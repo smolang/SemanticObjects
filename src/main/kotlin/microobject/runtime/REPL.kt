@@ -14,7 +14,7 @@ import java.io.InputStreamReader
 import java.util.*
 
 
-class REPL {
+class REPL( private var sparql : String) {
     private var interpreter : Interpreter? = null
     fun command(str: String, params: List<String>) : Boolean{
 
@@ -88,7 +88,7 @@ class REPL {
                 this.command("dump", listOf())
 
                 val command =
-                    "/home/edkam/Desktop/DL_Testing/apache-jena-3.16.0/bin/sparql --data=/tmp/mo/output.ttl --query=${params[0]}"
+                    "$sparql --data=/tmp/mo/output.ttl --query=${params[0]}"
                 val p = Runtime.getRuntime().exec(command)
                 p.waitFor()
                 var str = "jena output: \n"

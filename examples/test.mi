@@ -1,4 +1,0 @@
-read /home/edkam/src/keyma/MicroObjects/test.mo
-query /home/edkam/Desktop/DL_Testing/another.rq
-auto
-query SELECT ?obj WHERE { ?obj :MOinstanceOf :C } 

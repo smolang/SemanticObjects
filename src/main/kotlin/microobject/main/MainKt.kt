@@ -4,21 +4,23 @@ import microobject.runtime.REPL
 import java.io.File
 
 fun main(args: Array<String>) {
-    val repl = REPL()
-    if(args.size == 1){
-        val str = args[0]
-        File(str).forEachLine {
-            val splits = it.split(" ", limit = 2)
-            repl.command(splits.first(), splits.subList(1, splits.size))
+    if(args.size > 0) {
+        val repl = REPL(args[0])
+        if (args.size == 2) {
+            val str = args[1]
+            File(str).forEachLine {
+                val splits = it.split(" ", limit = 2)
+                repl.command(splits.first(), splits.subList(1, splits.size))
+            }
+        } else {
+            val repl = REPL(args[0])
+            do {
+                print(">")
+                val next = readLine() ?: break
+                val splits = next.split(" ", limit = 2)
+            } while (!repl.command(splits.first(), splits.subList(1, splits.size)))
+            println("Have a nice day")
         }
-    } else {
-        val repl = REPL()
-        do {
-            print(">")
-            val next = readLine() ?: break
-            val splits = next.split(" ", limit = 2)
-        } while (!repl.command(splits.first(), splits.subList(1, splits.size)))
-        println("Have a nice day")
     }
 }
 

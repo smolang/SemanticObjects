@@ -86,17 +86,19 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
 
-        for(i in 1 until ctx!!.expression().size)
-            ll += visit(ctx.expression(i)) as Expression
-        if(ctx.target == null){
+        if(ctx!!.target == null){
+            for(i in 1 until ctx!!.expression().size)
+                ll += visit(ctx.expression(i)) as Expression
             return CallStmt(Names.getVarName(),
                 visit(ctx.expression(0)) as Location,
                 ctx.NAME().text,
                 ll)
         } else {
+            for(i in 2 until ctx!!.expression().size)
+                ll += visit(ctx.expression(i)) as Expression
             return CallStmt(
                 visit(ctx.target) as Location,
-                visit(ctx.expression(0)) as Location,
+                visit(ctx.expression(1)) as Location,
                 ctx.NAME().text,
                 ll
             )
