@@ -31,7 +31,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             val res = mutableMapOf<String, MethodEntry>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
                 val stmt = visit(nm!!.statement()) as Statement
-                val params = nameListTranslate(nm.namelist())
+                val params = if(nm.namelist() != null) nameListTranslate(nm.namelist()) else listOf()
                 res[nm.NAME().text] = Pair(stmt, params)
             }
             table[cl.NAME(0).text] = Pair(fields, res)
@@ -85,19 +85,29 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
-        for(i in 2 until ctx!!.expression().size)
+
+        for(i in 1 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        return CallStmt(visit(ctx.expression(0)) as Location,
-                        visit(ctx.expression(1)) as Location,
-                        ctx.NAME().text,
-                        ll)
+        if(ctx.target == null){
+            return CallStmt(Names.getVarName(),
+                visit(ctx.expression(0)) as Location,
+                ctx.NAME().text,
+                ll)
+        } else {
+            return CallStmt(
+                visit(ctx.target) as Location,
+                visit(ctx.expression(0)) as Location,
+                ctx.NAME().text,
+                ll
+            )
+        }
     }
 
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
         for(i in 1 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        return CreateStmt(visit(ctx.expression(0)) as Location,
+        return CreateStmt(visit(ctx.target) as Location,
                           ctx.NAME().text,
                           ll)
     }
@@ -147,12 +157,19 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return ArithExpr(Operator.PLUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
 
+    override fun visitMinus_expression(ctx: Minus_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.PLUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+
     override fun visitGeq_expression(ctx: Geq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.GEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
 
     override fun visitEq_expression(ctx: Eq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.EQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+    override fun visitNeq_expression(ctx: Neq_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.NEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
 
     override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {
@@ -164,6 +181,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitVar_expression(ctx: Var_expressionContext?): ProgramElement {
+        if(ctx!!.NAME().text == "null") return LiteralExpr("null")
         return LocalVar(ctx!!.NAME().text)
     }
 

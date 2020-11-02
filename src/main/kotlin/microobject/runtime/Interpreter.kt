@@ -141,6 +141,7 @@ class Interpreter(
                 val mt = staticInfo.methodTable[newObj.tag] ?: throw Exception("This class is unknown: ${obj.tag}")
                 val m = mt[stmt.method] ?: throw Exception("This method is unknown: ${stmt.method}")
                 val newMemory: Memory = mutableMapOf()
+                newMemory["this"] = newObj
                 for (i in m.second.indices) {
                     newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
@@ -230,6 +231,13 @@ class Interpreter(
                     if (first == second) return LiteralExpr("True")
                     else return LiteralExpr("False")
                 }
+                if (expr.Op == Operator.NEQ) {
+                    if (expr.params.size != 2) throw Exception("Operator.NEQ requires two parameters")
+                    val first = eval(expr.params[0], stack, heap, obj)
+                    val second = eval(expr.params[1], stack, heap, obj)
+                    if (first == second) return LiteralExpr("False")
+                    else return LiteralExpr("True")
+                }
                 if (expr.Op == Operator.GEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.GEQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, obj)
@@ -242,6 +250,12 @@ class Interpreter(
                         val enx = eval(nx, stack, heap, obj)
                         LiteralExpr((acc.literal.toInt() + enx.literal.toInt()).toString())
                     })
+                }
+                if (expr.Op == Operator.MINUS) {
+                    if (expr.params.size != 2) throw Exception("Operator.MINUES requires two parameters")
+                    val first = eval(expr.params[0], stack, heap, obj)
+                    val second = eval(expr.params[1], stack, heap, obj)
+                    return LiteralExpr((first.literal.toInt() - second.literal.toInt()).toString())
                 }
                 throw Exception("This kind of operator is not implemented yet")
             }

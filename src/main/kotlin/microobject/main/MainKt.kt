@@ -4,11 +4,9 @@ import microobject.runtime.REPL
 import java.io.File
 
 fun main(args: Array<String>) {
-    val autoMode = true
-
-    if(autoMode) {
-        val repl = REPL()
-        val str = "/home/edkam/src/keyma/MicroObjects/test.mi"
+    val repl = REPL()
+    if(args.size == 1){
+        val str = args[0]
         File(str).forEachLine {
             val splits = it.split(" ", limit = 2)
             repl.command(splits.first(), splits.subList(1, splits.size))

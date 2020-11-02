@@ -11,6 +11,7 @@ TRUE : 'true';
 FALSE : 'false';
 SKIP_S : 'skip';
 EQ : '=';
+NEQ : '<>';
 LT : '<';
 GT : '>';
 LEQ : '<=';
@@ -61,7 +62,7 @@ method_def : NAME OPARAN namelist? CPARAN statement END;
 statement :   SKIP_S SEMI                                                           # skip_statment
 			| expression ASS expression SEMI                                        # assign_statement
 			| RETURN expression SEMI                                                # return_statement
-			| (expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI    # call_statement
+			| (target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI    # call_statement
 			| target=expression ASS NEW NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                 # output_statement
@@ -77,7 +78,9 @@ expression :      THIS NAME                      # field_expression
                 | NAME                           # var_expression
                 | CONSTANT                       # const_expression
                 | expression PLUS expression     # plus_expression
+                | expression MINUS expression    # minus_expression
                 | expression EQ expression       # eq_expression
+                | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression
                 | OPARAN expression CPARAN       # nested_expression
                 ;

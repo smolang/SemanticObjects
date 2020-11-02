@@ -18,35 +18,3 @@ do
   print(w);
   print(v.f);
 od
-
-
-
-
-
-
-
-
-
-
-
-
-
-/*
-PROGRAM test;
-FIELDS i;
-VARIABLES j;
-INVARIANT this.i = 0;
-CODE
-
-this.i = 1;
-while (j > 0) preserves (this.i = 1) do
-	this.i = 0;
-	await 1 = 1;
-	this.i = 1;
-	
-	
-	j = j - 1
-od
-this.i = 0;
-return 0
-*/

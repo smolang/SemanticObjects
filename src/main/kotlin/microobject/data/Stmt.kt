@@ -12,7 +12,7 @@ package microobject.data
  */
 
 enum class Operator {
-    PLUS, MINUS, MULT, GEQ, EQ
+    PLUS, MINUS, NEQ, GEQ, EQ
 }
 
 interface ProgramElement
@@ -105,4 +105,5 @@ data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Exp
 object Names{
     private var i = 0
     fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", className)
+    fun getVarName() : LocalVar = LocalVar("_v${i++}")
 }
