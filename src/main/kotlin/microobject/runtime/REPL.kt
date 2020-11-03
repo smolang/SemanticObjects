@@ -14,7 +14,7 @@ import java.io.InputStreamReader
 import java.util.*
 
 
-class REPL( private var sparql : String) {
+class REPL( private var apache : String) {
     private var interpreter : Interpreter? = null
     fun command(str: String, params: List<String>) : Boolean{
 
@@ -62,6 +62,30 @@ class REPL( private var sparql : String) {
                 if (!output.exists()) output.createNewFile()
                 output.writeText(res)
             }
+            "validate" -> { /** validates against a SHACL file**/
+                if (params.size != 1) {
+                    printRepl("Command $str expects 1 parameter (/path/to/.shapes/file)")
+                    return false
+                }
+                if (interpreter == null) {
+                    printRepl("Interpreter not initialized")
+                    return false
+                }
+                printRepl("Dumping current state....")
+                this.command("dump", listOf())
+
+                val command =
+                    "$apache/shacl validate --data /tmp/mo/output.ttl --shapes ${params[0]}"
+
+                val p = Runtime.getRuntime().exec(command)
+                p.waitFor()
+                var str = "jena output: \n"
+                val lineReader = BufferedReader(InputStreamReader(p.inputStream))
+                lineReader.lines().forEach { x: String? -> if(x != null) str += "$x\n" }
+                printRepl(str)
+                return false
+
+            }
             "query" -> {/** executes a SPARQL query **/
                 if (params.size != 1) {
                     printRepl("Command $str expects 1 parameter (SPARQL query) ")
@@ -88,7 +112,7 @@ class REPL( private var sparql : String) {
                 this.command("dump", listOf())
 
                 val command =
-                    "$sparql --data=/tmp/mo/output.ttl --query=${params[0]}"
+                    "$apache/sparql --data=/tmp/mo/output.ttl --query=${params[0]}"
                 val p = Runtime.getRuntime().exec(command)
                 p.waitFor()
                 var str = "jena output: \n"

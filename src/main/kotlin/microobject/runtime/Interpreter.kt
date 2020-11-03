@@ -43,26 +43,30 @@ class Interpreter(
     private var debug = false
 
     fun dumpTtl() : String{
-        var res = "@prefix : <urn:absolute:Test> .\n\n"
+        var res = "@prefix : <urn:absolute:Test> .\n\n:_Entry_ a :MOXClass.\n"
 
-        for(obj in staticInfo.hierarchy.entries){
-            for(obj2 in obj.value){
-                res += ":$obj2 :MOextends :${obj.key}.\n"
-            }
-        }
         for(obj in staticInfo.fieldTable){
+            res += ":${obj.key} a :MOXClass.\n"
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasField :$obj2.\n"
+                res += ":$obj2 a :MOXField.\n"
             }
         }
         for(obj in staticInfo.methodTable){
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasMethod :${obj2.key}.\n"
+                res += ":${obj2.key} a :MOXMethod.\n"
+            }
+        }
+        for(obj in staticInfo.hierarchy.entries){
+            for(obj2 in obj.value){
+                res += ":$obj2 :MOextends :${obj.key}.\n"
             }
         }
         var i = 0
         for(obj in heap.keys){
             res += ":${obj.literal} :MOinstanceOf :${obj.tag}.\n"
+            res += ":${obj.literal} a :MXObject.\n"
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += ":${obj.literal} :MOstore _:dummy$i.\n"
