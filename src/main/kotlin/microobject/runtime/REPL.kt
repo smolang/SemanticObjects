@@ -173,7 +173,8 @@ class REPL( private var apache : String) {
                     info                - prints static information
                     eval <expr>         - evaluates an expression in the current state (in the topmost frame)
                     query <expr>        - executes a SPARQL query
-                    query-file <file>   - executes a SPARQL query
+                    query-file <file>   - executes a SPARQL query file
+                    validate <file>     - validates against a SHACL graph file
                 """.trimIndent()
                 )
 
@@ -184,7 +185,7 @@ class REPL( private var apache : String) {
     }
 
     private fun printRepl(str: String){
-        println("MO> $str \n")
+        println("> $str \n")
     }
 
     private fun initInterpreter(path: String){
