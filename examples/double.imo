@@ -1,0 +1,6 @@
+auto
+examine
+class <urn:MOstore> some ((<urn:MOfield> value <urn:next>) and (<urn:MOvalue> value <urn:null>))
+query SELECT ?obj WHERE { ?obj :MOinstanceOf :List }
+query SELECT ?obj WHERE { ?obj rdf:type :MOXField }
+validate examples/shape.ttl

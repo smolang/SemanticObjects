@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+schema:TestShape
+    a sh:NodeShape ;
+    sh:targetClass schema:MXObject ;
+    sh:property [
+        sh:path schema:MOinstanceOf ;
+        sh:class schema:MOXClass ;
+        sh:name "Everything implements" ;
+    ].

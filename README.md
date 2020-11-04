@@ -11,5 +11,10 @@
  * examples/double.mo contains a simple doubly linked list example.
  * examples/double.rq contains a SPARQL query to select all `List` elements
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class
+ * examples/double.imo contains a simple test session
  
- To replay a session, pass as the second parameter a file which contains one command per line.
+ To run the test session and continue interactively, run
+ ```
+./gradlew shadowJar
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo
+```

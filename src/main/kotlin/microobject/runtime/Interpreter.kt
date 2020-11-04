@@ -122,6 +122,7 @@ class Interpreter(
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasField :$obj2.\n"
                 res += ":$obj2 rdf:type owl:NamedIndividual , :MOXField.\n"
+                res += ":${obj.key} :MOhasField :$obj2.\n"
                 //res += ":MOXField :$obj2.\n"
             }
         }

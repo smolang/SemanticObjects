@@ -30,7 +30,7 @@ class Command(val name : String,
     fun execute(param : String, apache : String) : Boolean {
         if(requiresDump) repl.dump()
         if(requiresParameter && param == ""){
-            repl.printRepl("Command $name expects 1 parameter (/path/to/.mo/file).")
+            repl.printRepl("Command $name expects 1 parameter $parameterHelp.")
             return false
         }
         if(requiresApache && apache == ""){
