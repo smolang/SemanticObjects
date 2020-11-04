@@ -111,6 +111,7 @@ class Interpreter(
 :Test rdf:type owl:Class ;
       owl:equivalentClass :MOXfield .
               
+:null rdf:type owl:NamedIndividual , :MOXObject .
 :_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
 
         """.trimIndent()
