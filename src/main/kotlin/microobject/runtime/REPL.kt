@@ -25,11 +25,16 @@ class Command(val name : String,
               val requiresParameter : Boolean = false,
               val parameterHelp : String = "",
               val requiresDump : Boolean = false,
+              val requiresApache : Boolean = false,
               val invalidatesDump : Boolean = false ){
-    fun execute(param : String) : Boolean {
+    fun execute(param : String, apache : String) : Boolean {
         if(requiresDump) repl.dump()
         if(requiresParameter && param == ""){
-            repl.printRepl("Command $name expects 1 parameter (/path/to/.mo/file)")
+            repl.printRepl("Command $name expects 1 parameter (/path/to/.mo/file).")
+            return false
+        }
+        if(requiresApache && apache == ""){
+            repl.printRepl("Command $name requires that a path to an apache jena installation is provided.")
             return false
         }
         val res = command(param)
@@ -38,32 +43,57 @@ class Command(val name : String,
     }
 }
 
-class REPL(private var apache: String) {
+@Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
+class REPL(private val apache: String, private val outPath: String, private val verbose : Boolean) {
     private var interpreter: Interpreter? = null
     var validDump = false
     private var m = OWLManager.createOWLOntologyManager()
-    private var ontology = m.loadOntologyFromOntologyDocument(File("/tmp/mo/output.ttl"))
+    private var ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
     private var reasoner: OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
     private val commands: MutableMap<String, Command> = mutableMapOf()
     init {
         initCommands()
     }
-    fun dump(): String {
+
+
+    fun command(str: String, param: String): Boolean {
+        if (str == "help") {
+            for (cmd in commands.values) {
+                print("${cmd.name}\n\t- ${cmd.help}")
+                if (cmd.requiresParameter)
+                    print(", parameter: ${cmd.parameterHelp}")
+                println()
+            }
+        }else if (interpreter == null && str != "read" && str != "exit"){
+            printRepl("No file loaded. Please \"read\" a file to continue.")
+        } else if (commands.containsKey(str)) {
+            try{
+                return commands[str]!!.execute(param, apache)
+            } catch (e : Exception) {
+                printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
+                e.printStackTrace()
+                return false
+            }
+        } else {
+            printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")
+        }
+        return false
+    }
+    fun dump() {
         if (!validDump) {
 
             val res = interpreter!!.dumpTtl()
-            //printRepl(res)
+            if(verbose) printRepl(res)
 
-            val output = File("/tmp/mo/output.ttl")
+            val output = File("$outPath/output.ttl")
             output.parentFile.mkdirs()
             if (!output.exists()) output.createNewFile()
             output.writeText(res)
             m = OWLManager.createOWLOntologyManager()
-            ontology = m.loadOntologyFromOntologyDocument(File("/tmp/mo/output.ttl"))
+            ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
             reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         }
         validDump = true
-        return "/tmp/mo/output.ttl"
     }
 
 
@@ -117,31 +147,32 @@ class REPL(private var apache: String) {
             "auto",
             this,
             { while (interpreter!!.makeStep()); false },
-            "dumps into /tmp/mo/output.ttl",
+            "continues execution until the next breakpoint",
             invalidatesDump = true
         )
         commands["step"] = Command(
             "step",
             this,
             { interpreter!!.makeStep(); false },
-            "dumps into /tmp/mo/output.ttl",
+            "executes one step",
             invalidatesDump = true
         )
         commands["validate"] = Command(
             "validate",
             this,
             { str ->
-                val p = Runtime.getRuntime().exec("$apache/shacl validate --data /tmp/mo/output.ttl --shapes $str")
+                val p = Runtime.getRuntime().exec("$apache/shacl validate --data $outPath/output.ttl --shapes $str")
                 p.waitFor()
-                var str = "jena output: \n"
+                var out = "jena output: \n"
                 val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if (x != null) str += "$x\n" }
-                printRepl(str)
+                lineReader.lines().forEach { x: String? -> if (x != null) out += "$x\n" }
+                printRepl(out)
                 false
             },
             "validates against a SHACL file",
             parameterHelp = "path to a SHACL file",
             requiresParameter = true,
+            requiresApache = true,
             requiresDump = true
         )
         commands["query"] = Command(
@@ -158,17 +189,18 @@ class REPL(private var apache: String) {
                     
                     $str
                 """.trimIndent()
-                val output = File("/tmp/mo/output.rq")
+                val output = File("$outPath/output.rq")
                 output.parentFile.mkdirs()
                 if (!output.exists()) output.createNewFile()
                 output.writeText(out)
 
-                this.command("query-file", "/tmp/mo/output.rq")
+                this.command("query-file", "$outPath/output.rq")
                 false
             },
             "executes a SPARQL query",
             parameterHelp = "SPARQL query",
             requiresParameter = true,
+            requiresApache = true,
             requiresDump = true
         )
 
@@ -177,25 +209,26 @@ class REPL(private var apache: String) {
             this,
             { str ->
                 val command =
-                    "$apache/sparql --data=/tmp/mo/output.ttl --query=$str"
+                    "$apache/sparql --data=$outPath/output.ttl --query=$str"
                 val p = Runtime.getRuntime().exec(command)
                 p.waitFor()
-                var str = "jena output: \n"
+                var out = "jena output: \n"
                 val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if (x != null) str += "$x\n" }
-                printRepl(str)
+                lineReader.lines().forEach { x: String? -> if (x != null) out += "$x\n" }
+                printRepl(out)
                 false
             },
             "executes a SPARQL query from a file",
             parameterHelp = "SPARQL file",
             requiresParameter = true,
+            requiresApache = true,
             requiresDump = true
         )
 
         commands["consistency"] = Command(
             "consistency",
             this,
-            { str ->
+            { _ ->
                 ontology.classesInSignature().forEach { println(it) }
                 printRepl("HermiT result ${reasoner.isConsistent}")
                 false
@@ -237,24 +270,5 @@ class REPL(private var apache: String) {
             requiresParameter = true,
             requiresDump = true
         )
-    }
-
-
-    fun command(str: String, param: String): Boolean {
-        if (str == "help") {
-            for (cmd in commands.values) {
-                print("${cmd.name}\t\t\t\t-\t${cmd.help}")
-                if (cmd.requiresParameter)
-                    print(", parameter: ${cmd.parameterHelp}")
-                println()
-            }
-        }else if (interpreter == null && str != "read"){
-            printRepl("No file loaded. Please \"read\" a file to continue.")
-        } else if (commands.containsKey(str)) {
-            return commands[str]!!.execute(param)
-        } else {
-            printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")
-        }
-        return false
     }
 }

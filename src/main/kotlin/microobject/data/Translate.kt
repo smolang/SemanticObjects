@@ -41,11 +41,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             val r = roots.first()
             roots.remove(r)
             val below = hierarchy[r] ?: continue
-            for( below in below ){
-                roots.add(below)
+            for( str in below ){
+                roots.add(str)
                 val entryUp = table[r]
-                val entryLow = table[below]
-                table[below] = Pair(entryUp!!.first + entryLow!!.first, entryUp.second + entryLow.second)
+                val entryLow = table[str]
+                table[str] = Pair(entryUp!!.first + entryLow!!.first, entryUp.second + entryLow.second)
             }
         }
 

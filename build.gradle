@@ -1,8 +1,9 @@
 plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+    id 'com.github.johnrengelman.shadow' version '5.2.0'
 }
 group = 'me.edkam'
-version = '1.0-SNAPSHOT'
+version = '0.1-SNAPSHOT'
 
 repositories {
     mavenCentral()
@@ -17,9 +18,16 @@ sourceSets {
 
 dependencies {
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-    compile "org.antlr:antlr4:4.8"
-    compile 'net.sourceforge.owlapi:org.semanticweb.hermit:1.3.8.510'
+    implementation("com.github.ajalt:clikt:2.3.0")
+    implementation "org.antlr:antlr4:4.8"
+    implementation 'net.sourceforge.owlapi:org.semanticweb.hermit:1.3.8.510'
+    implementation 'org.slf4j:slf4j-simple:1.7.25'
 }
 compileKotlin {
     kotlinOptions.jvmTarget = '1.8'
+}
+jar {
+    manifest {
+        attributes 'Main-Class': 'microobject.main.MainKtKt'
+    }
 }
