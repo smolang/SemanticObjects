@@ -4,7 +4,7 @@ import microobject.runtime.REPL
 import java.io.File
 
 fun main(args: Array<String>) {
-    if(args.size > 0) {
+    if(args.isNotEmpty()) {
         val repl = REPL(args[0])
         if (args.size == 2) {
             val str = args[1]
@@ -12,16 +12,17 @@ fun main(args: Array<String>) {
                 if(!it.startsWith("#")) {
                     println("MO> $it")
                     val splits = it.split(" ", limit = 2)
-                    repl.command(splits.first(), splits.subList(1, splits.size))
+                    val left = if(splits.size == 1) "" else splits[1]
+                    repl.command(splits.first(), left)
                 }
             }
         } else {
-            val repl = REPL(args[0])
             do {
                 print("MO>")
                 val next = readLine() ?: break
                 val splits = next.split(" ", limit = 2)
-            } while (!repl.command(splits.first(), splits.subList(1, splits.size)))
+                val left = if(splits.size == 1) "" else splits[1]
+            } while (!repl.command(splits.first(), left))
             println("Have a nice day")
         }
     }

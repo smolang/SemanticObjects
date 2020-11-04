@@ -87,14 +87,14 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         var ll = emptyList<Expression>()
 
         if(ctx!!.target == null){
-            for(i in 1 until ctx!!.expression().size)
+            for(i in 1 until ctx.expression().size)
                 ll += visit(ctx.expression(i)) as Expression
             return CallStmt(Names.getVarName(),
                 visit(ctx.expression(0)) as Location,
                 ctx.NAME().text,
                 ll)
         } else {
-            for(i in 2 until ctx!!.expression().size)
+            for(i in 2 until ctx.expression().size)
                 ll += visit(ctx.expression(i)) as Expression
             return CallStmt(
                 visit(ctx.target) as Location,
@@ -184,7 +184,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitVar_expression(ctx: Var_expressionContext?): ProgramElement {
         if(ctx!!.NAME().text == "null") return LiteralExpr("null")
-        return LocalVar(ctx!!.NAME().text)
+        return LocalVar(ctx.NAME().text)
     }
 
     override fun visitField_expression(ctx: Field_expressionContext?): ProgramElement {
