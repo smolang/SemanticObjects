@@ -43,19 +43,92 @@ class Interpreter(
     private var debug = false
 
     fun dumpTtl() : String{
-        var res = "@prefix : <urn:absolute:Test> .\n\n:_Entry_ a :MOXClass.\n"
+        var res = """
+@prefix : <urn:absolute:Test:> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+
+:MOXClass   rdf:type owl:Class .
+:MOXField   rdf:type owl:Class .
+:MOXMethod  rdf:type owl:Class .
+:MOXObject  rdf:type owl:Class .
+:MOXStorage rdf:type owl:Class .
+
+:MOinstanceOf rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXObject ;
+              rdfs:range :MOXClass .
+              
+:MOhasField   rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXClass ;
+              rdfs:range :MOXField .
+              
+:MOhasMethod  rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXClass ;
+              rdfs:range :MOXMethod .
+
+:MOextends    rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXClass ;
+              rdfs:range :MOXClass .
+
+:MOstore      rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXObject ;
+              rdfs:range :MOXStorage .
+              
+:MOvalue      rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXStorage .
+              
+:MOfield      rdf:type owl:ObjectProperty ;
+              rdfs:domain :MOXStorage ;
+              rdfs:range :MOXField .
+
+:HasAnyNull rdf:type owl:Class ;
+            owl:equivalentClass [ rdf:type owl:Restriction ;
+                                  owl:onProperty :MOstore ;
+                                  owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                       owl:onProperty :MOvalue ;
+                                                       owl:hasValue :null
+                                                     ]
+                                ] .
+:HasAnyNullNext  rdf:type owl:Class ;
+      owl:equivalentClass [ rdf:type owl:Restriction ;
+                            owl:onProperty :MOstore ;
+                            owl:someValuesFrom [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                                        owl:onProperty :MOfield ;
+                                                                        owl:hasValue :next
+                                                                      ]
+                                                                      [ rdf:type owl:Restriction ;
+                                                                        owl:onProperty :MOvalue ;
+                                                                        owl:hasValue :null
+                                                                      ]
+                                                                    ) ;
+                                                 rdf:type owl:Class
+                                               ]
+                          ] .
+
+
+
+:Test rdf:type owl:Class ;
+      owl:equivalentClass :MOXfield .
+              
+:_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
+
+        """.trimIndent()
 
         for(obj in staticInfo.fieldTable){
-            res += ":${obj.key} a :MOXClass.\n"
+            res += ":${obj.key} rdf:type owl:NamedIndividual , :MOXClass.\n"
+            //res += ":MOXClass :${obj.key}.\n"
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasField :$obj2.\n"
-                res += ":$obj2 a :MOXField.\n"
+                res += ":$obj2 rdf:type owl:NamedIndividual , :MOXField.\n"
+                //res += ":MOXField :$obj2.\n"
             }
         }
         for(obj in staticInfo.methodTable){
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasMethod :${obj2.key}.\n"
-                res += ":${obj2.key} a :MOXMethod.\n"
+                res += ":${obj2.key} rdf:type owl:NamedIndividual , :MOXMethod.\n"
+                //res += ":MOXMethod :${obj2.key}.\n"
             }
         }
         for(obj in staticInfo.hierarchy.entries){
@@ -66,7 +139,8 @@ class Interpreter(
         var i = 0
         for(obj in heap.keys){
             res += ":${obj.literal} :MOinstanceOf :${obj.tag}.\n"
-            res += ":${obj.literal} a :MXObject.\n"
+            res += ":${obj.literal} rdf:type owl:NamedIndividual , :MOXObject.\n"
+            //res += ":MOXObject :${obj.literal}.\n"
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += ":${obj.literal} :MOstore _:dummy$i.\n"

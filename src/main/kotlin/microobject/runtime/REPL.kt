@@ -8,13 +8,21 @@ import microobject.gen.WhileLexer
 import microobject.gen.WhileParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.semanticweb.HermiT.Reasoner
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyManager
+import org.semanticweb.owlapi.model.OntologyConfigurator
+import org.semanticweb.owlapi.reasoner.OWLReasoner
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 
 
-class REPL( private var apache : String) {
+class REPL(private var apache: String) {
     private var interpreter : Interpreter? = null
     fun command(str: String, params: List<String>) : Boolean{
 
@@ -55,14 +63,15 @@ class REPL( private var apache : String) {
                     return false
                 }
                 val res = interpreter!!.dumpTtl()
-                printRepl(res)
+                //printRepl(res)
 
                 val output = File("/tmp/mo/output.ttl")
                 output.parentFile.mkdirs()
                 if (!output.exists()) output.createNewFile()
                 output.writeText(res)
             }
-            "validate" -> { /** validates against a SHACL file**/
+            "validate" -> {
+                /** validates against a SHACL file**/
                 if (params.size != 1) {
                     printRepl("Command $str expects 1 parameter (/path/to/.shapes/file)")
                     return false
@@ -81,17 +90,26 @@ class REPL( private var apache : String) {
                 p.waitFor()
                 var str = "jena output: \n"
                 val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if(x != null) str += "$x\n" }
+                lineReader.lines().forEach { x: String? -> if (x != null) str += "$x\n" }
                 printRepl(str)
                 return false
 
             }
-            "query" -> {/** executes a SPARQL query **/
+            "query" -> {
+                /** executes a SPARQL query **/
                 if (params.size != 1) {
                     printRepl("Command $str expects 1 parameter (SPARQL query) ")
                     return false
                 }
-                val out = "PREFIX : <urn:absolute:Test>\n\n ${params[0]}"
+                val out =
+                    """
+                    PREFIX : <urn:absolute:Test:>
+                    PREFIX owl: <http://www.w3.org/2002/07/owl#> 
+                    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
+                    
+                    ${params[0]}
+                """.trimIndent()
                 val output = File("/tmp/mo/output.rq")
                 output.parentFile.mkdirs()
                 if (!output.exists()) output.createNewFile()
@@ -99,7 +117,8 @@ class REPL( private var apache : String) {
 
                 this.command("query-file", listOf("/tmp/mo/output.rq"))
             }
-            "query-file" -> {  /** executes a SPARQL query file **/
+            "query-file" -> {
+                /** executes a SPARQL query file **/
                 if (params.size != 1) {
                     printRepl("Command $str expects 1 parameter (/path/to/.query/file)")
                     return false
@@ -117,9 +136,42 @@ class REPL( private var apache : String) {
                 p.waitFor()
                 var str = "jena output: \n"
                 val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if(x != null) str += "$x\n" }
+                lineReader.lines().forEach { x: String? -> if (x != null) str += "$x\n" }
                 printRepl(str)
                 return false
+            }
+            "consistency" -> {
+                if (interpreter == null) {
+                    printRepl("Interpreter not initialized")
+                    return false
+                }
+
+                this.command("dump", listOf())
+
+                val m: OWLOntologyManager = OWLManager.createOWLOntologyManager()
+                val o: OWLOntology = m.loadOntologyFromOntologyDocument(File("/tmp/mo/output.ttl"))
+                val reasoner: OWLReasoner = Reasoner.ReasonerFactory().createReasoner(o)
+                println(reasoner.isConsistent)
+            }
+            "class" -> {
+                if (params.size != 1) {
+                    printRepl("Command $str expects 1 parameter (.mo expression)")
+                    return false
+                }
+                if (interpreter == null) {
+                    printRepl("Interpreter not initialized")
+                    return false
+                }
+
+                this.command("dump", listOf())
+
+                val m: OWLOntologyManager = OWLManager.createOWLOntologyManager()
+                val o: OWLOntology = m.loadOntologyFromOntologyDocument(File("/tmp/mo/output.ttl"))
+                val reasoner: OWLReasoner = Reasoner.ReasonerFactory().createReasoner(o)
+                val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+                parser.setDefaultOntology(o)
+                val res = reasoner.getInstances(parser.parseClassExpression(params[0]))
+                println(res)
             }
             "eval" -> {
                 /** evaluates a .mo expression **/
@@ -185,7 +237,7 @@ class REPL( private var apache : String) {
     }
 
     private fun printRepl(str: String){
-        println("> $str \n")
+        println("MO> $str \n")
     }
 
     private fun initInterpreter(path: String){
