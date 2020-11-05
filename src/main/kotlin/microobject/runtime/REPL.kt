@@ -58,7 +58,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         initCommands()
     }
 
-    fun initOntology(){
+    private fun initOntology(){
         val dir = File("$outPath/output.ttl")
         dir.parentFile.mkdirs()
         if (!dir.exists()) dir.createNewFile()
@@ -148,7 +148,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         commands["info"] = Command(
             "info",
             this,
-            { interpreter!!.staticInfo.toString(); false },
+            { printRepl(interpreter!!.staticInfo.toString()); false },
             "prints static information in internal format"
         )
         commands["dump"] =

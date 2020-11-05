@@ -218,8 +218,10 @@ class Interpreter(
             }
             is CallStmt -> {
                 val newObj = eval(stmt.callee, stackMemory, heap, obj)
-                val mt = staticInfo.methodTable[newObj.tag] ?: throw Exception("This class is unknown: ${obj.tag}")
-                val m = mt[stmt.method] ?: throw Exception("This method is unknown: ${stmt.method}")
+                val mt = staticInfo.methodTable[newObj.tag]
+                    ?: throw Exception("This class is unknown: ${obj.tag} when executing $stmt")
+                val m = mt[stmt.method]
+                    ?: throw Exception("This method is unknown: ${stmt.method}")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = newObj
                 for (i in m.second.indices) {
@@ -235,6 +237,8 @@ class Interpreter(
                 val m =
                     staticInfo.fieldTable[stmt.className] ?: throw Exception("This class is unknown: ${stmt.className}")
                 val newMemory: Memory = mutableMapOf()
+                if(m.size != stmt.params.size) throw Exception(
+                    "Creation of an instance of class ${stmt.className} failed, missmatched number of parameters: $stmt. Requires: ${m.size}")
                 for (i in m.indices) {
                     newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
@@ -344,7 +348,8 @@ class Interpreter(
             }
             is OthersVar -> {
                 val oObj = eval(expr.expr, stack, heap, obj)
-                val maps = heap[oObj] ?: throw Exception("Unknown object $oObj")
+                val maps = heap[oObj]
+                    ?: throw Exception("Unknown object $oObj")
                 return maps.getOrDefault(expr.name, LiteralExpr("ERROR"))
             }
             is LocalVar -> {

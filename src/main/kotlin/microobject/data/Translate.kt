@@ -65,8 +65,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private fun nameListTranslate(ctx: NamelistContext?) : List<String> {
         var res = listOf<String>()
-        for(nm in ctx!!.NAME())
-            res += nm.text
+        if(ctx!!.NAME() != null) {
+            for (nm in ctx!!.NAME())
+                res += nm.text
+        }
         return res
     }
 

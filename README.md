@@ -18,3 +18,9 @@
 ./gradlew shadowJar
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo
 ```
+
+To run the geo session, run
+ ```
+./gradlew shadowJar
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/geo.mo -r examples/geo.imo
+```
