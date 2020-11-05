@@ -11,6 +11,8 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.reasoner.OWLReasoner
 import java.io.BufferedReader
@@ -47,12 +49,22 @@ class Command(val name : String,
 class REPL(private val apache: String, private val outPath: String, private val verbose : Boolean) {
     private var interpreter: Interpreter? = null
     var validDump = false
-    private var m = OWLManager.createOWLOntologyManager()
-    private var ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
-    private var reasoner: OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
+    private lateinit var m : OWLOntologyManager
+    private lateinit var ontology : OWLOntology
+    private lateinit var reasoner : OWLReasoner
     private val commands: MutableMap<String, Command> = mutableMapOf()
     init {
+        initOntology()
         initCommands()
+    }
+
+    fun initOntology(){
+        val dir = File("$outPath/output.ttl")
+        dir.parentFile.mkdirs()
+        if (!dir.exists()) dir.createNewFile()
+        m = OWLManager.createOWLOntologyManager()
+        ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+        reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
     }
 
 
@@ -89,9 +101,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             output.parentFile.mkdirs()
             if (!output.exists()) output.createNewFile()
             output.writeText(res)
-            m = OWLManager.createOWLOntologyManager()
-            ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
-            reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
+            initOntology()
         }
         validDump = true
     }
