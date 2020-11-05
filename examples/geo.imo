@@ -1,3 +1,4 @@
 auto
 query SELECT ?obj WHERE { ?obj :MOinstanceOf :GeoUnit. ?obj :MOstore ?str. ?str :MOfield :sealing. ?str :MOvalue :1}
 query SELECT ?obj ?dir ?elem WHERE { ?obj :MOinstanceOf :GeoUnit. ?obj :MOstore ?str. ?str :MOfield ?dir. ?str :MOvalue ?elem. ?elem :MOinstanceOf :Fault}
+query SELECT ?obj WHERE { ?obj :MOinstanceOf :GeoUnit. ?obj :MOstore ?str. ?str :MOfield :migration. ?str :MOvalue ?elem. ?elem :MOinstanceOf :LeftHydrocarbonMigration}

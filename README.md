@@ -24,3 +24,5 @@ To run the geo session, run
 ./gradlew shadowJar
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/geo.mo -r examples/geo.imo
 ```
+
+Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and barely illustrates the debugger.

@@ -2,16 +2,31 @@ class GeoElement (sealing)
 
 end
 
+
+class LeftHydrocarbonMigration (gu)
+    migrate()
+        this.gu.migrate();
+        left := this.gu.left;
+        if left <> null then
+            left.migrateLeft(this);
+        else skip; end
+        return 0;
+    end
+    copy(param)
+        c := new LeftHydrocarbonMigration(param);
+        return c;
+    end
+end
+
 class GeoUnitList(content, next)
 
     append(last)
         if this.next = null then
             this.next := last;
-            return 0;
         else
             this.next.append(last);
-            return 0;
         end
+        return 0;
     end
 
     get(i)
@@ -38,7 +53,7 @@ end
 
 class GeoManager (list)
     createNew(seal)
-        tmp := new GeoUnit(seal, null, null, null, null);
+        tmp := new GeoUnit(seal, null, null, null, null, null);
         this.list := new GeoUnitList(tmp, this.list);
         return tmp;
     end
@@ -73,7 +88,7 @@ end
 
 
 
-class GeoUnit extends GeoElement (top, left, right, bottom)
+class GeoUnit extends GeoElement (top, left, right, bottom, migration)
     earthquake(fault)
         if this.right <> null then
             fault.replaces(this.right);
@@ -83,10 +98,29 @@ class GeoUnit extends GeoElement (top, left, right, bottom)
         else skip; end
         return 0;
     end
+    migrate()
+        if this.top <> null then
+            if this.top.s1.sealing <> 1 then
+                newMig := this.migration.copy(this.top.s1);
+                this.top.s1.migration := newMig;
+                newMig.migrate();
+            else skip; end
+        else skip; end
+        return 0;
+    end
 end
 
 class Touch extends GeoElement (s1, s2)
-
+    migrateLeft(mig)
+        if this.s1.sealing <> 1 then
+            if this.s1.migration = null then
+                newMig := new LeftHydrocarbonMigration(this.s1);
+                this.s1.migration := newMig;
+                newMig.migrate();
+            else skip; end
+        else skip; end
+        return 0;
+    end
 end
 
 class Fault extends GeoElement (s1, s2)
@@ -94,14 +128,35 @@ class Fault extends GeoElement (s1, s2)
         touch.s1.right := this;
         touch.s2.left  := this;
         this.s1 := new GeoUnitList(touch.s1, this.s1);
-        this.s2 := new GeoUnitList(touch.s1, this.s2);
+        this.s2 := new GeoUnitList(touch.s2, this.s2);
+        return 0;
+    end
+
+    migrateLeft(mig)
+        if this.sealing <> 1 then
+            if s1 <> null then
+                currentLeft := this.s1;
+                currentRight := this.s2;
+                while currentRight.content <> mig.gu do
+                    currentRight := currentRight.next;
+                    currentLeft := currentLeft.next;
+                end
+                if currentLeft.content.sealing <> 1 then
+                    if currentLeft.content.migration = null then
+                        newMig := new LeftHydrocarbonMigration(currentLeft.content);
+                        currentLeft.content.migration := newMig;
+                        newMig.migrate();
+                    else skip; end
+                else skip; end
+            else skip; end
+        else skip; end
         return 0;
     end
 end
 
 
 do
-    gu1 := new GeoUnit(0, null, null, null, null);
+    gu1 := new GeoUnit(0, null, null, null, null, null);
     initList := new GeoUnitList(gu1, null);
     manager := new GeoManager(initList);
     gu2 := manager.createNew(1);
@@ -117,4 +172,7 @@ do
     manager.connectTB(gu2, gu5);
     manager.connectTB(gu3, gu6);
     manager.startEarthquake(1, gu4);
+    mig := new LeftHydrocarbonMigration(gu5);
+    gu5.migration := mig;
+    mig.migrate();
 od
