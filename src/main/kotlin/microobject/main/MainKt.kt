@@ -20,6 +20,7 @@ class Main : CliktCommand() {
 
     override fun run() {
         val pathJena = if( apache == null ) "" else apache.toString()
+        org.apache.jena.query.ARQ.init()
         val repl = REPL(pathJena, tmp.toString(), verbose)
         if(load != null){
             repl.command("read", load.toString())

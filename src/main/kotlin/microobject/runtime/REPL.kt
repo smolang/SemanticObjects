@@ -10,7 +10,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
-import org.apache.jena.query.QuerySolution
 import org.apache.jena.query.ResultSetFormatter
 import org.apache.jena.rdf.model.ModelFactory
 import org.semanticweb.HermiT.Reasoner
@@ -210,7 +209,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
 
 
                 val model = ModelFactory.createDefaultModel()
-                model.read("$outPath/output.ttl")
+                val uri = File("$outPath/output.ttl").toURL().toString()
+                model.read(uri, "TTL")
 
 
                 val query = QueryFactory.create(out)
