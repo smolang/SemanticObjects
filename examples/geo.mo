@@ -105,6 +105,7 @@ class GeoUnit extends GeoElement (top, left, right, bottom, migration)
         else skip; end
         return 0;
     end
+
     migrate()
         if this.top <> null then
             if this.top.s1.sealing <> 1 then
@@ -117,14 +118,28 @@ class GeoUnit extends GeoElement (top, left, right, bottom, migration)
         else skip; end
         return 0;
     end
+
+    getTopNonSealing()
+        if this.sealing <> 1 then
+            return this;
+        else
+            if this.top <> null then
+                target := this.top.s1;
+                res := target.getTopNonSealing();
+                return res;
+            else return this; end
+        end
+    end
 end
 
 class Touch extends GeoElement (s1, s2)
     migrateLeft(mig)
         if this.s1.sealing <> 1 then
             if this.s1.migration = null then
+                old := mig.gu;
                 this.s1.migration := mig;
                 mig.gu := this.s1;
+                old.migration := null;
                 return 1;
             else skip; end
         else skip; end
@@ -147,14 +162,15 @@ class Fault extends GeoElement (s1, s2)
                 currentLeft := this.s1;
                 currentRight := this.s2;
                 while currentRight.content <> mig.gu do
-                    currentRight := currentRight.next;
                     currentLeft := currentLeft.next;
+                    currentRight := currentRight.next;
                 end
-                if currentLeft.content.sealing <> 1 then
-                    if currentLeft.content.migration = null then
+                finalLeft := currentLeft.content.getTopNonSealing();
+                if finalLeft.sealing <> 1 then
+                    if finalLeft.migration = null then
                         old := mig.gu;
-                        currentLeft.content.migration := mig;
-                        mig.gu := currentLeft.content;
+                        finalLeft.migration := mig;
+                        mig.gu := finalLeft;
                         old.migration := null;
                         return 1;
                     else skip; end
@@ -167,6 +183,117 @@ end
 
 
 do
+
+    gu11 := new GeoUnit(1, null, null, null, null, null);
+    initList := new GeoUnitList(gu11, null);
+    manager := new GeoManager(initList);
+
+
+
+    gu12 := manager.createNew(1);
+    gu13 := manager.createNew(1);
+    gu14 := manager.createNew(1);
+    gu15 := manager.createNew(1);
+    manager.connectLR(gu11, gu12);
+    manager.connectLR(gu12, gu13);
+    manager.connectLR(gu13, gu14);
+    manager.connectLR(gu14, gu15);
+
+    print(1);
+
+    gu21 := manager.createNew(1);
+    gu22 := manager.createNew(0);
+    gu23 := manager.createNew(1);
+    gu24 := manager.createNew(0);
+    gu25 := manager.createNew(1);
+    manager.connectTB(gu11, gu21);
+    manager.connectTB(gu12, gu22);
+    manager.connectTB(gu13, gu23);
+    manager.connectTB(gu14, gu24);
+    manager.connectTB(gu15, gu25);
+    manager.connectLR(gu21, gu22);
+    manager.connectLR(gu22, gu23);
+    manager.connectLR(gu23, gu24);
+    manager.connectLR(gu24, gu25);
+
+    print(2);
+
+    gu31 := manager.createNew(1);
+    gu32 := manager.createNew(0);
+    gu33 := manager.createNew(0);
+    gu34 := manager.createNew(1);
+    gu35 := manager.createNew(1);
+    manager.connectTB(gu21, gu31);
+    manager.connectTB(gu22, gu32);
+    manager.connectTB(gu23, gu33);
+    manager.connectTB(gu24, gu34);
+    manager.connectTB(gu25, gu35);
+    manager.connectLR(gu31, gu32);
+    manager.connectLR(gu32, gu33);
+    manager.connectLR(gu33, gu34);
+    manager.connectLR(gu34, gu35);
+
+    print(3);
+
+    gu41 := manager.createNew(1);
+    gu42 := manager.createNew(1);
+    gu43 := manager.createNew(1);
+    gu44 := manager.createNew(1);
+    gu45 := manager.createNew(1);
+    gu46 := manager.createNew(1);
+
+    manager.connectTB(gu31, gu41);
+    manager.connectTB(gu32, gu42);
+    manager.connectTB(gu33, gu43);
+    manager.connectTB(gu34, gu44);
+    manager.connectTB(gu35, gu45);
+
+    manager.connectLR(gu41, gu42);
+    manager.connectLR(gu42, gu43);
+    manager.connectLR(gu43, gu44);
+    manager.connectLR(gu44, gu45);
+    manager.connectLR(gu45, gu46);
+
+    print(4);
+
+    gu53 := manager.createNew(1);
+    gu54 := manager.createNew(0);
+    gu55 := manager.createNew(0);
+    gu56 := manager.createNew(1);
+    manager.connectTB(gu43, gu53);
+    manager.connectTB(gu44, gu54);
+    manager.connectTB(gu45, gu55);
+    manager.connectTB(gu46, gu56);
+    manager.connectLR(gu53, gu54);
+    manager.connectLR(gu54, gu55);
+    manager.connectLR(gu55, gu56);
+
+    print(5);
+
+    gu63 := manager.createNew(1);
+    gu64 := manager.createNew(1);
+    gu65 := manager.createNew(1);
+    gu66 := manager.createNew(1);
+    manager.connectTB(gu53, gu63);
+    manager.connectTB(gu54, gu64);
+    manager.connectTB(gu55, gu65);
+    manager.connectTB(gu56, gu66);
+    manager.connectLR(gu63, gu64);
+    manager.connectLR(gu64, gu65);
+    manager.connectLR(gu65, gu66);
+
+    print(6);
+
+
+    manager.startEarthquake(1, gu63);
+
+    mig := new LeftHydrocarbonMigration(gu55);
+    gu55.migration := mig;
+    mig.migrate();
+    breakpoint;
+    breakpoint;
+
+/*
     gu1 := new GeoUnit(0, null, null, null, null, null);
     initList := new GeoUnitList(gu1, null);
     manager := new GeoManager(initList);
@@ -185,4 +312,5 @@ do
     mig := new LeftHydrocarbonMigration(gu5);
     gu5.migration := mig;
     mig.migrate();
+*/
 od
