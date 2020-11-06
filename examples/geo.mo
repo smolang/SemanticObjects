@@ -2,6 +2,9 @@ class GeoElement (sealing)
 
 end
 
+class Dummy()
+
+end
 
 class LeftHydrocarbonMigration (gu)
     migrate()
@@ -13,10 +16,10 @@ class LeftHydrocarbonMigration (gu)
             left := this.gu.left;
             if left <> null then
                 left.migrateLeft(this);
-            else skip; end
+            end
             if started <> this.gu then
                 this.migrate();
-            else skip; end
+            end
         return 0;
     end
     copy(param)
@@ -40,7 +43,7 @@ class GeoUnitList(content, next)
         res := this.content;
         if i >= 1 then
             res := this.next.get(i-1);
-        else skip; end
+        end
         return res;
     end
 
@@ -101,8 +104,8 @@ class GeoUnit extends GeoElement (top, left, right, bottom, migration)
             fault.replaces(this.right);
             if this.bottom <> null then
                 this.bottom.s2.earthquake(fault);
-            else skip; end
-        else skip; end
+            end
+        end
         return 0;
     end
 
@@ -114,8 +117,8 @@ class GeoUnit extends GeoElement (top, left, right, bottom, migration)
                 this.migration.gu := this.top.s1;
                 old.migration := null;
                 return 1;
-            else skip; end
-        else skip; end
+            end
+        end
         return 0;
     end
 
@@ -141,8 +144,8 @@ class Touch extends GeoElement (s1, s2)
                 mig.gu := this.s1;
                 old.migration := null;
                 return 1;
-            else skip; end
-        else skip; end
+            end
+        end
         return 0;
     end
 end
@@ -173,10 +176,10 @@ class Fault extends GeoElement (s1, s2)
                         mig.gu := finalLeft;
                         old.migration := null;
                         return 1;
-                    else skip; end
-                else skip; end
-            else skip; end
-        else skip; end
+                   end
+                end
+            end
+        end
         return 0;
     end
 end
@@ -285,7 +288,7 @@ do
     print(6);
 
 
-    manager.startEarthquake(1, gu63);
+    manager.startEarthquake(0, gu63);
 
     mig := new LeftHydrocarbonMigration(gu55);
     gu55.migration := mig;

@@ -8,6 +8,11 @@ import microobject.gen.WhileLexer
 import microobject.gen.WhileParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import org.apache.jena.query.QueryExecutionFactory
+import org.apache.jena.query.QueryFactory
+import org.apache.jena.query.QuerySolution
+import org.apache.jena.query.ResultSetFormatter
+import org.apache.jena.rdf.model.ModelFactory
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -20,16 +25,19 @@ import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 
-class Command(val name : String,
-              private val repl : REPL,
-              val command : (String) -> Boolean,
-              val help : String,
-              val requiresParameter : Boolean = false,
-              val parameterHelp : String = "",
-              val requiresDump : Boolean = false,
-              val requiresApache : Boolean = false,
-              val invalidatesDump : Boolean = false ){
-    fun execute(param : String, apache : String) : Boolean {
+
+class Command(
+    val name: String,
+    private val repl: REPL,
+    val command: (String) -> Boolean,
+    val help: String,
+    val requiresParameter: Boolean = false,
+    val parameterHelp: String = "",
+    val requiresDump: Boolean = false,
+    val requiresApache: Boolean = false,
+    val invalidatesDump: Boolean = false
+){
+    fun execute(param: String, apache: String) : Boolean {
         if(requiresDump) repl.dump()
         if(requiresParameter && param == ""){
             repl.printRepl("Command $name expects 1 parameter $parameterHelp.")
@@ -46,7 +54,7 @@ class Command(val name : String,
 }
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
-class REPL(private val apache: String, private val outPath: String, private val verbose : Boolean) {
+class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean) {
     private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
@@ -81,7 +89,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         } else if (commands.containsKey(str)) {
             try{
                 return commands[str]!!.execute(param, apache)
-            } catch (e : Exception) {
+            } catch (e: Exception) {
                 printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
                 e.printStackTrace()
                 return false
@@ -199,18 +207,22 @@ class REPL(private val apache: String, private val outPath: String, private val 
                     
                     $str
                 """.trimIndent()
-                val output = File("$outPath/output.rq")
-                output.parentFile.mkdirs()
-                if (!output.exists()) output.createNewFile()
-                output.writeText(out)
 
-                this.command("query-file", "$outPath/output.rq")
+
+                val model = ModelFactory.createDefaultModel()
+                model.read("$outPath/output.ttl")
+
+
+                val query = QueryFactory.create(out)
+                val qexec = QueryExecutionFactory.create(query, model)
+
+                val results = qexec.execSelect()
+                printRepl("\n"+ResultSetFormatter.asText(results),)
                 false
             },
             "executes a SPARQL query",
             parameterHelp = "SPARQL query",
             requiresParameter = true,
-            requiresApache = true,
             requiresDump = true
         )
 

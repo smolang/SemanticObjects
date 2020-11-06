@@ -66,8 +66,8 @@ statement :   SKIP_S SEMI                                                       
 			| target=expression ASS NEW NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                 # output_statement
-			| IF expression THEN statement ELSE statement END statement?            # if_statement
-            | WHILE expression DO statement END statement?                          # while_statement
+			| IF expression THEN statement (ELSE statement)? END next=statement?    # if_statement
+            | WHILE expression DO statement END next=statement?                     # while_statement
             | statement statement                                                   # sequence_statement
             ;
 

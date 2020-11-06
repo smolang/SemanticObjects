@@ -26,7 +26,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.NAME(0).text
             }
-            val fields = nameListTranslate(cl!!.namelist())
+            val fields = if(cl.namelist() != null) nameListTranslate(cl.namelist()) else listOf()
 
             val res = mutableMapOf<String, MethodEntry>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
@@ -66,7 +66,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private fun nameListTranslate(ctx: NamelistContext?) : List<String> {
         var res = listOf<String>()
         if(ctx!!.NAME() != null) {
-            for (nm in ctx!!.NAME())
+            for (nm in ctx.NAME())
                 res += nm.text
         }
         return res
@@ -138,15 +138,15 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitIf_statement(ctx: If_statementContext?): ProgramElement {
         val stm1 = visit(ctx!!.statement(0)) as Statement
-        val stm2 = visit(ctx.statement(1)) as Statement
-        val stmNext =  if(ctx.statement(2) != null) visit(ctx.statement(2)) as Statement else SkipStmt
+        val stm2 = if(ctx.statement(1) != null) visit(ctx.statement(1)) as Statement else SkipStmt
+        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt
         val guard = visit(ctx.expression()) as Expression
         return appendStmt(IfStmt(guard, stm1, stm2), stmNext)
     }
 
     override fun visitWhile_statement(ctx: While_statementContext?): ProgramElement {
         val stm1 = visit(ctx!!.statement(0)) as Statement
-        val stmNext =  if(ctx.statement(1) != null) visit(ctx.statement(1)) as Statement else SkipStmt
+        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt
         val guard = visit(ctx.expression()) as Expression
         return appendStmt(WhileStmt(guard, stm1), stmNext)
     }
