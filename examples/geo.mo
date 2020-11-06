@@ -5,11 +5,18 @@ end
 
 class LeftHydrocarbonMigration (gu)
     migrate()
-        this.gu.migrate();
-        left := this.gu.left;
-        if left <> null then
-            left.migrateLeft(this);
-        else skip; end
+        started := this.gu;
+        b := 1;
+        while b = 1 do
+            b := this.gu.migrate();
+        end
+            left := this.gu.left;
+            if left <> null then
+                left.migrateLeft(this);
+            else skip; end
+            if started <> this.gu then
+                this.migrate();
+            else skip; end
         return 0;
     end
     copy(param)
@@ -101,9 +108,11 @@ class GeoUnit extends GeoElement (top, left, right, bottom, migration)
     migrate()
         if this.top <> null then
             if this.top.s1.sealing <> 1 then
-                newMig := this.migration.copy(this.top.s1);
-                this.top.s1.migration := newMig;
-                newMig.migrate();
+                old := this.migration.gu;
+                this.top.s1.migration := this.migration;
+                this.migration.gu := this.top.s1;
+                old.migration := null;
+                return 1;
             else skip; end
         else skip; end
         return 0;
@@ -114,9 +123,9 @@ class Touch extends GeoElement (s1, s2)
     migrateLeft(mig)
         if this.s1.sealing <> 1 then
             if this.s1.migration = null then
-                newMig := new LeftHydrocarbonMigration(this.s1);
-                this.s1.migration := newMig;
-                newMig.migrate();
+                this.s1.migration := mig;
+                mig.gu := this.s1;
+                return 1;
             else skip; end
         else skip; end
         return 0;
@@ -134,7 +143,7 @@ class Fault extends GeoElement (s1, s2)
 
     migrateLeft(mig)
         if this.sealing <> 1 then
-            if s1 <> null then
+            if this.s1 <> null then
                 currentLeft := this.s1;
                 currentRight := this.s2;
                 while currentRight.content <> mig.gu do
@@ -143,9 +152,11 @@ class Fault extends GeoElement (s1, s2)
                 end
                 if currentLeft.content.sealing <> 1 then
                     if currentLeft.content.migration = null then
-                        newMig := new LeftHydrocarbonMigration(currentLeft.content);
-                        currentLeft.content.migration := newMig;
-                        newMig.migrate();
+                        old := mig.gu;
+                        currentLeft.content.migration := mig;
+                        mig.gu := currentLeft.content;
+                        old.migration := null;
+                        return 1;
                     else skip; end
                 else skip; end
             else skip; end
@@ -170,8 +181,7 @@ do
     manager.connectLR(gu5, gu6);
     manager.connectTB(gu1, gu4);
     manager.connectTB(gu2, gu5);
-    manager.connectTB(gu3, gu6);
-    manager.startEarthquake(1, gu4);
+    manager.startEarthquake(0, gu4);
     mig := new LeftHydrocarbonMigration(gu5);
     gu5.migration := mig;
     mig.migrate();

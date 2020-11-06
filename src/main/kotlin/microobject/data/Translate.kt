@@ -196,4 +196,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitExternal_field_expression(ctx: External_field_expressionContext?): ProgramElement {
         return OthersVar(visit(ctx!!.expression()) as Expression, ctx.NAME().text)
     }
+    override fun visitThis_expression(ctx: This_expressionContext?): ProgramElement {
+        return LocalVar("this")
+    }
 }

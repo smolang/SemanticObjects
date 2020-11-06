@@ -28,7 +28,7 @@ ELSE : 'else';
 WHILE : 'while';
 DO : 'do';
 OD : 'od';
-THIS: 'this.';
+THIS: 'this';
 OPARAN : '(';
 CPARAN : ')';
 PLUS : '+';
@@ -73,7 +73,8 @@ statement :   SKIP_S SEMI                                                       
 
 
 //Expressions
-expression :      THIS NAME                      # field_expression
+expression :      THIS                           # this_expression
+                | THIS DOT NAME                  # field_expression
                 | expression DOT NAME			 # external_field_expression
                 | NAME                           # var_expression
                 | CONSTANT                       # const_expression

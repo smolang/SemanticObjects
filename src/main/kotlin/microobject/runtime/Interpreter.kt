@@ -207,7 +207,8 @@ class Interpreter(
                     }
                     is OthersVar -> {
                         val key = eval(stmt.target.expr, stackMemory, heap, obj)
-                        val otherHeap = heap[key] ?: throw Exception("This object is unknown: $key")
+                        val otherHeap = heap[key]
+                            ?: throw Exception("This object is unknown: $key")
                         if (!(staticInfo.fieldTable[key.tag]
                                 ?: error("")).contains(stmt.target.name)
                         ) throw Exception("This field is unknown: $key")
@@ -292,10 +293,11 @@ class Interpreter(
                 return Pair(null, emptyList())
             }
             is SequenceStmt -> {
+                if(stmt.first is ReturnStmt) return  eval(stmt.first, stackMemory, heap, obj)
                 val res = eval(stmt.first, stackMemory, heap, obj)
                 if (res.first != null) {
                     val newStmt = appendStmt(res.first!!.active, stmt.second)
-                    return Pair(StackEntry(newStmt, stackMemory, obj), res.second)
+                    return Pair(StackEntry(newStmt, res.first!!.store, res.first!!.obj), res.second)
                 } else return Pair(StackEntry(stmt.second, stackMemory, obj), res.second)
             }
             else -> throw Exception("This kind of statement is not implemented yet")
