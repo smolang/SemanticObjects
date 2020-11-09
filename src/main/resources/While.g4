@@ -42,6 +42,7 @@ CLASS : 'class';
 END : 'end';
 EXTENDS : 'extends';
 ACCESS : 'access';
+DERIVE : 'derive';
 BREAKPOINT : 'breakpoint';
 COMMA : ',';
 
@@ -70,6 +71,7 @@ statement :   SKIP_S SEMI                                                       
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                 # output_statement
 			| target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI # sparql_statement
+			| target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI # owl_statement
 			| IF expression THEN statement (ELSE statement)? END next=statement?    # if_statement
             | WHILE expression DO statement END next=statement?                     # while_statement
             | statement statement                                                   # sequence_statement

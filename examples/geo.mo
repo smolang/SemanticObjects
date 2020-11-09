@@ -202,7 +202,7 @@ do
     manager.connectLR(gu13, gu14);
     manager.connectLR(gu14, gu15);
 
-    print(1);
+    print("1:-XX|XX-");
 
     gu21 := manager.createNew(1);
     gu22 := manager.createNew(0);
@@ -219,7 +219,7 @@ do
     manager.connectLR(gu23, gu24);
     manager.connectLR(gu24, gu25);
 
-    print(2);
+    print("2:X X| X-");
 
     gu31 := manager.createNew(1);
     gu32 := manager.createNew(0);
@@ -236,7 +236,7 @@ do
     manager.connectLR(gu33, gu34);
     manager.connectLR(gu34, gu35);
 
-    print(3);
+    print("3:X  |XX-");
 
     gu41 := manager.createNew(1);
     gu42 := manager.createNew(1);
@@ -257,7 +257,7 @@ do
     manager.connectLR(gu44, gu45);
     manager.connectLR(gu45, gu46);
 
-    print(4);
+    print("4:XXX|XXX");
 
     gu53 := manager.createNew(1);
     gu54 := manager.createNew(0);
@@ -271,7 +271,7 @@ do
     manager.connectLR(gu54, gu55);
     manager.connectLR(gu55, gu56);
 
-    print(5);
+    print("5:--X|  X");
 
     gu63 := manager.createNew(1);
     gu64 := manager.createNew(1);
@@ -285,7 +285,7 @@ do
     manager.connectLR(gu64, gu65);
     manager.connectLR(gu65, gu66);
 
-    print(6);
+    print("6:--X|XXX");
 
 
     manager.startEarthquake(0, gu63);

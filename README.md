@@ -13,16 +13,17 @@
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class
  * examples/double.imo contains a simple test session
  
+To run the geo session, run
+ ```
+./gradlew shadowJar
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar  -l examples/geo.mo -r examples/geo.imo
+```
+
+Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and barely illustrates the debugger.
+
+
  To run the test session and continue interactively, run
  ```
 ./gradlew shadowJar
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo
 ```
-
-To run the geo session, run
- ```
-./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/geo.mo -r examples/geo.imo
-```
-
-Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and barely illustrates the debugger.

@@ -111,6 +111,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         return SparqlStmt(target, query, ll)
+    }
+
+    override fun visitOwl_statement(ctx: Owl_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        val query = visit(ctx!!.query) as Expression
+        return OwlStmt(target, query)
 
     }
 

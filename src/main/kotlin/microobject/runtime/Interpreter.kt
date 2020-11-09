@@ -9,6 +9,10 @@ import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.ModelFactory
+import org.semanticweb.HermiT.Reasoner
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import java.io.File
 import java.util.*
 
@@ -59,7 +63,6 @@ class Interpreter(
                     $str
                 """.trimIndent()
 
-        println(out)
         val model = ModelFactory.createDefaultModel()
         val uri = File("$outPath/output.ttl").toURL().toString()
         model.read(uri, "TTL")
@@ -310,7 +313,41 @@ class Interpreter(
                 }
 
                 return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
+            }
+            is OwlStmt -> {
+                if(!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") ||  !staticInfo.fieldTable["List"]!!.contains("next")){
+                    throw Exception("Could not find List class in this model")
+                }
+                if(stmt.query !is LiteralExpr || stmt.query.tag != "string"){
+                    throw Exception("Please provide a string as the input to a derive statement")
+                }
 
+                //this is duplicated w.r.t. REPL until we figure out how to internally represent the KB
+                dumpTtl()
+                val m = OWLManager.createOWLOntologyManager()
+                val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+                val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
+                val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+                parser.setDefaultOntology(ontology)
+                val res = reasoner.getInstances(parser.parseClassExpression(stmt.query.literal))
+                var list = LiteralExpr("null")
+                if(res != null) {
+                    for (r in res) {
+                        val name = Names.getObjName("List")
+                        val newMemory: Memory = mutableMapOf()
+
+                        val found = r.toString().removePrefix("<urn:").removeSuffix(">")
+                        for(ob in heap.keys){
+                            if(ob.literal == found){
+                                newMemory["content"] = LiteralExpr(found, ob.tag)
+                            }
+                        }
+                        newMemory["next"] = list
+                        heap[name] = newMemory
+                        list = name
+                    }
+                }
+                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
             }
             is ReturnStmt -> {
                 val over = stack.pop()

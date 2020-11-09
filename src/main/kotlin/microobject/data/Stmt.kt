@@ -89,6 +89,9 @@ data class PrintStmt(val expr: Expression): Statement {
 data class SparqlStmt(val target : Location, val query: Expression, val params : List<Expression>) : Statement {
     override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
 }
+data class OwlStmt(val target : Location, val query: Expression) : Statement {
+    override fun toString(): String = "$target := derive($query)"
+}
 
 data class LocalVar(val name : String) : Location { // local variable
     override fun toString(): String = name
