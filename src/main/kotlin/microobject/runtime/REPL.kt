@@ -8,10 +8,7 @@ import microobject.gen.WhileLexer
 import microobject.gen.WhileParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import org.apache.jena.query.QueryExecutionFactory
-import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSetFormatter
-import org.apache.jena.rdf.model.ModelFactory
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -86,12 +83,12 @@ class REPL(private val apache: String, private val outPath: String, private val 
         }else if (interpreter == null && str != "read" && str != "exit"){
             printRepl("No file loaded. Please \"read\" a file to continue.")
         } else if (commands.containsKey(str)) {
-            try{
-                return commands[str]!!.execute(param, apache)
+            return try{
+                commands[str]!!.execute(param, apache)
             } catch (e: Exception) {
                 printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
                 e.printStackTrace()
-                return false
+                false
             }
         } else {
             printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")

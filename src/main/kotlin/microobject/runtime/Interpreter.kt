@@ -47,7 +47,7 @@ class Interpreter(
     private val stack: Stack<StackEntry>,    // This is the function stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
     val staticInfo: StaticTable,
-    val outPath : String
+    private val outPath : String
 ) {
 
     private var debug = false
@@ -75,118 +75,7 @@ class Interpreter(
     }
 
     fun dumpTtl() : String{
-        var res = """
-@prefix : <urn:> .
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-
-:MOXClass   rdf:type owl:Class .
-:MOXField   rdf:type owl:Class .
-:MOXMethod  rdf:type owl:Class .
-:MOXObject  rdf:type owl:Class .
-:MOXStorage rdf:type owl:Class .
-
-:MOinstanceOf rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXObject ;
-              rdfs:range :MOXClass .
-              
-:MOhasField   rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXClass ;
-              rdfs:range :MOXField .
-              
-:MOhasMethod  rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXClass ;
-              rdfs:range :MOXMethod .
-
-:MOextends    rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXClass ;
-              rdfs:range :MOXClass .
-
-:MOstore      rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXObject ;
-              rdfs:range :MOXStorage .
-              
-:MOvalue      rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXStorage .
-              
-:MOfield      rdf:type owl:ObjectProperty ;
-              rdfs:domain :MOXStorage ;
-              rdfs:range :MOXField .
-
-:HasAnyNull rdf:type owl:Class ;
-            owl:equivalentClass [ rdf:type owl:Restriction ;
-                                  owl:onProperty :MOstore ;
-                                  owl:someValuesFrom [ rdf:type owl:Restriction ;
-                                                       owl:onProperty :MOvalue ;
-                                                       owl:hasValue :null
-                                                     ]
-                                ] .
-:HasAnyNullNext  rdf:type owl:Class ;
-      owl:equivalentClass [ rdf:type owl:Restriction ;
-                            owl:onProperty :MOstore ;
-                            owl:someValuesFrom [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :MOfield ;
-                                                                        owl:hasValue :next
-                                                                      ]
-                                                                      [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :MOvalue ;
-                                                                        owl:hasValue :null
-                                                                      ]
-                                                                    ) ;
-                                                 rdf:type owl:Class
-                                               ]
-                          ] .
-
-
-
-:Test rdf:type owl:Class ;
-      owl:equivalentClass :MOXfield .
-              
-:null rdf:type owl:NamedIndividual , :MOXObject .
-:_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
-
-        """.trimIndent()
-
-        for(obj in staticInfo.fieldTable){
-            res += ":${obj.key} rdf:type owl:NamedIndividual , :MOXClass.\n"
-            //res += ":MOXClass :${obj.key}.\n"
-            for(obj2 in obj.value){
-                res += ":${obj.key} :MOhasField :$obj2.\n"
-                res += ":$obj2 rdf:type owl:NamedIndividual , :MOXField.\n"
-                res += ":${obj.key} :MOhasField :$obj2.\n"
-                //res += ":MOXField :$obj2.\n"
-            }
-        }
-        for(obj in staticInfo.methodTable){
-            for(obj2 in obj.value){
-                res += ":${obj.key} :MOhasMethod :${obj2.key}.\n"
-                res += ":${obj2.key} rdf:type owl:NamedIndividual , :MOXMethod.\n"
-                //res += ":MOXMethod :${obj2.key}.\n"
-            }
-        }
-        for(obj in staticInfo.hierarchy.entries){
-            for(obj2 in obj.value){
-                res += ":$obj2 :MOextends :${obj.key}.\n"
-            }
-        }
-        var i = 0
-        for(obj in heap.keys){
-            res += ":${obj.literal} :MOinstanceOf :${obj.tag}.\n"
-            res += ":${obj.literal} rdf:type owl:NamedIndividual , :MOXObject.\n"
-            //res += ":MOXObject :${obj.literal}.\n"
-            for(store in heap[obj]!!.keys) {
-                val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += ":${obj.literal} :MOstore _:dummy$i.\n"
-                res += "_:dummy$i :MOfield :$store.\n"
-
-                if (target.tag != "IGNORE") res += "_:dummy$i :MOvalue :${target.literal}.\n"
-                else res += "_:dummy$i :MOvalue ${target.literal}.\n"
-
-                i++
-            }
-        }
-        return res
+        return State(stack, heap, staticInfo).dump() // snapshot management goes here
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
@@ -295,12 +184,12 @@ class Interpreter(
                 var list = LiteralExpr("null")
                 if(results != null) {
                     for (r in results) {
-                        val obj = r.getResource("?obj")
+                        val obres = r.getResource("?obj")
                             ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
-                        val found = obj.toString().removePrefix("urn:")
+                        val found = obres.toString().removePrefix("urn:")
                         for(ob in heap.keys){
                             if(ob.literal == found){
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
