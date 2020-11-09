@@ -19,7 +19,6 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
-import java.io.PrintWriter
 import java.util.*
 
 
@@ -150,7 +149,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             requiresParameter = true,
             invalidatesDump = true
         )
-        commands["examine"] =
+        val examine =
             Command("examine", this, { printRepl(interpreter!!.toString()); false }, "prints state in internal format")
         commands["info"] = Command(
             "info",
@@ -158,6 +157,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             { printRepl(interpreter!!.staticInfo.toString()); false },
             "prints static information in internal format"
         )
+        commands["examine"] = examine
+        commands["e"] = examine
         commands["dump"] =
             Command("dump", this, { dump(); false }, "dumps into /tmp/mo/output.ttl", invalidatesDump = true)
         commands["auto"] = Command(
@@ -167,13 +168,15 @@ class REPL(private val apache: String, private val outPath: String, private val 
             "continues execution until the next breakpoint",
             invalidatesDump = true
         )
-        commands["step"] = Command(
+        val step = Command(
             "step",
             this,
             { interpreter!!.makeStep(); false },
             "executes one step",
             invalidatesDump = true
         )
+        commands["step"] = step
+        commands["s"] = step
         commands["validate"] = Command(
             "validate",
             this,
@@ -192,7 +195,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             requiresApache = true,
             requiresDump = true
         )
-        commands["query"] = Command(
+        val query =  Command(
             "query",
             this,
             { str ->
@@ -205,6 +208,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             requiresParameter = true,
             requiresDump = true
         )
+        commands["query"] = query
+        commands["q"] = query
 
         commands["query-file"] = Command(
             "query-file",

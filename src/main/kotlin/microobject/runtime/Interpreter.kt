@@ -6,7 +6,6 @@
 package microobject.runtime
 
 import microobject.data.*
-import org.apache.jena.assembler.JA.reasoner
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -79,18 +78,13 @@ class Interpreter(
         val qexec = QueryExecutionFactory.create(query, model)
 
         return qexec.execSelect()
-/*
-        val model = ModelFactory.createDefaultModel()
-        val uri = File("$outPath/output.ttl").toURL().toString()
-        model.read(uri, "TTL")
+    }
 
-
-        val query = QueryFactory.create(out)
-        val qexec = QueryExecutionFactory.create(query, model)
-
-        return qexec.execSelect()
-
- */
+    fun dump() {
+        val output = File("$outPath/output.ttl")
+        output.parentFile.mkdirs()
+        if (!output.exists()) output.createNewFile()
+        output.writeText(dumpTtl())
     }
 
     fun dumpTtl() : String{
@@ -201,6 +195,7 @@ class Interpreter(
                 ) {
                     throw Exception("Could not find List class in this model")
                 }
+                dump()
                 val results = query(str.removePrefix("\"").removeSuffix("\""))
                 var list = LiteralExpr("null")
                 if (results != null) {
@@ -237,7 +232,7 @@ class Interpreter(
                 }
 
                 //this is duplicated w.r.t. REPL until we figure out how to internally represent the KB
-                dumpTtl()
+                dump()
                 val m = OWLManager.createOWLOntologyManager()
                 val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
                 val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
@@ -371,7 +366,7 @@ class Interpreter(
             is OthersVar -> {
                 val oObj = eval(expr.expr, stack, heap, obj)
                 val maps = heap[oObj]
-                    ?: throw Exception("Unknown object $oObj")
+                    ?: throw Exception("Unknown object $oObj stored in $expr")
                 return maps.getOrDefault(expr.name, LiteralExpr("ERROR"))
             }
             is LocalVar -> {

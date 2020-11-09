@@ -72,12 +72,10 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         //records all classes and their fields
         for(obj in staticInfo.fieldTable){
             res += ":${obj.key} rdf:type owl:NamedIndividual , :MOXClass.\n"
-            //res += ":MOXClass :${obj.key}.\n"
             for(obj2 in obj.value){
                 res += ":${obj.key} :MOhasField :$obj2.\n"
                 res += ":$obj2 rdf:type owl:NamedIndividual , :MOXField.\n"
                 res += ":${obj.key} :MOhasField :$obj2.\n"
-                //res += ":MOXField :$obj2.\n"
             }
         }
 

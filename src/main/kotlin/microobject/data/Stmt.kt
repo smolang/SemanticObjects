@@ -7,8 +7,7 @@ package microobject.data
  *  - Allows calls and creations within expressions
  *  - Constructors and internal fields
  *  - Encapsulation (private/public)
- *  - More operator
- *  - Actual data types, especially all that OO stuff
+ *  - More operators
  */
 
 enum class Operator {
