@@ -28,7 +28,7 @@ class LeftHydrocarbonMigration (gu)
     end
 end
 
-class GeoUnitList(content, next)
+class List(content, next)
 
     append(last)
         if this.next = null then
@@ -64,7 +64,7 @@ end
 class GeoManager (list)
     createNew(seal)
         tmp := new GeoUnit(seal, null, null, null, null, null);
-        this.list := new GeoUnitList(tmp, this.list);
+        this.list := new List(tmp, this.list);
         return tmp;
     end
 
@@ -154,8 +154,8 @@ class Fault extends GeoElement (s1, s2)
     replaces(touch)
         touch.s1.right := this;
         touch.s2.left  := this;
-        this.s1 := new GeoUnitList(touch.s1, this.s1);
-        this.s2 := new GeoUnitList(touch.s2, this.s2);
+        this.s1 := new List(touch.s1, this.s1);
+        this.s2 := new List(touch.s2, this.s2);
         return 0;
     end
 
@@ -188,7 +188,7 @@ end
 do
 
     gu11 := new GeoUnit(1, null, null, null, null, null);
-    initList := new GeoUnitList(gu11, null);
+    initList := new List(gu11, null);
     manager := new GeoManager(initList);
 
 
@@ -292,28 +292,9 @@ do
 
     mig := new LeftHydrocarbonMigration(gu55);
     gu55.migration := mig;
-    mig.migrate();
+    //instead of mig.migrate(); we use ontology-based reflexion
+    all := access("SELECT ?obj WHERE {?obj :MOinstanceOf :LeftHydrocarbonMigration }");
+    all.content.migrate();
     breakpoint;
     breakpoint;
-
-/*
-    gu1 := new GeoUnit(0, null, null, null, null, null);
-    initList := new GeoUnitList(gu1, null);
-    manager := new GeoManager(initList);
-    gu2 := manager.createNew(1);
-    gu3 := manager.createNew(1);
-    gu4 := manager.createNew(0);
-    gu5 := manager.createNew(0);
-    gu6 := manager.createNew(1);
-    manager.connectLR(gu1, gu2);
-    manager.connectLR(gu2, gu3);
-    manager.connectLR(gu4, gu5);
-    manager.connectLR(gu5, gu6);
-    manager.connectTB(gu1, gu4);
-    manager.connectTB(gu2, gu5);
-    manager.startEarthquake(0, gu4);
-    mig := new LeftHydrocarbonMigration(gu5);
-    gu5.migration := mig;
-    mig.migrate();
-*/
 od

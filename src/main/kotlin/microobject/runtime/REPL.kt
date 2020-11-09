@@ -135,7 +135,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
         interpreter = Interpreter(
             initStack,
             initGlobalStore,
-            pair.second
+            pair.second,
+            outPath
         )
     }
 
@@ -196,28 +197,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             "query",
             this,
             { str ->
-
-                val out =
-                    """
-                    PREFIX : <urn:>
-                    PREFIX owl: <http://www.w3.org/2002/07/owl#> 
-                    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
-                    
-                    $str
-                """.trimIndent()
-
-
-                val model = ModelFactory.createDefaultModel()
-                val uri = File("$outPath/output.ttl").toURL().toString()
-                model.read(uri, "TTL")
-
-
-                val query = QueryFactory.create(out)
-                val qexec = QueryExecutionFactory.create(query, model)
-
-                val results = qexec.execSelect()
-                printRepl("\n"+ResultSetFormatter.asText(results),)
+                val results = interpreter!!.query(str)
+                printRepl("\n"+ResultSetFormatter.asText(results))
                 false
             },
             "executes a SPARQL query",

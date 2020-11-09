@@ -72,18 +72,6 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return res
     }
 
-    override fun visitProgram(ctx: ProgramContext?): ProgramElement {
-        return visitChildren(ctx)
-    }
-
-    override fun visitClass_def(ctx: Class_defContext?): ProgramElement {
-        return visitChildren(ctx)
-    }
-
-
-    override fun visitMethod_def(ctx: Method_defContext?): ProgramElement {
-        return visitChildren(ctx)
-    }
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
@@ -114,6 +102,16 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return CreateStmt(visit(ctx.target) as Location,
                           ctx.NAME().text,
                           ll)
+    }
+
+    override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        val query = visit(ctx!!.query) as Expression
+        var ll = emptyList<Expression>()
+        for(i in 2 until ctx!!.expression().size)
+            ll += visit(ctx.expression(i)) as Expression
+        return SparqlStmt(target, query, ll)
+
     }
 
     override fun visitOutput_statement(ctx: Output_statementContext?): ProgramElement {
@@ -177,7 +175,13 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {
-        return LiteralExpr(ctx!!.CONSTANT().text)
+        val inner = ctx!!.CONSTANT()!!.text
+        return if(inner.toIntOrNull() != null) LiteralExpr(inner, "integer") else LiteralExpr(inner, "boolean")
+    }
+
+    override fun visitString_expression(ctx: String_expressionContext?): ProgramElement {
+        val inner = ctx!!.STRING().text
+        return LiteralExpr(inner, "string")
     }
 
     override fun visitNested_expression(ctx: Nested_expressionContext?): ProgramElement {

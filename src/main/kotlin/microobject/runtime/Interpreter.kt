@@ -5,6 +5,11 @@
 package microobject.runtime
 
 import microobject.data.*
+import org.apache.jena.query.QueryExecutionFactory
+import org.apache.jena.query.QueryFactory
+import org.apache.jena.query.ResultSet
+import org.apache.jena.rdf.model.ModelFactory
+import java.io.File
 import java.util.*
 
 
@@ -37,10 +42,34 @@ data class StackEntry(val active: Statement, val store: Memory, val obj: Literal
 class Interpreter(
     private val stack: Stack<StackEntry>,    // This is the function stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
-    val staticInfo: StaticTable
+    val staticInfo: StaticTable,
+    val outPath : String
 ) {
 
     private var debug = false
+
+    fun query(str : String): ResultSet? {
+        val out =
+            """
+                    PREFIX : <urn:>
+                    PREFIX owl: <http://www.w3.org/2002/07/owl#> 
+                    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
+                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
+                    
+                    $str
+                """.trimIndent()
+
+        println(out)
+        val model = ModelFactory.createDefaultModel()
+        val uri = File("$outPath/output.ttl").toURL().toString()
+        model.read(uri, "TTL")
+
+
+        val query = QueryFactory.create(out)
+        val qexec = QueryExecutionFactory.create(query, model)
+
+        return qexec.execSelect()
+    }
 
     fun dumpTtl() : String{
         var res = """
@@ -239,12 +268,49 @@ class Interpreter(
                     staticInfo.fieldTable[stmt.className] ?: throw Exception("This class is unknown: ${stmt.className}")
                 val newMemory: Memory = mutableMapOf()
                 if(m.size != stmt.params.size) throw Exception(
-                    "Creation of an instance of class ${stmt.className} failed, missmatched number of parameters: $stmt. Requires: ${m.size}")
+                    "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}")
                 for (i in m.indices) {
                     newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
                 heap[name] = newMemory
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj), listOf())
+            }
+            is SparqlStmt -> {
+                val query = eval(stmt.query, stackMemory, heap ,obj)
+                if(query.tag != "string")
+                    throw Exception("Query is not a string: $query")
+                var str = query.literal
+                var i = 1
+                for(expr in stmt.params){
+                    val p = eval(expr, stackMemory, heap ,obj)
+                    str = str.replace("%${i++}", p.literal)
+                }
+                if(!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") ||  !staticInfo.fieldTable["List"]!!.contains("next")){
+                    throw Exception("Could not find List class in this model")
+                }
+                val results = query(str.removePrefix("\"").removeSuffix("\""))
+                var list = LiteralExpr("null")
+                if(results != null) {
+                    for (r in results) {
+                        val obj = r.getResource("?obj")
+                            ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
+                        val name = Names.getObjName("List")
+                        val newMemory: Memory = mutableMapOf()
+
+                        val found = obj.toString().removePrefix("urn:")
+                        for(ob in heap.keys){
+                            if(ob.literal == found){
+                                newMemory["content"] = LiteralExpr(found, ob.tag)
+                            }
+                        }
+                        newMemory["next"] = list
+                        heap[name] = newMemory
+                        list = name
+                    }
+                }
+
+                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
+
             }
             is ReturnStmt -> {
                 val over = stack.pop()
@@ -265,7 +331,7 @@ class Interpreter(
             }
             is IfStmt -> {
                 val res = eval(stmt.guard, stackMemory, heap, obj)
-                if (res == LiteralExpr("True")) return Pair(StackEntry(stmt.thenBranch, stackMemory, obj), listOf())
+                if (res == LiteralExpr("True", "boolean")) return Pair(StackEntry(stmt.thenBranch, stackMemory, obj), listOf())
                 else return Pair(
                     StackEntry(stmt.elseBranch, stackMemory, obj),
                     listOf()
@@ -314,22 +380,22 @@ class Interpreter(
                     if (expr.params.size != 2) throw Exception("Operator.EQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, obj)
                     val second = eval(expr.params[1], stack, heap, obj)
-                    if (first == second) return LiteralExpr("True")
-                    else return LiteralExpr("False")
+                    if (first == second) return LiteralExpr("True", "boolean")
+                    else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.NEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.NEQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, obj)
                     val second = eval(expr.params[1], stack, heap, obj)
-                    if (first == second) return LiteralExpr("False")
-                    else return LiteralExpr("True")
+                    if (first == second) return LiteralExpr("False", "boolean")
+                    else return LiteralExpr("True", "boolean")
                 }
                 if (expr.Op == Operator.GEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.GEQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, obj)
                     val second = eval(expr.params[1], stack, heap, obj)
-                    if (first.literal.toInt() >= second.literal.toInt()) return LiteralExpr("True")
-                    else return LiteralExpr("False")
+                    if (first.literal.toInt() >= second.literal.toInt()) return LiteralExpr("True", "boolean")
+                    else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.PLUS) {
                     return expr.params.fold(LiteralExpr("0"), { acc, nx ->

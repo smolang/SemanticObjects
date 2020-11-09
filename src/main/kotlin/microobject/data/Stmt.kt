@@ -84,6 +84,12 @@ data class PrintStmt(val expr: Expression): Statement {
     override fun toString(): String = "println($expr)"
 }
 
+
+// For ontology-based reflexion
+data class SparqlStmt(val target : Location, val query: Expression, val params : List<Expression>) : Statement {
+    override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
+}
+
 data class LocalVar(val name : String) : Location { // local variable
     override fun toString(): String = name
 }

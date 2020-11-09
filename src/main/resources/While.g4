@@ -1,5 +1,7 @@
 grammar While;
 
+//Strings
+STRING : '"' .*? '"' ;
 
 //Whitespace and comments
 WS           : [ \t\r\n\u000C]+ -> channel(HIDDEN);
@@ -39,6 +41,7 @@ PRINTLN : 'print';
 CLASS : 'class';
 END : 'end';
 EXTENDS : 'extends';
+ACCESS : 'access';
 BREAKPOINT : 'breakpoint';
 COMMA : ',';
 
@@ -66,6 +69,7 @@ statement :   SKIP_S SEMI                                                       
 			| target=expression ASS NEW NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                 # output_statement
+			| target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI # sparql_statement
 			| IF expression THEN statement (ELSE statement)? END next=statement?    # if_statement
             | WHILE expression DO statement END next=statement?                     # while_statement
             | statement statement                                                   # sequence_statement
@@ -78,6 +82,7 @@ expression :      THIS                           # this_expression
                 | expression DOT NAME			 # external_field_expression
                 | NAME                           # var_expression
                 | CONSTANT                       # const_expression
+                | STRING                         # string_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression
                 | expression EQ expression       # eq_expression
