@@ -4,7 +4,7 @@ import microobject.data.LiteralExpr
 import java.util.*
 
 //This will be used for snapshots
-class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : StaticTable) {
+class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : StaticTable, private val background : String) {
     private val stack: Stack<StackEntry> = initStack.clone() as Stack<StackEntry>
     private val heap: GlobalMemory = initHeap.toMutableMap()
     private val staticInfo: StaticTable = initInfo.copy()
@@ -63,37 +63,10 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
        :_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
         """.trimIndent()
 
-    private val BACKGROUND =
-        """
-        :HasAnyNull rdf:type owl:Class ;
-            owl:equivalentClass [ rdf:type owl:Restriction ;
-                                  owl:onProperty :MOstore ;
-                                  owl:someValuesFrom [ rdf:type owl:Restriction ;
-                                                       owl:onProperty :MOvalue ;
-                                                       owl:hasValue :null
-                                                     ]
-                                ] .
-        :HasAnyNullNext  rdf:type owl:Class ;
-              owl:equivalentClass [ rdf:type owl:Restriction ;
-                            owl:onProperty :MOstore ;
-                            owl:someValuesFrom [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :MOfield ;
-                                                                        owl:hasValue :next
-                                                                      ]
-                                                                      [ rdf:type owl:Restriction ;
-                                                                        owl:onProperty :MOvalue ;
-                                                                        owl:hasValue :null
-                                                                      ]
-                                                                    ) ;
-                                                 rdf:type owl:Class
-                                               ]
-                          ] .
-        """.trimIndent()
-
     fun dump() : String{
 
         //Builds always known information and meta data
-        var res = HEADER + "\n" + VOCAB + "\n" + MINIMAL + "\n"+ BACKGROUND
+        var res = HEADER + "\n" + VOCAB + "\n"+ background + "\n" + MINIMAL
 
 
         //records all classes and their fields

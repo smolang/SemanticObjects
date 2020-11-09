@@ -1,14 +1,18 @@
-@file:Suppress("LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment",
+@file:Suppress(
+    "LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment",
     "LiftReturnOrAssignment"
 )
 
 package microobject.runtime
 
 import microobject.data.*
+import org.apache.jena.assembler.JA.reasoner
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
+import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.reasoner.ReasonerRegistry
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -47,12 +51,13 @@ class Interpreter(
     private val stack: Stack<StackEntry>,    // This is the function stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
     val staticInfo: StaticTable,
-    private val outPath : String
+    private val outPath: String,
+    private val back : String
 ) {
 
     private var debug = false
 
-    fun query(str : String): ResultSet? {
+    fun query(str: String): ResultSet? {
         val out =
             """
                     PREFIX : <urn:>
@@ -63,6 +68,18 @@ class Interpreter(
                     $str
                 """.trimIndent()
 
+        var model : Model = ModelFactory.createOntologyModel()
+        val uri = File("$outPath/output.ttl").toURL().toString()
+        model.read(uri, "TTL")
+
+        if(back != "") {
+            model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
+        }
+        val query = QueryFactory.create(out)
+        val qexec = QueryExecutionFactory.create(query, model)
+
+        return qexec.execSelect()
+/*
         val model = ModelFactory.createDefaultModel()
         val uri = File("$outPath/output.ttl").toURL().toString()
         model.read(uri, "TTL")
@@ -72,10 +89,12 @@ class Interpreter(
         val qexec = QueryExecutionFactory.create(query, model)
 
         return qexec.execSelect()
+
+ */
     }
 
     fun dumpTtl() : String{
-        return State(stack, heap, staticInfo).dump() // snapshot management goes here
+        return State(stack, heap, staticInfo, back).dump() // snapshot management goes here
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
@@ -159,8 +178,9 @@ class Interpreter(
                 val m =
                     staticInfo.fieldTable[stmt.className] ?: throw Exception("This class is unknown: ${stmt.className}")
                 val newMemory: Memory = mutableMapOf()
-                if(m.size != stmt.params.size) throw Exception(
-                    "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}")
+                if (m.size != stmt.params.size) throw Exception(
+                    "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}"
+                )
                 for (i in m.indices) {
                     newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
@@ -168,21 +188,22 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj), listOf())
             }
             is SparqlStmt -> {
-                val query = eval(stmt.query, stackMemory, heap ,obj)
-                if(query.tag != "string")
+                val query = eval(stmt.query, stackMemory, heap, obj)
+                if (query.tag != "string")
                     throw Exception("Query is not a string: $query")
                 var str = query.literal
                 var i = 1
-                for(expr in stmt.params){
-                    val p = eval(expr, stackMemory, heap ,obj)
+                for (expr in stmt.params) {
+                    val p = eval(expr, stackMemory, heap, obj)
                     str = str.replace("%${i++}", p.literal)
                 }
-                if(!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") ||  !staticInfo.fieldTable["List"]!!.contains("next")){
+                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains("next")
+                ) {
                     throw Exception("Could not find List class in this model")
                 }
                 val results = query(str.removePrefix("\"").removeSuffix("\""))
                 var list = LiteralExpr("null")
-                if(results != null) {
+                if (results != null) {
                     for (r in results) {
                         val obres = r.getResource("?obj")
                             ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
@@ -190,11 +211,12 @@ class Interpreter(
                         val newMemory: Memory = mutableMapOf()
 
                         val found = obres.toString().removePrefix("urn:")
-                        for(ob in heap.keys){
-                            if(ob.literal == found){
+                        for (ob in heap.keys) {
+                            if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
                             }
                         }
+                        if (!newMemory.containsKey("content")) throw Exception("Query returned unknown object: $found")
                         newMemory["next"] = list
                         heap[name] = newMemory
                         list = name
@@ -204,10 +226,13 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
             }
             is OwlStmt -> {
-                if(!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") ||  !staticInfo.fieldTable["List"]!!.contains("next")){
+                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
+                        "next"
+                    )
+                ) {
                     throw Exception("Could not find List class in this model")
                 }
-                if(stmt.query !is LiteralExpr || stmt.query.tag != "string"){
+                if (stmt.query !is LiteralExpr || stmt.query.tag != "string") {
                     throw Exception("Please provide a string as the input to a derive statement")
                 }
 
@@ -220,14 +245,14 @@ class Interpreter(
                 parser.setDefaultOntology(ontology)
                 val res = reasoner.getInstances(parser.parseClassExpression(stmt.query.literal))
                 var list = LiteralExpr("null")
-                if(res != null) {
+                if (res != null) {
                     for (r in res) {
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
                         val found = r.toString().removePrefix("<urn:").removeSuffix(">")
-                        for(ob in heap.keys){
-                            if(ob.literal == found){
+                        for (ob in heap.keys) {
+                            if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
                             }
                         }
@@ -257,7 +282,10 @@ class Interpreter(
             }
             is IfStmt -> {
                 val res = eval(stmt.guard, stackMemory, heap, obj)
-                if (res == LiteralExpr("True", "boolean")) return Pair(StackEntry(stmt.thenBranch, stackMemory, obj), listOf())
+                if (res == LiteralExpr("True", "boolean")) return Pair(
+                    StackEntry(stmt.thenBranch, stackMemory, obj),
+                    listOf()
+                )
                 else return Pair(
                     StackEntry(stmt.elseBranch, stackMemory, obj),
                     listOf()
@@ -285,7 +313,7 @@ class Interpreter(
                 return Pair(null, emptyList())
             }
             is SequenceStmt -> {
-                if(stmt.first is ReturnStmt) return  eval(stmt.first, stackMemory, heap, obj)
+                if (stmt.first is ReturnStmt) return eval(stmt.first, stackMemory, heap, obj)
                 val res = eval(stmt.first, stackMemory, heap, obj)
                 if (res.first != null) {
                     val newStmt = appendStmt(res.first!!.active, stmt.second)

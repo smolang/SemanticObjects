@@ -1,0 +1,23 @@
+        :HasAnyNull rdf:type owl:Class ;
+            owl:equivalentClass [ rdf:type owl:Restriction ;
+                                  owl:onProperty :MOstore ;
+                                  owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                       owl:onProperty :MOvalue ;
+                                                       owl:hasValue :null
+                                                     ]
+                                ] .
+        :HasAnyNullNext  rdf:type owl:Class ;
+              owl:equivalentClass [ rdf:type owl:Restriction ;
+                            owl:onProperty :MOstore ;
+                            owl:someValuesFrom [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                                        owl:onProperty :MOfield ;
+                                                                        owl:hasValue :next
+                                                                      ]
+                                                                      [ rdf:type owl:Restriction ;
+                                                                        owl:onProperty :MOvalue ;
+                                                                        owl:hasValue :null
+                                                                      ]
+                                                                    ) ;
+                                                 rdf:type owl:Class
+                                               ]
+                          ] .

@@ -292,9 +292,10 @@ do
 
     mig := new LeftHydrocarbonMigration(gu55);
     gu55.migration := mig;
+
     //instead of mig.migrate(); we use ontology-based reflexion
     all := access("SELECT ?obj WHERE {?obj :MOinstanceOf :LeftHydrocarbonMigration }");
     all.content.migrate();
-    breakpoint;
-    breakpoint;
+    nulls := access("SELECT ?obj WHERE { ?obj a :HasAnyNullNext }");
+    print(nulls);
 od

@@ -19,6 +19,7 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner
 import java.io.BufferedReader
 import java.io.File
 import java.io.InputStreamReader
+import java.io.PrintWriter
 import java.util.*
 
 
@@ -50,7 +51,7 @@ class Command(
 }
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
-class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean) {
+class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean, private val back : String) {
     private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
@@ -133,7 +134,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             initStack,
             initGlobalStore,
             pair.second,
-            outPath
+            outPath,
+            back
         )
     }
 
@@ -195,7 +197,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             this,
             { str ->
                 val results = interpreter!!.query(str)
-                printRepl("\n"+ResultSetFormatter.asText(results))
+                printRepl("\n" + ResultSetFormatter.asText(results))
                 false
             },
             "executes a SPARQL query",

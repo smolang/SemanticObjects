@@ -16,11 +16,11 @@
 To run the geo session, run
  ```
 ./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar  -l examples/geo.mo -r examples/geo.imo
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar  -l examples/geo.mo -r examples/geo.imo -b examples/geo.back
 ```
 
 Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and barely illustrates the debugger.
-
+If the example takes to much time, remove the `-b file` parameter to disable OWL inference for all queries.
 
  To run the test session and continue interactively, run
  ```
