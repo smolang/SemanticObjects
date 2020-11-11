@@ -1,5 +1,7 @@
 grammar While;
-
+@header {
+package antlr.microobject.gen;
+}
 //Strings
 STRING : '"' .*? '"' ;
 

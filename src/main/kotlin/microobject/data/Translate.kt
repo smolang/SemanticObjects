@@ -1,11 +1,13 @@
 package microobject.data
 
-import microobject.gen.WhileBaseVisitor
-import microobject.gen.WhileParser.*
+import antlr.microobject.gen.WhileBaseVisitor
+import antlr.microobject.gen.WhileParser
+import antlr.microobject.gen.WhileParser.*
 import microobject.runtime.FieldEntry
 import microobject.runtime.MethodEntry
 import microobject.runtime.StackEntry
 import microobject.runtime.StaticTable
+
 
 class Translate : WhileBaseVisitor<ProgramElement>() {
 

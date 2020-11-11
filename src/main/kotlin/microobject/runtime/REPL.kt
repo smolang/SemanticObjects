@@ -4,8 +4,8 @@ package microobject.runtime
 
 import microobject.data.Expression
 import microobject.data.Translate
-import microobject.gen.WhileLexer
-import microobject.gen.WhileParser
+import antlr.microobject.gen.WhileLexer
+import antlr.microobject.gen.WhileParser
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
