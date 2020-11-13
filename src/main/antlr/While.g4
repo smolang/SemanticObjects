@@ -46,6 +46,7 @@ EXTENDS : 'extends';
 ACCESS : 'access';
 DERIVE : 'derive';
 BREAKPOINT : 'breakpoint';
+RULE : 'rule';
 COMMA : ',';
 
 //Names etc.
@@ -62,7 +63,7 @@ program : (class_def)+ DO statement OD;
 
 //classes
 class_def : CLASS NAME (EXTENDS NAME)? OPARAN namelist? CPARAN  method_def* END;
-method_def : NAME OPARAN namelist? CPARAN statement END;
+method_def : (builtinrule=RULE)? NAME OPARAN namelist? CPARAN statement END;
 
 //Statements
 statement :   SKIP_S SEMI                                                           # skip_statment

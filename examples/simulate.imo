@@ -1,0 +1,2 @@
+auto
+query SELECT ?obj WHERE { ?sth :D_n_builtin_res ?obj }

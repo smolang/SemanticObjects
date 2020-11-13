@@ -12,6 +12,8 @@ import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.ReasonerRegistry
+import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
+import org.apache.jena.reasoner.rulesys.Rule
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -47,11 +49,12 @@ MethodTable     : $methodTable
 data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr)
 
 class Interpreter(
-    private val stack: Stack<StackEntry>,    // This is the function stack
+    val stack: Stack<StackEntry>,    // This is the function stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
     val staticInfo: StaticTable,
     private val outPath: String,
-    private val back : String
+    private val back : String,
+    private val rules : String
 ) {
 
     private var debug = false
@@ -72,15 +75,25 @@ class Interpreter(
         model.read(uri, "TTL")
 
         if(back != "") {
+            println("Using background knowledge...")
             model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
         }
+
+        if(rules != "") {
+            println("Loading generated builtin rules $rules...")
+            val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rules))
+            val infModel = ModelFactory.createInfModel(reasoner, model)
+            //infModel.prepare()
+            model = infModel
+        }
+
         val query = QueryFactory.create(out)
         val qexec = QueryExecutionFactory.create(query, model)
 
         return qexec.execSelect()
     }
 
-    fun dump() {
+    private fun dump() {
         val output = File("$outPath/output.ttl")
         output.parentFile.mkdirs()
         if (!output.exists()) output.createNewFile()
@@ -349,14 +362,14 @@ class Interpreter(
                 if (expr.Op == Operator.PLUS) {
                     return expr.params.fold(LiteralExpr("0"), { acc, nx ->
                         val enx = eval(nx, stack, heap, obj)
-                        LiteralExpr((acc.literal.toInt() + enx.literal.toInt()).toString())
+                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
                     })
                 }
                 if (expr.Op == Operator.MINUS) {
-                    if (expr.params.size != 2) throw Exception("Operator.MINUES requires two parameters")
+                    if (expr.params.size != 2) throw Exception("Operator.MINUS requires two parameters")
                     val first = eval(expr.params[0], stack, heap, obj)
                     val second = eval(expr.params[1], stack, heap, obj)
-                    return LiteralExpr((first.literal.toInt() - second.literal.toInt()).toString())
+                    return LiteralExpr((first.literal.removePrefix("urn:").toInt() - second.literal.removePrefix("urn:").toInt()).toString(), "integer")
                 }
                 throw Exception("This kind of operator is not implemented yet")
             }

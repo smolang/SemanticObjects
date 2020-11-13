@@ -2,10 +2,10 @@
 
 package microobject.runtime
 
-import microobject.data.Expression
-import microobject.data.Translate
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
+import microobject.data.Expression
+import microobject.data.Translate
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
@@ -57,6 +57,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
     private lateinit var ontology : OWLOntology
     private lateinit var reasoner : OWLReasoner
     private val commands: MutableMap<String, Command> = mutableMapOf()
+    private var rules = ""
     init {
         initOntology()
         initCommands()
@@ -68,6 +69,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         if (!dir.exists()) dir.createNewFile()
         m = OWLManager.createOWLOntologyManager()
         ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+
         reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
     }
 
@@ -123,6 +125,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
 
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
+        rules = visitor.generateBuiltins(tree, pair.second, back)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -134,7 +137,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             initGlobalStore,
             pair.second,
             outPath,
-            back
+            back,
+            rules
         )
     }
 

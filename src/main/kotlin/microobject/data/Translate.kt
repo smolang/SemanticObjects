@@ -1,20 +1,105 @@
 package microobject.data
 
 import antlr.microobject.gen.WhileBaseVisitor
-import antlr.microobject.gen.WhileParser
 import antlr.microobject.gen.WhileParser.*
-import microobject.runtime.FieldEntry
-import microobject.runtime.MethodEntry
-import microobject.runtime.StackEntry
-import microobject.runtime.StaticTable
+import microobject.runtime.*
+import org.apache.jena.graph.Node
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.graph.Triple
+import org.apache.jena.reasoner.rulesys.BuiltinRegistry
+import org.apache.jena.reasoner.rulesys.RuleContext
+import org.apache.jena.reasoner.rulesys.builtins.BaseBuiltin
+import java.util.*
 
 
 class Translate : WhileBaseVisitor<ProgramElement>() {
 
-    override fun visitNamelist(ctx: NamelistContext?): ProgramElement {
-        return visitChildren(ctx)
-    }
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
+    var i = 0
+
+    fun generateBuiltins(ctx: ProgramContext?, staticTable: StaticTable, back: String) : String{
+        var num = 0
+        var retString = "["
+        for(cl in ctx!!.class_def()){
+            for(nm in cl.method_def()) {
+                if(nm.builtinrule != null){
+                    println("Generating builtin functor and rule for ${nm.NAME()}...")
+
+                    val builtin = object : BaseBuiltin() {
+                        override fun getName(): String {
+                            return "${cl.NAME(0)}_${nm.NAME()}_builtin"
+                        }
+
+                        override fun getArgLength(): Int {
+                            return 1+nm.namelist().NAME().size
+                        }
+
+                        override fun headAction(args: Array<out Node>?, length: Int, context: RuleContext?) {
+                            val thisVar = getArg(0, args, context)
+                            val params = mutableListOf<Node>()
+                            for(i in 1..nm.namelist().NAME().size){
+                                params.add(getArg(i, args, context))
+                            }
+                                val mem : Memory = mutableMapOf()
+                            for((c, nm) in nm.namelist().NAME().withIndex()){
+                                    val key = nm.text
+                                    mem[key] = LiteralExpr(params[c].toString())
+                                }
+                                val classStmt =
+                                    staticTable.methodTable[cl.NAME(0).text ?: throw Exception("Error during builtin generation")]
+                                        ?: throw Exception("Error during builtin generation")
+                                val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
+                                val obj = Names.getObjName("_Entry_")
+                                val se = StackEntry(met.first, mem, obj)
+                                val initGlobalStore: GlobalMemory = mutableMapOf(Pair(obj, mutableMapOf()))
+
+                                val initStack = Stack<StackEntry>()
+                                initStack.push(se)
+                                val interpreter = Interpreter(
+                                    initStack,
+                                    initGlobalStore,
+                                    staticTable,
+                                    "",
+                                    back,
+                                    ""
+                                )
+                                while(true){
+                                    if(interpreter.stack.peek().active is ReturnStmt){
+                                        val resStmt = interpreter.stack.peek().active as ReturnStmt
+                                        val res = resStmt.value
+                                        val ret = interpreter!!.evalTopMost(res).literal
+                                        val str = if(ret.toIntOrNull() == null) ret else "urn:$ret"
+                                        val resNode = NodeFactory.createURI(str)
+                                        val blankNode = NodeFactory.createURI("_:gen_${i++}")
+                                        val connectInNode = NodeFactory.createURI("urn:${name}_res")
+                                        val connectOutNode = NodeFactory.createURI("urn:${name}_param")
+                                        val triple = Triple.create(blankNode,connectInNode,resNode)
+                                        context!!.add(triple)
+                                        for(j in params.indices){
+                                            val ttriple = Triple.create(params[j],connectOutNode,blankNode)
+                                            context!!.add(ttriple)
+                                        }
+                                        break
+                                    }
+                                    interpreter.makeStep()
+                                }
+                        }
+                    }
+                    BuiltinRegistry.theRegistry.register(builtin)
+                    var ruleString = "rule${num++}:"
+                    var paramString = nm.namelist().NAME().joinToString(", ") { "?$it" } +")"
+                    if(paramString != ")") paramString = ",$paramString"
+                    val headString = "${builtin.name}(?this $paramString"
+                    val thisString = "(?this urn:MOinstanceOf urn:${cl.NAME(0)})"
+                    val bodyString = nm.namelist().NAME()
+                        .joinToString(" ") { "(?this urn:MOstore ?st) (?st urn:MOfield urn:g) (?st urn:MOvalue ?$it)" }
+                    ruleString = " $ruleString $thisString $bodyString -> $headString "
+                    retString += ruleString
+                }
+            }
+        }
+        return if(retString != "[") "$retString]" else ""
+    }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()

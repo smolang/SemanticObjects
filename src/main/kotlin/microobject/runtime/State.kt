@@ -46,7 +46,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
                       rdfs:range :MOXStorage .
                       
         :MOvalue      rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXStorage .
+                      rdfs:domain :MOXStorage.
                       
         :MOfield      rdf:type owl:ObjectProperty ;
                       rdfs:domain :MOXStorage ;
@@ -106,8 +106,9 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
                 res += ":${obj.literal} :MOstore _:dummy$i.\n"
                 res += "_:dummy$i :MOfield :$store.\n"
 
-                res += if (target.tag != "IGNORE") "_:dummy$i :MOvalue :${target.literal}.\n"
-                else "_:dummy$i :MOvalue ${target.literal}.\n"
+                res += if (target.tag == "IGNORE") "_:dummy$i :MOvalue ${target.literal}.\n"
+                       //else if (target.tag == "integer") "_:dummy$i :MOvalue ${target.literal}.\n"
+                       else "_:dummy$i :MOvalue :${target.literal}.\n"
 
                 i++
             }
