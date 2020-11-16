@@ -112,6 +112,8 @@ data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Exp
 // This is used to generate fresh names for objects
 object Names{
     private var i = 0
+    private var j = 0
     fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", className)
     fun getVarName() : LocalVar = LocalVar("_v${i++}")
+    fun getStackId() : Int = j++
 }

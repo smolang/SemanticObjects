@@ -46,7 +46,7 @@ MethodTable     : $methodTable
 """.trimIndent()
 
 }
-data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr)
+data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr, val id: Int)
 
 class Interpreter(
     val stack: Stack<StackEntry>,    // This is the function stack
@@ -121,7 +121,7 @@ class Interpreter(
         val current = stack.pop()
 
         //evaluate it
-        val res = eval(current.active, current.store, heap, current.obj)
+        val res = eval(current.active, current.store, heap, current.obj, current.id)
 
         //if there frame is not finished, push its modification back
         if(res.first != null){
@@ -136,7 +136,7 @@ class Interpreter(
         return !debug
     }
 
-    private fun eval(stmt: Statement, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : Pair<StackEntry?, List<StackEntry>>{
+    private fun eval(stmt: Statement, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, id: Int) : Pair<StackEntry?, List<StackEntry>>{
         if(heap[obj] == null) throw Exception("This object is unknown: $obj")
 
         //get own local memory
@@ -176,8 +176,8 @@ class Interpreter(
                     newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
                 return Pair(
-                    StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj),
-                    listOf(StackEntry(m.first, newMemory, newObj))
+                    StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
+                    listOf(StackEntry(m.first, newMemory, newObj, Names.getStackId()))
                 )
             }
             is CreateStmt -> {
@@ -192,7 +192,7 @@ class Interpreter(
                     newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, obj)
                 }
                 heap[name] = newMemory
-                return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
             }
             is SparqlStmt -> {
                 val query = eval(stmt.query, stackMemory, heap, obj)
@@ -231,7 +231,7 @@ class Interpreter(
                     }
                 }
 
-                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
                 if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
@@ -269,20 +269,20 @@ class Interpreter(
                         list = name
                     }
                 }
-                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
             }
             is ReturnStmt -> {
                 val over = stack.pop()
                 if (over.active is StoreReturnStmt) {
                     val res = eval(stmt.value, stackMemory, heap, obj)
-                    return Pair(StackEntry(AssignStmt(over.active.target, res), over.store, over.obj), listOf())
+                    return Pair(StackEntry(AssignStmt(over.active.target, res), over.store, over.obj, id), listOf())
                 }
                 if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
                     val active = over.active.first
                     val next = over.active.second
                     val res = eval(stmt.value, stackMemory, heap, obj)
                     return Pair(
-                        StackEntry(appendStmt(AssignStmt(active.target, res), next), over.store, over.obj),
+                        StackEntry(appendStmt(AssignStmt(active.target, res), next), over.store, over.obj, id),
                         listOf()
                     )
                 }
@@ -291,11 +291,11 @@ class Interpreter(
             is IfStmt -> {
                 val res = eval(stmt.guard, stackMemory, heap, obj)
                 if (res == LiteralExpr("True", "boolean")) return Pair(
-                    StackEntry(stmt.thenBranch, stackMemory, obj),
+                    StackEntry(stmt.thenBranch, stackMemory, obj, id),
                     listOf()
                 )
                 else return Pair(
-                    StackEntry(stmt.elseBranch, stackMemory, obj),
+                    StackEntry(stmt.elseBranch, stackMemory, obj, id),
                     listOf()
                 )
             }
@@ -306,7 +306,7 @@ class Interpreter(
                             stmt.guard,
                             appendStmt(stmt.loopBody, stmt),
                             SkipStmt
-                        ), stackMemory, obj
+                        ), stackMemory, obj, id
                     ), listOf()
                 )
             }
@@ -321,12 +321,12 @@ class Interpreter(
                 return Pair(null, emptyList())
             }
             is SequenceStmt -> {
-                if (stmt.first is ReturnStmt) return eval(stmt.first, stackMemory, heap, obj)
-                val res = eval(stmt.first, stackMemory, heap, obj)
+                if (stmt.first is ReturnStmt) return eval(stmt.first, stackMemory, heap, obj, id)
+                val res = eval(stmt.first, stackMemory, heap, obj, id)
                 if (res.first != null) {
                     val newStmt = appendStmt(res.first!!.active, stmt.second)
-                    return Pair(StackEntry(newStmt, res.first!!.store, res.first!!.obj), res.second)
-                } else return Pair(StackEntry(stmt.second, stackMemory, obj), res.second)
+                    return Pair(StackEntry(newStmt, res.first!!.store, res.first!!.obj, id), res.second)
+                } else return Pair(StackEntry(stmt.second, stackMemory, obj, id), res.second)
             }
             else -> throw Exception("This kind of statement is not implemented yet")
         }
@@ -395,7 +395,7 @@ Global store : $heap
 Stack:
 ${stack.joinToString(
     separator = "",
-    transform = { "Store@${it.obj}:\n\t" + it.store.toString() + "\nStatement:\n\t" + it.active.toString() + "\n" })}
+    transform = { "Prc${it.id}@${it.obj}:\n\t" + it.store.toString() + "\nStatement:\n\t" + it.active.toString() + "\n" })}
 """.trimIndent()
 
 }

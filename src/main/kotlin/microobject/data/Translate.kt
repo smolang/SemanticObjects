@@ -50,7 +50,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                                         ?: throw Exception("Error during builtin generation")
                                 val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
                                 val obj = Names.getObjName("_Entry_")
-                                val se = StackEntry(met.first, mem, obj)
+                                val se = StackEntry(met.first, mem, obj, Names.getStackId())
                                 val initGlobalStore: GlobalMemory = mutableMapOf(Pair(obj, mutableMapOf()))
 
                                 val initStack = Stack<StackEntry>()
@@ -98,7 +98,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 }
             }
         }
-        return if(retString != "[") "$retString]" else ""
+        val str = if(retString != "[") "$retString]" else ""
+        println("rules: "+str)
+        return str
     }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
@@ -145,7 +147,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         }
 
         return Pair(
-                     StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_")),
+                     StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
                      StaticTable(fieldTable, methodTable, hierarchy)
                    )
     }
