@@ -83,6 +83,7 @@ class RuleGenerator{
             for(nm in cl.method_def()) {
                 if(nm.builtinrule != null){
                     println("Generating builtin functor and rule for ${nm.NAME()}...")
+                    if(!checkValidRule(nm)) throw Exception("${nm.NAME()} is not a valid rule method!")
                     val builtin : Builtin = buildFunctor(cl, nm, interpreterBridge)
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
@@ -95,5 +96,10 @@ class RuleGenerator{
         val str = if(retString != "[") "$retString]" else ""
         println("rules: $str")
         return str
+    }
+
+    //No parameter passing from queries!
+    fun checkValidRule(nm: WhileParser.Method_defContext) : Boolean {
+        return nm.namelist() == null
     }
 }

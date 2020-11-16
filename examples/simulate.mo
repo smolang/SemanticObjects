@@ -13,5 +13,6 @@ class E()
 end
 
 do
-  q := new D(2);
+  a := new D(2);
+  b := new D(3);
 od
