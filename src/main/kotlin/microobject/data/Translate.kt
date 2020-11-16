@@ -17,7 +17,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
     var i = 0
 
-    fun generateBuiltins(ctx: ProgramContext?, staticTable: StaticTable, back: String) : String{
+    fun generateBuiltins(ctx: ProgramContext?, staticTable: StaticTable, back: String, interpreterBridge: InterpreterBridge) : String{
         var num = 0
         var retString = "["
         for(cl in ctx!!.class_def()){
@@ -31,75 +31,57 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                         }
 
                         override fun getArgLength(): Int {
-                            return 1+nm.namelist().NAME().size
+                            return 1
                         }
 
                         override fun headAction(args: Array<out Node>?, length: Int, context: RuleContext?) {
                             val thisVar = getArg(0, args, context)
-                            val params = mutableListOf<Node>()
-                            for(i in 1..nm.namelist().NAME().size){
-                                params.add(getArg(i, args, context))
-                            }
-                                val mem : Memory = mutableMapOf()
-                            for((c, nm) in nm.namelist().NAME().withIndex()){
-                                    val key = nm.text
-                                    mem[key] = LiteralExpr(params[c].toString())
-                                }
-                                val classStmt =
-                                    staticTable.methodTable[cl.NAME(0).text ?: throw Exception("Error during builtin generation")]
-                                        ?: throw Exception("Error during builtin generation")
-                                val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
-                                val obj = Names.getObjName("_Entry_")
-                                val se = StackEntry(met.first, mem, obj, Names.getStackId())
-                                val initGlobalStore: GlobalMemory = mutableMapOf(Pair(obj, mutableMapOf()))
+                            val ipr = interpreterBridge.interpreter
+                                ?: throw Exception("Builtin functor cannot be expanded if the interpreter is unknown.")
 
-                                val initStack = Stack<StackEntry>()
-                                initStack.push(se)
-                                val interpreter = Interpreter(
-                                    initStack,
-                                    initGlobalStore,
-                                    staticTable,
-                                    "",
-                                    back,
-                                    ""
-                                )
-                                while(true){
-                                    if(interpreter.stack.peek().active is ReturnStmt){
-                                        val resStmt = interpreter.stack.peek().active as ReturnStmt
-                                        val res = resStmt.value
-                                        val ret = interpreter!!.evalTopMost(res).literal
-                                        val str = if(ret.toIntOrNull() == null) ret else "urn:$ret"
-                                        val resNode = NodeFactory.createURI(str)
-                                        val blankNode = NodeFactory.createURI("_:gen_${i++}")
-                                        val connectInNode = NodeFactory.createURI("urn:${name}_res")
-                                        val connectOutNode = NodeFactory.createURI("urn:${name}_param")
-                                        val triple = Triple.create(blankNode,connectInNode,resNode)
-                                        context!!.add(triple)
-                                        for(j in params.indices){
-                                            val ttriple = Triple.create(params[j],connectOutNode,blankNode)
-                                            context!!.add(ttriple)
-                                        }
-                                        break
-                                    }
-                                    interpreter.makeStep()
+                            val myIpr = ipr.coreCopy()
+
+                            val classStmt =
+                                myIpr.staticInfo.methodTable[cl.NAME(0).text
+                                    ?: throw Exception("Error during builtin generation")]
+                                    ?: throw Exception("Error during builtin generation")
+                            val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
+                            val mem: Memory = mutableMapOf()
+                            val obj = LiteralExpr(
+                                thisVar.toString().removePrefix("urn:"),
+                                cl.NAME(0).text
+                            )
+                            mem["this"] = obj
+                            val se = StackEntry(met.first, mem, obj, Names.getStackId())
+                            myIpr.stack.push(se)
+
+                            while (true) {
+                                if (myIpr.stack.peek().active is ReturnStmt) {
+                                    val resStmt = myIpr.stack.peek().active as ReturnStmt
+                                    val res = resStmt.value
+                                    val ret = myIpr.evalTopMost(res).literal
+                                    val str = if (ret.toIntOrNull() == null) ret else "urn:$ret"
+                                    val resNode = NodeFactory.createURI(str)
+                                    val connectInNode = NodeFactory.createURI("urn:${name}_res")
+                                    val triple = Triple.create(thisVar, connectInNode, resNode)
+                                    context!!.add(triple)
+                                    break
                                 }
+                                myIpr.makeStep()
+                            }
                         }
                     }
                     BuiltinRegistry.theRegistry.register(builtin)
                     var ruleString = "rule${num++}:"
-                    var paramString = nm.namelist().NAME().joinToString(", ") { "?$it" } +")"
-                    if(paramString != ")") paramString = ",$paramString"
-                    val headString = "${builtin.name}(?this $paramString"
+                    val headString = "${builtin.name}(?this)"
                     val thisString = "(?this urn:MOinstanceOf urn:${cl.NAME(0)})"
-                    val bodyString = nm.namelist().NAME()
-                        .joinToString(" ") { "(?this urn:MOstore ?st) (?st urn:MOfield urn:g) (?st urn:MOvalue ?$it)" }
-                    ruleString = " $ruleString $thisString $bodyString -> $headString "
+                    ruleString = " $ruleString $thisString -> $headString "
                     retString += ruleString
                 }
             }
         }
         val str = if(retString != "[") "$retString]" else ""
-        println("rules: "+str)
+        println("rules: $str")
         return str
     }
 

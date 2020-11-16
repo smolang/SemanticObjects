@@ -48,6 +48,8 @@ MethodTable     : $methodTable
 }
 data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr, val id: Int)
 
+class InterpreterBridge(var interpreter: Interpreter?)
+
 class Interpreter(
     val stack: Stack<StackEntry>,    // This is the function stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
@@ -56,6 +58,19 @@ class Interpreter(
     private val back : String,
     private val rules : String
 ) {
+
+    fun coreCopy() : Interpreter{
+        val newHeap = mutableMapOf<LiteralExpr, Memory>()
+        for(kv in heap.entries){
+            newHeap[kv.key] = kv.value.toMap().toMutableMap()
+        }
+        return Interpreter(
+            Stack<StackEntry>(),
+            newHeap,
+            staticInfo,
+            outPath, back, rules
+        )
+    }
 
     private var debug = false
 

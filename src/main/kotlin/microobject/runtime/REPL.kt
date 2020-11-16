@@ -49,6 +49,7 @@ class Command(
     }
 }
 
+
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean, private val back : String) {
     private var interpreter: Interpreter? = null
@@ -125,7 +126,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
 
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
-        rules = visitor.generateBuiltins(tree, pair.second, back)
+        val iB = InterpreterBridge(null)
+        rules = visitor.generateBuiltins(tree, pair.second, back, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -140,6 +142,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             back,
             rules
         )
+        iB.interpreter = interpreter
     }
 
     private fun initCommands() {
