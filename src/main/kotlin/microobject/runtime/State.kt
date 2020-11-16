@@ -26,6 +26,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         :MOXMethod  rdf:type owl:Class .
         :MOXObject  rdf:type owl:Class .
         :MOXStorage rdf:type owl:Class .
+        :MOXProcess rdf:type owl:Class .
         
         :MOinstanceOf rdf:type owl:ObjectProperty ;
                       rdfs:domain :MOXObject ;
@@ -43,6 +44,10 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
                       rdfs:domain :MOXClass ;
                       rdfs:range :MOXClass .
                       
+        :MOrunsOnOject    rdf:type owl:ObjectProperty ;
+                      rdfs:domain :MOXProcess ;
+                      rdfs:range :MOXObject .
+                      
         """.trimIndent()
 
 
@@ -56,7 +61,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
     fun dump() : String{
 
         //Builds always known information and meta data
-        var res = HEADER + "\n" + VOCAB + "\n"+ background + "\n" + MINIMAL
+        var res = HEADER + "\n" + VOCAB + "\n" + background + "\n" + MINIMAL
 
 
         //records all classes and their fields
@@ -98,7 +103,17 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
                 i++
             }
         }
+
+
+        // dumps processes
+        res += "\n"
+        for (st in stack){
+            res += ":pro${st.id} rdf:type MOXProcess.\n"
+            res += ":pro${st.id} :runsOnObject ${st.obj}.\n"
+        }
+
         return res
+
     }
 
 }
