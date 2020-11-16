@@ -1,4 +1,3 @@
-PREFIX : <urn:absolute:Test>
-#PREFIX : <http://www.semanticweb.org/edkam/ontologies/2020/9/untitled-ontology-7#>
+PREFIX : <urn:>
 
-SELECT ?obj WHERE { ?obj :MOinstanceOf :C } LIMIT 10
+SELECT ?obj WHERE { ?obj :MOinstanceOf :C }

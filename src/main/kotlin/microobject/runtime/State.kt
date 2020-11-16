@@ -16,12 +16,13 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+        
         """.trimIndent()
 
     private val VOCAB =
         """
         :MOXClass   rdf:type owl:Class .
-        :MOXField   rdf:type owl:Class .
+        :MOXField   rdf:type owl:ObjectProperty .
         :MOXMethod  rdf:type owl:Class .
         :MOXObject  rdf:type owl:Class .
         :MOXStorage rdf:type owl:Class .
@@ -41,27 +42,15 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         :MOextends    rdf:type owl:ObjectProperty ;
                       rdfs:domain :MOXClass ;
                       rdfs:range :MOXClass .
-        
-        :MOstore      rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXObject ;
-                      rdfs:range :MOXStorage .
                       
-        :MOvalue      rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXStorage.
-                      
-        :MOfield      rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXStorage ;
-                      rdfs:range :MOXField .
         """.trimIndent()
 
 
     private val MINIMAL =
-        """
-       :Test rdf:type owl:Class ;
-             owl:equivalentClass :MOXfield .
-                     
-       :null rdf:type owl:NamedIndividual , :MOXObject .
-       :_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
+        """                     
+        :null rdf:type owl:NamedIndividual , :MOXObject .
+        :_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
+        
         """.trimIndent()
 
     fun dump() : String{
@@ -74,8 +63,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         for(obj in staticInfo.fieldTable){
             res += ":${obj.key} rdf:type owl:NamedIndividual , :MOXClass.\n"
             for(obj2 in obj.value){
-                res += ":${obj.key} :MOhasField :$obj2.\n"
-                res += ":$obj2 rdf:type owl:NamedIndividual , :MOXField.\n"
+                res += ":$obj2 rdfs:subPropertyOf :MOXField.\n"
                 res += ":${obj.key} :MOhasField :$obj2.\n"
             }
         }
@@ -83,9 +71,8 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         //records all methods
         for(obj in staticInfo.methodTable){
             for(obj2 in obj.value){
-                res += ":${obj.key} :MOhasMethod :${obj2.key}.\n"
-                res += ":${obj2.key} rdf:type owl:NamedIndividual , :MOXMethod.\n"
-                //res += ":MOXMethod :${obj2.key}.\n"
+                res += ":${obj.key} :MOhasMethod :MO${obj2.key}.\n"
+                res += ":MO${obj2.key} rdf:type owl:NamedIndividual , :MOXMethod.\n"
             }
         }
 
@@ -96,6 +83,8 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             }
         }
 
+        val known = mutableSetOf<String>()
+
         //dumps individuals
         var i = 0
         for(obj in heap.keys){
@@ -104,13 +93,8 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             //and their fields
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += ":${obj.literal} :MOstore _:dummy$i.\n"
-                res += "_:dummy$i :MOfield :$store.\n"
-
-                res += if (target.tag == "IGNORE") "_:dummy$i :MOvalue ${target.literal}.\n"
-                       //else if (target.tag == "integer") "_:dummy$i :MOvalue ${target.literal}.\n"
-                       else "_:dummy$i :MOvalue :${target.literal}.\n"
-
+                res += ":${obj.literal} :$store "
+                res += if (target.tag == "IGNORE") "${target.literal}.\n" else ":${target.literal}.\n"
                 i++
             }
         }
