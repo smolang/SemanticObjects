@@ -1,4 +1,4 @@
-@file:Suppress("unused", "unused")
+@file:Suppress("unused")
 
 package microobject.data
 
@@ -19,6 +19,7 @@ interface Statement : ProgramElement
 interface Expression : ProgramElement
 interface Location : Expression
 
+/** Statement **/
 
 // Empty statement. Handy for unrolling of loops.
 object SkipStmt : Statement{
@@ -92,6 +93,11 @@ data class OwlStmt(val target : Location, val query: Expression) : Statement {
     override fun toString(): String = "$target := derive($query)"
 }
 
+
+
+/** Expressions **/
+
+
 data class LocalVar(val name : String) : Location { // local variable
     override fun toString(): String = name
 }
@@ -109,7 +115,7 @@ data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Exp
     override fun toString(): String = literal
 }
 
-// This is used to generate fresh names for objects
+// Use this whenever we need a new unique name
 object Names{
     private var i = 0
     private var j = 0

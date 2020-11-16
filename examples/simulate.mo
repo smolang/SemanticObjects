@@ -1,6 +1,14 @@
 class D (g)
     rule n()
-        return this.g + this.g;
+        v := new E();
+        res := v.m(this.g);
+        return this.g + res;
+    end
+end
+
+class E()
+    m(p)
+        return p + p;
     end
 end
 

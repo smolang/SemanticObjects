@@ -3,87 +3,15 @@ package microobject.data
 import antlr.microobject.gen.WhileBaseVisitor
 import antlr.microobject.gen.WhileParser.*
 import microobject.runtime.*
-import org.apache.jena.graph.Node
-import org.apache.jena.graph.NodeFactory
-import org.apache.jena.graph.Triple
-import org.apache.jena.reasoner.rulesys.BuiltinRegistry
-import org.apache.jena.reasoner.rulesys.RuleContext
-import org.apache.jena.reasoner.rulesys.builtins.BaseBuiltin
-import java.util.*
 
-
+/**
+ * This class handles multiple tasks related to translating ANTLR structures to the internal representation
+ *  - It translate statements and expression
+ *  - It generates the class table
+ */
 class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
-    var i = 0
-
-    fun generateBuiltins(ctx: ProgramContext?, staticTable: StaticTable, back: String, interpreterBridge: InterpreterBridge) : String{
-        var num = 0
-        var retString = "["
-        for(cl in ctx!!.class_def()){
-            for(nm in cl.method_def()) {
-                if(nm.builtinrule != null){
-                    println("Generating builtin functor and rule for ${nm.NAME()}...")
-
-                    val builtin = object : BaseBuiltin() {
-                        override fun getName(): String {
-                            return "${cl.NAME(0)}_${nm.NAME()}_builtin"
-                        }
-
-                        override fun getArgLength(): Int {
-                            return 1
-                        }
-
-                        override fun headAction(args: Array<out Node>?, length: Int, context: RuleContext?) {
-                            val thisVar = getArg(0, args, context)
-                            val ipr = interpreterBridge.interpreter
-                                ?: throw Exception("Builtin functor cannot be expanded if the interpreter is unknown.")
-
-                            val myIpr = ipr.coreCopy()
-
-                            val classStmt =
-                                myIpr.staticInfo.methodTable[cl.NAME(0).text
-                                    ?: throw Exception("Error during builtin generation")]
-                                    ?: throw Exception("Error during builtin generation")
-                            val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
-                            val mem: Memory = mutableMapOf()
-                            val obj = LiteralExpr(
-                                thisVar.toString().removePrefix("urn:"),
-                                cl.NAME(0).text
-                            )
-                            mem["this"] = obj
-                            val se = StackEntry(met.first, mem, obj, Names.getStackId())
-                            myIpr.stack.push(se)
-
-                            while (true) {
-                                if (myIpr.stack.peek().active is ReturnStmt) {
-                                    val resStmt = myIpr.stack.peek().active as ReturnStmt
-                                    val res = resStmt.value
-                                    val ret = myIpr.evalTopMost(res).literal
-                                    val str = if (ret.toIntOrNull() == null) ret else "urn:$ret"
-                                    val resNode = NodeFactory.createURI(str)
-                                    val connectInNode = NodeFactory.createURI("urn:${name}_res")
-                                    val triple = Triple.create(thisVar, connectInNode, resNode)
-                                    context!!.add(triple)
-                                    break
-                                }
-                                myIpr.makeStep()
-                            }
-                        }
-                    }
-                    BuiltinRegistry.theRegistry.register(builtin)
-                    var ruleString = "rule${num++}:"
-                    val headString = "${builtin.name}(?this)"
-                    val thisString = "(?this urn:MOinstanceOf urn:${cl.NAME(0)})"
-                    ruleString = " $ruleString $thisString -> $headString "
-                    retString += ruleString
-                }
-            }
-        }
-        val str = if(retString != "[") "$retString]" else ""
-        println("rules: $str")
-        return str
-    }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()

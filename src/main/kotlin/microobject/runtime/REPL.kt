@@ -5,6 +5,7 @@ package microobject.runtime
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import microobject.data.Expression
+import microobject.data.RuleGenerator
 import microobject.data.Translate
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -127,7 +128,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
         val iB = InterpreterBridge(null)
-        rules = visitor.generateBuiltins(tree, pair.second, back, iB)
+        rules = RuleGenerator().generateBuiltins(tree, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -156,14 +157,14 @@ class REPL(private val apache: String, private val outPath: String, private val 
             requiresParameter = true,
             invalidatesDump = true
         )
-        val examine =
-            Command("examine", this, { printRepl(interpreter!!.toString()); false }, "prints state in internal format")
         commands["info"] = Command(
             "info",
             this,
             { printRepl(interpreter!!.staticInfo.toString()); false },
             "prints static information in internal format"
         )
+        val examine =
+            Command("examine", this, { printRepl(interpreter!!.toString()); false }, "prints state in internal format")
         commands["examine"] = examine
         commands["e"] = examine
         commands["dump"] =

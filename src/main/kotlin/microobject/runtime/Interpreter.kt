@@ -1,5 +1,4 @@
 @file:Suppress(
-    "LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment", "LiftReturnOrAssignment",
     "LiftReturnOrAssignment"
 )
 
@@ -21,42 +20,16 @@ import org.semanticweb.owlapi.model.OntologyConfigurator
 import java.io.File
 import java.util.*
 
-
-/*
-We use the term "heap" NOT in the sense of C and other low-level here.
-Heap memory is barely the opposite of local memory, we have no assumptions about the memory.
- */
-
-typealias Memory = MutableMap<String, LiteralExpr>       // Maps variable names to values
-typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name literals to local memories
-
-typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
-typealias FieldEntry = List<String>                   //list of fields
-
-data class StaticTable(
-    val fieldTable: Map<String, FieldEntry>,               // This maps class names to their fields
-    val methodTable: Map<String, Map<String, MethodEntry>>, // This maps class names to a map that maps method names to their definition
-    val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf()
-) { // DOWNWARDS class hierarchy
-    override fun toString(): String =
-"""
-Class Hierarchy : $hierarchy 
-FieldTable      : $fieldTable 
-MethodTable     : $methodTable 
-""".trimIndent()
-
-}
-data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr, val id: Int)
-
+//There is probably something in the standard library for this pattern
 class InterpreterBridge(var interpreter: Interpreter?)
 
 class Interpreter(
-    val stack: Stack<StackEntry>,    // This is the function stack
+    val stack: Stack<StackEntry>,            // This is the process stack
     private var heap: GlobalMemory,          // This is a map from objects to their heap memory
-    val staticInfo: StaticTable,
-    private val outPath: String,
-    private val back : String,
-    private val rules : String
+    val staticInfo: StaticTable,             // Class table etc.
+    private val outPath: String,             // Path to the output directory (e.g., /tmp/mo)
+    private val back : String,               // Background knowledge (Should be a string with OWL class definitions)
+    private val rules : String               // Additional rules for jena
 ) {
 
     fun coreCopy() : Interpreter{
