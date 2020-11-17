@@ -3,6 +3,7 @@ package microobject.runtime
 import microobject.data.LiteralExpr
 import microobject.data.Statement
 import java.util.*
+import microobject.data.*
 
 //This will be used for snapshots
 class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : StaticTable, private val background : String) {
@@ -21,33 +22,124 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
 
     private val VOCAB =
         """
-        :MOXClass   rdf:type owl:Class .
-        :MOXField   rdf:type owl:ObjectProperty .
-        :MOXMethod  rdf:type owl:Class .
-        :MOXObject  rdf:type owl:Class .
-        :MOXStorage rdf:type owl:Class .
-        :MOXProcess rdf:type owl:Class .
+        :MOXClass                rdf:type owl:Class.
+        :MOXField                rdf:type owl:ObjectProperty.
+        :MOXMethod               rdf:type owl:Class.
+        :MOXObject               rdf:type owl:Class.
+        :MOXStorage              rdf:type owl:Class.
+        :MOXProcess              rdf:type owl:Class.
+        :MOXStatement            rdf:type owl:Class.
+        :MOXAssignStatement      rdf:type owl:Class.
+        :MOXCallStatement        rdf:type owl:Class.
+        :MOXCreateStatement      rdf:type owl:Class.
+        :MOXDebugStatement       rdf:type owl:Class.
+        :MOXIfStatement          rdf:type owl:Class.
+        :MOXOwlStatement         rdf:type owl:Class.
+        :MOXPrintStatement       rdf:type owl:Class.
+        :MOXReturnStatement      rdf:type owl:Class.
+        :MOXReturnStatement      rdf:type owl:Class.
+        :MOXSequenceStatement    rdf:type owl:Class.
+        :MOXSkipStatement        rdf:type owl:Class.
+        :MOXSkipStatement        rdf:type owl:Class.
+        :MOXSparqlStatement      rdf:type owl:Class.
+        :MOXStoreReturnStatement rdf:type owl:Class.
+        :MOXWhileStatement       rdf:type owl:Class.
+        :MOXLocation             rdf:type owl:Class.
+        :MOXOthersVarLocation    rdf:type owl:Class.
+        :MOXOwnVarLocation       rdf:type owl:Class.
+        :MOXLocalVarLocation     rdf:type owl:Class.
+        :MOXExpression           rdf:type owl:Class.
+        :MOXLiteralExpression    rdf:type owl:Class.
+        :MOXArithExpression      rdf:type owl:Class.
         
-        :MOinstanceOf rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXObject ;
-                      rdfs:range :MOXClass .
+
+        :MOinstanceOf   rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXObject ;
+                        rdfs:range :MOXClass .
                       
-        :MOhasField   rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXClass ;
-                      rdfs:range :MOXField .
+        :MOhasField     rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXClass ;
+                        rdfs:range :MOXField .
                       
-        :MOhasMethod  rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXClass ;
-                      rdfs:range :MOXMethod .
+        :MOhasMethod    rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXClass ;
+                        rdfs:range :MOXMethod .
         
-        :MOextends    rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXClass ;
-                      rdfs:range :MOXClass .
+        :MOextends      rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXClass ;
+                        rdfs:range :MOXClass .
                       
-        :MOrunsOnOject    rdf:type owl:ObjectProperty ;
-                      rdfs:domain :MOXProcess ;
-                      rdfs:range :MOXObject .
+        :MOrunsOnOject  rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXProcess ;
+                        rdfs:range :MOXObject .
                       
+        :MOnextOnStack  rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXProcess ;
+                        rdfs:range :MOXProcess .
+
+        :MOfirst            rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXStatement .
+        :MOhasCallee        rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXLocation .
+        :MOhasElseBranch    rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXStatement .
+        :MOhasGuard         rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXExpression .
+        :MOhasLocation      rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXLocation .
+        :MOhasLoopBody      rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXStatement .
+        :MOhasQuery         rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXExpression .
+        :MOhasTarget        rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXLocation .
+        :MOhasThenBranch    rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXStatement .
+        :MOsecond           rdf:type owl:ObjectProperty ;
+                            rdfs:domain :MOXStatement ;
+                            rdfs:range :MOXStatement .
+
+
+        :MOhasClassName rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXStatement ;
+                        rdfs:range xsd:string .
+
+        :MOhasLiteral   rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXExpression ;
+                        rdfs:range xsd:string .
+
+        :MOhasMethod    rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXStatement ;
+                        rdfs:range xsd:string .
+
+        :MOhasName      rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXLocation ;
+                        rdfs:range xsd:string .
+
+        :MOhasOp        rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXExpression ;
+                        rdfs:range xsd:string .
+
+        :MOhasTag       rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXExpression ;
+                        rdfs:range xsd:string .
+
+
+        :MOhasExpr      rdf:type owl:ObjectProperty .
+        :MOhasValue     rdf:type owl:ObjectProperty .
+        :MOhasIndex     rdf:type owl:DatatypeProperty ;
+                        rdfs:range xsd:integer.
+        :MOhasParameter rdf:type owl:Property.
+
         """.trimIndent()
 
 
@@ -104,18 +196,27 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             }
         }
 
-
         // dumps processes
         res += "\n"
-        for (st in stack){
-            res += ":pro${st.id} rdf:type MOXProcess.\n"
-            res += ":pro${st.id} :runsOnObject ${st.obj}.\n"
+        var prevStackEntry: StackEntry? = null
+        for (stackEntry in stack){
+            if (prevStackEntry != null){
+                res += ":pro${prevStackEntry.id} :MOnextOnStack :pro${stackEntry.id}.\n"
+            }
+            prevStackEntry = stackEntry
+            res += ":pro${stackEntry.id} rdf:type :MOXProcess.\n"
+            res += ":pro${stackEntry.id} :MOrunsOnObject :${stackEntry.obj}.\n"
+            for ((key, value) in stackEntry.store){
+                if (key != "this" && key.first() != '_') {
+                    res += ":pro${stackEntry.id} ${key} ${value}.\n"
+                }
+            }
+            res += ":pro${stackEntry.id} :MOactive :stmt${stackEntry.active.hashCode()}.\n"
+            res += stackEntry.active.getRDF()
         }
 
         return res
-
     }
-
 }
 
 
