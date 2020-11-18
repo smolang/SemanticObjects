@@ -12,10 +12,8 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.formats.TurtleDocumentFormat
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
 import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyLoaderConfiguration
 import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.reasoner.OWLReasoner

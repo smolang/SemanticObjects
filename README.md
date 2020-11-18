@@ -1,17 +1,17 @@
- # MicroObjects 
- This repository contains an interactive interpreter for a minimal object-oriented language.
- The interpreter can be used to examine the state with SPARQL and SHACL queries.
+ # Semantic Micro Object Language
+ This repository contains an interactive interpreter for **SMOL**, a minimal object-oriented language with integrated semantic state access.
+ The interpreter can be used to examine the state with SPARQL, SHACL and OWL queries.
  
  The project is in a very early stage, and the language performs almost no checks on its input.
+ Tested only on Linux.
  
  ## Examples
- Run with a path to an apache jena installation as the first parameter for the interactive mode.
- No trailing "/", tested only on Linux. Enter `help` for an overview over the available commands.
+Enter `help` for an overview over the available commands.
  
  * examples/double.mo contains a simple doubly linked list example.
- * examples/double.rq contains a SPARQL query to select all `List` elements
- * examples/double.ttl contains a SHACL query that ensures that all objects implement a class
- * examples/double.imo contains a simple test session
+ * examples/double.rq contains a SPARQL query to select all `List` elements.
+ * examples/double.ttl contains a SHACL query that ensures that all objects implement a class.
+ * examples/double.imo contains a simple test session.
  
 To run the geo session, run
  ```
@@ -35,3 +35,11 @@ To run the general test session and continue interactively, run
 ./gradlew shadowJar
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo
 ```
+
+ ## Misc.
+ 
+  * REPL: `validate` and `query-file` use the shell to call the Apache Jena installation, all other commands have no extra dependencies.
+  * REPL: If you use `-b` to load background knowledge, OWL reasoning is used for all queries.
+  * SMOL: If you use the `query` *statement*, a `List` class with fields `content` and `next` is assumed to exist. The result of the command is  list with all results for the variable `?obj`. (You must use `?obj`, every other variable is dropped.)
+  * SMOL: If you use `rule` modifiers, the rules are invoked for every process.
+  * SMOL: A method modified by `rule` is not allowed to have parameters. 

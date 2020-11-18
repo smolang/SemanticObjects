@@ -81,7 +81,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             return CallStmt(Names.getVarName(),
                 visit(ctx.expression(0)) as Location,
                 ctx.NAME().text,
-                ll)
+                ll,
+                ctx!!.start.line
+            )
         } else {
             for(i in 2 until ctx.expression().size)
                 ll += visit(ctx.expression(i)) as Expression
@@ -89,7 +91,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 visit(ctx.target) as Location,
                 visit(ctx.expression(1)) as Location,
                 ctx.NAME().text,
-                ll
+                ll,
+                ctx!!.start.line
             )
         }
     }
@@ -100,7 +103,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             ll += visit(ctx.expression(i)) as Expression
         return CreateStmt(visit(ctx.target) as Location,
                           ctx.NAME().text,
-                          ll)
+                          ll,
+                          ctx!!.start.line
+                         )
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
@@ -109,49 +114,49 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         var ll = emptyList<Expression>()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        return SparqlStmt(target, query, ll)
+        return SparqlStmt(target, query, ll, ctx!!.start.line)
     }
 
     override fun visitOwl_statement(ctx: Owl_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         val query = visit(ctx!!.query) as Expression
-        return OwlStmt(target, query)
+        return OwlStmt(target, query, ctx!!.start.line)
 
     }
 
     override fun visitOutput_statement(ctx: Output_statementContext?): ProgramElement {
-        return PrintStmt(visit(ctx!!.expression()) as Expression)
+        return PrintStmt(visit(ctx!!.expression()) as Expression, ctx!!.start.line)
     }
 
     override fun visitAssign_statement(ctx: Assign_statementContext?): ProgramElement {
-        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression)
+        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, ctx!!.start.line)
     }
 
     override fun visitSkip_statment(ctx: Skip_statmentContext?): ProgramElement {
-        return SkipStmt
+        return SkipStmt(ctx!!.start.line)
     }
 
     override fun visitDebug_statement(ctx: Debug_statementContext?): ProgramElement {
-        return DebugStmt
+        return DebugStmt(ctx!!.start.line)
     }
 
     override fun visitReturn_statement(ctx: Return_statementContext?): ProgramElement {
-        return ReturnStmt(visit(ctx!!.expression()) as Expression)
+        return ReturnStmt(visit(ctx!!.expression()) as Expression, ctx!!.start.line)
     }
 
     override fun visitIf_statement(ctx: If_statementContext?): ProgramElement {
         val stm1 = visit(ctx!!.statement(0)) as Statement
-        val stm2 = if(ctx.statement(1) != null) visit(ctx.statement(1)) as Statement else SkipStmt
-        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt
+        val stm2 = if(ctx.statement(1) != null) visit(ctx.statement(1)) as Statement else SkipStmt()
+        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt()
         val guard = visit(ctx.expression()) as Expression
-        return appendStmt(IfStmt(guard, stm1, stm2), stmNext)
+        return appendStmt(IfStmt(guard, stm1, stm2, ctx!!.start.line), stmNext)
     }
 
     override fun visitWhile_statement(ctx: While_statementContext?): ProgramElement {
         val stm1 = visit(ctx!!.statement(0)) as Statement
-        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt
+        val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt()
         val guard = visit(ctx.expression()) as Expression
-        return appendStmt(WhileStmt(guard, stm1), stmNext)
+        return appendStmt(WhileStmt(guard, stm1, ctx!!.start.line), stmNext)
     }
 
     override fun visitSequence_statement(ctx: Sequence_statementContext?): ProgramElement {

@@ -26,33 +26,33 @@ interface Location : Expression
 /** Statement **/
 
 // Empty statement. Handy for unrolling of loops.
-object SkipStmt : Statement{
+data class SkipStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "skip"
-    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXSkipStatement.\n"
+    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXSkipStatement.\n:stmt${this.hashCode()} :MOLine :$pos.\n"
 }
 
 
 // Stops automatic execution
-object DebugStmt : Statement{
+data class DebugStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "breakpoint"
-    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXDebugStatement.\n"
+    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXDebugStatement.\n:stmt${this.hashCode()} :MOLine :$pos.\n"
 }
 
 // Assignment, where value cannot refer to calls or object creations.
-data class AssignStmt(val target : Location, val value : Expression) : Statement {
+data class AssignStmt(val target : Location, val value : Expression, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := $value"
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXAssignStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasValue :expr${value.hashCode()}.
-
+            :stmt${this.hashCode()} :MOLine :$pos.
         """.trimIndent()
     }
 }
 
 // Method call. We have the ABS-style split between calls and expressions to make the rules more simple
-data class CallStmt(val target : Location, val callee : Location, val method : String, val params : List<Expression>) :
+data class CallStmt(val target : Location, val callee : Location, val method : String, val params : List<Expression>, val pos : Int = -1) :
     Statement {
     override fun toString(): String = "$target := $callee.$method(${params.joinToString(",")})"
     override fun getRDF(): String {
@@ -61,60 +61,63 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasCallee :loc${callee.hashCode()}.
             :stmt${this.hashCode()} :MOhasMethod '${method}'.
-
+            :stmt${this.hashCode()} :MOLine :$pos.
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex ${i} ; :MOhasValue :expr${params[i].hashCode()}]\n"
-            s += params[i].getRDF();
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += params[i].getRDF()
         }
         return s + target.getRDF() + callee.getRDF()
     }
 }
 
 // Object creation. There is no constructor, but we
-data class CreateStmt(val target : Location, val className: String, val params : List<Expression>) : Statement {
+data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := new $className(${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
             :stmt${this.hashCode()} rdf:type :MOXCreateStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasClassName '${className}'.
+            :stmt${this.hashCode()} :MOLine :$pos.
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex ${i} ; :MOhasValue :expr${params[i].hashCode()}]\n"
-            s += params[i].getRDF();
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += params[i].getRDF()
         }
         return s + target.getRDF()
     }
 }
 
 // Return statement
-data class ReturnStmt(var value : Expression) : Statement {
+data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
     override fun toString(): String = "return $value"
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXReturnStatement.
             :stmt${this.hashCode()} :MOhasValue :expr${value.hashCode()}.
+            :stmt${this.hashCode()} :MOLine :$pos.
 
         """.trimIndent() + value.getRDF()
     }
 }
 
 // This is a microobject.runtime-syntax only statement which models that we will write the return value of the next method in the stack into target
-data class StoreReturnStmt(val target : Location) : Statement {
+data class StoreReturnStmt(val target : Location, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target <- stack"
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXStoreReturnStatement.
             :stmt${this.hashCode()} :MOhasLocation :loc${target.hashCode()}.
+            :stmt${this.hashCode()} :MOLine :$pos.
 
         """.trimIndent() + target.getRDF()
     }
 }
 
 // Standard control flow
-data class IfStmt(val guard : Expression, val thenBranch : Statement, val elseBranch : Statement) : Statement {
+data class IfStmt(val guard : Expression, val thenBranch : Statement, val elseBranch : Statement, val pos : Int = -1) : Statement {
     override fun toString(): String = "if($guard) then $thenBranch else $elseBranch fi"
     override fun getRDF(): String {
         return """
@@ -122,18 +125,20 @@ data class IfStmt(val guard : Expression, val thenBranch : Statement, val elseBr
             :stmt${this.hashCode()} :MOhasGuard :expr${guard.hashCode()}.
             :stmt${this.hashCode()} :MOhasThenBranch :stmt${thenBranch.hashCode()}.
             :stmt${this.hashCode()} :MOhasElseBranch :stmt${elseBranch.hashCode()}.
+            :stmt${this.hashCode()} :MOLine :$pos.
 
         """.trimIndent() + guard.getRDF() + thenBranch.getRDF() + elseBranch.getRDF()
     }
 }
 
-data class WhileStmt(val guard : Expression, val loopBody : Statement) : Statement {
-    override fun toString(): String = "while($guard) do $loopBody od"
+data class WhileStmt(val guard : Expression, val loopBody : Statement, val pos : Int = -1) : Statement {
+    override fun toString(): String = "while $guard do $loopBody end"
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXWhileStatement.
             :stmt${this.hashCode()} :MOhasGuard :expr${guard.hashCode()}.
             :stmt${this.hashCode()} :MOhasLoopBody :stmt${loopBody.hashCode()}.
+            :stmt${this.hashCode()} :MOLine :$pos.
 
         """.trimIndent() + guard.getRDF() + loopBody.getRDF()
     }
@@ -154,13 +159,13 @@ data class SequenceStmt(val first: Statement, val second : Statement) : Statemen
 }
 
 fun appendStmt (a : Statement, b: Statement) : Statement {
-    if(b == SkipStmt) return a
-    if(a == SkipStmt) return b
+    if(b is SkipStmt) return a
+    if(a is SkipStmt) return b
     return if(a !is SequenceStmt) SequenceStmt(a, b) else SequenceStmt(a.first, appendStmt(a.second,b))
 }
 
 //for output
-data class PrintStmt(val expr: Expression): Statement {
+data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
     override fun toString(): String = "println($expr)"
     override fun getRDF(): String {
         return """
@@ -173,7 +178,7 @@ data class PrintStmt(val expr: Expression): Statement {
 
 
 // For ontology-based reflexion
-data class SparqlStmt(val target : Location, val query: Expression, val params : List<Expression>) : Statement {
+data class SparqlStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
@@ -183,14 +188,14 @@ data class SparqlStmt(val target : Location, val query: Expression, val params :
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex ${i} ; :MOhasValue :expr${params[i].hashCode()}]\n"
-            s += params[i].getRDF();
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += params[i].getRDF()
         }
         return s + target.getRDF()
         // return s + target.getRDF() + query.getRDF()
     }
 }
-data class OwlStmt(val target : Location, val query: Expression) : Statement {
+data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := derive($query)"
     override fun getRDF(): String {
         return """
@@ -245,12 +250,12 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>) : Expressi
     override fun getRDF(): String {
         var s = """
             :expr${this.hashCode()} rdf:type :MOXArithExpression.
-            :expr${this.hashCode()} :MOhasOp ${Op.toString()}.
+            :expr${this.hashCode()} :MOhasOp $Op.
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":expr${this.hashCode()} :MOhasParameter [:MOhasIndex ${i} ; :MOhasValue :expr${params[i].hashCode()}]\n"
-            s += params[i].getRDF();
+            s += ":expr${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += params[i].getRDF()
         }
         return s
     }
@@ -263,7 +268,7 @@ data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Exp
     override fun getRDF(): String {
         return """
             :expr${this.hashCode()} rdf:type :MOXLiteralExpression.
-            :expr${this.hashCode()} :MOhasLiteral '${literal}'.
+            :expr${this.hashCode()} :MOhasLiteral '${literal.removePrefix("\"").removeSuffix("\"")}'.
             :expr${this.hashCode()} :MOhasTag '${tag}'.
 
         """.trimIndent()

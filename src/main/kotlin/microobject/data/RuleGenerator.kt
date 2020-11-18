@@ -99,7 +99,7 @@ class RuleGenerator{
     }
 
     //No parameter passing from queries!
-    fun checkValidRule(nm: WhileParser.Method_defContext) : Boolean {
+    private fun checkValidRule(nm: WhileParser.Method_defContext) : Boolean {
         return nm.namelist() == null
     }
 }
