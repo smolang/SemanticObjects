@@ -9,7 +9,9 @@ version = '0.1-SNAPSHOT'
 repositories {
     mavenCentral()
 }
-
+test {
+    useJUnitPlatform()
+}
 sourceSets {
     main {
         java.srcDirs += 'build/generated-src/main'
@@ -18,6 +20,8 @@ sourceSets {
     }
 }
 dependencies {
+    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.0")
+    compileClasspath("io.kotlintest:kotlintest-runner-junit5:3.4.0")
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
     implementation("com.github.ajalt:clikt:2.3.0")
     implementation "org.antlr:antlr4:4.8"
