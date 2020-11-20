@@ -46,7 +46,7 @@ class List (next, content, previous)
 end
 
 
-do
+main
   a := new List(null, 1, null);
   b := new List(null, 2, null);
   c := new List(null, 4, null);
@@ -57,4 +57,4 @@ do
   c.remove();
   breakpoint;
   print(a.next.next.content);
-od
+end

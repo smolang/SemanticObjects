@@ -185,8 +185,7 @@ class Fault extends GeoElement (s1, s2)
 end
 
 
-do
-
+main
     gu11 := new GeoUnit(1, null, null, null, null, null);
     initList := new List(gu11, null);
     manager := new GeoManager(initList);
@@ -281,4 +280,4 @@ do
     all := access("SELECT ?obj WHERE {?obj :MOinstanceOf :LeftHydrocarbonMigration }");
     all.content.migrate();
     nulls := access("SELECT ?obj WHERE { ?obj a :HasAnyNullNext }");
-od
+end

@@ -11,7 +11,7 @@ class D (g)
     end
 end
 
-do
+main
   v  := new C(5, 4);
   q := new D(1);
   w := v.m(2);
@@ -20,4 +20,4 @@ do
   w := v.m(2);
   print(w);
   print(v.f);
-od
+end

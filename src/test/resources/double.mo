@@ -46,7 +46,7 @@ class List (next, content, previous)
 end
 
 
-do
+main
   a := new List(null, 1, null);
   b := new List(null, 2, null);
   c := new List(null, 4, null);
@@ -55,4 +55,4 @@ do
   a.append(c);
   b.insert_after(d);
   c.remove();
-od
+end

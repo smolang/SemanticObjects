@@ -31,7 +31,7 @@ NEW : 'new';
 ELSE : 'else';
 WHILE : 'while';
 DO : 'do';
-OD : 'od';
+MAIN : 'main';
 THIS: 'this';
 OPARAN : '(';
 CPARAN : ')';
@@ -59,7 +59,7 @@ CONSTANT :  DIG+ | TRUE | FALSE;
 namelist : NAME (COMMA NAME)*;
 
 //Entry point
-program : (class_def)+ DO statement OD;
+program : (class_def)+ MAIN statement END;
 
 //classes
 class_def : CLASS NAME (EXTENDS NAME)? OPARAN namelist? CPARAN  method_def* END;

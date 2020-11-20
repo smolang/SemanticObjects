@@ -22,7 +22,6 @@ import java.io.File
 import java.io.InputStreamReader
 import java.util.*
 
-
 class Command(
     val name: String,
     private val repl: REPL,
@@ -49,7 +48,6 @@ class Command(
         return res
     }
 }
-
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean, private val back : String) {

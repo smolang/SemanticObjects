@@ -12,7 +12,7 @@ class E()
     end
 end
 
-do
+main
   a := new D(2);
   b := new D(3);
-od
+end

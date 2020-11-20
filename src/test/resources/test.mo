@@ -11,11 +11,11 @@ class D (g)
     end
 end
 
-do
+main
   v  := new C(5, 4);
   q := new D(1);
   w := v.m(2);
   w := v.m(2);
   w := v.m(2);
   w := v.m(2);
-od
+end
