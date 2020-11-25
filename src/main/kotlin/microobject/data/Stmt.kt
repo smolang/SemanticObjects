@@ -28,14 +28,14 @@ interface Location : Expression
 // Empty statement. Handy for unrolling of loops.
 data class SkipStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "skip"
-    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXSkipStatement.\n:stmt${this.hashCode()} :MOLine :$pos.\n"
+    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXSkipStatement.\n:stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.\n"
 }
 
 
 // Stops automatic execution
 data class DebugStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "breakpoint"
-    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXDebugStatement.\n:stmt${this.hashCode()} :MOLine :$pos.\n"
+    override fun getRDF(): String = ":stmt${this.hashCode()} rdf:type :MOXDebugStatement.\n:stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.\n"
 }
 
 // Assignment, where value cannot refer to calls or object creations.
@@ -46,7 +46,8 @@ data class AssignStmt(val target : Location, val value : Expression, val pos : I
             :stmt${this.hashCode()} rdf:type :MOXAssignStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasValue :expr${value.hashCode()}.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
+
         """.trimIndent()
     }
 }
@@ -60,11 +61,12 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
             :stmt${this.hashCode()} rdf:type :MOXCallStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasCallee :loc${callee.hashCode()}.
-            :stmt${this.hashCode()} :MOhasMethod '${method}'.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOhasMethodName '${method}'.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
+
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasParameterIndex $i ; :MOhasParameterValue :expr${params[i].hashCode()}; ].\n"
             s += params[i].getRDF()
         }
         return s + target.getRDF() + callee.getRDF()
@@ -79,11 +81,11 @@ data class CreateStmt(val target : Location, val className: String, val params :
             :stmt${this.hashCode()} rdf:type :MOXCreateStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasClassName '${className}'.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasParameterIndex $i ; :MOhasParameterValue :expr${params[i].hashCode()}; ].\n"
             s += params[i].getRDF()
         }
         return s + target.getRDF()
@@ -97,7 +99,7 @@ data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
         return """
             :stmt${this.hashCode()} rdf:type :MOXReturnStatement.
             :stmt${this.hashCode()} :MOhasValue :expr${value.hashCode()}.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + value.getRDF()
     }
@@ -110,7 +112,7 @@ data class StoreReturnStmt(val target : Location, val pos : Int = -1) : Statemen
         return """
             :stmt${this.hashCode()} rdf:type :MOXStoreReturnStatement.
             :stmt${this.hashCode()} :MOhasLocation :loc${target.hashCode()}.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + target.getRDF()
     }
@@ -125,7 +127,7 @@ data class IfStmt(val guard : Expression, val thenBranch : Statement, val elseBr
             :stmt${this.hashCode()} :MOhasGuard :expr${guard.hashCode()}.
             :stmt${this.hashCode()} :MOhasThenBranch :stmt${thenBranch.hashCode()}.
             :stmt${this.hashCode()} :MOhasElseBranch :stmt${elseBranch.hashCode()}.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + guard.getRDF() + thenBranch.getRDF() + elseBranch.getRDF()
     }
@@ -138,7 +140,7 @@ data class WhileStmt(val guard : Expression, val loopBody : Statement, val pos :
             :stmt${this.hashCode()} rdf:type :MOXWhileStatement.
             :stmt${this.hashCode()} :MOhasGuard :expr${guard.hashCode()}.
             :stmt${this.hashCode()} :MOhasLoopBody :stmt${loopBody.hashCode()}.
-            :stmt${this.hashCode()} :MOLine :$pos.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + guard.getRDF() + loopBody.getRDF()
     }
@@ -170,7 +172,7 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXPrintStatement.
-            :stmt${this.hashCode()} :MOhasExpr :expr${expr.hashCode()}.
+            :stmt${this.hashCode()} :MOhasStmtExpr :expr${expr.hashCode()}.
 
         """.trimIndent() + expr.getRDF()
     }
@@ -188,11 +190,12 @@ data class SparqlStmt(val target : Location, val query: Expression, val params :
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += ":stmt${this.hashCode()} :MOhasParameter [:MOhasParameterIndex $i ; :MOhasParameterValue :expr${params[i].hashCode()}; ].\n"
             s += params[i].getRDF()
         }
-        return s + target.getRDF()
-        // return s + target.getRDF() + query.getRDF()
+        // return s + target.getRDF()
+        return s + target.getRDF() + query.getRDF()
+        // '${literal.removePrefix("\"").removeSuffix("\"")}'
     }
 }
 data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
@@ -254,7 +257,7 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>) : Expressi
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":expr${this.hashCode()} :MOhasParameter [:MOhasIndex $i ; :MOhasValue :expr${params[i].hashCode()}]\n"
+            s += ":expr${this.hashCode()} :MOhasParameter [:MOhasParameterIndex $i ; :MOhasParameterValue :expr${params[i].hashCode()}; ].\n"
             s += params[i].getRDF()
         }
         return s
