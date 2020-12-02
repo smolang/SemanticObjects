@@ -176,6 +176,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitGeq_expression(ctx: Geq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.GEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
+    override fun visitLeq_expression(ctx: Leq_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.LEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
 
     override fun visitEq_expression(ctx: Eq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.EQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))

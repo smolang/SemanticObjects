@@ -156,7 +156,7 @@ class Interpreter(
             is CallStmt -> {
                 val newObj = eval(stmt.callee, stackMemory, heap, obj)
                 val mt = staticInfo.methodTable[newObj.tag]
-                    ?: throw Exception("This class is unknown: ${obj.tag} when executing $stmt")
+                    ?: throw Exception("This class is unknown: ${newObj.tag} when executing $stmt")
                 val m = mt[stmt.method]
                     ?: throw Exception("This method is unknown: ${stmt.method}")
                 val newMemory: Memory = mutableMapOf()
@@ -317,7 +317,7 @@ class Interpreter(
                     return Pair(StackEntry(newStmt, res.first!!.store, res.first!!.obj, id), res.second)
                 } else return Pair(StackEntry(stmt.second, stackMemory, obj, id), res.second)
             }
-            else -> throw Exception("This kind of statement is not implemented yet")
+            else -> throw Exception("This kind of statement is not implemented yet: $stmt")
         }
     }
 
@@ -346,6 +346,13 @@ class Interpreter(
                     val first = eval(expr.params[0], stack, heap, obj)
                     val second = eval(expr.params[1], stack, heap, obj)
                     if (first.literal.toInt() >= second.literal.toInt()) return LiteralExpr("True", "boolean")
+                    else return LiteralExpr("False", "boolean")
+                }
+                if (expr.Op == Operator.LEQ) {
+                    if (expr.params.size != 2) throw Exception("Operator.LEQ requires two parameters")
+                    val first = eval(expr.params[0], stack, heap, obj)
+                    val second = eval(expr.params[1], stack, heap, obj)
+                    if (first.literal.toInt() <= second.literal.toInt()) return LiteralExpr("True", "boolean")
                     else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.PLUS) {

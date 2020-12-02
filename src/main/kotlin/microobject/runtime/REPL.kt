@@ -69,7 +69,6 @@ class REPL(private val apache: String, private val outPath: String, private val 
         if (!dir.exists()) dir.createNewFile()
         m = OWLManager.createOWLOntologyManager()
         ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
-
         reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
     }
 
@@ -254,8 +253,15 @@ class REPL(private val apache: String, private val outPath: String, private val 
             this,
             { str ->
                 val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-                parser.setDefaultOntology(ontology)
-                val res = reasoner.getInstances(parser.parseClassExpression(str))
+                ontology.objectPropertiesInSignature().forEach { println(it) }
+                var hermString = "Ontology:\n"
+                ontology.objectPropertiesInSignature().filter { it.toString().startsWith("<") }
+                                                      .forEach { hermString += "ObjectProperty: $it" }
+                ontology.individualsInSignature().forEach { hermString += "Individual: $it" }
+                parser.setStringToParse(hermString)
+                parser.parseOntology(ontology)
+                val expr = parser.parseClassExpression(str)
+                val res = reasoner.getInstances(expr)
                 printRepl("HermiT result $res")
                 false
             },
@@ -281,7 +287,6 @@ class REPL(private val apache: String, private val outPath: String, private val 
             "evaluates a .mo expression in the current frame",
             parameterHelp = "a .mo expression",
             requiresParameter = true,
-            requiresDump = true
         )
     }
 }

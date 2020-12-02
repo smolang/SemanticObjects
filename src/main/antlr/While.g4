@@ -93,6 +93,7 @@ expression :      THIS                           # this_expression
                 | expression EQ expression       # eq_expression
                 | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression
+                | expression LEQ expression      # leq_expression
                 | OPARAN expression CPARAN       # nested_expression
                 ;
 

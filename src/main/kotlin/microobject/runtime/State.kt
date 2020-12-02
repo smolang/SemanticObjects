@@ -70,7 +70,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += ":${obj.literal} :$store "
-                res += if (target.tag == "IGNORE") "${target.literal}.\n" else ":${target.literal}.\n"
+                res += if (target.tag == "IGNORE" || target.tag == "string") "${target.literal}.\n" else ":${target.literal}.\n"
                 i++
             }
         }
