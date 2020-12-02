@@ -41,6 +41,9 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             for(obj2 in obj.value){
                 res += ":$obj2 rdfs:subPropertyOf :MOXField.\n"
                 res += ":${obj.key} :MOhasField :$obj2.\n"
+                res += ":restriction${obj2.hashCode()} rdf:type owl:Restriction.\n"
+                res += ":restriction${obj2.hashCode()} owl:onProperty :$obj2 .\n"
+                res += ":restriction${obj2.hashCode()} owl:cardinality 1 .\n"
             }
         }
 

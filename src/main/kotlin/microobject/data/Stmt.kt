@@ -111,7 +111,7 @@ data class StoreReturnStmt(val target : Location, val pos : Int = -1) : Statemen
     override fun getRDF(): String {
         return """
             :stmt${this.hashCode()} rdf:type :MOXStoreReturnStatement.
-            :stmt${this.hashCode()} :MOhasLocation :loc${target.hashCode()}.
+            :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + target.getRDF()
@@ -155,6 +155,7 @@ data class SequenceStmt(val first: Statement, val second : Statement) : Statemen
             :stmt${this.hashCode()} rdf:type :MOXSequenceStatement.
             :stmt${this.hashCode()} :MOfirst :stmt${first.hashCode()}.
             :stmt${this.hashCode()} :MOsecond :stmt${second.hashCode()}.
+            :stmt${this.hashCode()} :MOLine ${first.pos}.
 
         """.trimIndent() + first.getRDF() + second.getRDF()
     }
@@ -173,6 +174,7 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
         return """
             :stmt${this.hashCode()} rdf:type :MOXPrintStatement.
             :stmt${this.hashCode()} :MOhasStmtExpr :expr${expr.hashCode()}.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + expr.getRDF()
     }
@@ -187,6 +189,7 @@ data class SparqlStmt(val target : Location, val query: Expression, val params :
             :stmt${this.hashCode()} rdf:type :MOXSparqlStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasQuery :expr${query.hashCode()}.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent()
         for (i in params.indices){
@@ -205,6 +208,7 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
             :stmt${this.hashCode()} rdf:type :MOXOwlStatement.
             :stmt${this.hashCode()} :MOhasTarget :loc${target.hashCode()}.
             :stmt${this.hashCode()} :MOhasQuery :expr${query.hashCode()}.
+            :stmt${this.hashCode()} :MOLine '$pos'^^xsd:integer.
 
         """.trimIndent() + target.getRDF() + query.getRDF()
     }
