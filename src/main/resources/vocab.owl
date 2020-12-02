@@ -16,10 +16,14 @@
 :MOXValueStatement       rdfs:subClassOf  :MOXStatement.
 :MOXQueryStatement       rdfs:subClassOf  :MOXStatement.
 :MOXTargetStatement      rdfs:subClassOf  :MOXStatement.
+:MOXVarLengthStatement   rdfs:subClassOf  :MOXStatement.
 :MOXDebugStatement       rdfs:subClassOf  :MOXStatement.
 :MOXPrintStatement       rdfs:subClassOf  :MOXStatement.
 :MOXSequenceStatement    rdfs:subClassOf  :MOXStatement.
 :MOXSkipStatement        rdfs:subClassOf  :MOXStatement.
+:MOXCallStatement        rdfs:subClassOf  :MOXVarLengthStatement.
+:MOXCreateStatement      rdfs:subClassOf  :MOXVarLengthStatement.
+:MOXSparqlStatement      rdfs:subClassOf  :MOXVarLengthStatement.
 :MOXIfStatement          rdfs:subClassOf  :MOXGuardedStatement.
 :MOXWhileStatement       rdfs:subClassOf  :MOXGuardedStatement.
 :MOXAssignStatement      rdfs:subClassOf  :MOXValueStatement.
@@ -43,8 +47,9 @@
 :MOXOwnVarLocation       rdfs:subClassOf  :MOXLocation.
 :MOXLocalVarLocation     rdfs:subClassOf  :MOXLocation.
 
-#Parameter
-:MOXParameter            rdf:type owl:Class.
+#Parameters
+:MOXParameter   rdf:type owl:Class.
+:MOXOperand     rdf:type owl:Class.
 
 ######## Properties
 ####  Semantic static layer
@@ -114,6 +119,9 @@
 :MOhasParameterValue    rdf:type owl:ObjectProperty ;
                         rdfs:domain :MOXParameter ;
                         rdfs:range :MOXExpression .
+:MOhasOperandValue      rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXOperand ;
+                        rdfs:range :MOXExpression .
 :MOhasStmtExpr          rdf:type owl:ObjectProperty ;
                         rdfs:domain :MOXPrintStatement ;
                         rdfs:range :MOXExpression .
@@ -147,10 +155,15 @@
 :MOhasParameterIndex    rdf:type owl:DatatypeProperty ;
                         rdfs:domain :MOXParameter ;
                         rdfs:range xsd:integer .
-
+:MOhasOperandIndex      rdf:type owl:DatatypeProperty ;
+                        rdfs:domain :MOXOperand ;
+                        rdfs:range xsd:integer .
 :MOhasParameter         rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXVarLengthStatement ;
                         rdfs:range :MOXParameter .
-
+:MOhasOperand           rdf:type owl:ObjectProperty ;
+                        rdfs:domain :MOXArithExpression ;
+                        rdfs:range :MOXOperand .
 
 
 

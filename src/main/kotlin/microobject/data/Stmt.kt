@@ -155,7 +155,6 @@ data class SequenceStmt(val first: Statement, val second : Statement) : Statemen
             :stmt${this.hashCode()} rdf:type :MOXSequenceStatement.
             :stmt${this.hashCode()} :MOfirst :stmt${first.hashCode()}.
             :stmt${this.hashCode()} :MOsecond :stmt${second.hashCode()}.
-            :stmt${this.hashCode()} :MOLine ${first.pos}.
 
         """.trimIndent() + first.getRDF() + second.getRDF()
     }
@@ -261,7 +260,7 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>) : Expressi
 
         """.trimIndent()
         for (i in params.indices){
-            s += ":expr${this.hashCode()} :MOhasParameter [:MOhasParameterIndex $i ; :MOhasParameterValue :expr${params[i].hashCode()}; ].\n"
+            s += ":expr${this.hashCode()} :MOhasOperand [:MOhasOperandIndex $i ; :MOhasOperandValue :expr${params[i].hashCode()}; ].\n"
             s += params[i].getRDF()
         }
         return s
