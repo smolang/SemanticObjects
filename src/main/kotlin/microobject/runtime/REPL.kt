@@ -154,6 +154,15 @@ class REPL(private val apache: String, private val outPath: String, private val 
             requiresParameter = true,
             invalidatesDump = true
         )
+        commands["reada"] = Command(
+            "reada",
+            this,
+            { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
+            "reads a file and rune auto",
+            parameterHelp = "Path to a .mo file",
+            requiresParameter = true,
+            invalidatesDump = true
+        )
         commands["info"] = Command(
             "info",
             this,
