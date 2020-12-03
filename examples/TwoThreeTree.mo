@@ -137,6 +137,19 @@ class Tree(root)
     end
 end
 
+class Wrap(ttt, key)
+    rule lookup()
+        v := this.ttt.retrieve(this.key);
+        return v;
+    end
+end
+
+class List(content, next)
+    length()
+        if(this.next = null) then return 1;
+        else n := this.next.length; return n + 1;
+    end
+end
 
 main
     root := new Node(null, null, null, null, null, null);
@@ -155,20 +168,10 @@ main
     tree.add(pair4);
     tree.add(pair5);
     tree.add(pair6);
-    breakpoint;
-    r1 := tree.retrieve(1);
-    print(r1);
-    r2 := tree.retrieve(2);
-    print(r2);
-    r3 := tree.retrieve(3);
-    print(r3);
-    r4 := tree.retrieve(4);
-    print(r4);
-    r5 := tree.retrieve(5);
-    print(r5);
-    r6 := tree.retrieve(6);
-    print(r6);
-    r7 := tree.retrieve(7);
-    print(r7);
+
+    ww := new Wrap(tree, 1);
+    //res := ww.lookup();
+    res := access("SELECT ?obj WHERE {?sth :Wrap_lookup_builtin_res ?obj}");
+    print(res);
     print("done");
 end

@@ -213,7 +213,11 @@ class Interpreter(
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
                             }
                         }
-                        if (!newMemory.containsKey("content")) throw Exception("Query returned unknown object: $found")
+                        if (!newMemory.containsKey("content")) {
+                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, "string");
+                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, "integer");
+                            else throw Exception("Query returned unknown object/literal: $found")
+                        }
                         newMemory["next"] = list
                         heap[name] = newMemory
                         list = name
