@@ -81,7 +81,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
                     print(", parameter: ${cmd.parameterHelp}")
                 println()
             }
-        }else if (interpreter == null && str != "read" && str != "exit"){
+        }else if (interpreter == null && str != "read" && str != "reada" && str != "exit"){
             printRepl("No file loaded. Please \"read\" a file to continue.")
         } else if (commands.containsKey(str)) {
             return try{
