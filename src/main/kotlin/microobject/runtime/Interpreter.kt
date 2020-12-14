@@ -214,8 +214,8 @@ class Interpreter(
                             }
                         }
                         if (!newMemory.containsKey("content")) {
-                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, "string");
-                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, "integer");
+                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, "string")
+                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, "integer")
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
                         newMemory["next"] = list
@@ -363,6 +363,12 @@ class Interpreter(
                     return expr.params.fold(LiteralExpr("0"), { acc, nx ->
                         val enx = eval(nx, stack, heap, obj)
                         LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
+                    })
+                }
+                if (expr.Op == Operator.MULT) {
+                    return expr.params.fold(LiteralExpr("1"), { acc, nx ->
+                        val enx = eval(nx, stack, heap, obj)
+                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
                     })
                 }
                 if (expr.Op == Operator.MINUS) {

@@ -1,3 +1,5 @@
+@file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
+
 package microobject.data
 
 import antlr.microobject.gen.WhileBaseVisitor
@@ -168,6 +170,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitPlus_expression(ctx: Plus_expressionContext?): ProgramElement {
         return ArithExpr(Operator.PLUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
+
+    override fun visitMult_expression(ctx: Mult_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.MULT, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+
 
     override fun visitMinus_expression(ctx: Minus_expressionContext?): ProgramElement {
         return ArithExpr(Operator.PLUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))

@@ -11,7 +11,7 @@ package microobject.data
  */
 
 enum class Operator {
-    PLUS, MINUS, NEQ, GEQ, EQ, LEQ
+    PLUS, MINUS, MULT, NEQ, GEQ, EQ, LEQ
 }
 
 interface ProgramElement{

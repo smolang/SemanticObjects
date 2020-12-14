@@ -13,13 +13,13 @@ class LeftHydrocarbonMigration (gu)
         while b = 1 do
             b := this.gu.migrate();
         end
-            left := this.gu.left;
-            if left <> null then
-                left.migrateLeft(this);
-            end
-            if started <> this.gu then
-                this.migrate();
-            end
+        left := this.gu.left;
+        if left <> null then
+            left.migrateLeft(this);
+        end
+        if started <> this.gu then
+            this.migrate();
+        end
         return 0;
     end
     copy(param)

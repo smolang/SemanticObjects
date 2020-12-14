@@ -262,7 +262,6 @@ class REPL(private val apache: String, private val outPath: String, private val 
             this,
             { str ->
                 val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-                ontology.objectPropertiesInSignature().forEach { println(it) }
                 var hermString = "Ontology:\n"
                 ontology.objectPropertiesInSignature().filter { it.toString().startsWith("<") }
                                                       .forEach { hermString += "ObjectProperty: $it" }

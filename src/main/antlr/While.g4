@@ -36,6 +36,7 @@ THIS: 'this';
 OPARAN : '(';
 CPARAN : ')';
 PLUS : '+';
+MULT : '*';
 MINUS : '-';
 AND : '&';
 OR : '|';
@@ -90,6 +91,7 @@ expression :      THIS                           # this_expression
                 | STRING                         # string_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression
+                | expression MULT expression     # mult_expression
                 | expression EQ expression       # eq_expression
                 | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression
