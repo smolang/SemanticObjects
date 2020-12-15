@@ -3,9 +3,9 @@
 
 schema:TestShape
     a sh:NodeShape ;
-    sh:targetClass schema:MXObject ;
+    sh:targetClass schema:Object ;
     sh:property [
-        sh:path schema:MOinstanceOf ;
-        sh:class schema:MOXClass ;
+        sh:path schema:instanceOf ;
+        sh:class schema:Class ;
         sh:name "Everything implements" ;
     ].

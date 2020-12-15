@@ -293,7 +293,7 @@ main
     gu55.migration := mig;
 
     //instead of mig.migrate(); we use ontology-based reflexion
-    all := access("SELECT ?obj WHERE {?obj :MOinstanceOf :LeftHydrocarbonMigration }");
+    all := access("SELECT ?obj WHERE {?obj smol:instanceOf prog:LeftHydrocarbonMigration }");
     all.content.migrate();
     nulls := access("SELECT ?obj WHERE { ?obj a :HasAnyNullNext }");
     print(nulls);

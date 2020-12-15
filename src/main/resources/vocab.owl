@@ -1,169 +1,169 @@
 
 ######## Classes
 ####  Semantic static layer
-:MOXClass                rdf:type owl:Class.
-:MOXField                rdf:type owl:ObjectProperty.
-:MOXMethod               rdf:type owl:Class.
+smol:Class                rdf:type owl:Class.
+smol:Field                rdf:type owl:ObjectProperty.
+smol:Method               rdf:type owl:Class.
 
 ####  Semantic dynamic layer
-:MOXObject               rdf:type owl:Class.
-:MOXProcess              rdf:type owl:Class.
+smol:Object               rdf:type owl:Class.
+smol:Process              rdf:type owl:Class.
 
 ####  Syntactic layer
 #Statements
-:MOXStatement            rdf:type owl:Class.
-:MOXGuardedStatement     rdfs:subClassOf  :MOXStatement.
-:MOXValueStatement       rdfs:subClassOf  :MOXStatement.
-:MOXQueryStatement       rdfs:subClassOf  :MOXStatement.
-:MOXTargetStatement      rdfs:subClassOf  :MOXStatement.
-:MOXVarLengthStatement   rdfs:subClassOf  :MOXStatement.
-:MOXDebugStatement       rdfs:subClassOf  :MOXStatement.
-:MOXPrintStatement       rdfs:subClassOf  :MOXStatement.
-:MOXSequenceStatement    rdfs:subClassOf  :MOXStatement.
-:MOXSkipStatement        rdfs:subClassOf  :MOXStatement.
-:MOXCallStatement        rdfs:subClassOf  :MOXVarLengthStatement.
-:MOXCreateStatement      rdfs:subClassOf  :MOXVarLengthStatement.
-:MOXSparqlStatement      rdfs:subClassOf  :MOXVarLengthStatement.
-:MOXIfStatement          rdfs:subClassOf  :MOXGuardedStatement.
-:MOXWhileStatement       rdfs:subClassOf  :MOXGuardedStatement.
-:MOXAssignStatement      rdfs:subClassOf  :MOXValueStatement.
-:MOXReturnStatement      rdfs:subClassOf  :MOXValueStatement.
-:MOXSparqlStatement      rdfs:subClassOf  :MOXQueryStatement.
-:MOXOwlStatement         rdfs:subClassOf  :MOXQueryStatement.
-:MOXAssignStatement      rdfs:subClassOf  :MOXTargetStatement.
-:MOXSparqlStatement      rdfs:subClassOf  :MOXTargetStatement.
-:MOXOwlStatement         rdfs:subClassOf  :MOXTargetStatement.
-:MOXCallStatement        rdfs:subClassOf  :MOXTargetStatement.
-:MOXCreateStatement      rdfs:subClassOf  :MOXTargetStatement.
-:MOXStoreReturnStatement rdfs:subClassOf  :MOXTargetStatement.
+smol:Statement            rdf:type owl:Class.
+smol:GuardedStatement     rdfs:subClassOf  smol:Statement.
+smol:ValueStatement       rdfs:subClassOf  smol:Statement.
+smol:QueryStatement       rdfs:subClassOf  smol:Statement.
+smol:TargetStatement      rdfs:subClassOf  smol:Statement.
+smol:VarLengthStatement   rdfs:subClassOf  smol:Statement.
+smol:DebugStatement       rdfs:subClassOf  smol:Statement.
+smol:PrintStatement       rdfs:subClassOf  smol:Statement.
+smol:SequenceStatement    rdfs:subClassOf  smol:Statement.
+smol:SkipStatement        rdfs:subClassOf  smol:Statement.
+smol:CallStatement        rdfs:subClassOf  smol:VarLengthStatement.
+smol:CreateStatement      rdfs:subClassOf  smol:VarLengthStatement.
+smol:SparqlStatement      rdfs:subClassOf  smol:VarLengthStatement.
+smol:IfStatement          rdfs:subClassOf  smol:GuardedStatement.
+smol:WhileStatement       rdfs:subClassOf  smol:GuardedStatement.
+smol:AssignStatement      rdfs:subClassOf  smol:ValueStatement.
+smol:ReturnStatement      rdfs:subClassOf  smol:ValueStatement.
+smol:SparqlStatement      rdfs:subClassOf  smol:QueryStatement.
+smol:OwlStatement         rdfs:subClassOf  smol:QueryStatement.
+smol:AssignStatement      rdfs:subClassOf  smol:TargetStatement.
+smol:SparqlStatement      rdfs:subClassOf  smol:TargetStatement.
+smol:OwlStatement         rdfs:subClassOf  smol:TargetStatement.
+smol:CallStatement        rdfs:subClassOf  smol:TargetStatement.
+smol:CreateStatement      rdfs:subClassOf  smol:TargetStatement.
+smol:StoreReturnStatement rdfs:subClassOf  smol:TargetStatement.
 
 
 #Expressions and Locations
-:MOXExpression           rdf:type owl:Class.
-:MOXLiteralExpression    rdfs:subClassOf  :MOXExpression.
-:MOXArithExpression      rdfs:subClassOf  :MOXExpression.
-:MOXLocation             rdfs:subClassOf  :MOXExpression.
-:MOXOthersVarLocation    rdfs:subClassOf  :MOXLocation.
-:MOXOwnVarLocation       rdfs:subClassOf  :MOXLocation.
-:MOXLocalVarLocation     rdfs:subClassOf  :MOXLocation.
+smol:Expression           rdf:type owl:Class.
+smol:LiteralExpression    rdfs:subClassOf  smol:Expression.
+smol:ArithExpression      rdfs:subClassOf  smol:Expression.
+smol:Location             rdfs:subClassOf  smol:Expression.
+smol:OthersVarLocation    rdfs:subClassOf  smol:Location.
+smol:OwnVarLocation       rdfs:subClassOf  smol:Location.
+smol:LocalVarLocation     rdfs:subClassOf  smol:Location.
 
 #Parameters
-:MOXParameter   rdf:type owl:Class.
-:MOXOperand     rdf:type owl:Class.
+smol:Parameter   rdf:type owl:Class.
+smol:Operand     rdf:type owl:Class.
 
 ######## Properties
 ####  Semantic static layer
-:MOhasField     rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXClass ;
-                rdfs:range :MOXField .
+smol:hasField     rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Class ;
+                rdfs:range smol:Field .
 
-:MOhasMethod    rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXClass ;
-                rdfs:range :MOXMethod .
+smol:hasMethod    rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Class ;
+                rdfs:range smol:Method .
 
-:MOextends      rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXClass ;
-                rdfs:range :MOXClass .
+smol:extends      rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Class ;
+                rdfs:range smol:Class .
 
 ####  Semantic dynamic layer
-:MOinstanceOf   rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXObject ;
-                rdfs:range :MOXClass .
+smol:instanceOf   rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Object ;
+                rdfs:range smol:Class .
 
-:MOrunsOnObject rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXProcess ;
-                rdfs:range :MOXObject .
+smol:runsOnObject rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Process ;
+                rdfs:range smol:Object .
 
-:MOnextOnStack  rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXProcess ;
-                rdfs:range :MOXProcess .
+smol:nextOnStack  rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Process ;
+                rdfs:range smol:Process .
 
-:MOactive       rdf:type owl:ObjectProperty ;
-                rdfs:domain :MOXProcess ;
-                rdfs:range :MOXStatement .
+smol:active       rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Process ;
+                rdfs:range smol:Statement .
 
 
 ####  Syntactic layer
 
 ## Object properties
-:MOfirst                rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXSequenceStatement ;
-                        rdfs:range :MOXStatement .
-:MOsecond               rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXSequenceStatement ;
-                        rdfs:range :MOXStatement .
-:MOhasThenBranch        rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXIfStatement ;
-                        rdfs:range :MOXStatement .
-:MOhasElseBranch        rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXIfStatement ;
-                        rdfs:range :MOXStatement .
-:MOhasCallee            rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXCallStatement ;
-                        rdfs:range :MOXLocation .
-:MOhasLoopBody          rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXWhileStatement ;
-                        rdfs:range :MOXStatement .
-:MOhasGuard             rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXGuardedStatement ;
-                        rdfs:range :MOXExpression .
-:MOhasQuery             rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXQueryStatement ;
-                        rdfs:range :MOXExpression .
-:MOhasTarget            rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXTargetStatement ;
-                        rdfs:range :MOXLocation .
-:MOhasValue             rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXValueStatement ;
-                        rdfs:range :MOXExpression .
-:MOhasParameterValue    rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXParameter ;
-                        rdfs:range :MOXExpression .
-:MOhasOperandValue      rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXOperand ;
-                        rdfs:range :MOXExpression .
-:MOhasStmtExpr          rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXPrintStatement ;
-                        rdfs:range :MOXExpression .
-:MOhasExpr              rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXOthersVarLocation ;
-                        rdfs:range :MOXExpression .
+smol:first                rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:SequenceStatement ;
+                        rdfs:range smol:Statement .
+smol:second               rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:SequenceStatement ;
+                        rdfs:range smol:Statement .
+smol:hasThenBranch        rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:IfStatement ;
+                        rdfs:range smol:Statement .
+smol:hasElseBranch        rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:IfStatement ;
+                        rdfs:range smol:Statement .
+smol:hasCallee            rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:CallStatement ;
+                        rdfs:range smol:Location .
+smol:hasLoopBody          rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:WhileStatement ;
+                        rdfs:range smol:Statement .
+smol:hasGuard             rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:GuardedStatement ;
+                        rdfs:range smol:Expression .
+smol:hasQuery             rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:QueryStatement ;
+                        rdfs:range smol:Expression .
+smol:hasTarget            rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:TargetStatement ;
+                        rdfs:range smol:Location .
+smol:hasValue             rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:ValueStatement ;
+                        rdfs:range smol:Expression .
+smol:hasParameterValue    rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:Parameter ;
+                        rdfs:range smol:Expression .
+smol:hasOperandValue      rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:Operand ;
+                        rdfs:range smol:Expression .
+smol:hasStmtExpr          rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:PrintStatement ;
+                        rdfs:range smol:Expression .
+smol:hasExpr              rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:OthersVarLocation ;
+                        rdfs:range smol:Expression .
 
 
 ## Datatype properties
-:MOLine                 rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXStatement ;
+smol:Line                 rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:Statement ;
                         rdfs:range xsd:integer.
-:MOhasMethodName        rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXCallStatement ;
+smol:hasMethodName        rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:CallStatement ;
                         rdfs:range xsd:string .
-:MOhasClassName         rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXCreateStatement ;
+smol:hasClassName         rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:CreateStatement ;
                         rdfs:range xsd:string .
-:MOhasLiteral           rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXLiteralExpression ;
+smol:hasLiteral           rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:LiteralExpression ;
                         rdfs:range xsd:string .
-:MOhasName              rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXLocation ;
+smol:hasName              rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:Location ;
                         rdfs:range xsd:string .
-:MOhasTag               rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXLiteralExpression ;
+smol:hasTag               rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:LiteralExpression ;
                         rdfs:range xsd:string .
-:MOhasOp                rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXArithExpression ;
+smol:hasOp                rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:ArithExpression ;
                         rdfs:range xsd:string .
-:MOhasParameterIndex    rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXParameter ;
+smol:hasParameterIndex    rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:Parameter ;
                         rdfs:range xsd:integer .
-:MOhasOperandIndex      rdf:type owl:DatatypeProperty ;
-                        rdfs:domain :MOXOperand ;
+smol:hasOperandIndex      rdf:type owl:DatatypeProperty ;
+                        rdfs:domain smol:Operand ;
                         rdfs:range xsd:integer .
-:MOhasParameter         rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXVarLengthStatement ;
-                        rdfs:range :MOXParameter .
-:MOhasOperand           rdf:type owl:ObjectProperty ;
-                        rdfs:domain :MOXArithExpression ;
-                        rdfs:range :MOXOperand .
+smol:hasParameter         rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:VarLengthStatement ;
+                        rdfs:range smol:Parameter .
+smol:hasOperand           rdf:type owl:ObjectProperty ;
+                        rdfs:domain smol:ArithExpression ;
+                        rdfs:range smol:Operand .
 
 
 

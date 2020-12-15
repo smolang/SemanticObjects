@@ -171,7 +171,7 @@ main
 
     ww := new Wrap(tree, 1);
     //res := ww.lookup();
-    res := access("SELECT ?obj WHERE {?sth :Wrap_lookup_builtin_res ?obj}");
+    res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);
     print("done");
 end

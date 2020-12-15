@@ -1,3 +1,3 @@
 PREFIX : <urn:>
 
-SELECT ?obj WHERE { ?obj :MOinstanceOf :C }
+SELECT ?obj WHERE { ?obj smol:instanceOf prog:C }

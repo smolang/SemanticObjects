@@ -1,2 +1,2 @@
 auto
-query SELECT ?obj  ?name WHERE { ?sth :Rectangle_area_builtin_res ?obj. ?sth :name ?name }
+query SELECT ?obj  ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth :name ?name }

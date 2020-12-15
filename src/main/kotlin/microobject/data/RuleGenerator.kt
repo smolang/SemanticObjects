@@ -63,8 +63,11 @@ class RuleGenerator{
                     val ret = myIpr.evalTopMost(res).literal
 
                     //Build final triple and add it to the context
-                    val str = if (ret.toIntOrNull() == null) ret else "urn:$ret"
+                    val str = if (ret.toIntOrNull() == null) ret else "smol:$ret"
                     val resNode = NodeFactory.createURI(str)
+                    /**
+                    IMPORTANT: this hardcodes the prog prefix because of the way the jena _rule_ parser messes up prefixes
+                    */
                     val connectInNode = NodeFactory.createURI("urn:${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)
@@ -88,7 +91,7 @@ class RuleGenerator{
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
                     val headString = "${builtin.name}(?this)"
-                    val thisString = "(?this urn:MOinstanceOf urn:${cl.NAME(0)})"
+                    val thisString = "(?this smol:instanceOf prog:${cl.NAME(0)})"
                     retString += " $ruleString $thisString -> $headString "
                 }
             }

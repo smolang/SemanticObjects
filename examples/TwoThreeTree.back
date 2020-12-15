@@ -1,37 +1,37 @@
 :Root rdf:type owl:Class ;
       owl:equivalentClass [ rdf:type owl:Restriction ;
                                      owl:onProperty :parent ;
-                                     owl:hasValue :null
+                                     owl:hasValue smol:null
                            ] .
 
 :TruePair rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
                 owl:onProperty :MOinstanceOf ;
-                owl:hasValue :Pair
+                owl:hasValue prog:Pair
            ].
 
 :TrueNode rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
                 owl:onProperty :MOinstanceOf ;
-                owl:hasValue :Node
+                owl:hasValue prog:Node
            ].
 
 :Leaf rdf:type owl:Class ;
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childL ;
-                                      owl:hasValue :null]
+                                      owl:onProperty prog:childL ;
+                                      owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childR ;
-                                      owl:hasValue :null]
+                                      owl:onProperty prog:childR ;
+                                      owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childM ;
-                                      owl:hasValue :null]
+                                      owl:onProperty prog:childM ;
+                                      owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :dataL;
+                                      owl:onProperty prog:dataL;
                                       owl:someValuesFrom :TruePair]
                          )
                          ] .
@@ -43,19 +43,19 @@
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :dataR ;
-                                      owl:hasValue :null]
+                                      owl:onProperty prog:dataR ;
+                                      owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childR ;
-                                      owl:hasValue :null]
+                                      owl:onProperty prog:childR ;
+                                      owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :dataL;
+                                      owl:onProperty prog:dataL;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childL;
+                                      owl:onProperty prog:childL;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childM;
+                                      owl:onProperty prog:childM;
                                       owl:someValuesFrom :TrueNode]
                          )
                          ] .
@@ -65,19 +65,19 @@
       owl:intersectionOf(
 
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :dataR;
+                                      owl:onProperty prog:dataR;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childR;
+                                      owl:onProperty prog:childR;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :dataL;
+                                      owl:onProperty prog:dataL;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childL;
+                                      owl:onProperty prog:childL;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty :childM;
+                                      owl:onProperty prog:childM;
                                       owl:someValuesFrom :TrueNode]
                          )
                          ] .

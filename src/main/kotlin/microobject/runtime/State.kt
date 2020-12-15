@@ -14,6 +14,9 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         private val HEADER =
         """
         @prefix : <urn:> .
+        @prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
+        @prefix prog: <urn:> .
+        @prefix run: <urn:> .
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -24,8 +27,8 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
 
         private val MINIMAL =
         """                     
-        :null rdf:type owl:NamedIndividual , :MOXObject .
-        :_Entry_ rdf:type owl:NamedIndividual , :MOXClass .
+        smol:null rdf:type owl:NamedIndividual , smol:Object .
+        prog:_Entry_ rdf:type owl:NamedIndividual , smol:Class .
 
         """.trimIndent()
     }
@@ -38,14 +41,14 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
 
         //records all classes and their fields
         for(obj in staticInfo.fieldTable){
-            res += ":${obj.key} rdf:type owl:NamedIndividual , :MOXClass.\n"
+            res += ":${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
             for(obj2 in obj.value){
-                res += ":$obj2 rdfs:subPropertyOf :MOXField.\n"
-                res += ":${obj.key} :MOhasField :$obj2.\n"
+                res += ":$obj2 rdfs:subPropertyOf smol:Field.\n"
+                res += ":${obj.key} smol:hasField :$obj2.\n"
                 res += """
-                :${obj.key} rdfs:subClassOf [
+                prog:${obj.key} rdfs:subClassOf [
                     rdf:type owl:Restriction;
-                    owl:onProperty :$obj2 ;
+                    owl:onProperty prog:$obj2 ;
                     owl:cardinality 1
                 ] .
 
@@ -56,29 +59,27 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         //records all methods
         for(obj in staticInfo.methodTable){
             for(obj2 in obj.value){
-                res += ":${obj.key} :MOhasMethod :MO${obj2.key}.\n"
-                res += ":MO${obj2.key} rdf:type owl:NamedIndividual , :MOXMethod.\n"
+                res += ":${obj.key} smol:hasMethod prog:${obj2.key}.\n"
+                res += "prog:${obj2.key} rdf:type owl:NamedIndividual , smol:Method.\n"
             }
         }
 
         //records type hierarchy
         for(obj in staticInfo.hierarchy.entries){
             for(obj2 in obj.value){
-                res += ":$obj2 :MOextends :${obj.key}.\n"
+                res += ":$obj2 smol:extends prog:${obj.key}.\n"
             }
         }
-
-        val known = mutableSetOf<String>()
 
         //dumps individuals
         var i = 0
         for(obj in heap.keys){
-            res += ":${obj.literal} :MOinstanceOf :${obj.tag}.\n"
-            res += ":${obj.literal} rdf:type owl:NamedIndividual , :MOXObject.\n"
+            res += ":${obj.literal} smol:instanceOf prog:${obj.tag}.\n"
+            res += ":${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
             //and their fields
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += ":${obj.literal} :$store "
+                res += ":${obj.literal} prog:$store "
                 res += if (target.tag == "IGNORE" || target.tag == "string") "${target.literal}.\n" else ":${target.literal}.\n"
                 i++
             }
@@ -89,17 +90,17 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         var prevStackEntry: StackEntry? = null
         for (stackEntry in stack){
             if (prevStackEntry != null){
-                res += ":pro${prevStackEntry.id} :MOnextOnStack :pro${stackEntry.id}.\n"
+                res += ":pro${prevStackEntry.id} smol:nextOnStack run:pro${stackEntry.id}.\n"
             }
             prevStackEntry = stackEntry
-            res += ":pro${stackEntry.id} rdf:type :MOXProcess.\n"
-            res += ":pro${stackEntry.id} :MOrunsOnObject :${stackEntry.obj}.\n"
+            res += "run:pro${stackEntry.id} rdf:type smol:Process.\n"
+            res += "run:pro${stackEntry.id} smol:runsOnObject run:${stackEntry.obj}.\n"
             for ((key, value) in stackEntry.store){
                 if (key != "this" && key.first() != '_') {
-                    res += ":pro${stackEntry.id} :${key} :${value}.\n"
+                    res += "run:pro${stackEntry.id} prog:${key} run:${value}.\n"
                 }
             }
-            res += ":pro${stackEntry.id} :MOactive :stmt${stackEntry.active.hashCode()}.\n"
+            res += ":pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
             res += stackEntry.active.getRDF()
         }
 

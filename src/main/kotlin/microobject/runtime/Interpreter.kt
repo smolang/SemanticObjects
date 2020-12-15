@@ -17,6 +17,7 @@ import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
 import org.semanticweb.owlapi.model.OntologyConfigurator
+import java.io.BufferedReader
 import java.io.File
 import java.util.*
 
@@ -51,6 +52,9 @@ class Interpreter(
         val out =
             """
                     PREFIX : <urn:>
+                    PREFIX smol: <https://github.com/Edkamb/SemanticObjects#>
+                    PREFIX prog: <urn:>
+                    PREFIX run: <urn:>
                     PREFIX owl: <http://www.w3.org/2002/07/owl#> 
                     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
@@ -70,7 +74,14 @@ class Interpreter(
 
         if(rules != "") {
             println("Loading generated builtin rules $rules...")
-            val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rules))
+            val prefixes  =
+            """@prefix : <urn:> .
+               @prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
+               @prefix prog: <urn:> .
+               @prefix run: <urn:> .""".trimIndent()
+            val reader = (prefixes+"\n"+rules).byteInputStream().bufferedReader()
+            val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
+            val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rParsed))
             val infModel = ModelFactory.createInfModel(reasoner, model)
             //infModel.prepare()
             model = infModel

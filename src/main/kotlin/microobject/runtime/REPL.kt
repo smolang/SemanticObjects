@@ -263,18 +263,28 @@ class REPL(private val apache: String, private val outPath: String, private val 
             { str ->
                 val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
                 var hermString = "Ontology:\n"
+                ontology.classesInSignature().filter { it.toString().startsWith("<") }
+                                                      .forEach { hermString += "Class: $it\n" }
                 ontology.objectPropertiesInSignature().filter { it.toString().startsWith("<") }
-                                                      .forEach { hermString += "ObjectProperty: $it" }
-                ontology.individualsInSignature().forEach { hermString += "Individual: $it" }
+                                                      .forEach { hermString += "ObjectProperty: $it\n" }
+                ontology.individualsInSignature().forEach { hermString += "Individual: $it\n" }
+
+
+                parser.prefixManager.setPrefix("smol:","<https://github.com/Edkamb/SemanticObjects#>")
+                parser.prefixManager.setPrefix("prog:","<urn:>")
+                parser.prefixManager.setPrefix("run:","<urn:>")
                 parser.setStringToParse(hermString)
                 parser.parseOntology(ontology)
-                val expr = parser.parseClassExpression(str)
+                var unprefixed = str.replace("smol:", "https://github.com/Edkamb/SemanticObjects#")
+                unprefixed = unprefixed.replace("prog:", "urn:")
+                unprefixed = unprefixed.replace("run:", "urn")
+                val expr = parser.parseClassExpression(unprefixed)
                 val res = reasoner.getInstances(expr)
                 printRepl("HermiT result $res")
                 false
             },
             "returns all members of a class",
-            parameterHelp = "class expression in Manchester Syntax, e.r., \"<urn:MOXClass>\"",
+            parameterHelp = "class expression in Manchester Syntax, e.r., \"<smol:Class>\"",
             requiresParameter = true,
             requiresDump = true
         )
