@@ -148,6 +148,7 @@ class List(content, next)
     length()
         if(this.next = null) then return 1;
         else n := this.next.length; return n + 1;
+        end
     end
 end
 

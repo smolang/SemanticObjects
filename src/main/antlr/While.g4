@@ -11,8 +11,8 @@ COMMENT      : '/*' .*? '*/' -> channel(HIDDEN) ;
 LINE_COMMENT : '//' ~[\r\n]* -> channel(HIDDEN) ;
 
 //Keywords
-TRUE : 'true';
-FALSE : 'false';
+TRUE : 'True';
+FALSE : 'False';
 SKIP_S : 'skip';
 EQ : '=';
 NEQ : '<>';
@@ -55,7 +55,7 @@ fragment DIG : [0-9];
 fragment LET : [a-zA-Z_];
 fragment LOD : LET | DIG;
 NAME : LET LOD*;
-CONSTANT :  DIG+ | TRUE | FALSE;
+CONSTANT :  DIG+;
 
 namelist : NAME (COMMA NAME)*;
 
@@ -88,6 +88,8 @@ expression :      THIS                           # this_expression
                 | expression DOT NAME			 # external_field_expression
                 | NAME                           # var_expression
                 | CONSTANT                       # const_expression
+                | TRUE                           # true_expression
+                | FALSE                          # false_expression
                 | STRING                         # string_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression

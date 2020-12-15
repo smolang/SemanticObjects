@@ -1,0 +1,65 @@
+
+:ZeroServer rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:taskList ;
+                owl:hasValue smol:null
+           ].
+
+:OneList rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:next ;
+                owl:hasValue smol:null
+           ].
+
+:OneServer rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:taskList ;
+                owl:someValuesFrom :OneList;
+           ].
+
+
+
+
+
+:TwoList rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:next ;
+                owl:someValuesFrom :OneList
+           ].
+
+:TwoServer rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:taskList ;
+                owl:someValuesFrom :TwoList;
+           ].
+
+
+
+
+
+:ThreeList rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:next ;
+                owl:someValuesFrom :TwoList
+           ].
+
+
+
+
+
+
+:ThreeServer rdf:type owl:Class ;
+           owl:equivalentClass [
+                rdf:type owl:Restriction ;
+                owl:onProperty prog:taskList ;
+                owl:someValuesFrom :ThreeList;
+           ].
+
+:Overloaded rdf:type owl:Class ;
+            owl:equivalentClass :ThreeServer.

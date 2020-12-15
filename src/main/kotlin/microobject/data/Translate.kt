@@ -196,7 +196,13 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {
         val inner = ctx!!.CONSTANT()!!.text
-        return if(inner.toIntOrNull() != null) LiteralExpr(inner, "integer") else LiteralExpr(inner, "boolean")
+        return if(inner.toIntOrNull() != null) LiteralExpr(inner, "integer") else LiteralExpr(inner, "ERROR")
+    }
+    override fun visitTrue_expression(ctx: True_expressionContext?): ProgramElement {
+        return LiteralExpr("True", "boolean")
+    }
+    override fun visitFalse_expression(ctx: False_expressionContext?): ProgramElement {
+        return LiteralExpr("False", "boolean")
     }
 
     override fun visitString_expression(ctx: String_expressionContext?): ProgramElement {
