@@ -82,8 +82,15 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.mo -r exa
 Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and is only an illustration of the debugger for a bigger model.
 If the example takes too much time, remove the `-b file` parameter to disable OWL inference for all queries.
 
+## Evaluation
 
-### Misc.
+To reproduce the numbers from the companion paper, run one of the following commands (with the according value for *n*):
+ ```
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_rule_n.mo -r eval/eval_rule.imo
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_class_1.mo -r eval/eval_class.imo
+```
+
+## Misc.
  
   * REPL: `validate` and `query-file` use the shell to call the Apache Jena installation, all other commands have no extra dependencies.
   * REPL: If you use `-b` to load background knowledge, OWL reasoning is used for all queries.
