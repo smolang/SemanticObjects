@@ -30,7 +30,7 @@ Additionally, eval/ contains the files used for performance evaluation and domai
 To execute it, run the following. If no jena path is provided, only the validate command fails.
 ```
 ./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/double.mo -r examples/double.imo 
 ```
 
 ### 2-3 Trees
@@ -43,7 +43,7 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l ex
 To execute it, run the following. If no jena path is provided, only the validate command fails.
 ```
 ./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 ### Geometric Scene
