@@ -27,7 +27,7 @@ Additionally, eval/ contains the files used for performance evaluation and domai
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/double.imo contains a simple test session.
 
-To execute it, run the following. If no jena path is provided, only the validate command fails.
+To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
 ./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/double.mo -r examples/double.imo 
@@ -40,7 +40,7 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena
  * examples/tree_shapes.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/TTT.imo contains an example session (The one from the companion paper).
 
-To execute it, run the following. If no jena path is provided, only the validate command fails.
+To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
 ./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
