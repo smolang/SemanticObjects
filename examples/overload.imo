@@ -1,0 +1,4 @@
+auto
+query SELECT ?obj WHERE {?obj a :Overloaded }
+auto
+query SELECT ?obj WHERE {?obj a :Overloaded }
