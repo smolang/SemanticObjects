@@ -150,7 +150,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             this,
             { str -> initInterpreter(str); false },
             "reads a file",
-            parameterHelp = "Path to a .mo file",
+            parameterHelp = "Path to a .smol file",
             requiresParameter = true,
             invalidatesDump = true
         )
@@ -159,7 +159,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
             this,
             { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
             "reads a file and rune auto",
-            parameterHelp = "Path to a .mo file",
+            parameterHelp = "Path to a .smol file",
             requiresParameter = true,
             invalidatesDump = true
         )
@@ -302,8 +302,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
                 printRepl(interpreter!!.evalTopMost(newExpr).literal)
                 false
             },
-            "evaluates a .mo expression in the current frame",
-            parameterHelp = "a .mo expression",
+            "evaluates a .smol expression in the current frame",
+            parameterHelp = "a .smol expression",
             requiresParameter = true,
         )
     }

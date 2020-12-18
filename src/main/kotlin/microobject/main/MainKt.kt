@@ -16,7 +16,7 @@ class Main : CliktCommand() {
     private val tmp          by option("--tmp","-t",help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val apache       by option("--jena","-j",help="path to the bin/ directory of an apache jena installation (used for SHACL and SPARQL queries).").path()
     private val replay       by option("--replay","-r",help="path to a file containing a series of shell commands.").path()
-    private val load         by option("--load","-l",help="path to a .mo file which is loaded on startup.").path()
+    private val load         by option("--load","-l",help="path to a .smol file which is loaded on startup.").path()
     private val back         by option("--back","-b",help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
 
     override fun run() {

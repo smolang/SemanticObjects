@@ -35,4 +35,4 @@
   (setq font-lock-defaults (list 'smol-font-lock-defaults)))
 
 ;;;###autoload
-(add-to-list 'auto-mode-alist '("\\.mo\\'" . smol-mode))
+(add-to-list 'auto-mode-alist '("\\.smol\\'" . smol-mode))

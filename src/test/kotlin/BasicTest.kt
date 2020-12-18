@@ -8,22 +8,22 @@ class BasicTest : StringSpec() {
 
     init {
         "parsing double"{
-            val input = this::class.java.classLoader.getResource("double.mo").file
+            val input = this::class.java.classLoader.getResource("double.smol").file
             repl.initInterpreter(input)
             assertNotNull(repl.interpreter)
         }
         "parsing geo"{
-            val input = this::class.java.classLoader.getResource("geo.mo").file
+            val input = this::class.java.classLoader.getResource("geo.smol").file
             repl.initInterpreter(input)
             assertNotNull(repl.interpreter)
         }
         "parsing simulate"{
-            val input = this::class.java.classLoader.getResource("simulate.mo").file
+            val input = this::class.java.classLoader.getResource("simulate.smol").file
             repl.initInterpreter(input)
             assertNotNull(repl.interpreter)
         }
         "parsing test"{
-            val input = this::class.java.classLoader.getResource("test.mo").file
+            val input = this::class.java.classLoader.getResource("test.smol").file
             repl.initInterpreter(input)
             assertNotNull(repl.interpreter)
         }

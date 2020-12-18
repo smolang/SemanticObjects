@@ -22,7 +22,7 @@ Additionally, eval/ contains the files used for performance evaluation and domai
 
 ### Doubly Linked Lists
 
- * examples/double.mo contains a simple doubly linked list example.
+ * examples/double.smol contains a simple doubly linked list example.
  * examples/double.rq contains a SPARQL query to select all `List` elements.
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/double.imo contains a simple test session.
@@ -30,12 +30,12 @@ Additionally, eval/ contains the files used for performance evaluation and domai
 To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/double.mo -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/double.smol -r examples/double.imo 
 ```
 
 ### 2-3 Trees
 
- * examples/TwoThreeTree.mo contains an implementation of 2-3 trees
+ * examples/TwoThreeTree.smol contains an implementation of 2-3 trees
  * examples/TwoThreeTree.back contains the domain knowledge as a set of OWL classes
  * examples/tree_shapes.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/TTT.imo contains an example session (The one from the companion paper).
@@ -43,30 +43,30 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena
 To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 ### Geometric Scene
 
- * examples/scene.mo contains an example to illustrate `rule`, the computational semantic state access (CSSA).
+ * examples/scene.smol contains an example to illustrate `rule`, the computational semantic state access (CSSA).
  * examples/scene.imo contain a sample session.
 
 To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/scene.mo -r examples/scene.imo 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/scene.smol -r examples/scene.imo 
 ```
 
 ### Cloud Platforms
 
- * examples/overload.mo contains a simple demo for ontology-mediated programming 
+ * examples/overload.smol contains a simple demo for ontology-mediated programming 
  * examples/overload.back defines a server as overloaded if it has 3 tasks running
  * examples/overload.imo has a sample session that queries all overlaoded servers, reschedules and shows that no servers are overloaded afterwards
 
 To execute it, run the following.
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/overload.mo -r examples/overload.imo -b examples/overload.back 
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/overload.smol -r examples/overload.imo -b examples/overload.back 
 ```
 
 To change the interpretation of `:Overloaded` modify examples/overload.back, e.g., change the last line to `owl:equivalentClass :ThreeServer.` to consider a server as being overloaded if 2 tasks run.
@@ -76,7 +76,7 @@ Note that the implementation is *not* guaranteeing that no server is overloaded 
 To run the geological system, run
  ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.mo -r examples/geo.imo -b examples/geo.back
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.smol -r examples/geo.imo -b examples/geo.back
 ```
 
 Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and is only an illustration of the debugger for a bigger model.
@@ -86,8 +86,8 @@ If the example takes too much time, remove the `-b file` parameter to disable OW
 
 To reproduce the numbers from the companion paper, run one of the following commands (with the according value for *n*):
  ```
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_rule_n.mo -r eval/eval_rule.imo
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_class_1.mo -r eval/eval_class.imo
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_rule_n.smol -r eval/eval_rule.imo
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_class_1.smol -r eval/eval_class.imo
 ```
 
 ## Misc.
