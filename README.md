@@ -9,7 +9,7 @@ Tested only on Linux.
 
 To compile a runnable jar, run
 ```
-./gradlew shadowJar
+./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar --help
 ```
 
@@ -27,10 +27,10 @@ Additionally, eval/ contains the files used for performance evaluation and domai
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/double.imo contains a simple test session.
 
-To execute it, run the following. If no jena path is provided, only the validate command fails.
+To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
-./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/double.mo -r examples/double.imo 
+./gradlew build
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/double.mo -r examples/double.imo 
 ```
 
 ### 2-3 Trees
@@ -40,10 +40,10 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l ex
  * examples/tree_shapes.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/TTT.imo contains an example session (The one from the companion paper).
 
-To execute it, run the following. If no jena path is provided, only the validate command fails.
+To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
 ```
-./gradlew shadowJar
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
+./gradlew build
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j $(dirname $(which jena)) -l examples/TwoThreeTree.mo -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 ### Geometric Scene
@@ -53,7 +53,7 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -j </path/to/jena/> -l ex
 
 To execute it, run the following. 
 ```
-./gradlew shadowJar
+./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/scene.mo -r examples/scene.imo 
 ```
 
@@ -65,7 +65,7 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/scene.mo -r e
 
 To execute it, run the following.
 ```
-./gradlew shadowJar
+./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/overload.mo -r examples/overload.imo -b examples/overload.back 
 ```
 
@@ -75,7 +75,7 @@ Note that the implementation is *not* guaranteeing that no server is overloaded 
 
 To run the geological system, run
  ```
-./gradlew shadowJar
+./gradlew build
 java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.mo -r examples/geo.imo -b examples/geo.back
 ```
 
