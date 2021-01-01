@@ -1,13 +1,17 @@
-class Scene(scaling) getScale() return this.scaling; end end
+class Scene(Int scaling)
+    Int getScale()
+        return this.scaling;
+    end
+end
 
-class Rectangle(scene, w, h, name)
-    rule area()
-        s := this.scene.getScale();
+class Rectangle(Scene scene, Int w, Int h, String name)
+    rule Int area()
+        Int s := this.scene.getScale();
         return s*this.w*this.h;
     end
 end
 
 main
-    sc := new Scene(2);
-    r := new Rectangle(sc, 5, 1, "rect1");
+    Scene sc := new Scene(2);
+    Rectangle r := new Rectangle(sc, 5, 1, "rect1");
 end

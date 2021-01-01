@@ -27,12 +27,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.NAME(0).text
             }
-            val fields = if(cl.namelist() != null) nameListTranslate(cl.namelist()) else listOf()
+            val fields = if(cl.paramList() != null) paramListTranslate(cl.paramList()) else listOf()
 
             val res = mutableMapOf<String, MethodEntry>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
                 val stmt = visit(nm!!.statement()) as Statement
-                val params = if(nm.namelist() != null) nameListTranslate(nm.namelist()) else listOf()
+                val params = if(nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
                 res[nm.NAME().text] = Pair(stmt, params)
             }
             table[cl.NAME(0).text] = Pair(fields, res)
@@ -64,11 +64,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                    )
     }
 
-    private fun nameListTranslate(ctx: NamelistContext?) : List<String> {
+    private fun paramListTranslate(ctx: ParamListContext?) : List<String> {
         var res = listOf<String>()
-        if(ctx!!.NAME() != null) {
-            for (nm in ctx.NAME())
-                res += nm.text
+        if(ctx!!.param() != null) {
+            for (nm in ctx.param())
+                res += nm.NAME().text
         }
         return res
     }
@@ -205,6 +205,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return LiteralExpr("False", "boolean")
     }
 
+    override fun visitNull_expression(ctx: Null_expressionContext?): ProgramElement {
+        return LiteralExpr("null")
+    }
+
     override fun visitString_expression(ctx: String_expressionContext?): ProgramElement {
         val inner = ctx!!.STRING().text
         return LiteralExpr(inner, "string")
@@ -215,8 +219,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitVar_expression(ctx: Var_expressionContext?): ProgramElement {
-        if(ctx!!.NAME().text == "null") return LiteralExpr("null")
-        return LocalVar(ctx.NAME().text)
+        return LocalVar(ctx!!.NAME().text)
     }
 
     override fun visitField_expression(ctx: Field_expressionContext?): ProgramElement {

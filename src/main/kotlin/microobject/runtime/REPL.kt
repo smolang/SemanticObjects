@@ -7,6 +7,7 @@ import antlr.microobject.gen.WhileParser
 import microobject.data.Expression
 import microobject.data.RuleGenerator
 import microobject.data.Translate
+import microobject.data.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
@@ -122,8 +123,15 @@ class REPL(private val apache: String, private val outPath: String, private val 
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
+        val tC = TypeChecker(tree)
+        tC.check()
+        tC.report()
+
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
+
+
+
         val iB = InterpreterBridge(null)
         rules = RuleGenerator().generateBuiltins(tree, iB)
 
