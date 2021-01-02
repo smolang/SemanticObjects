@@ -15,7 +15,7 @@ class LeftHydrocarbonMigration (GeoUnit gu)
         while b = 1 do
             b := this.gu.migrate();
         end
-        Touch left := this.gu.left;
+        HoriTouch left := this.gu.left;
         if left <> null then
             left.migrateLeft(this);
         end
@@ -24,7 +24,7 @@ class LeftHydrocarbonMigration (GeoUnit gu)
         end
         return 0;
     end
-    LeftHydrocarbonMigration copy(Boolean param)
+    LeftHydrocarbonMigration copy(GeoUnit param)
         LeftHydrocarbonMigration c := new LeftHydrocarbonMigration(param);
         return c;
     end
@@ -64,14 +64,14 @@ class <T> List(T content, List<T> next)
 end
 
 class GeoManager (List<GeoUnit> list)
-    GeoUnit createNew(Boolean seal)
+    GeoUnit createNew(Int seal)
         GeoUnit tmp := new GeoUnit(seal, null, null, null, null, null);
-        this.list := new List(tmp, this.list);
+        this.list := new List<GeoUnit>(tmp, this.list);
         return tmp;
     end
 
     Int connectLR(GeoUnit g1, GeoUnit g2)
-        Touch cn1 := new Touch(0, g1, g2);
+        HoriTouch cn1 := new HoriTouch(0, g1, g2);
         g1.right := cn1;
         g2.left := cn1;
         return 0;
@@ -79,7 +79,7 @@ class GeoManager (List<GeoUnit> list)
 
 
     Int connectTB(GeoUnit g1, GeoUnit g2)
-        Touch cn1 := new Touch(0, g1, g2);
+        VertTouch cn1 := new VertTouch(0, g1, g2);
         g1.bottom := cn1;
         g2.top := cn1;
         return 0;
@@ -100,7 +100,7 @@ end
 
 
 
-class GeoUnit extends GeoElement (Touch top, Touch left, Touch right, Touch bottom, LeftHydrocarbonMigration migration)
+class GeoUnit extends GeoElement (VertTouch top, HoriTouch left, HoriTouch right, VertTouch bottom, LeftHydrocarbonMigration migration)
     Int earthquake(Fault fault)
         if this.right <> null then
             fault.replaces(this.right);
@@ -114,7 +114,7 @@ class GeoUnit extends GeoElement (Touch top, Touch left, Touch right, Touch bott
     Int migrate()
         if this.top <> null then
             if this.top.s1.sealing <> 1 then
-                GeoElement old := this.migration.gu;
+                GeoUnit old := this.migration.gu;
                 this.top.s1.migration := this.migration;
                 this.migration.gu := this.top.s1;
                 old.migration := null;
@@ -129,7 +129,7 @@ class GeoUnit extends GeoElement (Touch top, Touch left, Touch right, Touch bott
             return this;
         else
             if this.top <> null then
-                GeoElement target := this.top.s1;
+                GeoUnit target := this.top.s1;
                 GeoUnit res := target.getTopNonSealing();
                 return res;
             else return this; end
@@ -137,13 +137,13 @@ class GeoUnit extends GeoElement (Touch top, Touch left, Touch right, Touch bott
     end
 end
 
-class Touch extends GeoElement (GeoElement s1, GeoElement s2)
+class HoriTouch extends GeoElement (GeoElement s1, GeoElement s2)
     Int migrateLeft(LeftHydrocarbonMigration mig)
         if this.s1.sealing <> 1 then
-            if this.s1.migration = null then
-                GeoElement old := mig.gu;
-                this.s1.migration := mig;
-                mig.gu := this.s1;
+            if this.s1.migration = null then //XXX
+                GeoUnit old := mig.gu;
+                this.s1.migration := mig; //XXX
+                mig.gu := this.s1; //XXX
                 old.migration := null;
                 return 1;
             end
@@ -152,20 +152,22 @@ class Touch extends GeoElement (GeoElement s1, GeoElement s2)
     end
 end
 
-class Fault extends GeoElement (List<GeoElement> s1, List<GeoElement> s2)
-    Int replaces(Touch touch)
-        touch.s1.right := this;
-        touch.s2.left  := this;
-        this.s1 := new List(touch.s1, this.s1);
-        this.s2 := new List(touch.s2, this.s2);
+class VertTouch extends GeoElement (GeoUnit s1, GeoUnit s2) end
+
+class Fault extends GeoElement (List<GeoUnit> s1, List<GeoUnit> s2)
+    Int replaces(HoriTouch touch)
+        touch.s1.right := this; //XXX
+        touch.s2.left  := this; //XXX
+        this.s1 := new List<GeoElement>(touch.s1, this.s1);
+        this.s2 := new List<GeoElement>(touch.s2, this.s2);
         return 0;
     end
 
     Int migrateLeft(LeftHydrocarbonMigration mig)
         if this.sealing <> 1 then
             if this.s1 <> null then
-                GeoElement currentLeft := this.s1;
-                GeoElement currentRight := this.s2;
+                List<GeoUnit> currentLeft := this.s1;
+                List<GeoUnit> currentRight := this.s2;
                 while currentRight.content <> mig.gu do
                     currentLeft := currentLeft.next;
                     currentRight := currentRight.next;

@@ -6,6 +6,7 @@ TODO: casts
       name clash generics
       drop special treatment of atomic types
       overrides
+      implements with generics ignores generics
 **/
 @header {
 package antlr.microobject.gen;

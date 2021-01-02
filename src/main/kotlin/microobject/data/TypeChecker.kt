@@ -198,7 +198,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                metType : Type, //return type
                                thisType : Type,
                                className: String) : Boolean{
-        val inner = fields.getOrDefault(className, mapOf())
+        val inner : Map<String, Type> = getFields(className)
 
         when(ctx){
             is WhileParser.If_statementContext -> {
@@ -274,16 +274,17 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                       val otherClassName = rhsType.getPrimary().getNameString()
                       val met = methods.getOrDefault(otherClassName, listOf()).first { it.NAME().text == calledMet }
                       if(met.paramList() != null) {
-                          if (ctx.expression().size - 1 - calleeIndex != met.paramList().param().size) {
+                          val callParams : List<Type> = getParameterTypes(met, otherClassName)
+                          if (ctx.expression().size - 1 - calleeIndex != callParams.size) {
                               log(
-                                  "Mismatching number of parameter when calling $rhsType.$calledMet. Expected ${
-                                      met.paramList().depth()
+                                  "Mismatching number of parameters when calling $rhsType.$calledMet. Expected ${
+                                      callParams.size
                                   }, got ${ctx.expression().size - 1 - calleeIndex}", ctx
                               )
                           } else {
                               for (i in calleeIndex + 1 until ctx.expression().size) {
                                   val match = i - calleeIndex - 1
-                                  val targetType = translateType(met.paramList().param(match).type(), otherClassName) //of method decl
+                                  val targetType = callParams.get(match) //of method decl
                                   val realType = getType(ctx.expression(i), inner, vars, thisType)                    //of call
                                   val finalType = instantiateGenerics(targetType, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
                                   if (targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(
@@ -292,8 +293,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                       )
                                   ) {
                                       log("Type $realType is not assignable to $targetType.", ctx, Severity.WARNING)
-                                      val finalType = instantiateGenerics(targetType, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
-                                      println(finalType)
                                   }
                               }
                               if (lhsType != null) { //result type
@@ -325,24 +324,40 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         translateType(ctx.type(), className)
                     } else getType(ctx.expression(0), inner, vars, thisType)
                 val createClass = ctx.NAME().text
-                if (parameters.getOrDefault(createClass, listOf()).size == (ctx.expression().size - 1)){
-                    for(i in 1 until ctx.expression().size){
-                        val currentTarget = parameters.getOrDefault(createClass, listOf())
-                        val targetType = fields.getOrDefault(createClass, mapOf()).getOrDefault(currentTarget,
-                            ERRORTYPE
-                        )
-                        val realType = getType(ctx.expression(i), inner, vars, thisType)
-                        if(targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(targetType, realType))
-                            log("Type $targetType is not assignable to $realType", ctx)
-                    }
-                } else log("Mismatching number of parameter when creating an $createClass instance. Expected ${ctx.expression().size-1}, got ${fields.getOrDefault(createClass, mapOf()).size}", ctx)
-
+                val createDecl = recoverDef[createClass]
                 var newType : Type = BaseType(createClass)
 
                 if(ctx.namelist() != null)
                     newType = ComposedType(newType, ctx.namelist().NAME().map {
                         stringToType(it.text, createClass)
                     })
+
+                if(createDecl?.namelist() != null){
+                    if(ctx.namelist() == null ){
+                        log("Generic parameters for $createClass missing.", ctx)
+                    }else if(createDecl.namelist().NAME().size != ctx.namelist().NAME().size){
+                        log("Number of generic parameters for $createClass is wrong.", ctx)
+                    }
+                }
+
+                val creationParameters = getParameterTypes(createClass)
+                if (creationParameters.size == (ctx.expression().size - 1)){
+                    for(i in 1 until ctx.expression().size){
+                        //val currentTarget = parameters.getOrDefault(createClass, listOf())
+                        val targetType = creationParameters[i-1] //TODO(last change here)
+                        val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
+                        val realType = getType(ctx.expression(i), inner, vars, thisType)
+                        if(targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(finalType, realType)) {
+                            log("Type $finalType is not assignable to $realType", ctx)
+                            val finalType = isAssignable(finalType, realType)
+                            println(finalType)
+                        }
+                    }
+                } else {
+                    log("Mismatching number of parameter when creating an $createClass instance. Expected ${ctx.expression().size-1}, got ${fields.getOrDefault(createClass, mapOf()).size}", ctx)
+                }
+
+
 
                 if(lhsType != ERRORTYPE && !isAssignable(newType, lhsType) )
                     log("Type $createClass is not assignable to $lhsType", ctx)
@@ -416,7 +431,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             }
             is WhileParser.Field_expressionContext -> {
                 val name = eCtx.NAME().text
-                if(!fields.containsKey(name)) log("Field $name is not declared for $thisType.", eCtx)
+                if(!fields.containsKey(name))
+                    log("Field $name is not declared for $thisType.", eCtx)
                 return fields.getOrDefault(name, ERRORTYPE)
             }
             is WhileParser.Nested_expressionContext -> {
@@ -482,11 +498,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 }
                 val primary = t1.getPrimary()
                 val primName = primary.getNameString()
-                if(!this.fields.containsKey(primary.getNameString())){
+                if(!this.fields.containsKey(primName)){
                     log("Cannot access fields of $primary.", eCtx)
                     return ERRORTYPE
                 }
-                if(!this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).containsKey(eCtx.NAME().text)){
+                val otherFields = getFields(primName)
+                if(!otherFields.containsKey(eCtx.NAME().text)){
                     log("Field ${eCtx.NAME().text} is not declared for $primary.", eCtx)
                     return ERRORTYPE
                 }
@@ -517,7 +534,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         if(lhs is BaseType && rhs is BaseType){
             return isBelow(rhs, lhs)
         } else if (lhs is BaseType && rhs is ComposedType) {
-            return isBelow(rhs.getPrimary(), lhs)
+            return false
         } else if (lhs is ComposedType && rhs is BaseType) {
             return false
         } else { //if (lhs is microobject.data.ComposedType && rhs is microobject.data.ComposedType)
@@ -534,13 +551,30 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         }
     }
 
-    /* checks whether @rhs is below @lhs in the type hierarchy*/
-    private fun isBelow(rhs: Type, lhs: Type): Boolean {
-        if(rhs == lhs) return true
-        if(rhs == NULLTYPE) return true
-        if(rhs is GenericType || rhs is ComposedType || !rhs.isAtomic()) return false
-        if(extends.containsKey(rhs)) return isBelow(BaseType(extends.getOrDefault(rhs, "Object")), lhs)
+    /* checks whether t1 is below t2 in the type hierarchy*/
+    private fun isBelow(t1: Type, t2: Type): Boolean {
+        if(t1 == t2) return true
+        if(t1 == NULLTYPE) return true
+        if(t1 is GenericType || t1 is ComposedType || t1.isAtomic()) return false
+        if(extends.containsKey(t1.getPrimary().getNameString())) return isBelow(BaseType(extends.getOrDefault(t1.getPrimary().getNameString(), "Object")), t2)
         return false
+    }
+
+
+    private fun getParameterTypes(met: WhileParser.Method_defContext, otherClassName: String): List<Type> {
+        var types : List<Type> = met.paramList().param().map { translateType(it.type(), otherClassName) }
+        return types
+    }
+
+
+    private fun getParameterTypes(className: String): List<Type> {
+        val types : List<Type> = fields.getOrDefault(className, mapOf()).map { it.value }
+        if(extends.containsKey(className)){
+            val supertype = extends.getOrDefault(className, ERRORTYPE.name)
+            val moreTypes = getParameterTypes(supertype)
+            return moreTypes + types
+        }
+        return types
     }
 
     /* check whether @type contains an unknown (structural) subtype  */
@@ -551,6 +585,15 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         return composType.params.fold( containsUnknown(composType.name, types), {acc,nx -> acc || containsUnknown(nx, types)})
     }
 
+    private fun getFields(className: String): Map<String, Type> {
+        var f = fields.getOrDefault(className, mapOf())
+        if(extends.containsKey(className)){
+            val supertype = extends.getOrDefault(className, ERRORTYPE.name)
+            val moreFields = getFields(supertype)
+            return moreFields + f
+        }
+        return f
+    }
     /**********************************************************************
     Helper to handle generics
      ***********************************************************************/

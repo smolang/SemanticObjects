@@ -36,7 +36,7 @@ class Scheduler(List<Server> serverList)
         while tasks <> null do
             List<Task> l := new List<Task>(tasks.content, null);
             Server n := new Server(l);
-            this.serverList := new List(n, this.serverList);
+            this.serverList := new List<Server>(n, this.serverList);
             tasks := tasks.next;
         end
         return 0;
@@ -50,7 +50,7 @@ class Scheduler(List<Server> serverList)
             //breakpoint;
             if b then
                 Task localExc := plats.content.excessive();
-                exc := new List(localExc, exc);
+                exc := new List<Task>(localExc, exc);
             end
             plats := plats.next;
        end
@@ -82,20 +82,20 @@ main
     Task task5 := new Task("t5");
     Task task6 := new Task("t6");
 
-    List<Task> l1 := new List(task1, null);
-    List<Task> l2 := new List(task2, null);
-    List<Task> l3 := new List(task3, l2);
-    List<Task> l4 := new List(task4, null);
-    List<Task> l5 := new List(task5, l4);
-    List<Task> l6 := new List(task6, l5);
+    List<Task> l1 := new List<Task>(task1, null);
+    List<Task> l2 := new List<Task>(task2, null);
+    List<Task> l3 := new List<Task>(task3, l2);
+    List<Task> l4 := new List<Task>(task4, null);
+    List<Task> l5 := new List<Task>(task5, l4);
+    List<Task> l6 := new List<Task>(task6, l5);
 
     Server dummy := new Server(null);
     Server server1 := new Server(l1);
     Server server2 := new Server(l3);
     Server server3 := new Server(l6);
-    List<Server> sl1 := new List(server3, null);
-    List<Server> sl2 := new List(server2, sl1);
-    List<Server> sl3 := new List(server1, sl2);
+    List<Server> sl1 := new List<Server>(server3, null);
+    List<Server> sl2 := new List<Server>(server2, sl1);
+    List<Server> sl3 := new List<Server>(server1, sl2);
 
     Scheduler sch := new Scheduler(sl3);
     breakpoint;

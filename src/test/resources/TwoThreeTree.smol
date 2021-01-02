@@ -43,17 +43,17 @@ class <S> Node(Pair<Int, S> dataL,
         Node<S> right := null;
         if(kv.key <= this.dataL.key) then
             middle := this.dataL;
-            left := new Node(kv, null, null, null, null, null);
-            right := new Node(this.dataR, null, null, null, null, null);
+            left := new Node<S>(kv, null, null, null, null, null);
+            right := new Node<S>(this.dataR, null, null, null, null, null);
         else
             if (kv.key >= this.dataR.key) then
                 middle := this.dataR;
-                left := new Node(this.dataL, null, null, null, null, null);
-                right := new Node(kv, null, null, null, null, null);
+                left := new Node<S>(this.dataL, null, null, null, null, null);
+                right := new Node<S>(kv, null, null, null, null, null);
             else
                 middle := kv;
-                left := new Node(this.dataL, null, null, null, null, null);
-                right := new Node(this.dataR, null, null, null, null, null);
+                left := new Node<S>(this.dataL, null, null, null, null, null);
+                right := new Node<S>(this.dataR, null, null, null, null, null);
             end
          end
         Node<S> newTop := this.repairOrReroot(middle, left, right);
@@ -83,25 +83,25 @@ class <S> Node(Pair<Int, S> dataL,
             Node<S> newLeft := null;
             Node<S> newRight := null;
             if(from = this.childL) then
-                 newLeft := new Node(middle, null, left, right, null, null);
+                 newLeft := new Node<S>(middle, null, left, right, null, null);
                  left.parent := newLeft;
                  right.parent := newLeft;
-                 newRight := new Node(this.dataR, null, this.childM, this.childR, null, null);
+                 newRight := new Node<S>(this.dataR, null, this.childM, this.childR, null, null);
                  this.childM.parent := newRight;
                  this.childR.parent := newRight;
             else
                 if(from = this.childM) then
-                     newLeft := new Node(this.dataL, null, this.childL, left, null, null);
+                     newLeft := new Node<S>(this.dataL, null, this.childL, left, null, null);
                      this.childL.parent := newLeft;
                      left.parent := newLeft;
-                     newRight := new Node(this.dataR, null, right, this.childR, null, null);
+                     newRight := new Node<S>(this.dataR, null, right, this.childR, null, null);
                      right.parent := newRight;
                      this.childR.parent := newRight;
                 else
-                     newLeft := new Node(this.dataL, null, this.childL, this.childM, null, null);
+                     newLeft := new Node<S>(this.dataL, null, this.childL, this.childM, null, null);
                      this.childL.parent := newLeft;
                      this.childM.parent := newLeft;
-                     newRight := new Node(middle, null, left, right, null, null);
+                     newRight := new Node<S>(middle, null, left, right, null, null);
                      left.parent := newRight;
                      right.parent := newRight;
                 end
@@ -114,7 +114,7 @@ class <S> Node(Pair<Int, S> dataL,
     Node<S> repairOrReroot(Pair<Int, S> middle, Node<S> left, Node<S> right)
         Node<S> newTop := null;
         if(this.parent = null) then //root
-            newTop := new Node(middle, null, left, right, null, null);
+            newTop := new Node<S>(middle, null, left, right, null, null);
             left.parent := newTop;
             right.parent := newTop;
         else
