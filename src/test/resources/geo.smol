@@ -13,13 +13,13 @@ class LeftHydrocarbonMigration (gu)
         while b = 1 do
             b := this.gu.migrate();
         end
-            left := this.gu.left;
-            if left <> null then
-                left.migrateLeft(this);
-            end
-            if started <> this.gu then
-                this.migrate();
-            end
+        left := this.gu.left;
+        if left <> null then
+            left.migrateLeft(this);
+        end
+        if started <> this.gu then
+            this.migrate();
+        end
         return 0;
     end
     copy(param)
@@ -190,6 +190,8 @@ main
     initList := new List(gu11, null);
     manager := new GeoManager(initList);
 
+
+
     gu12 := manager.createNew(1);
     gu13 := manager.createNew(1);
     gu14 := manager.createNew(1);
@@ -198,6 +200,8 @@ main
     manager.connectLR(gu12, gu13);
     manager.connectLR(gu13, gu14);
     manager.connectLR(gu14, gu15);
+
+    print("1:-XX|XX-");
 
     gu21 := manager.createNew(1);
     gu22 := manager.createNew(0);
@@ -214,6 +218,8 @@ main
     manager.connectLR(gu23, gu24);
     manager.connectLR(gu24, gu25);
 
+    print("2:X X| X-");
+
     gu31 := manager.createNew(1);
     gu32 := manager.createNew(0);
     gu33 := manager.createNew(0);
@@ -228,6 +234,8 @@ main
     manager.connectLR(gu32, gu33);
     manager.connectLR(gu33, gu34);
     manager.connectLR(gu34, gu35);
+
+    print("3:X  |XX-");
 
     gu41 := manager.createNew(1);
     gu42 := manager.createNew(1);
@@ -248,6 +256,8 @@ main
     manager.connectLR(gu44, gu45);
     manager.connectLR(gu45, gu46);
 
+    print("4:XXX|XXX");
+
     gu53 := manager.createNew(1);
     gu54 := manager.createNew(0);
     gu55 := manager.createNew(0);
@@ -259,6 +269,8 @@ main
     manager.connectLR(gu53, gu54);
     manager.connectLR(gu54, gu55);
     manager.connectLR(gu55, gu56);
+
+    print("5:--X|  X");
 
     gu63 := manager.createNew(1);
     gu64 := manager.createNew(1);
@@ -272,12 +284,17 @@ main
     manager.connectLR(gu64, gu65);
     manager.connectLR(gu65, gu66);
 
+    print("6:--X|XXX");
+
+
     manager.startEarthquake(0, gu63);
 
     mig := new LeftHydrocarbonMigration(gu55);
     gu55.migration := mig;
 
-    all := access("SELECT ?obj WHERE {?obj :MOinstanceOf :LeftHydrocarbonMigration }");
+    //instead of mig.migrate(); we use ontology-based reflexion
+    all := access("SELECT ?obj WHERE {?obj smol:instanceOf prog:LeftHydrocarbonMigration }");
     all.content.migrate();
     nulls := access("SELECT ?obj WHERE { ?obj a :HasAnyNullNext }");
+    print(nulls);
 end

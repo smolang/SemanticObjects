@@ -1,8 +1,13 @@
-class Pair(key, value) end
+class <A, B> Pair(A key, B value) end
 
-class Node(dataL, dataR, childL, childM, childR, parent)
-    add(kv)
-        res := null;
+class <S> Node(Pair<Int, S> dataL,
+                  Pair<Int, S> dataR,
+                  Node<S> childL,
+                  Node<S> childM,
+                  Node<S> childR,
+                  Node<S> parent)
+    Node<S> add(Pair<Int, S> kv)
+        Node<S> res := null;
         if(this.childL = null) then //this is a leaf
             if(this.dataL = null)  then this.dataL := kv;
             else
@@ -31,8 +36,11 @@ class Node(dataL, dataR, childL, childM, childR, parent)
     end
 
 
-    createNew(kv)
+    Node<S> createNew(Pair<Int, S>kv)
         //find middle
+        Pair<Int, S> middle := null;
+        Node<S> left := null;
+        Node<S> right := null;
         if(kv.key <= this.dataL.key) then
             middle := this.dataL;
             left := new Node(kv, null, null, null, null, null);
@@ -48,11 +56,12 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                 right := new Node(this.dataR, null, null, null, null, null);
             end
          end
-        newTop := this.repairOrReroot(middle, left, right);
+        Node<S> newTop := this.repairOrReroot(middle, left, right);
         return newTop;
     end
 
-    repair(left, middle, right, from)
+    Node<S> repair(Node<S> left, Pair<Int, S> middle, Node<S> right, Node<S> from)
+        Node<S> res := null;
         if(this.dataR = null) then  //internal 2-node
             if(from = this.childL) then
                 this.dataR := this.dataL;
@@ -69,8 +78,10 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                 right.parent := this;
                 left.parent := this;
             end
-            return null;
+            return this;
         else                        //internal 3-node
+            Node<S> newLeft := null;
+            Node<S> newRight := null;
             if(from = this.childL) then
                  newLeft := new Node(middle, null, left, right, null, null);
                  left.parent := newLeft;
@@ -78,7 +89,6 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                  newRight := new Node(this.dataR, null, this.childM, this.childR, null, null);
                  this.childM.parent := newRight;
                  this.childR.parent := newRight;
-                 res := this.repairOrReroot(this.dataR, newLeft, newRight);
             else
                 if(from = this.childM) then
                      newLeft := new Node(this.dataL, null, this.childL, left, null, null);
@@ -87,7 +97,6 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                      newRight := new Node(this.dataR, null, right, this.childR, null, null);
                      right.parent := newRight;
                      this.childR.parent := newRight;
-                     res := this.repairOrReroot(this.dataR, newLeft, newRight);
                 else
                      newLeft := new Node(this.dataL, null, this.childL, this.childM, null, null);
                      this.childL.parent := newLeft;
@@ -95,14 +104,15 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                      newRight := new Node(middle, null, left, right, null, null);
                      left.parent := newRight;
                      right.parent := newRight;
-                     res := this.repairOrReroot(this.dataR, newLeft, newRight);
                 end
             end
+        res := this.repairOrReroot(this.dataR, newLeft, newRight);
         return res;
         end
     end
 
-    repairOrReroot(middle, left, right)
+    Node<S> repairOrReroot(Pair<Int, S> middle, Node<S> left, Node<S> right)
+        Node<S> newTop := null;
         if(this.parent = null) then //root
             newTop := new Node(middle, null, left, right, null, null);
             left.parent := newTop;
@@ -113,7 +123,8 @@ class Node(dataL, dataR, childL, childM, childR, parent)
         end
         return newTop;
     end
-    retrieve(k)
+    S retrieve(Int k)
+       S res := null;
        if(this.dataL = null) then res := null; return res; end
        if(k = this.dataL.key) then res := this.dataL.value; return res; end
        if(k <= this.dataL.key) then res := this.childL.retrieve(k); return res; end
@@ -125,51 +136,54 @@ class Node(dataL, dataR, childL, childM, childR, parent)
     end
 end
 
-class Tree(root)
-    add(kv)
-        res := this.root.add(kv);
+class <P> Tree(Node<P> root)
+    Int add(Pair<Int, P> kv)
+        Node<P> res := this.root.add(kv);
         if(res <> null) then this.root := res; end
         return 0;
     end
-    retrieve(k)
-       res := this.root.retrieve(k);
+    P retrieve(Int k)
+       P res := this.root.retrieve(k);
        return res;
     end
 end
 
-class Wrap(ttt, key)
-    rule lookup()
-        v := this.ttt.retrieve(this.key);
+class <Z> Wrap(Tree<Z> ttt, Int key)
+    rule Z lookup()
+        Z v := this.ttt.retrieve(this.key);
         return v;
     end
 end
 
-class List(content, next)
-    length()
+class <D> List(D content, List<D> next)
+    Int length()
         if(this.next = null) then return 1;
-        else n := this.next.length(); return n + 1; end
+        else Int n := this.next.length(); return n + 1;
+        end
     end
 end
 
 main
-    root := new Node(null, null, null, null, null, null);
-    tree := new Tree(root);
-    pair1 := new Pair(1,"a");
+    Node<String> root := new Node(null, null, null, null, null, null);
+    Tree<String> tree := new Tree(root);
+    Pair<Int, String> pair1 := new Pair(1,"a");
+    Pair<Int, String> pair2 := new Pair(2,"b");
+    Pair<Int, String> pair3 := new Pair(3,"c");
+    Pair<Int, String> pair4 := new Pair(4,"d");
+    Pair<Int, String> pair5 := new Pair(5,"e");
+    Pair<Int, String> pair6 := new Pair(6,"f");
+    Pair<Int, String> pair7 := new Pair(7,"g");
+    tree.add(pair3);
+    tree.add(pair2);
     tree.add(pair1);
-    i := 2;
-    while( i <= 1000 ) do
-    	pair2 := new Pair(i,"b");
-	    tree.add(pair2);
-	    i := i + 1;
-    end
+    tree.add(pair7);
+    tree.add(pair4);
+    tree.add(pair5);
+    tree.add(pair6);
 
-    ww := new Wrap(tree, 1);
-    res := ww.lookup();
-    res := access("SELECT ?obj WHERE {?sth :Wrap_lookup_builtin_res ?obj}");
-    print(res.content);
-
-    res := tree.retrieve(1);
+    Wrap<String> ww := new Wrap(tree, 1);
+    //res := ww.lookup();
+    List<String> res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);
-
     print("done");
 end

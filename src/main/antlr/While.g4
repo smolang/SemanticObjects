@@ -3,7 +3,9 @@ grammar While;
 TODO: casts
       unit
       constraints on generics
+      name clash generics
       drop special treatment of atomic types
+      overrides
 **/
 @header {
 package antlr.microobject.gen;

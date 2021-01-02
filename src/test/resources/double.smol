@@ -1,5 +1,5 @@
-class List (next, content, previous)
-   append(node)
+class <T> List (List<T> next, T content, List<T> previous)
+   List<T> append(List<T> node)
       if this.next = null then
          this.next := node;
          node.previous := this;
@@ -9,7 +9,7 @@ class List (next, content, previous)
       return this;
    end
 
-   insert_after(node)
+   List<T> insert_after(List<T> node)
         node.next := this.next;
         node.previous := this;
         if this.next <> null then
@@ -20,7 +20,7 @@ class List (next, content, previous)
    end
 
 
-   remove()
+   List<T> remove()
         if this.next <> null then
             this.next.previous := this.previous;
         else skip; end
@@ -33,7 +33,7 @@ class List (next, content, previous)
    end
 
 
-   remove_unclean()
+   List<T> remove_unclean()
         if this.next <> null then
             this.next.previous := this.previous;
         else skip; end
@@ -47,12 +47,14 @@ end
 
 
 main
-  a := new List(null, 1, null);
-  b := new List(null, 2, null);
-  c := new List(null, 4, null);
-  d := new List(null, 3, null);
+  List<Int> a := new List<Int>(null, 1, null);
+  List<Int> b := new List<Int>(null, 2, null);
+  List<Int> c := new List<Int>(null, 4, null);
+  List<Int> d := new List<Int>(null, 3, null);
   a.append(b);
   a.append(c);
   b.insert_after(d);
   c.remove();
+  breakpoint;
+  print(a.next.next.content);
 end

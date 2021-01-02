@@ -144,7 +144,7 @@ main
     pair1 := new Pair(1,"a");
     tree.add(pair1);
     i := 2;
-    while( i <= 600 ) do
+    while( i <= VAR ) do
     	pair2 := new Pair(i,"b");
 	    tree.add(pair2);
 	    i := i + 1;
