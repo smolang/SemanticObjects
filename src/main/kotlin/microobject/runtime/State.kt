@@ -80,12 +80,12 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += ":${obj.literal} prog:$store "
-                if(target.tag == "IGNORE" || target.tag == "string")
-                    res += "${target.literal}.\n"
+                res += if(target.tag == "IGNORE" || target.tag == "string")
+                    "${target.literal}.\n"
                 else if(target.literal == "null")
-                    res += "smol:${target.literal}.\n"
+                    "smol:${target.literal}.\n"
                 else
-                    res += ":${target.literal}.\n"
+                    ":${target.literal}.\n"
                 i++
             }
         }
@@ -135,6 +135,25 @@ Class Hierarchy : $hierarchy
 FieldTable      : $fieldTable 
 MethodTable     : $methodTable 
 """.trimIndent()
+
+    private fun getSuper(name : String) : String?{
+        for(obj in hierarchy.entries){
+            for(obj2 in obj.value){
+                if(obj2 == name) return obj.key
+            }
+        }
+        return null
+    }
+
+    fun getSuperMethod(className : String, methodName : String) : MethodEntry?{
+        var current = getSuper(className)
+        while(current != null && current != "Object"){
+            if(!methodTable.containsKey(current)) return null
+            if(methodTable[current]!!.containsKey(methodName)) return methodTable[current]!![methodName]
+            current = getSuper(current)
+        }
+        return null
+    }
 }
 
 data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr, val id: Int)

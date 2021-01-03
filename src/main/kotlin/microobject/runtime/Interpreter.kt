@@ -141,7 +141,20 @@ class Interpreter(
 
         //get own local memory
         val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())
+
         when (stmt){
+            is SuperStmt -> {
+                val m = staticInfo.getSuperMethod(obj.tag, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
+                val newMemory: Memory = mutableMapOf()
+                newMemory["this"] = obj
+                for (i in m.second.indices) {
+                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, obj)
+                }
+                return Pair(
+                    StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
+                    listOf(StackEntry(m.first, newMemory, obj, Names.getStackId()))
+                )
+            }
             is AssignStmt -> {
                 val res = eval(stmt.value, stackMemory, heap, obj)
                 when (stmt.target) {

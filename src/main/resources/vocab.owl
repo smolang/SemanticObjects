@@ -22,6 +22,7 @@ smol:PrintStatement       rdfs:subClassOf  smol:Statement.
 smol:SequenceStatement    rdfs:subClassOf  smol:Statement.
 smol:SkipStatement        rdfs:subClassOf  smol:Statement.
 smol:CallStatement        rdfs:subClassOf  smol:VarLengthStatement.
+smol:SuperStatement        rdfs:subClassOf  smol:VarLengthStatement.
 smol:CreateStatement      rdfs:subClassOf  smol:VarLengthStatement.
 smol:SparqlStatement      rdfs:subClassOf  smol:VarLengthStatement.
 smol:IfStatement          rdfs:subClassOf  smol:GuardedStatement.

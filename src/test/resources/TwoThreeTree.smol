@@ -164,15 +164,15 @@ class <D> List(D content, List<D> next)
 end
 
 main
-    Node<String> root := new Node(null, null, null, null, null, null);
-    Tree<String> tree := new Tree(root);
-    Pair<Int, String> pair1 := new Pair(1,"a");
-    Pair<Int, String> pair2 := new Pair(2,"b");
-    Pair<Int, String> pair3 := new Pair(3,"c");
-    Pair<Int, String> pair4 := new Pair(4,"d");
-    Pair<Int, String> pair5 := new Pair(5,"e");
-    Pair<Int, String> pair6 := new Pair(6,"f");
-    Pair<Int, String> pair7 := new Pair(7,"g");
+    Node<String> root := new Node<String>(null, null, null, null, null, null);
+    Tree<String> tree := new Tree<String>(root);
+    Pair<Int, String> pair1 := new Pair<Int, String>(1,"a");
+    Pair<Int, String> pair2 := new Pair<Int, String>(2,"b");
+    Pair<Int, String> pair3 := new Pair<Int, String>(3,"c");
+    Pair<Int, String> pair4 := new Pair<Int, String>(4,"d");
+    Pair<Int, String> pair5 := new Pair<Int, String>(5,"e");
+    Pair<Int, String> pair6 := new Pair<Int, String>(6,"f");
+    Pair<Int, String> pair7 := new Pair<Int, String>(7,"g");
     tree.add(pair3);
     tree.add(pair2);
     tree.add(pair1);
@@ -181,7 +181,7 @@ main
     tree.add(pair5);
     tree.add(pair6);
 
-    Wrap<String> ww := new Wrap(tree, 1);
+    Wrap<String> ww := new Wrap<String>(tree, 1);
     //res := ww.lookup();
     List<String> res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);

@@ -52,6 +52,25 @@ data class AssignStmt(val target : Location, val value : Expression, val pos : I
     }
 }
 
+// Super call. MethodName is merely saved for easier access for the interpreter
+data class SuperStmt(val target : Location, val methodName : String, val params : List<Expression>, val pos : Int = -1) :
+    Statement {
+    override fun toString(): String = "$target := super(${params.joinToString(",")})"
+    override fun getRDF(): String {
+        var s = """
+            prog:stmt${this.hashCode()} rdf:type smol:SuperStatement.
+            prog:stmt${this.hashCode()} smol:hasTarget prog:loc${target.hashCode()}.
+            prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
+
+        """.trimIndent()
+        for (i in params.indices){
+            s += "prog:stmt${this.hashCode()} smol:hasParameter [smol:hasParameterIndex $i ; smol:hasParameterValue prog:expr${params[i].hashCode()}; ].\n"
+            s += params[i].getRDF()
+        }
+        return s + target.getRDF()
+    }
+}
+
 // Method call. We have the ABS-style split between calls and expressions to make the rules more simple
 data class CallStmt(val target : Location, val callee : Location, val method : String, val params : List<Expression>, val pos : Int = -1) :
     Statement {

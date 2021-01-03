@@ -76,7 +76,7 @@ Note that the implementation is *not* guaranteeing that no server is overloaded 
 To run the geological system, run
  ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l src/test/kotlin/resources/geo.smol -r examples/geo.imo -b examples/geo.back
+java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.smol -r examples/geo.imo -b examples/geo.back
 ```
 
 Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and is only an illustration of the debugger for a bigger model.
@@ -100,5 +100,5 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_class_n.mo -r
   * SMOL: If you use the `query` *statement*, a `List` class with fields `content` and `next` is assumed to exist. The result of the command is a list with all results for the variable `?obj`. (You must use `?obj`, every other variable is dropped.)
   * SMOL: A method modified by `rule` is not allowed to have parameters. 
   * SMOL: Results of type checking are ignored, but output to the user.
-  * SMOL: You cannot override mathods.
   * SMOL: SSA is not type checked.
+  * SMOL: `super` refers to the overloaded method, not the instance as its supertype

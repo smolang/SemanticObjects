@@ -52,7 +52,7 @@ class Command(
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean, private val back : String) {
-    internal var interpreter: Interpreter? = null
+    private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
     private lateinit var ontology : OWLOntology
@@ -117,7 +117,7 @@ class REPL(private val apache: String, private val outPath: String, private val 
         println("MO> $str \n")
     }
 
-    internal fun initInterpreter(path: String) {
+    private fun initInterpreter(path: String) {
         val lexer = WhileLexer(CharStreams.fromFileName(path))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)

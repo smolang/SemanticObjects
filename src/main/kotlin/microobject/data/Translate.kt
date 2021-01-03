@@ -5,6 +5,7 @@ package microobject.data
 import antlr.microobject.gen.WhileBaseVisitor
 import antlr.microobject.gen.WhileParser.*
 import microobject.runtime.*
+import org.antlr.v4.runtime.RuleContext
 
 /**
  * This class handles multiple tasks related to translating ANTLR structures to the internal representation
@@ -73,6 +74,34 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return res
     }
 
+    override fun visitSuper_statement(ctx: Super_statementContext?): ProgramElement {
+        var ll = emptyList<Expression>()
+        var met : RuleContext? = ctx
+        while(met != null && met !is Method_defContext){
+            met = met.parent
+        }
+        val method = (met as Method_defContext).NAME().text
+
+        if(ctx!!.target == null){
+            for(i in 0 until ctx.expression().size)
+                ll += visit(ctx.expression(i)) as Expression
+
+            return SuperStmt(Names.getVarName(),
+                method,
+                ll,
+                ctx!!.start.line
+            )
+        } else {
+            for(i in 0 until ctx.expression().size)
+                ll += visit(ctx.expression(i)) as Expression
+            return SuperStmt(
+                visit(ctx.target) as Location,
+                method,
+                ll,
+                ctx!!.start.line
+            )
+        }
+    }
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()

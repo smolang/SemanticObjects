@@ -1,6 +1,6 @@
-//NOTE: this was written before we added booleans
+//NOTE: this was written before we added types and relies on some patterns that would require a major rewrite, you can ignore all error, it will run just fine
 
-class GeoElement (Int sealing)
+class GeoElement (Int sealing, LeftHydrocarbonMigration migration)
 
 end
 
@@ -71,7 +71,7 @@ class GeoManager (List<GeoUnit> list)
     end
 
     Int connectLR(GeoUnit g1, GeoUnit g2)
-        HoriTouch cn1 := new HoriTouch(0, g1, g2);
+        HoriTouch cn1 := new HoriTouch(0, null, g1, g2);
         g1.right := cn1;
         g2.left := cn1;
         return 0;
@@ -79,7 +79,7 @@ class GeoManager (List<GeoUnit> list)
 
 
     Int connectTB(GeoUnit g1, GeoUnit g2)
-        VertTouch cn1 := new VertTouch(0, g1, g2);
+        VertTouch cn1 := new VertTouch(0, null, g1, g2);
         g1.bottom := cn1;
         g2.top := cn1;
         return 0;
@@ -91,7 +91,7 @@ class GeoManager (List<GeoUnit> list)
             while gu.top <> null do
                 gu := gu.top.s1;
             end
-            Fault fault := new Fault(sealing, null, null);
+            Fault fault := new Fault(sealing, null, null, null);
             gu.earthquake(fault);
             return 0;
         else return 0; end
@@ -100,7 +100,7 @@ end
 
 
 
-class GeoUnit extends GeoElement (VertTouch top, HoriTouch left, HoriTouch right, VertTouch bottom, LeftHydrocarbonMigration migration)
+class GeoUnit extends GeoElement (VertTouch top, HoriTouch left, HoriTouch right, VertTouch bottom)
     Int earthquake(Fault fault)
         if this.right <> null then
             fault.replaces(this.right);
@@ -140,10 +140,10 @@ end
 class HoriTouch extends GeoElement (GeoElement s1, GeoElement s2)
     Int migrateLeft(LeftHydrocarbonMigration mig)
         if this.s1.sealing <> 1 then
-            if this.s1.migration = null then //XXX
+            if this.s1.migration = null then
                 GeoUnit old := mig.gu;
-                this.s1.migration := mig; //XXX
-                mig.gu := this.s1; //XXX
+                this.s1.migration := mig;
+                mig.gu := this.s1;
                 old.migration := null;
                 return 1;
             end
@@ -196,10 +196,10 @@ main
 
 
 
-    gu12 := manager.createNew(1);
-    gu13 := manager.createNew(1);
-    gu14 := manager.createNew(1);
-    gu15 := manager.createNew(1);
+    GeoUnit gu12 := manager.createNew(1);
+    GeoUnit gu13 := manager.createNew(1);
+    GeoUnit gu14 := manager.createNew(1);
+    GeoUnit gu15 := manager.createNew(1);
     manager.connectLR(gu11, gu12);
     manager.connectLR(gu12, gu13);
     manager.connectLR(gu13, gu14);
@@ -207,11 +207,11 @@ main
 
     print("1:-XX|XX-");
 
-    gu21 := manager.createNew(1);
-    gu22 := manager.createNew(0);
-    gu23 := manager.createNew(1);
-    gu24 := manager.createNew(0);
-    gu25 := manager.createNew(1);
+    GeoUnit gu21 := manager.createNew(1);
+    GeoUnit gu22 := manager.createNew(0);
+    GeoUnit gu23 := manager.createNew(1);
+    GeoUnit gu24 := manager.createNew(0);
+    GeoUnit gu25 := manager.createNew(1);
     manager.connectTB(gu11, gu21);
     manager.connectTB(gu12, gu22);
     manager.connectTB(gu13, gu23);
@@ -224,11 +224,11 @@ main
 
     print("2:X X| X-");
 
-    gu31 := manager.createNew(1);
-    gu32 := manager.createNew(0);
-    gu33 := manager.createNew(0);
-    gu34 := manager.createNew(1);
-    gu35 := manager.createNew(1);
+    GeoUnit gu31 := manager.createNew(1);
+    GeoUnit gu32 := manager.createNew(0);
+    GeoUnit gu33 := manager.createNew(0);
+    GeoUnit gu34 := manager.createNew(1);
+    GeoUnit gu35 := manager.createNew(1);
     manager.connectTB(gu21, gu31);
     manager.connectTB(gu22, gu32);
     manager.connectTB(gu23, gu33);
@@ -241,12 +241,12 @@ main
 
     print("3:X  |XX-");
 
-    gu41 := manager.createNew(1);
-    gu42 := manager.createNew(1);
-    gu43 := manager.createNew(1);
-    gu44 := manager.createNew(1);
-    gu45 := manager.createNew(1);
-    gu46 := manager.createNew(1);
+    GeoUnit gu41 := manager.createNew(1);
+    GeoUnit gu42 := manager.createNew(1);
+    GeoUnit gu43 := manager.createNew(1);
+    GeoUnit gu44 := manager.createNew(1);
+    GeoUnit gu45 := manager.createNew(1);
+    GeoUnit gu46 := manager.createNew(1);
 
     manager.connectTB(gu31, gu41);
     manager.connectTB(gu32, gu42);
@@ -262,10 +262,10 @@ main
 
     print("4:XXX|XXX");
 
-    gu53 := manager.createNew(1);
-    gu54 := manager.createNew(0);
-    gu55 := manager.createNew(0);
-    gu56 := manager.createNew(1);
+    GeoUnit gu53 := manager.createNew(1);
+    GeoUnit gu54 := manager.createNew(0);
+    GeoUnit gu55 := manager.createNew(0);
+    GeoUnit gu56 := manager.createNew(1);
     manager.connectTB(gu43, gu53);
     manager.connectTB(gu44, gu54);
     manager.connectTB(gu45, gu55);
@@ -276,10 +276,10 @@ main
 
     print("5:--X|  X");
 
-    gu63 := manager.createNew(1);
-    gu64 := manager.createNew(1);
-    gu65 := manager.createNew(1);
-    gu66 := manager.createNew(1);
+    GeoUnit gu63 := manager.createNew(1);
+    GeoUnit gu64 := manager.createNew(1);
+    GeoUnit gu65 := manager.createNew(1);
+    GeoUnit gu66 := manager.createNew(1);
     manager.connectTB(gu53, gu63);
     manager.connectTB(gu54, gu64);
     manager.connectTB(gu55, gu65);
