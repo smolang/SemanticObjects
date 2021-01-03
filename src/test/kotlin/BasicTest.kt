@@ -1,12 +1,9 @@
-
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import io.kotlintest.specs.StringSpec
 import microobject.data.TypeChecker
-import microobject.runtime.REPL
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
-import kotlin.test.assertNotNull
 
 class BasicTest : StringSpec() {
     private fun load(path : String) : Boolean {

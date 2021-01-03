@@ -4,7 +4,6 @@ package microobject.data
 interface Type {
     fun isFullyConcrete() : Boolean
     fun getPrimary() : SimpleType
-    fun isAtomic() : Boolean
     fun containsUnknown(types: Set<String>): Boolean
 }
 
@@ -17,15 +16,13 @@ data class GenericType(val name : String) : SimpleType() {
     override fun getNameString() : String  = name
     override fun toString() : String  = name
     override fun isFullyConcrete() : Boolean = false
-    override fun isAtomic() : Boolean = true
     override fun containsUnknown(types: Set<String>): Boolean = !types.contains(name)
 }
 
-data class BaseType(val name : String, val atomic : Boolean = false) : SimpleType(){
+data class BaseType(val name : String) : SimpleType(){
     override fun getNameString() : String  = name
     override fun isFullyConcrete() : Boolean = true
     override fun toString() : String  = name
-    override fun isAtomic() : Boolean = atomic
     override fun containsUnknown(types: Set<String>): Boolean = false //contract
 }
 
@@ -36,13 +33,12 @@ data class ComposedType(val name : Type, val params : List<Type>) : Type {
     }
     override fun toString() : String  = name.toString() + "<" + params.joinToString { it.toString() }+">"
     override fun isFullyConcrete() : Boolean = params.fold(name.isFullyConcrete(), { it,nx -> it && nx.isFullyConcrete()})
-    override fun isAtomic() : Boolean = false
     override fun containsUnknown(types: Set<String>): Boolean = params.fold( name.containsUnknown(types), {acc,nx -> acc || nx.containsUnknown(types)})
 }
 
-val INTTYPE = BaseType("Int", true)
-val BOOLEANTYPE = BaseType("Boolean", true)
-val STRINGTYPE = BaseType("String", true)
+val INTTYPE = BaseType("Int")
+val BOOLEANTYPE = BaseType("Boolean")
+val STRINGTYPE = BaseType("String")
 val OBJECTTYPE = BaseType("Object")
 val NULLTYPE = BaseType("Null")
-val ERRORTYPE = BaseType("ERROR", true)
+val ERRORTYPE = BaseType("ERROR")

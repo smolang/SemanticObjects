@@ -1,0 +1,38 @@
+class C() end
+class D extends C() end
+
+class E()
+    C m(C c) return null; end
+end
+
+class Success1 extends E ()
+    override C m(C c) return c; end
+end
+class Success2 extends E ()
+    override C m(C c) C ret := super(c); return ret; end
+end
+class Fail1 extends E () //lacks modifier
+    C m(C c) C ret := super(c); return ret; end
+end
+class Fail2 extends E () //changes signature
+    override C m(D c) C ret := super(c); return ret; end
+end
+class Fail3 extends E () //changes signature
+    override C m(C d) C ret := super(d); return ret; end
+end
+class Fail4 extends E () //changes signature
+    override C m(C c, D d) C ret := super(c); return ret; end
+end
+class Fail5 extends E () //wrong modifier
+    override C n(C c) C ret := super(c); return ret; end
+end
+class Fail6 extends E () //ill-typed super call
+    override C m(C c) C ret := super(1); return ret; end
+end
+class Fail7 extends E () //ill-typed super call
+    override C m(C c) C ret := super(null, null); return ret; end
+end
+
+main
+    skip;
+end
