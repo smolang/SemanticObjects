@@ -81,6 +81,7 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l examples/geo.smol -r e
 
 Set the first parameter of the earthquake to `0` for a non-sealing fault. The model is not faithful to geological process and is only an illustration of the debugger for a bigger model.
 If the example takes too much time, remove the `-b file` parameter to disable OWL inference for all queries.
+You can ignore the typing errors.
 
 ## Evaluation
 
