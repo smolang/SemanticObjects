@@ -52,17 +52,37 @@ class TypeTest  : StringSpec() {
         "Assign Test Success"{
             assert(checkMet("Test", "assignSuccess1", "test_assign" ).report(false))
             assert(checkMet("Test", "assignSuccess2", "test_assign" ).report(false))
+            assert(checkMet("TestGen", "success", "test_assign" ).report(false))
         }
-        "Assign Test Fail 1 "{
-            val tC = checkMet("Test", "assignFail1", "test_assign" )
-            assertFalse(tC.report(false))
-            assertEquals(tC.error.size, 2)
+        for(i in 1..7) {
+            "Assign Test Fail $i"{
+                val tC = checkMet("Test", "fail$i", "test_assign")
+                assertFalse(tC.report(false))
+                assertEquals(tC.error.size, 1)
+            }
         }
-        "Assign Test Fail 2"{
-            val tC = checkMet("Test", "assignFail2", "test_assign" )
-            assertFalse(tC.report(false))
-            assertEquals(tC.error.size, 1)
+        for(i in 1..4) {
+            "Assign Test Gen Fail $i"{
+                val tC = checkMet("TestGen", "fail$i", "test_assign")
+                assertFalse(tC.report(false))
+                assertEquals(tC.error.size, 1)
+            }
         }
+
+
+        "Call Test Success"{
+            assert(checkMet("Test", "success", "test_call" ).report(false))
+        }
+        for(i in 1..7){
+            "Call Test Fail $i"{
+                val tC = checkMet("Test", "fail$i", "test_call" )
+                assertFalse(tC.report(false))
+                assertEquals(tC.error.size, 1)
+            }
+        }
+
+
+
         "Override Test Success"{
             assert(checkClass("Success1", "test_override" ).report(false))
             assert(checkClass("Success2", "test_override" ).report(false))

@@ -3,7 +3,7 @@ This repository contains an interactive interpreter for **SMOL**, a minimal obje
 The interpreter can be used to examine the state with SPARQL, SHACL and OWL queries.
  
 The project is in an early stage, and the interpreter performs little checks on its input. 
-In particular, there is no type system and it is not checked that a `return` ends every path in the control flow.
+In particular, there is no type system, and it is not checked that a `return` ends every path in the control flow.
 Input has to be in turtle syntax (except the `class` command of the REPL, which is Manchester syntax).
 Tested only on Linux. 
 

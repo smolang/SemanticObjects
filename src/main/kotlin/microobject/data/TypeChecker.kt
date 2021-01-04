@@ -427,7 +427,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                           finalType
                                       )
                                   ) {
-                                      log("Type $realType is not assignable to $targetType.", ctx, Severity.WARNING)
+                                      log("Type $realType is not assignable to $targetType.", ctx)
                                   }
                               }
                               if (lhsType != null) { //result type
@@ -464,7 +464,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
                 if(ctx.namelist() != null)
                     newType = ComposedType(newType, ctx.namelist().NAME().map {
-                        stringToType(it.text, createClass)
+                        stringToType(it.text, className)
                     })
 
                 if(createDecl?.namelist() != null){
@@ -486,7 +486,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         }
                     }
                 } else {
-                    log("Mismatching number of parameter when creating an $createClass instance. Expected ${fields.getOrDefault(createClass, mapOf()).size}, got ${ctx.expression().size-1}", ctx)
+                    log("Mismatching number of parameters when creating an $createClass instance. Expected ${creationParameters.size}, got ${ctx.expression().size-1}", ctx)
                 }
 
 
@@ -573,51 +573,58 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             }
             is WhileParser.Mult_expressionContext -> { // The following has a lot of code duplication and could be improved by changing the grammar
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
+                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
                 log("Malformed multiplication with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Plus_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
+                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
                 log("Malformed addition with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Minus_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 // do not throw an error twice
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
+                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
                 log("Malformed subtraction with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Neq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
+                if(isAssignable(t1, t2) || isAssignable(t2, t1)) return BOOLEANTYPE
                 log("Malformed comparison <> with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Eq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
+                if(isAssignable(t1, t2) || isAssignable(t2, t1)) return BOOLEANTYPE
                 log("Malformed comparison = with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Leq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
+                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return BOOLEANTYPE
                 log("Malformed comparison <= with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Geq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
+                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return BOOLEANTYPE
                 log("Malformed comparison >= with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -665,11 +672,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         if(lhs == rhs) return true  //no need for complex typing
         if(lhs is BaseType && rhs is BaseType){
             return isBelow(rhs, lhs)
-        } else if (lhs is BaseType && rhs is ComposedType) {
+        } else if(lhs is GenericType && rhs is GenericType) {
+            return lhs == rhs
+        }
+        else if (lhs.javaClass != rhs.javaClass) {
             return false
-        } else if (lhs is ComposedType && rhs is BaseType) {
-            return false
-        } else { //if (lhs is microobject.data.ComposedType && rhs is microobject.data.ComposedType)
+        }  else { //if (lhs is ComposedType && rhs is ComposedType)
             val cLhs = lhs as ComposedType
             val cRhs = rhs as ComposedType
             if(cLhs.params.size != cRhs.params.size) return false
