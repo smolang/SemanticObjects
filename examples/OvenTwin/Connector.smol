@@ -29,7 +29,7 @@ class Installation(House house, Oven oven, Connector connector)
         print(this.oven.heater.AC);
         return False;
     end
-    Int price()
+    Int price() //simulate
         Int res := 10;
         if(this.connector.inAC) then res := res + 5; end
         if(this.connector.outAC) then res := res + 5; end
@@ -59,10 +59,11 @@ class Constructor()
     end
 
     Installation fill(Int houseId, Int ovenId)
+
+
         //Database access: Retrieve input
         House house_v := this.getHouse(houseId);
         Oven oven_v := this.getOven(ovenId);
-
 
         //Schematics: Connect to partial input
         Installation inst := new Installation(house_v, oven_v, null);
@@ -83,26 +84,36 @@ class Constructor()
     end
 
     Boolean canFillIn(Installation inst, Boolean b1, Boolean b2)
-        List<Installation> list :=
-          access("SELECT ?obj WHERE {?obj prog:house ?x. ?x prog:outlet ?y. ?y prog:AC %1. ?obj prog:oven ?x2. ?x2 prog:heater ?y2. ?y2 prog:AC %2. }", b1, b2);
-        //List<Installation> list2 := derive("<domain:ACACInst>"); //OWL bugged
-            if(list <> null) then
-                Boolean inside := list.contains(inst);
-                if(inside) then
-                    inst.connector := new Connector(b1, b2);
-                    return True;
-                end
+        List<Installation> list := null;
+        if(b1) then
+            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:ACACInst.}");
+            else list := access("SELECT ?obj WHERE {?obj a domain:ACDCInst.}");
             end
+        else
+            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:DCACInst.}");
+            else list := access("SELECT ?obj WHERE {?obj a domain:DCDCInst.}");
+            end
+        end
+        //List<Installation> list :=
+        //  access("SELECT ?obj WHERE {?obj prog:house ?x. ?x prog:outlet ?y. ?y prog:AC %1. ?obj prog:oven ?x2. ?x2 prog:heater ?y2. ?y2 prog:AC %2. }", b1, b2);
+        //List<Installation> list2 := derive("<domain:ACACInst>"); //OWL bugged
+        if(list <> null) then
+            Boolean inside := list.contains(inst);
+            if(inside) then
+                inst.connector := new Connector(b1, b2);
+                return True;
+            end
+        end
         return False;
     end
 end
 
 main
     Constructor c := new Constructor();
-    Installation inst := c.fill(1, 11);
+    Installation inst := c.fill(12, 11);
     Int cost := inst.price();
     print(cost);
-    Installation inst2 := c.fill(22, 23);
+    Installation inst2 := c.fill(12, 1);
     Int cost2 := inst2.price();
     print(cost2);
 end

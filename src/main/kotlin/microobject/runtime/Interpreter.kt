@@ -32,7 +32,8 @@ class Interpreter(
     val staticInfo: StaticTable,             // Class table etc.
     private val outPath: String,             // Path to the output directory (e.g., /tmp/mo)
     private val back : String,               // Background knowledge (Should be a string with OWL class definitions)
-    private val rules : String               // Additional rules for jena
+    private val rules : String,              // Additional rules for jena
+    private val domainPrefix : String        // Interface prefix for the domain
 ) {
 
     fun coreCopy() : Interpreter{
@@ -44,7 +45,7 @@ class Interpreter(
             Stack<StackEntry>(),
             newHeap,
             staticInfo,
-            outPath, back, rules
+            outPath, back, rules, domainPrefix
         )
     }
 
@@ -59,6 +60,7 @@ class Interpreter(
                     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
                     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
+                    PREFIX domain: <$domainPrefix> 
                 """.trimIndent()
 
     fun query(str: String): ResultSet? {
@@ -79,6 +81,7 @@ class Interpreter(
             """@prefix : <urn:> .
                @prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
                @prefix prog: <urn:> .
+               @prefix domain: <$domainPrefix> .
                @prefix run: <urn:> .""".trimIndent()
             val reader = (prefixes+"\n"+rules).byteInputStream().bufferedReader()
             val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
