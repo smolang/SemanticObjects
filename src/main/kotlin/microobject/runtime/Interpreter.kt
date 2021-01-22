@@ -16,7 +16,9 @@ import org.apache.jena.reasoner.rulesys.Rule
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.OWLNamedIndividual
 import org.semanticweb.owlapi.model.OntologyConfigurator
+import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.BufferedReader
 import java.io.File
 import java.util.*
@@ -47,10 +49,8 @@ class Interpreter(
     }
 
     private var debug = false
-
-    fun query(str: String): ResultSet? {
-        val out =
-            """
+    val prefix =
+        """
                     PREFIX : <urn:>
                     PREFIX smol: <https://github.com/Edkamb/SemanticObjects#>
                     PREFIX prog: <urn:>
@@ -59,9 +59,10 @@ class Interpreter(
                     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
                     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
-                    
-                    $str
                 """.trimIndent()
+
+    fun query(str: String): ResultSet? {
+        val out = prefix + "\n\n $str\n"
 
         var model : Model = ModelFactory.createOntologyModel()
         val uri = File("$outPath/output.ttl").toURL().toString()
@@ -86,11 +87,22 @@ class Interpreter(
             //infModel.prepare()
             model = infModel
         }
-
+        //println("execute CSSA: $out")
         val query = QueryFactory.create(out)
         val qexec = QueryExecutionFactory.create(query, model)
 
         return qexec.execSelect()
+    }
+
+
+    private fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
+        val out ="$str".replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
+        val m = OWLManager.createOWLOntologyManager()
+        val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+        val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
+        val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+        parser.setDefaultOntology(ontology)
+        return reasoner.getInstances(parser.parseClassExpression(out))
     }
 
     private fun dump() {
@@ -215,7 +227,8 @@ class Interpreter(
                 var i = 1
                 for (expr in stmt.params) {
                     val p = eval(expr, stackMemory, heap, obj)
-                    str = str.replace("%${i++}", p.literal)
+                    //todo: check is this truly a run:literal
+                    str = str.replace("%${i++}", "run:${p.literal}")
                 }
                 if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains("next")
                 ) {
@@ -263,12 +276,7 @@ class Interpreter(
 
                 //this is duplicated w.r.t. REPL until we figure out how to internally represent the KB
                 dump()
-                val m = OWLManager.createOWLOntologyManager()
-                val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
-                val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
-                val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-                parser.setDefaultOntology(ontology)
-                val res = reasoner.getInstances(parser.parseClassExpression(stmt.query.literal))
+                val res : NodeSet<OWLNamedIndividual> = owlQuery(stmt.query.literal)
                 var list = LiteralExpr("null")
                 if (res != null) {
                     for (r in res) {
@@ -348,6 +356,7 @@ class Interpreter(
             else -> throw Exception("This kind of statement is not implemented yet: $stmt")
         }
     }
+
 
     private fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, obj: LiteralExpr) : LiteralExpr {
         if(heap[obj] == null) throw Exception("This object is unknown: $obj$")

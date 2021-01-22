@@ -1,0 +1,324 @@
+@prefix : <http://github.com/edkamb/SemanticObjects/ontologies/oven#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://github.com/edkamb/SemanticObjects/ontologies/oven> .
+
+<http://github.com/edkamb/SemanticObjects/ontologies/oven> rdf:type owl:Ontology .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#adapts
+:adapts rdf:type owl:ObjectProperty ;
+        rdfs:subPropertyOf owl:topObjectProperty ;
+        rdfs:domain :Installation ;
+        rdfs:range :Connector .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasACDCElement
+:hasACDCElement rdf:type owl:ObjectProperty ;
+                rdfs:subPropertyOf :hasConverterElement ;
+                rdfs:domain [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :inHouse ;
+                                                     owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                                          owl:onProperty :hasOutlet ;
+                                                                          owl:someValuesFrom :ACOutput
+                                                                        ]
+                                                   ]
+                                                   [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :ofOven ;
+                                                     owl:someValuesFrom :ACOven
+                                                   ]
+                                                 ) ;
+                              rdf:type owl:Class
+                            ] ;
+                rdfs:range :ACDCConverter .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasACStraightElement
+:hasACStraightElement rdf:type owl:ObjectProperty ;
+                      rdfs:subPropertyOf :hasStraightElement ;
+                      rdfs:domain [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                           owl:onProperty :inHouse ;
+                                                           owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                                                owl:onProperty :hasOutlet ;
+                                                                                owl:someValuesFrom :ACOutput
+                                                                              ]
+                                                         ]
+                                                         [ rdf:type owl:Restriction ;
+                                                           owl:onProperty :ofOven ;
+                                                           owl:someValuesFrom :ACOven
+                                                         ]
+                                                       ) ;
+                                    rdf:type owl:Class
+                                  ] ;
+                      rdfs:range :ACStraight .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasConnectorElement
+:hasConnectorElement rdf:type owl:ObjectProperty ;
+                     rdfs:subPropertyOf owl:topObjectProperty ;
+                     rdfs:domain :Installation ;
+                     rdfs:range :Connector .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasConverterElement
+:hasConverterElement rdf:type owl:ObjectProperty ;
+                     rdfs:subPropertyOf :hasConnectorElement .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasDCACElement
+:hasDCACElement rdf:type owl:ObjectProperty ;
+                rdfs:subPropertyOf :hasConverterElement ;
+                rdfs:domain [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :inHouse ;
+                                                     owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                                          owl:onProperty :hasOutlet ;
+                                                                          owl:someValuesFrom :DCOutput
+                                                                        ]
+                                                   ]
+                                                   [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :ofOven ;
+                                                     owl:someValuesFrom :DCOven
+                                                   ]
+                                                 ) ;
+                              rdf:type owl:Class
+                            ] ;
+                rdfs:range :DCACConverter .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasDCStraightElement
+:hasDCStraightElement rdf:type owl:ObjectProperty ;
+                      rdfs:subPropertyOf :hasStraightElement ;
+                      rdfs:domain [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                           owl:onProperty :inHouse ;
+                                                           owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                                                owl:onProperty :hasOutlet ;
+                                                                                owl:someValuesFrom :DCOutput
+                                                                              ]
+                                                         ]
+                                                         [ rdf:type owl:Restriction ;
+                                                           owl:onProperty :ofOven ;
+                                                           owl:someValuesFrom :DCOven
+                                                         ]
+                                                       ) ;
+                                    rdf:type owl:Class
+                                  ] ;
+                      rdfs:range :DCStraight .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasHeaterElement
+:hasHeaterElement rdf:type owl:ObjectProperty ;
+                  rdfs:domain :Oven ;
+                  rdfs:range :Heater .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasOutlet
+:hasOutlet rdf:type owl:ObjectProperty ;
+           rdfs:domain :House ;
+           rdfs:range :Output .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasOven
+:hasOven rdf:type owl:ObjectProperty ;
+         rdfs:subPropertyOf owl:topObjectProperty ;
+         rdfs:domain :House ;
+         rdfs:range :Oven ;
+         owl:propertyChainAxiom ( [ owl:inverseOf :inHouse
+                                  ]
+                                  :ofOven
+                                ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#hasStraightElement
+:hasStraightElement rdf:type owl:ObjectProperty ;
+                    rdfs:subPropertyOf :hasConnectorElement .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#inHouse
+:inHouse rdf:type owl:ObjectProperty ;
+         rdfs:subPropertyOf owl:topObjectProperty ;
+         rdfs:domain :Installation ;
+         rdfs:range :House .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ofOven
+:ofOven rdf:type owl:ObjectProperty ;
+        rdfs:subPropertyOf owl:topObjectProperty ;
+        rdfs:domain :Installation ;
+        rdfs:range :Oven .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#usesOutlet
+:usesOutlet rdf:type owl:ObjectProperty ;
+            rdfs:domain :Oven ;
+            rdfs:range :Output ;
+            owl:propertyChainAxiom ( [ owl:inverseOf :hasOven
+                                     ]
+                                     :hasOutlet
+                                   ) .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ACDCConverter
+:ACDCConverter rdf:type owl:Class ;
+               rdfs:subClassOf :Converter ;
+               owl:disjointWith :DCACConverter .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ACHeater
+:ACHeater rdf:type owl:Class ;
+          rdfs:subClassOf :Heater ;
+          owl:disjointWith :DCHeater .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ACOutput
+:ACOutput rdf:type owl:Class ;
+          rdfs:subClassOf :Output ;
+          owl:disjointWith :DCOutput .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ACOven
+:ACOven rdf:type owl:Class ;
+        owl:equivalentClass [ rdf:type owl:Restriction ;
+                              owl:onProperty :hasHeaterElement ;
+                              owl:someValuesFrom :ACHeater
+                            ] ;
+        rdfs:subClassOf :Oven .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#ACStraight
+:ACStraight rdf:type owl:Class ;
+            rdfs:subClassOf :Straight ;
+            owl:disjointWith :DCStraight .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Connector
+:Connector rdf:type owl:Class ;
+           owl:disjointUnionOf ( :Converter
+                                 :Straight
+                               ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Converter
+:Converter rdf:type owl:Class ;
+           rdfs:subClassOf :Connector ;
+           owl:disjointWith :Straight ;
+           owl:disjointUnionOf ( :ACDCConverter
+                                 :DCACConverter
+                               ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#DCACConverter
+:DCACConverter rdf:type owl:Class ;
+               rdfs:subClassOf :Converter .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#DCHeater
+:DCHeater rdf:type owl:Class ;
+          rdfs:subClassOf :Heater .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#DCOutput
+:DCOutput rdf:type owl:Class ;
+          rdfs:subClassOf :Output .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#DCOven
+:DCOven rdf:type owl:Class ;
+        owl:equivalentClass [ rdf:type owl:Restriction ;
+                              owl:onProperty :hasHeaterElement ;
+                              owl:someValuesFrom :DCHeater
+                            ] ;
+        rdfs:subClassOf :Oven .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#DCStraight
+:DCStraight rdf:type owl:Class ;
+            rdfs:subClassOf :Straight .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Heater
+:Heater rdf:type owl:Class ;
+        owl:disjointUnionOf ( :ACHeater
+                              :DCHeater
+                            ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#House
+:House rdf:type owl:Class .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Installation
+:Installation rdf:type owl:Class .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Output
+:Output rdf:type owl:Class ;
+        owl:disjointUnionOf ( :ACOutput
+                              :DCOutput
+                            ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Oven
+:Oven rdf:type owl:Class ;
+      owl:disjointUnionOf ( :ACOven
+                            :DCOven
+                          ) .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#Straight
+:Straight rdf:type owl:Class ;
+          rdfs:subClassOf :Connector ;
+          owl:disjointUnionOf ( :ACStraight
+                                :DCStraight
+                              ) .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyConnector
+:MyConnector rdf:type owl:NamedIndividual ,
+                      :Connector .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyHeater
+:MyHeater rdf:type owl:NamedIndividual ,
+                   :DCHeater .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyHouse
+:MyHouse rdf:type owl:NamedIndividual ,
+                  :House ;
+         :hasOutlet :MyOutlet .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyInstallation
+:MyInstallation rdf:type owl:NamedIndividual ,
+                         :Installation ;
+                :hasConnectorElement :MyConnector ;
+                :inHouse :MyHouse ;
+                :ofOven :MyOven .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyOutlet
+:MyOutlet rdf:type owl:NamedIndividual ,
+                   :DCOutput .
+
+
+###  http://github.com/edkamb/SemanticObjects/ontologies/oven#MyOven
+:MyOven rdf:type owl:NamedIndividual ,
+                 :Oven ;
+        :hasHeaterElement :MyHeater .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi
