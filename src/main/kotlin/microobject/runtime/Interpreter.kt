@@ -27,13 +27,14 @@ import java.util.*
 class InterpreterBridge(var interpreter: Interpreter?)
 
 class Interpreter(
-    val stack: Stack<StackEntry>,            // This is the process stack
-    private var heap: GlobalMemory,          // This is a map from objects to their heap memory
-    val staticInfo: StaticTable,             // Class table etc.
-    private val outPath: String,             // Path to the output directory (e.g., /tmp/mo)
-    private val back : String,               // Background knowledge (Should be a string with OWL class definitions)
-    private val rules : String,              // Additional rules for jena
-    private val domainPrefix : String        // Interface prefix for the domain
+    val stack: Stack<StackEntry>,               // This is the process stack
+    private var heap: GlobalMemory,             // This is a map from objects to their heap memory
+    private var simMemory: SimulationMemory,  // This is a map from simulation objects to their handler
+    val staticInfo: StaticTable,                // Class table etc.
+    private val outPath: String,                // Path to the output directory (e.g., /tmp/mo)
+    private val back : String,                  // Background knowledge (Should be a string with OWL class definitions)
+    private val rules : String,                 // Additional rules for jena
+    private val domainPrefix : String           // Interface prefix for the domain
 ) {
 
     fun coreCopy() : Interpreter{
@@ -44,13 +45,14 @@ class Interpreter(
         return Interpreter(
             Stack<StackEntry>(),
             newHeap,
+            mutableMapOf(),
             staticInfo,
             outPath, back, rules, domainPrefix
         )
     }
 
     private var debug = false
-    val prefix =
+    private val prefix =
         """
                     PREFIX : <urn:>
                     PREFIX smol: <https://github.com/Edkamb/SemanticObjects#>
@@ -64,7 +66,7 @@ class Interpreter(
                 """.trimIndent()
 
     fun query(str: String): ResultSet? {
-        val out = prefix + "\n\n $str\n"
+        val out = "$prefix\n\n $str\n"
 
         var model : Model = ModelFactory.createOntologyModel()
         val uri = File("$outPath/output.ttl").toURL().toString()
@@ -99,7 +101,7 @@ class Interpreter(
 
 
     private fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
-        val out ="$str".replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
+        val out = str.replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
         val m = OWLManager.createOWLOntologyManager()
         val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
@@ -121,7 +123,7 @@ class Interpreter(
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
         if(stack.isEmpty()) return LiteralExpr("ERROR") // program terminated
-        return eval(expr, stack.peek().store, heap, stack.peek().obj)
+        return eval(expr, stack.peek().store, heap, simMemory, stack.peek().obj)
     }
 
     /*
@@ -163,7 +165,7 @@ class Interpreter(
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = obj
                 for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, obj)
+                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
@@ -171,7 +173,7 @@ class Interpreter(
                 )
             }
             is AssignStmt -> {
-                val res = eval(stmt.value, stackMemory, heap, obj)
+                val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                 when (stmt.target) {
                     is LocalVar -> stackMemory[stmt.target.name] = res
                     is OwnVar -> {
@@ -181,19 +183,26 @@ class Interpreter(
                         heapObj[stmt.target.name] = res
                     }
                     is OthersVar -> {
-                        val key = eval(stmt.target.expr, stackMemory, heap, obj)
-                        val otherHeap = heap[key]
-                            ?: throw Exception("This object is unknown: $key")
-                        if (!(staticInfo.fieldTable[key.tag]
-                                ?: error("")).contains(stmt.target.name)
-                        ) throw Exception("This field is unknown: $key")
-                        otherHeap[stmt.target.name] = res
+                        val key = eval(stmt.target.expr, stackMemory, heap, simMemory, obj)
+
+                        if(heap.containsKey(key)) {
+                            val otherHeap = heap[key]
+                                ?: throw Exception("This object is unknown: $key")
+                            if (!(staticInfo.fieldTable[key.tag]
+                                    ?: error("")).contains(stmt.target.name)
+                            ) throw Exception("This field is unknown: $key")
+                            otherHeap[stmt.target.name] = res
+                        }
+                        else if(simMemory.containsKey(key)) {
+                            simMemory[key]!!.write(stmt.target.name, res)
+                        }
+                        else throw Exception("This object is unknown: $key")
                     }
                 }
                 return Pair(null, emptyList())
             }
             is CallStmt -> {
-                val newObj = eval(stmt.callee, stackMemory, heap, obj)
+                val newObj = eval(stmt.callee, stackMemory, heap, simMemory, obj)
                 val mt = staticInfo.methodTable[newObj.tag]
                     ?: throw Exception("This class is unknown: ${newObj.tag} when executing $stmt")
                 val m = mt[stmt.method]
@@ -201,7 +210,7 @@ class Interpreter(
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = newObj
                 for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, obj)
+                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
@@ -217,19 +226,19 @@ class Interpreter(
                     "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}"
                 )
                 for (i in m.indices) {
-                    newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, obj)
+                    newMemory[m[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 heap[name] = newMemory
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
             }
             is SparqlStmt -> {
-                val query = eval(stmt.query, stackMemory, heap, obj)
+                val query = eval(stmt.query, stackMemory, heap, simMemory, obj)
                 if (query.tag != "string")
                     throw Exception("Query is not a string: $query")
                 var str = query.literal
                 var i = 1
                 for (expr in stmt.params) {
-                    val p = eval(expr, stackMemory, heap, obj)
+                    val p = eval(expr, stackMemory, heap, simMemory, obj)
                     //todo: check is this truly a run:literal
                     str = str.replace("%${i++}", "run:${p.literal}")
                 }
@@ -302,13 +311,13 @@ class Interpreter(
             is ReturnStmt -> {
                 val over = stack.pop()
                 if (over.active is StoreReturnStmt) {
-                    val res = eval(stmt.value, stackMemory, heap, obj)
+                    val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                     return Pair(StackEntry(AssignStmt(over.active.target, res), over.store, over.obj, id), listOf())
                 }
                 if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
                     val active = over.active.first
                     val next = over.active.second
-                    val res = eval(stmt.value, stackMemory, heap, obj)
+                    val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                     return Pair(
                         StackEntry(appendStmt(AssignStmt(active.target, res), next), over.store, over.obj, id),
                         listOf()
@@ -317,7 +326,7 @@ class Interpreter(
                 throw Exception("Malformed heap")
             }
             is IfStmt -> {
-                val res = eval(stmt.guard, stackMemory, heap, obj)
+                val res = eval(stmt.guard, stackMemory, heap, simMemory, obj)
                 if (res == LiteralExpr("True", "boolean")) return Pair(
                     StackEntry(stmt.thenBranch, stackMemory, obj, id),
                     listOf()
@@ -345,7 +354,25 @@ class Interpreter(
                 debug = true; return Pair(null, emptyList())
             }
             is PrintStmt -> {
-                println(eval(stmt.expr, stackMemory, heap, obj))
+                println(eval(stmt.expr, stackMemory, heap, simMemory, obj))
+                return Pair(null, emptyList())
+            }
+            is SimulationStmt -> {
+                val simObj = SimulatorObject(stmt.path,stmt.params.map { Pair(it.name,eval(
+                    it.expr,
+                    stackMemory,
+                    heap, simMemory,
+                    obj
+                )) }.toMap().toMutableMap())
+                val name = Names.getObjName("CoSimulation")
+                simMemory[name] = simObj
+                return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
+            }
+            is TickStmt -> {
+                val target = eval(stmt.fmu, stackMemory, heap, simMemory, obj)
+                if(!simMemory.containsKey(target)) throw Exception("Object $target is no a simulation object")
+                val tickTime = eval(stmt.tick, stackMemory, heap, simMemory, obj)
+                simMemory[target]!!.tick(tickTime.literal.toInt())
                 return Pair(null, emptyList())
             }
             is SequenceStmt -> {
@@ -361,7 +388,7 @@ class Interpreter(
     }
 
 
-    private fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, obj: LiteralExpr) : LiteralExpr {
+    private fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr {
         if(heap[obj] == null) throw Exception("This object is unknown: $obj$")
         val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())
         when (expr) {
@@ -369,48 +396,48 @@ class Interpreter(
             is ArithExpr -> {
                 if (expr.Op == Operator.EQ) {
                     if (expr.params.size != 2) throw Exception("Operator.EQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, obj)
-                    val second = eval(expr.params[1], stack, heap, obj)
+                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
                     if (first == second) return LiteralExpr("True", "boolean")
                     else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.NEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.NEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, obj)
-                    val second = eval(expr.params[1], stack, heap, obj)
+                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
                     if (first == second) return LiteralExpr("False", "boolean")
                     else return LiteralExpr("True", "boolean")
                 }
                 if (expr.Op == Operator.GEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.GEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, obj)
-                    val second = eval(expr.params[1], stack, heap, obj)
+                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
                     if (first.literal.toInt() >= second.literal.toInt()) return LiteralExpr("True", "boolean")
                     else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.LEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.LEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, obj)
-                    val second = eval(expr.params[1], stack, heap, obj)
+                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
                     if (first.literal.toInt() <= second.literal.toInt()) return LiteralExpr("True", "boolean")
                     else return LiteralExpr("False", "boolean")
                 }
                 if (expr.Op == Operator.PLUS) {
                     return expr.params.fold(LiteralExpr("0"), { acc, nx ->
-                        val enx = eval(nx, stack, heap, obj)
+                        val enx = eval(nx, stack, heap, simMemory, obj)
                         LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
                     })
                 }
                 if (expr.Op == Operator.MULT) {
                     return expr.params.fold(LiteralExpr("1"), { acc, nx ->
-                        val enx = eval(nx, stack, heap, obj)
+                        val enx = eval(nx, stack, heap, simMemory, obj)
                         LiteralExpr((acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
                     })
                 }
                 if (expr.Op == Operator.MINUS) {
                     if (expr.params.size != 2) throw Exception("Operator.MINUS requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, obj)
-                    val second = eval(expr.params[1], stack, heap, obj)
+                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
                     return LiteralExpr((first.literal.removePrefix("urn:").toInt() - second.literal.removePrefix("urn:").toInt()).toString(), "integer")
                 }
                 throw Exception("This kind of operator is not implemented yet")
@@ -419,10 +446,10 @@ class Interpreter(
                 return heapObj.getOrDefault(expr.name, LiteralExpr("ERROR"))
             }
             is OthersVar -> {
-                val oObj = eval(expr.expr, stack, heap, obj)
-                val maps = heap[oObj]
-                    ?: throw Exception("Unknown object $oObj stored in $expr")
-                return maps.getOrDefault(expr.name, LiteralExpr("ERROR"))
+                val oObj = eval(expr.expr, stack, heap, simMemory, obj)
+                if(heap.containsKey(oObj)) return heap[oObj]!!.getOrDefault(expr.name, LiteralExpr("ERROR"))
+                if(simMemory.containsKey(oObj)) return simMemory[oObj]!!.read(expr.name)
+                throw Exception("Unknown object $oObj stored in $expr")
             }
             is LocalVar -> {
                 return stack.getOrDefault(expr.name, LiteralExpr("ERROR"))

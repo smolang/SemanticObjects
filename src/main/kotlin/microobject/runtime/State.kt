@@ -121,6 +121,7 @@ Heap memory is barely the opposite of local memory, we have no assumptions about
  */
 typealias Memory = MutableMap<String, LiteralExpr>       // Maps variable names to values
 typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name literals to local memories
+typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
 typealias FieldEntry = List<String>                   //list of fields
 typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
 

@@ -1,0 +1,10 @@
+main
+    //beware: path is relative to interpreter instance, not this file
+    DE[Int integer_a, Int integer_b; Int integer_c] de := simulate("examples/adder.fmu", integer_a:=1, integer_b:=2);
+    Int i := de.integer_c;
+    print(i);
+    tick(de, 1);
+    de.integer_a := 2;
+    i := de.integer_c;
+    print(i);
+end

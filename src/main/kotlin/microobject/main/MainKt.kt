@@ -10,7 +10,6 @@ import java.io.File
 import java.nio.file.Paths
 
 
-
 class Main : CliktCommand() {
     private val ninteractive by option("--non-interactive","-n",help="Does not enter the interactive shell.").flag()
     private val verbose      by option("--verbose","-v",help="Verbose output.").flag()

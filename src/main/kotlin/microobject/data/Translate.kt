@@ -155,6 +155,22 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     }
 
+    override fun visitSimulate_statement(ctx: Simulate_statementContext?): ProgramElement {
+        val path = ctx!!.path.text.removeSurrounding("\"")
+        val target = visit(ctx!!.target) as Location
+
+        var res = listOf<VarInit>()
+        if(ctx!!.varInitList() != null) {
+            for (nm in ctx!!.varInitList()!!.varInit())
+                res += visit(nm) as VarInit
+        }
+        return SimulationStmt(target, path,  res)
+    }
+
+    override fun visitTick_statement(ctx: Tick_statementContext?): ProgramElement {
+        return TickStmt(visit(ctx!!.fmu) as Expression, visit(ctx!!.time) as Expression )
+    }
+
     override fun visitOutput_statement(ctx: Output_statementContext?): ProgramElement {
         return PrintStmt(visit(ctx!!.expression()) as Expression, ctx!!.start.line)
     }
@@ -260,5 +276,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
     override fun visitThis_expression(ctx: This_expressionContext?): ProgramElement {
         return LocalVar("this")
+    }
+
+    override fun visitVarInit(ctx: VarInitContext?): ProgramElement {
+        return VarInit(ctx!!.NAME().text, visit(ctx.expression()) as Expression)
     }
 }

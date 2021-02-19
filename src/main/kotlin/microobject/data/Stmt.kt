@@ -232,7 +232,30 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
     }
 }
 
+// For simulation interaface
+data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1) : Statement {
+    override fun toString(): String = "$target := simulate($path, ${params.joinToString(",")})"
+    override fun getRDF(): String {
+        //TODO: extend ontology
+        return ""
+    }
+}
 
+data class TickStmt(val fmu: Expression, val tick : Expression, val pos : Int = -1) : Statement {
+    override fun toString(): String = "tick($fmu, $tick)"
+    override fun getRDF(): String {
+        //TODO: extend ontology
+        return ""
+    }
+}
+
+data class VarInit(val name : String, val expr: Expression) : ProgramElement {
+    override fun toString(): String = "$name : $expr"
+    override fun getRDF(): String {
+        //TODO: extend ontology
+        return ""
+    }
+}
 
 /** Expressions **/
 

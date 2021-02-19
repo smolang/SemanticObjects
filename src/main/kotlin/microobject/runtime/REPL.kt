@@ -147,6 +147,7 @@ class REPL(private val apache: String,
         interpreter = Interpreter(
             initStack,
             initGlobalStore,
+            mutableMapOf(),
             pair.second,
             outPath,
             back,

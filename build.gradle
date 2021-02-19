@@ -30,6 +30,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-simple:1.7.25'
     implementation 'org.apache.jena:apache-jena-libs:3.16.0'
     implementation 'org.apache.jena:jena-core:3.16.0'
+    compile 'org.siani.javafmi:fmu-wrapper:2.26.3'
 }
 
 generateGrammarSource {

@@ -150,7 +150,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             for(col in collisions)
                 log("Class $name has type parameter ${col.text} that shadows a known type.", clCtx)
 
-            val globalColl = clCtx.namelist().NAME().filter { generics.filter { it.key != name }.values.fold(listOf<String>(), {acc, nx -> acc + nx}).contains(it.text) }
+            val globalColl = clCtx.namelist().NAME().filter { it -> generics.filter { it.key != name }.values.fold(listOf<String>(), { acc, nx -> acc + nx}).contains(it.text) }
             for(col in globalColl)
                 log("Class $name has type parameter ${col.text} that shadows another type parameter (type parameters share a global namespace).", clCtx)
         }
@@ -170,7 +170,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             for( mtCtx in clCtx.method_def() ) checkMet(mtCtx, name)
     }
 
-    internal fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){
+    private fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){
         val name = mtCtx.NAME().text
         val upwards = recoverDef[className]!!.NAME(1).text
         val allMets = getMethods(upwards).filter { it.NAME().text == name }
@@ -271,7 +271,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()
     // TODO: move this to an antlr visitor
-    internal fun checkStatement(ctx : WhileParser.StatementContext,
+    private fun checkStatement(ctx : WhileParser.StatementContext,
                                finished : Boolean,
                                vars : MutableMap<String, Type>,
                                metType : Type, //return type
@@ -537,7 +537,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             is WhileParser.Skip_statmentContext -> { }
             is WhileParser.Debug_statementContext -> { }
             else -> {
-                log("Statement $ctx cannot be type checked}",ctx)
+                log("Statements with class ${ctx.javaClass} cannot be type checked",ctx)
             }
         }
         return false

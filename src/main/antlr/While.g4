@@ -26,6 +26,8 @@ PRINTLN : 'print';
 END : 'end';
 ACCESS : 'access';
 DERIVE : 'derive';
+SIMULATE : 'simulate';
+TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
 
@@ -61,6 +63,8 @@ DOT : '.';
 SEMI : ';';
 OPARAN : '(';
 CPARAN : ')';
+OBRACK : '[';
+CBRACK : ']';
 COMMA : ',';
 
 //Names etc.
@@ -73,7 +77,7 @@ CONSTANT :  DIG+;
 namelist : NAME (COMMA NAME)*;
 
 //Entry point
-program : (class_def)+ MAIN statement END;
+program : (class_def)* MAIN statement END;
 
 //classes
 class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN paramList? CPARAN  method_def* END;
@@ -90,6 +94,8 @@ statement :   SKIP_S SEMI                                                       
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
+			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
+			| TICK OPARAN fmu=expression COMMA time=expression CPARAN SEMI                                                                              # tick_statement
 			| IF expression THEN statement (ELSE statement)? END next=statement?                                                                        # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
             | statement statement                                                                                                                       # sequence_statement
@@ -116,9 +122,12 @@ expression :      THIS                           # this_expression
                 | OPARAN expression CPARAN       # nested_expression
                 ;
 
-type : NAME                #simple_type
-     | NAME LT typelist GT #nested_type
+type : NAME                                                    #simple_type
+     | NAME LT typelist GT                                     #nested_type
+     | NAME OBRACK in=paramList? SEMI out=paramList? CBRACK    #fmu_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
+varInit : NAME ASS expression;
+varInitList : varInit (COMMA varInit)*;
