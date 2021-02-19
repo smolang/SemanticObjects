@@ -1,4 +1,7 @@
 grammar While;
+/**
+TODO: casts, unit, constraints on generics, drop special treatment of atomic types
+**/
 @header {
 package antlr.microobject.gen;
 }
@@ -10,44 +13,54 @@ WS           : [ \t\r\n\u000C]+ -> channel(HIDDEN);
 COMMENT      : '/*' .*? '*/' -> channel(HIDDEN) ;
 LINE_COMMENT : '//' ~[\r\n]* -> channel(HIDDEN) ;
 
-//Keywords
+//Keywords: statements
+SKIP_S : 'skip';
+RETURN : 'return';
+IF : 'if';
+THEN : 'then';
+NEW : 'new';
+ELSE : 'else';
+WHILE : 'while';
+DO : 'do';
+PRINTLN : 'print';
+END : 'end';
+ACCESS : 'access';
+DERIVE : 'derive';
+BREAKPOINT : 'breakpoint';
+SUPER : 'super';
+
+//Keywords: classes and methods
+CLASS : 'class';
+EXTENDS : 'extends';
+RULE : 'rule';
+OVERRIDE : 'override';
+MAIN : 'main';
+
+//Keywords: constants
 TRUE : 'True';
 FALSE : 'False';
-SKIP_S : 'skip';
+NULL : 'null';
+THIS: 'this';
+
+//Keywords: operators
 EQ : '=';
 NEQ : '<>';
 LT : '<';
 GT : '>';
 LEQ : '<=';
 GEQ : '>=';
-RETURN : 'return';
 ASS : ':=';
-DOT : '.';
-SEMI : ';';
-IF : 'if';
-FI : 'fi';
-THEN : 'then';
-NEW : 'new';
-ELSE : 'else';
-WHILE : 'while';
-DO : 'do';
-MAIN : 'main';
-THIS: 'this';
-OPARAN : '(';
-CPARAN : ')';
 PLUS : '+';
 MULT : '*';
 MINUS : '-';
 AND : '&';
 OR : '|';
-PRINTLN : 'print';
-CLASS : 'class';
-END : 'end';
-EXTENDS : 'extends';
-ACCESS : 'access';
-DERIVE : 'derive';
-BREAKPOINT : 'breakpoint';
-RULE : 'rule';
+
+//Keywords: others
+DOT : '.';
+SEMI : ';';
+OPARAN : '(';
+CPARAN : ')';
 COMMA : ',';
 
 //Names etc.
@@ -63,34 +76,36 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)+ MAIN statement END;
 
 //classes
-class_def : CLASS NAME (EXTENDS NAME)? OPARAN namelist? CPARAN  method_def* END;
-method_def : (builtinrule=RULE)? NAME OPARAN namelist? CPARAN statement END;
+class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN paramList? CPARAN  method_def* END;
+method_def : (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
 
 //Statements
-statement :   SKIP_S SEMI                                                           # skip_statment
-			| expression ASS expression SEMI                                        # assign_statement
-			| RETURN expression SEMI                                                # return_statement
-			| (target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI    # call_statement
-			| target=expression ASS NEW NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
-			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                           # debug_statement
-			| PRINTLN OPARAN expression CPARAN SEMI                                 # output_statement
-			| target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI # sparql_statement
-			| target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI # owl_statement
-			| IF expression THEN statement (ELSE statement)? END next=statement?    # if_statement
-            | WHILE expression DO statement END next=statement?                     # while_statement
-            | statement statement                                                   # sequence_statement
+statement :   SKIP_S SEMI                                                                                                                               # skip_statment
+			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
+			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
+			| RETURN expression SEMI                                                                                                                    # return_statement
+			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
+			| (declType = type)? target=expression ASS NEW NAME (LT namelist GT)? OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
+			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                                                                                               # debug_statement
+			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
+			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
+			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
+			| IF expression THEN statement (ELSE statement)? END next=statement?                                                                        # if_statement
+            | WHILE expression DO statement END next=statement?                                                                                         # while_statement
+            | statement statement                                                                                                                       # sequence_statement
             ;
 
 
 //Expressions
 expression :      THIS                           # this_expression
                 | THIS DOT NAME                  # field_expression
-                | expression DOT NAME			 # external_field_expression
                 | NAME                           # var_expression
                 | CONSTANT                       # const_expression
                 | TRUE                           # true_expression
                 | FALSE                          # false_expression
                 | STRING                         # string_expression
+                | NULL                           # null_expression
+                | expression DOT NAME			 # external_field_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression
                 | expression MULT expression     # mult_expression
@@ -101,4 +116,9 @@ expression :      THIS                           # this_expression
                 | OPARAN expression CPARAN       # nested_expression
                 ;
 
-
+type : NAME                #simple_type
+     | NAME LT typelist GT #nested_type
+     ;
+typelist : type (COMMA type)*;
+param : type NAME;
+paramList : param (COMMA param)*;

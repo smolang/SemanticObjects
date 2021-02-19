@@ -10,6 +10,7 @@ import java.io.File
 import java.nio.file.Paths
 
 
+
 class Main : CliktCommand() {
     private val ninteractive by option("--non-interactive","-n",help="Does not enter the interactive shell.").flag()
     private val verbose      by option("--verbose","-v",help="Verbose output.").flag()
@@ -18,6 +19,7 @@ class Main : CliktCommand() {
     private val replay       by option("--replay","-r",help="path to a file containing a series of shell commands.").path()
     private val load         by option("--load","-l",help="path to a .smol file which is loaded on startup.").path()
     private val back         by option("--back","-b",help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
+    private val domainPrefix by option("--domain","-d",help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
 
     override fun run() {
         val pathJena = if( apache == null ) "" else apache.toString()
@@ -31,7 +33,7 @@ class Main : CliktCommand() {
             }else println("Could not find file for background knowledge: ${file.path}")
         }
 
-        val repl = REPL(pathJena, tmp.toString(), verbose, backgr)
+        val repl = REPL(pathJena, tmp.toString(), verbose, backgr, domainPrefix)
         if(load != null){
             repl.command("read", load.toString())
         }

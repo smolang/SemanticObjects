@@ -7,6 +7,7 @@ import antlr.microobject.gen.WhileParser
 import microobject.data.Expression
 import microobject.data.RuleGenerator
 import microobject.data.Translate
+import microobject.data.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
@@ -50,8 +51,12 @@ class Command(
 }
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
-class REPL(private val apache: String, private val outPath: String, private val verbose: Boolean, private val back : String) {
-    internal var interpreter: Interpreter? = null
+class REPL(private val apache: String,
+           private val outPath: String,
+           private val verbose: Boolean,
+           private val back : String,
+           private val domain : String) {
+    private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
     private lateinit var ontology : OWLOntology
@@ -116,14 +121,21 @@ class REPL(private val apache: String, private val outPath: String, private val 
         println("MO> $str \n")
     }
 
-    internal fun initInterpreter(path: String) {
+    private fun initInterpreter(path: String) {
         val lexer = WhileLexer(CharStreams.fromFileName(path))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
+        val tC = TypeChecker(tree)
+        tC.check()
+        tC.report()
+
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
+
+
+
         val iB = InterpreterBridge(null)
         rules = RuleGenerator().generateBuiltins(tree, iB)
 
@@ -138,7 +150,8 @@ class REPL(private val apache: String, private val outPath: String, private val 
             pair.second,
             outPath,
             back,
-            rules
+            rules,
+            domain
         )
         iB.interpreter = interpreter
     }

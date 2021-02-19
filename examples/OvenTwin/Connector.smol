@@ -1,0 +1,119 @@
+class <T> List(T content, List<T> next)
+    T get(Int i)
+        T res := this.content;
+        if i >= 1 then
+            res := this.next.get(i-1);
+        end
+        return res;
+    end
+    Boolean contains(T t)
+        if(t = this.content) then return True; end
+        if(this.next = null) then return False; end
+        Boolean n := this.next.contains(t);
+        return n;
+    end
+end
+
+class Heater(Boolean AC) end
+class Oven(Heater heater) end
+class Outlet(Boolean AC) end
+class House(Outlet outlet) end
+class Connector(Boolean inAC, Boolean outAC) end
+class Installation(House house, Oven oven, Connector connector) 
+    Boolean output()
+        print(this.house.outlet.AC);
+        if(this.connector <> null) then
+            print(this.connector.inAC);
+            print(this.connector.outAC);
+        end
+        print(this.oven.heater.AC);
+        return False;
+    end
+    Int price() //simulate
+        Int res := 10;
+        if(this.connector.inAC) then res := res + 5; end
+        if(this.connector.outAC) then res := res + 5; end
+        return res;
+    end
+end
+
+
+class Constructor()
+    House getHouse(Int id)
+        Boolean ac := False;
+        if( id >= 10 ) then ac := True; end
+
+        Outlet outlet_v := new Outlet(ac);
+        House house_v := new House(outlet_v);
+
+        return house_v;
+    end
+    Oven getOven(Int id)
+        Boolean ac := False;
+        if( id >= 10 ) then ac := True; end
+
+        Heater heater_v := new Heater(ac);
+        Oven oven_v := new Oven(heater_v);
+
+        return oven_v;
+    end
+
+    Installation fill(Int houseId, Int ovenId)
+
+
+        //Database access: Retrieve input
+        House house_v := this.getHouse(houseId);
+        Oven oven_v := this.getOven(ovenId);
+
+        //Schematics: Connect to partial input
+        Installation inst := new Installation(house_v, oven_v, null);
+
+
+        //Reasoning: Perform semantics to fill in gaps
+        Boolean fill := this.canFillIn(inst, True, True);
+        if(fill) then return inst; end
+        fill := this.canFillIn(inst, True, False);
+        if(fill) then return inst; end
+        fill := this.canFillIn(inst, False, True);
+        if(fill) then return inst; end
+        fill := this.canFillIn(inst, False, False);
+        if(fill) then  return inst; end
+
+        //Error
+        return null;
+    end
+
+    Boolean canFillIn(Installation inst, Boolean b1, Boolean b2)
+        List<Installation> list := null;
+        if(b1) then
+            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:ACACInst.}");
+            else list := access("SELECT ?obj WHERE {?obj a domain:ACDCInst.}");
+            end
+        else
+            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:DCACInst.}");
+            else list := access("SELECT ?obj WHERE {?obj a domain:DCDCInst.}");
+            end
+        end
+        //List<Installation> list :=
+        //  access("SELECT ?obj WHERE {?obj prog:house ?x. ?x prog:outlet ?y. ?y prog:AC %1. ?obj prog:oven ?x2. ?x2 prog:heater ?y2. ?y2 prog:AC %2. }", b1, b2);
+        //List<Installation> list2 := derive("<domain:ACACInst>"); //OWL bugged
+        if(list <> null) then
+            Boolean inside := list.contains(inst);
+            if(inside) then
+                inst.connector := new Connector(b1, b2);
+                return True;
+            end
+        end
+        return False;
+    end
+end
+
+main
+    Constructor c := new Constructor();
+    Installation inst := c.fill(12, 11);
+    Int cost := inst.price();
+    print(cost);
+    Installation inst2 := c.fill(12, 1);
+    Int cost2 := inst2.price();
+    print(cost2);
+end

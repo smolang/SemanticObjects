@@ -69,7 +69,7 @@ class Node(dataL, dataR, childL, childM, childR, parent)
                 right.parent := this;
                 left.parent := this;
             end
-            return null;
+            return this;
         else                        //internal 3-node
             if(from = this.childL) then
                  newLeft := new Node(middle, null, left, right, null, null);
@@ -137,19 +137,6 @@ class Tree(root)
     end
 end
 
-class Wrap(ttt, key)
-    rule lookup()
-        v := this.ttt.retrieve(this.key);
-        return v;
-    end
-end
-
-class List(content, next)
-    length()
-        if(this.next = null) then return 1;
-        else n := this.next.length(); return n + 1; end
-    end
-end
 
 main
     root := new Node(null, null, null, null, null, null);
@@ -157,19 +144,10 @@ main
     pair1 := new Pair(1,"a");
     tree.add(pair1);
     i := 2;
-    while( i <= 1000 ) do
+    while( i <= VAR ) do
     	pair2 := new Pair(i,"b");
 	    tree.add(pair2);
 	    i := i + 1;
     end
-
-    ww := new Wrap(tree, 1);
-    res := ww.lookup();
-    res := access("SELECT ?obj WHERE {?sth :Wrap_lookup_builtin_res ?obj}");
-    print(res.content);
-
-    res := tree.retrieve(1);
-    print(res);
-
     print("done");
 end

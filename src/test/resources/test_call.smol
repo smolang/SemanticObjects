@@ -1,0 +1,58 @@
+class C(Int i)
+    Int m1(Int i) return i; end
+end
+class D extends C (Object o)
+    Object m2(Int i) return i; end
+end
+class <U> Wrapper(U content) end
+
+class Test(C c, D d, Wrapper<C> cw, Wrapper<D> dw)
+
+    Int success()
+        Int i := this.cw.content.m1(1);
+        Object o := this.dw.content.m2(1);
+        o := i;
+        D d := new D(i, o);
+        d.m2(i);
+        return 1;
+    end
+
+    Int fail1() //no return
+        skip;
+    end
+
+    Int fail2() //no return
+        if( 1 = 2 ) then
+            skip;
+        else
+            return 1;
+        end
+    end
+
+    Int fail3() //wrong method
+        Int i := this.cw.content.m2(1);
+        return 1;
+    end
+
+    Int fail4() //method does not exist
+        Int i := this.cw.content.m3(1);
+        return 1;
+    end
+
+    Int fail5() //wrong parameter
+        Int i := this.cw.content.m1(this.d);
+        return 1;
+    end
+
+    Int fail6() //wrong number of parameters
+        Int i := this.cw.content.m1(1,1);
+        return 1;
+    end
+
+    Int fail7() //wrong return type
+        D i := this.cw.content.m1(1);
+        return 1;
+    end
+end
+
+main skip; end

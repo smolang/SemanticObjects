@@ -41,14 +41,14 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
 
         //records all classes and their fields
         for(obj in staticInfo.fieldTable){
-            res += ":${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
+            res += "run:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
             for(obj2 in obj.value){
-                res += ":$obj2 rdfs:subPropertyOf smol:Field.\n"
-                res += ":${obj.key} smol:hasField :$obj2.\n"
+                res += "run:$obj2 rdfs:subPropertyOf smol:Field.\n"
+                res += "prog:${obj.key} smol:hasField run:$obj2.\n"
                 res += """
                 prog:${obj.key} rdfs:subClassOf [
                     rdf:type owl:Restriction;
-                    owl:onProperty prog:$obj2 ;
+                    owl:onProperty run:$obj2 ;
                     owl:cardinality 1
                 ] .
 
@@ -59,7 +59,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         //records all methods
         for(obj in staticInfo.methodTable){
             for(obj2 in obj.value){
-                res += ":${obj.key} smol:hasMethod prog:${obj2.key}.\n"
+                res += "prog:${obj.key} smol:hasMethod prog:${obj2.key}.\n"
                 res += "prog:${obj2.key} rdf:type owl:NamedIndividual , smol:Method.\n"
             }
         }
@@ -67,25 +67,25 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         //records type hierarchy
         for(obj in staticInfo.hierarchy.entries){
             for(obj2 in obj.value){
-                res += ":$obj2 smol:extends prog:${obj.key}.\n"
+                res += "prog:$obj2 smol:extends prog:${obj.key}.\n"
             }
         }
 
         //dumps individuals
         var i = 0
         for(obj in heap.keys){
-            res += ":${obj.literal} smol:instanceOf prog:${obj.tag}.\n"
-            res += ":${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
+            res += "run:${obj.literal} smol:instanceOf prog:${obj.tag}.\n"
+            res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
             //and their fields
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += ":${obj.literal} prog:$store "
-                if(target.tag == "IGNORE" || target.tag == "string")
-                    res += "${target.literal}.\n"
+                res += "run:${obj.literal} prog:$store "
+                res += if(target.tag == "IGNORE" || target.tag == "string")
+                    "${target.literal}.\n"
                 else if(target.literal == "null")
-                    res += "smol:${target.literal}.\n"
+                    "smol:${target.literal}.\n"
                 else
-                    res += ":${target.literal}.\n"
+                    "run:${target.literal}.\n"
                 i++
             }
         }
@@ -95,7 +95,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
         var prevStackEntry: StackEntry? = null
         for (stackEntry in stack){
             if (prevStackEntry != null){
-                res += ":pro${prevStackEntry.id} smol:nextOnStack run:pro${stackEntry.id}.\n"
+                res += "run:pro${prevStackEntry.id} smol:nextOnStack run:pro${stackEntry.id}.\n"
             }
             prevStackEntry = stackEntry
             res += "run:pro${stackEntry.id} rdf:type smol:Process.\n"
@@ -105,7 +105,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
                     res += "run:pro${stackEntry.id} prog:${key} run:${value}.\n"
                 }
             }
-            res += ":pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
+            res += "run:pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
             res += stackEntry.active.getRDF()
         }
 
@@ -135,6 +135,25 @@ Class Hierarchy : $hierarchy
 FieldTable      : $fieldTable 
 MethodTable     : $methodTable 
 """.trimIndent()
+
+    private fun getSuper(name : String) : String?{
+        for(obj in hierarchy.entries){
+            for(obj2 in obj.value){
+                if(obj2 == name) return obj.key
+            }
+        }
+        return null
+    }
+
+    fun getSuperMethod(className : String, methodName : String) : MethodEntry?{
+        var current = getSuper(className)
+        while(current != null && current != "Object"){
+            if(!methodTable.containsKey(current)) return null
+            if(methodTable[current]!!.containsKey(methodName)) return methodTable[current]!![methodName]
+            current = getSuper(current)
+        }
+        return null
+    }
 }
 
 data class StackEntry(val active: Statement, val store: Memory, val obj: LiteralExpr, val id: Int)

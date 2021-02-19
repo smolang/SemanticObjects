@@ -1,0 +1,91 @@
+class C(Int i) end
+class D extends C (Object o) end
+class <U> Wrapper(U content) end
+
+class Test()
+  Int assignSuccess1()
+    C c := new D(1, null);
+    C c2 := new D(1, c);
+    C c3 := new D(1, 1);
+    return 0;
+  end
+
+
+  Int assignSuccess2()
+    C c := new D(1, null);
+    Wrapper<C> v := new Wrapper<C>(c);
+    D d := new D(1, null);
+    Wrapper<C> w := new Wrapper<D>(d);
+    return 0;
+  end
+
+  Int fail1()
+    D d := new C(1);
+    return 0;
+  end
+
+  Int fail2()
+    C c := new C("hi");
+    return 0;
+  end
+
+  Int fail3()
+    C c := new C(1);
+    Wrapper<D> w := new Wrapper<C>(c);
+    return 0;
+  end
+
+  Boolean fail4()
+    return 1;
+  end
+
+  Int fail5()
+    if( 1 = "hi") then skip; end
+    return 0;
+  end
+
+  Int fail6()
+    while( 1 = "hi") do skip; end
+    return 0;
+  end
+
+  Int fail7()
+    Int i := "hi";
+    return 0;
+  end
+end
+
+
+class <A,B> TestGen(A a, B b, Wrapper<A> wa, Wrapper<B> wb)
+    Int success()
+        this.a := this.wa.content;
+        this.b := this.wb.content;
+        this.wa := new Wrapper<A>(this.a);
+        this.wb := new Wrapper<B>(this.b);
+        return 0;
+    end
+
+    Int fail1()
+        this.a := this.wb.content;
+        return 0;
+    end
+
+    Int fail2()
+        this.wb := new Wrapper<A>(this.a);
+        return 0;
+    end
+
+    Int fail3()
+        this.a := this.b;
+        return 0;
+    end
+
+    Int fail4()
+        this.wa := this.b;
+        return 0;
+    end
+end
+
+main
+    skip;
+end
