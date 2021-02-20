@@ -5,7 +5,7 @@ import microobject.data.LiteralExpr
 import org.javafmi.wrapper.Simulation
 
 class SimulatorObject(val path : String, memory : Memory){
-    fun read(name: String): LiteralExpr {
+    fun read(name: String): LiteralExpr { //TODO: add buffer
         val v = sim.modelDescription.getModelVariable(name)
         if(v.typeName != "Integer") throw Exception("Failed to read variable ${v.name}: only Integer variables are supported")
         return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE.name)
@@ -25,7 +25,33 @@ class SimulatorObject(val path : String, memory : Memory){
         }
     }
 
+    fun getName() : String {
+        return sim.modelDescription.modelName
+    }
+
     private var sim : Simulation = Simulation(path)
+    protected fun finalize() {
+        sim.terminate()
+    }
+
+    fun dump(obj: String): String {
+        var res = "$obj smol:modelName ${sim.modelDescription.modelName}\n"
+        for(mVar in sim.modelDescription.modelVariables) {
+            if(mVar.causality == "input") {
+                res += "$obj smol:hasInPort prog:${mVar.name}\n"
+                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+            }
+            if(mVar.causality == "output"){
+                res += "$obj smol:hasOutPort prog:${mVar.name}\n"
+                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+            }
+            if(mVar.causality == "parameter"){
+                res += "$obj smol:hasStatePort prog:${mVar.name}\n"
+                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+            }
+        }
+        return res
+    }
 
     init {
         for(mVar in sim.modelDescription.modelVariables){

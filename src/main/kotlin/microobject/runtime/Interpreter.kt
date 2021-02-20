@@ -29,7 +29,7 @@ class InterpreterBridge(var interpreter: Interpreter?)
 class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     private var heap: GlobalMemory,             // This is a map from objects to their heap memory
-    private var simMemory: SimulationMemory,  // This is a map from simulation objects to their handler
+    private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
     private val outPath: String,                // Path to the output directory (e.g., /tmp/mo)
     private val back : String,                  // Background knowledge (Should be a string with OWL class definitions)
@@ -118,7 +118,7 @@ class Interpreter(
     }
 
     fun dumpTtl() : String{
-        return State(stack, heap, staticInfo, back).dump() // snapshot management goes here
+        return State(stack, heap, simMemory, staticInfo, back).dump() // snapshot management goes here
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{

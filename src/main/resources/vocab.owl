@@ -3,7 +3,9 @@
 ####  Semantic static layer
 smol:Class                rdf:type owl:Class.
 smol:Field                rdf:type owl:ObjectProperty.
+smol:Port                 rdf:type owl:ObjectProperty.
 smol:Method               rdf:type owl:Class.
+smol:Simulation           rdf:type owl:Class.
 
 ####  Semantic dynamic layer
 smol:Object               rdf:type owl:Class.
@@ -21,10 +23,12 @@ smol:DebugStatement       rdfs:subClassOf  smol:Statement.
 smol:PrintStatement       rdfs:subClassOf  smol:Statement.
 smol:SequenceStatement    rdfs:subClassOf  smol:Statement.
 smol:SkipStatement        rdfs:subClassOf  smol:Statement.
+smol:TickStatement        rdfs:subClassOf  smol:Statement.
 smol:CallStatement        rdfs:subClassOf  smol:VarLengthStatement.
-smol:SuperStatement        rdfs:subClassOf  smol:VarLengthStatement.
+smol:SuperStatement       rdfs:subClassOf  smol:VarLengthStatement.
 smol:CreateStatement      rdfs:subClassOf  smol:VarLengthStatement.
 smol:SparqlStatement      rdfs:subClassOf  smol:VarLengthStatement.
+smol:SimulationStatement  rdfs:subClassOf  smol:VarLengthStatement.
 smol:IfStatement          rdfs:subClassOf  smol:GuardedStatement.
 smol:WhileStatement       rdfs:subClassOf  smol:GuardedStatement.
 smol:AssignStatement      rdfs:subClassOf  smol:ValueStatement.
@@ -37,6 +41,7 @@ smol:OwlStatement         rdfs:subClassOf  smol:TargetStatement.
 smol:CallStatement        rdfs:subClassOf  smol:TargetStatement.
 smol:CreateStatement      rdfs:subClassOf  smol:TargetStatement.
 smol:StoreReturnStatement rdfs:subClassOf  smol:TargetStatement.
+smol:SimulationStatement  rdfs:subClassOf  smol:TargetStatement.
 
 
 #Expressions and Locations
@@ -44,6 +49,7 @@ smol:Expression           rdf:type owl:Class.
 smol:LiteralExpression    rdfs:subClassOf  smol:Expression.
 smol:ArithExpression      rdfs:subClassOf  smol:Expression.
 smol:Location             rdfs:subClassOf  smol:Expression.
+smol:VarInit              rdfs:subClassOf  smol:Expression.
 smol:OthersVarLocation    rdfs:subClassOf  smol:Location.
 smol:OwnVarLocation       rdfs:subClassOf  smol:Location.
 smol:LocalVarLocation     rdfs:subClassOf  smol:Location.
@@ -52,19 +58,37 @@ smol:LocalVarLocation     rdfs:subClassOf  smol:Location.
 smol:Parameter   rdf:type owl:Class.
 smol:Operand     rdf:type owl:Class.
 
+#TODO: Types
+
 ######## Properties
 ####  Semantic static layer
-smol:hasField     rdf:type owl:ObjectProperty ;
+smol:hasField   rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Field .
 
-smol:hasMethod    rdf:type owl:ObjectProperty ;
+smol:hasMethod  rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Method .
 
-smol:extends      rdf:type owl:ObjectProperty ;
+smol:extends    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Class .
+
+
+smol:modelName  rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Simulation ;
+                rdfs:range xsd:String .
+
+
+smol:hasInPort    rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Simulation ;
+                rdfs:range smol:Port .
+smol:hasOutPort    rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Simulation ;
+                rdfs:range smol:Port .
+smol:hasStatePort    rdf:type owl:ObjectProperty ;
+                rdfs:domain smol:Simulation ;
+                rdfs:range smol:Port .
 
 ####  Semantic dynamic layer
 smol:instanceOf   rdf:type owl:ObjectProperty ;
@@ -165,6 +189,3 @@ smol:hasParameter         rdf:type owl:ObjectProperty ;
 smol:hasOperand           rdf:type owl:ObjectProperty ;
                         rdfs:domain smol:ArithExpression ;
                         rdfs:range smol:Operand .
-
-
-

@@ -4,7 +4,7 @@ main
     Int i := de.integer_c;
     print(i);
     tick(de, 1);
-    de.integer_a := 2;
+    de.integer_a := i;
     i := de.integer_c;
     print(i);
 end

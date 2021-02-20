@@ -5,10 +5,11 @@ import microobject.data.Statement
 import java.util.*
 
 //This will be used for snapshots
-class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : StaticTable, private val background : String) {
+class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: SimulationMemory, initInfo : StaticTable, private val background : String) {
     private val stack: Stack<StackEntry> = initStack.clone() as Stack<StackEntry>
     private val heap: GlobalMemory = initHeap.toMutableMap()
     private val staticInfo: StaticTable = initInfo.copy()
+    private val simulation : SimulationMemory = simMemory.toMap().toMutableMap()
 
     companion object{
         private val HEADER =
@@ -34,7 +35,6 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
     }
 
     fun dump() : String{
-
         //Builds always known information and meta data
         var res = HEADER + "\n" + VOCAB + "\n" + background + "\n" + MINIMAL
 
@@ -109,6 +109,12 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, initInfo : S
             res += stackEntry.active.getRDF()
         }
 
+        // dumps simulation processes
+        for(obj in simulation.keys){
+            res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Simulation.\n"
+            val sim = simulation.getValue(obj)
+            res += sim.dump("run:${obj.literal}")
+        }
         return res
     }
 }
