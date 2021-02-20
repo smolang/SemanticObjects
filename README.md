@@ -103,3 +103,4 @@ java -jar build/libs/MicroObjects-0.1-SNAPSHOT-all.jar -l eval/TTT_class_n.mo -r
   * SMOL: Results of type checking are ignored, but output to the user.
   * SMOL: SSA is not type checked.
   * SMOL: `super` refers to the overloaded method, not the instance as its supertype
+  * General: To run the simulation example, python3 and the zmq package are required 

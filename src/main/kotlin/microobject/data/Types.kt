@@ -12,6 +12,15 @@ abstract class SimpleType : Type {
     override fun getPrimary(): SimpleType = this
 }
 
+data class SimulatorType(val inVar : List<Pair<String, Type>>, val outVar : List<Pair<String, Type>>) : SimpleType() {
+    override fun toString() : String  = "DE[ ${inVar.joinToString(",") { it.first + ":" + it.second }}; ${outVar.joinToString(",") { it.first + ":" + it.second }}]"
+    override fun getNameString() : String  = "DE"
+    override fun isFullyConcrete() : Boolean =
+        inVar.map { it.second }.any { it.isFullyConcrete() } && outVar.map { it.second }.any { it.isFullyConcrete() }
+    override fun containsUnknown(types: Set<String>): Boolean =
+        inVar.map { it.second }.any { it.containsUnknown(types) } || outVar.map { it.second }.any { it.containsUnknown(types) }
+}
+
 data class GenericType(val name : String) : SimpleType() {
     override fun getNameString() : String  = name
     override fun toString() : String  = name

@@ -3,7 +3,11 @@ package microobject.data
 import antlr.microobject.gen.WhileParser
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
+import org.javafmi.wrapper.Simulation
+import java.io.File
 import java.lang.Exception
+import java.nio.file.Files
+import java.nio.file.Paths
 
 //Error Messages
 enum class Severity { WARNING, ERROR }
@@ -86,6 +90,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             is WhileParser.Nested_typeContext -> {
                 val lead = stringToType(ctx.NAME().text, className)
                 ComposedType(lead, ctx.typelist().type().map { translateType(it, className) })
+            }
+            is WhileParser.Fmu_typeContext -> {
+                val ins = ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
+                val outs = ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
+                SimulatorType(ins,outs)
             }
             else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
         }
@@ -314,7 +323,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             else vars[name] = translateType(ctx.type(), className)
                         }
                         translateType(ctx.type(), className)
-                    } else getType(ctx.expression(0), inner, vars, thisType)
+                    } else getType(ctx.expression(0), inner, vars, thisType, false)
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !isAssignable(lhsType, rhsType))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
@@ -390,7 +399,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             translateType(ctx.type(), className)
                         }
                         ctx.target != null -> {
-                            getType(ctx.expression(0), inner, vars, thisType)
+                            getType(ctx.expression(0), inner, vars, thisType, false)
                         }
                         else -> {
                             null
@@ -457,7 +466,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             else vars[name] = translateType(ctx.type(), className)
                         }
                         translateType(ctx.type(), className)
-                    } else getType(ctx.expression(0), inner, vars, thisType)
+                    } else getType(ctx.expression(0), inner, vars, thisType, false)
                 val createClass = ctx.NAME().text
                 val createDecl = recoverDef[createClass]
                 var newType : Type = BaseType(createClass)
@@ -536,6 +545,64 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             }
             is WhileParser.Skip_statmentContext -> { }
             is WhileParser.Debug_statementContext -> { }
+            is WhileParser.Simulate_statementContext -> {
+                val path = ctx.path.text.removeSurrounding("\"")
+                if (!Files.exists(Paths.get(path))) {
+                    log("Could not find file for FMU $path, statement cannot be type checked", ctx)
+                } else{
+                    val sim = Simulation(path)
+                    val inits = ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType)) }.toMap()
+
+                    var ins = listOf<Pair<String,Type>>()
+                    var outs = listOf<Pair<String,Type>>()
+
+                    for(mVar in sim.modelDescription.modelVariables){
+                        if(mVar.causality == "input" || mVar.causality == "state"){
+                            if(!mVar.hasStartValue() && !inits.containsKey(mVar.name))
+                                log("Simulation fails to initialize variable ${mVar.name}: no initial value given", ctx)
+                            if(inits.containsKey(mVar.name)) {
+                                if (mVar.typeName != "Integer")
+                                    log("Simulation fails to initialize variable ${mVar.name}: only Integer variables are supported",ctx)
+                            }
+                            if(mVar.causality == "input")
+                                ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
+                        }
+                        if((mVar.causality == "output" || mVar.initial == "calculated") && inits.containsKey(mVar.name)) {
+                            log("Cannot initialize output or/and calculated variable ${mVar.name}",ctx)
+                        }
+
+                        if(mVar.causality == "input") ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
+                        if(mVar.causality == "output") outs = outs + Pair(mVar.name, getSimType(mVar.typeName))
+                    }
+                    val simType = SimulatorType(ins, outs)
+
+                    if(ctx.type() != null) {
+                        val declType = translateType(ctx.type(), className)
+                        if(!isAssignable(declType, simType))
+                            log("Type $simType is not assignable to $declType", ctx)
+                        if (ctx.target !is WhileParser.Var_expressionContext) {
+                            log("Variable declaration must declare a variable.", ctx)
+                        } else {
+                            val name = ((ctx.target) as WhileParser.Var_expressionContext).NAME().text
+                            if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                            else vars[name] = translateType(ctx.type(), className)
+                        }
+                    }else{
+                        val declType = getType(ctx.target, inner, vars, thisType, false)
+                        if(!isAssignable(declType, simType))
+                            log("Type $simType is not assignable to $declType", ctx)
+                    }
+
+                }
+            }
+            is WhileParser.Tick_statementContext -> {
+                val fmuType = getType(ctx.fmu, inner, vars, thisType)
+                val tickType = getType(ctx.time, inner, vars, thisType)
+                if(fmuType !is SimulatorType)
+                    log("Tick statement expects a FMU as first parameter, but got $fmuType }.",ctx)
+                if(tickType != INTTYPE)
+                    log("Tick statement expects an integer as second parameter, but got $tickType }.",ctx)
+            }
             else -> {
                 log("Statements with class ${ctx.javaClass} cannot be type checked",ctx)
             }
@@ -543,13 +610,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         return false
     }
 
+    private fun getSimType(typeName: String): Type =
+        when(typeName) {
+            "Integer" -> INTTYPE
+            "Real" -> ERRORTYPE
+            "String" -> STRINGTYPE
+            "Boolean" -> BOOLEANTYPE
+            else -> ERRORTYPE
+        }
 
 
     // This cannot be done with extension methods because they cannot override ExpressionContext.getType()
     private fun getType(eCtx : WhileParser.ExpressionContext,
                         fields : Map<String, Type>,
                         vars : Map<String, Type>,
-                        thisType : Type
+                        thisType : Type,
+                        read: Boolean = true
     ) : Type {
         when(eCtx){
             is WhileParser.Const_expressionContext -> return INTTYPE
@@ -632,6 +708,15 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             is WhileParser.External_field_expressionContext -> { // This must resolve the generics
                 val t1 = getType(eCtx.expression(), fields, vars, thisType)
                 if(t1 == ERRORTYPE) return ERRORTYPE
+                if(t1 is SimulatorType){
+                    return if(read){
+                        val inVar = t1.outVar.firstOrNull { it.first == eCtx.NAME().text }
+                        inVar?.second ?: ERRORTYPE
+                    } else {
+                        val inVar = t1.inVar.firstOrNull { it.first == eCtx.NAME().text }
+                        inVar?.second ?: ERRORTYPE
+                    }
+                }
                 if(t1 is GenericType) {
                     log("Access of fields of generic types is not supported.", eCtx)
                     return ERRORTYPE
@@ -667,15 +752,16 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
     /* checks whether @rhs is assignable to @lhs */
     private fun isAssignable(lhs: Type, rhs : Type) : Boolean {
-        if(lhs == ERRORTYPE || rhs == ERRORTYPE) return false   //errors are not assignable
-        if(rhs == NULLTYPE) return true
-        if(lhs == rhs) return true  //no need for complex typing
-        if(lhs is BaseType && rhs is BaseType){
+        if (lhs == ERRORTYPE || rhs == ERRORTYPE) return false   //errors are not assignable
+        if (rhs == NULLTYPE) return true
+        if (lhs == rhs) return true  //no need for complex typing
+        if (lhs is BaseType && rhs is BaseType) {
             return isBelow(rhs, lhs)
-        } else if(lhs is GenericType && rhs is GenericType) {
+        } else if (lhs is GenericType && rhs is GenericType) {
             return lhs == rhs
-        }
-        else if (lhs.javaClass != rhs.javaClass) {
+        } else if (lhs is SimulatorType && rhs is SimulatorType) {
+            return rhs.inVar.containsAll(lhs.inVar) && rhs.outVar.containsAll(lhs.outVar)
+        } else if (lhs.javaClass != rhs.javaClass) {
             return false
         }  else { //if (lhs is ComposedType && rhs is ComposedType)
             val cLhs = lhs as ComposedType
