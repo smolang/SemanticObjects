@@ -467,4 +467,9 @@ ${stack.joinToString(
     transform = { "Prc${it.id}@${it.obj}:\n\t" + it.store.toString() + "\nStatement:\n\t" + it.active.toString() + "\n" })}
 """.trimIndent()
 
+    fun terminate() {
+        for(sim in simMemory.values)
+            sim.terminate()
+    }
+
 }

@@ -55,8 +55,8 @@ class Main : CliktCommand() {
                 val splits = next.split(" ", limit = 2)
                 val left = if(splits.size == 1) "" else splits[1]
             } while (!repl.command(splits.first(), left))
-
         }
+        repl.terminate()
     }
 }
 

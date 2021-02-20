@@ -172,7 +172,7 @@ class REPL(private val apache: String,
             "reada",
             this,
             { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
-            "reads a file and rune auto",
+            "reads a file and runs auto",
             parameterHelp = "Path to a .smol file",
             requiresParameter = true,
             invalidatesDump = true
@@ -320,5 +320,9 @@ class REPL(private val apache: String,
             parameterHelp = "a .smol expression",
             requiresParameter = true,
         )
+    }
+
+    fun terminate() {
+        interpreter?.terminate()
     }
 }

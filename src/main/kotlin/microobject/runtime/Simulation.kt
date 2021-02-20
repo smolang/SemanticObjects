@@ -2,7 +2,9 @@ package microobject.runtime
 
 import microobject.data.INTTYPE
 import microobject.data.LiteralExpr
+import org.javafmi.modeldescription.SimpleType
 import org.javafmi.wrapper.Simulation
+import org.javafmi.wrapper.variables.SingleRead
 
 class SimulatorObject(val path : String, memory : Memory){
     fun read(name: String): LiteralExpr { //TODO: add buffer
@@ -25,29 +27,29 @@ class SimulatorObject(val path : String, memory : Memory){
         }
     }
 
-    fun getName() : String {
-        return sim.modelDescription.modelName
-    }
 
     private var sim : Simulation = Simulation(path)
-    protected fun finalize() {
+    fun terminate() {
         sim.terminate()
     }
 
     fun dump(obj: String): String {
-        var res = "$obj smol:modelName ${sim.modelDescription.modelName}\n"
+        var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
         for(mVar in sim.modelDescription.modelVariables) {
+            if(mVar.type !is org.javafmi.modeldescription.v2.IntegerType && mVar.type !is org.javafmi.modeldescription.v1.IntegerType)
+                continue
             if(mVar.causality == "input") {
-                res += "$obj smol:hasInPort prog:${mVar.name}\n"
-                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+                res += "$obj smol:hasInPort prog:${mVar.name}.\n"
+                res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
             }
             if(mVar.causality == "output"){
-                res += "$obj smol:hasOutPort prog:${mVar.name}\n"
-                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+                res += "$obj smol:hasOutPort prog:${mVar.name}.\n"
+                res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
             }
             if(mVar.causality == "parameter"){
-                res += "$obj smol:hasStatePort prog:${mVar.name}\n"
-                res += "$obj prog:${mVar.name} ${sim.read(mVar.name).asInteger()}\n"
+                res += "$obj smol:hasStatePort prog:${mVar.name}.\n"
+                res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
+                mVar.type
             }
         }
         return res
@@ -66,6 +68,20 @@ class SimulatorObject(val path : String, memory : Memory){
             if((mVar.causality == "output" || mVar.initial == "calculated") && memory.containsKey(mVar.name)) {
                 throw Exception("Cannot initialize output or/and calculated variable ${mVar.name}")
             }
+        }
+    }
+
+    private fun dumpSingle(read : SingleRead, type : SimpleType) : String{
+        return when(type){
+            is org.javafmi.modeldescription.v2.IntegerType -> read.asInteger().toString()
+            is org.javafmi.modeldescription.v1.IntegerType -> read.asInteger().toString()
+            is org.javafmi.modeldescription.v2.StringType -> "\""+read.asString()+"\""
+            is org.javafmi.modeldescription.v1.StringType -> read.asString()
+            is org.javafmi.modeldescription.v2.BooleanType -> read.asBoolean().toString()
+            is org.javafmi.modeldescription.v1.BooleanType -> read.asBoolean().toString()
+            is org.javafmi.modeldescription.v2.RealType -> read.asDouble().toString()
+            is org.javafmi.modeldescription.v1.RealType -> read.asDouble().toString()
+            else -> throw java.lang.Exception("Unknown Type")
         }
     }
 }
