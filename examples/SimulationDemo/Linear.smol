@@ -1,0 +1,27 @@
+main
+    DE[; Int outPort, Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
+    DE[Int inPort; Int outPort, Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
+    Int i := 0;
+    while(i <= 50) do
+        Int leak := de1.leak;
+        if leak >= 10 then
+            de1.inPort := 0;
+            de2.inPort := 2;
+        else
+            if leak >= 1 then
+                de1.inPort := 1;
+                de2.inPort := 1;
+            end
+        end
+        de2.inFlow := de1.outPort;
+
+        Int df1 := de1.outPort;
+        Int df2 := de2.outPort;
+        print("---");
+        print(df1);
+        print(df2);
+        tick(de1, 1);
+        tick(de2, 1);
+        i := i + 1;
+    end
+end

@@ -566,7 +566,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             if(!mVar.hasStartValue() && !inits.containsKey(mVar.name))
                                 log("Simulation fails to initialize variable ${mVar.name}: no initial value given", ctx)
                             if(inits.containsKey(mVar.name)) {
-                                if (mVar.typeName != "Integer")
+                                if (mVar.typeName != "Integer" && mVar.typeName != "Boolean")
                                     log("Simulation fails to initialize variable ${mVar.name}: only Integer variables are supported",ctx)
                             }
                             if(mVar.causality == "input")
