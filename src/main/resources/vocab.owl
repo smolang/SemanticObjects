@@ -75,7 +75,7 @@ smol:extends    rdf:type owl:ObjectProperty ;
                 rdfs:range smol:Class .
 
 
-smol:modelName  rdf:type owl:ObjectProperty ;
+smol:modelName  rdf:type owl:DatatypeProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range xsd:String .
 

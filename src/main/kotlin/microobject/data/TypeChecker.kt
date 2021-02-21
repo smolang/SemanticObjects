@@ -92,8 +92,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 ComposedType(lead, ctx.typelist().type().map { translateType(it, className) })
             }
             is WhileParser.Fmu_typeContext -> {
-                val ins = ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
-                val outs = ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
+                val ins = if(ctx.`in` != null) ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
+                          else emptyList()
+                val outs = if(ctx.out != null) ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
+                           else emptyList()
                 SimulatorType(ins,outs)
             }
             else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
@@ -551,7 +553,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     log("Could not find file for FMU $path, statement cannot be type checked", ctx)
                 } else{
                     val sim = Simulation(path)
-                    val inits = ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType)) }.toMap()
+                    val inits = if(ctx.varInitList() != null)
+                                ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType)) }.toMap()
+                                else
+                                 emptyMap()
 
                     var ins = listOf<Pair<String,Type>>()
                     var outs = listOf<Pair<String,Type>>()
