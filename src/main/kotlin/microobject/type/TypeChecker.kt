@@ -816,11 +816,17 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
     }
 
     /* check whether @type contains an unknown (structural) subtype  */
-    private fun containsUnknown(type: Type, types: Set<String>): Boolean {
-        if(type is GenericType) return false // If we can translate it into a generic type, we already checked
-        if(type is BaseType) return !types.contains(type.name)
-        val composType = type as ComposedType
-        return composType.params.fold( containsUnknown(composType.name, types), {acc,nx -> acc || containsUnknown(nx, types)})
+    private fun containsUnknown(type: Type, types: Set<String>): Boolean =
+        when(type){
+        is GenericType -> false // If we can translate it into a generic type, we already checke
+        is SimulatorType -> false
+        is BaseType -> !types.contains(type.name)
+        else -> {
+            val composType = type as ComposedType
+            composType.params.fold(
+                containsUnknown(composType.name, types),
+                { acc, nx -> acc || containsUnknown(nx, types) })
+        }
     }
 
     private fun getFields(className: String): Map<String, Type> {

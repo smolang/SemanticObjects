@@ -13,7 +13,6 @@ main
                 de2.inPort := 1;
             end
         end
-        de2.inFlow := de1.outPort;
 
         Int df1 := de1.outPort;
         Int df2 := de2.outPort;

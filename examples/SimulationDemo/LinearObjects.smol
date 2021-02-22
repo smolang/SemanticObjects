@@ -1,0 +1,102 @@
+class <T> List(T content, List<T> next)
+    Int length()
+        if this.next = null then return 1;
+        else Int n := this.next.length(); return n + 1;
+        end
+    end
+    Int append(List<T> last)
+        if this.next = null then
+            this.next := last;
+        else
+            this.next.append(last);
+        end
+        return 0;
+    end
+
+    T get(Int i)
+        T res := this.content;
+        if i >= 1 then
+            res := this.next.get(i-1);
+        end
+        return res;
+    end
+
+    Boolean contains(T element)
+        if this.content = element then
+            return True;
+        else
+            if this.next = null then
+                return False;
+            else
+                Boolean res := this.next.contains(element);
+                return res;
+            end
+        end
+    end
+end
+
+
+class WrappedSimulator(DE[Int inPort; Int outPort, Int leak] content) end
+
+class Connection(WrappedSimulator from, WrappedSimulator to)
+    Int propagate()
+        Int leak := this.from.content.leak;
+        if leak >= 10 then
+            this.from.content.inPort := 0;
+            this.to.content.inPort := 2;
+        else
+            if leak >= 1 then
+                this.from.content.inPort := 1;
+                this.to.content.inPort := 1;
+            end
+        end
+        return leak;
+    end
+end
+
+class CoSim(List<Connection> list)
+    Int round(Int t)
+        Int i := 0;
+        Int length := this.list.length();
+        List<WrappedSimulator> sims := null;
+        while i < length do
+            Connection c := this.list.get(i);
+            c.propagate();
+            Boolean knowsFirst := sims.contains(c.from);
+            Boolean knowsSecond := sims.contains(c.to);
+            if !knowsFirst then sims := new List<WrappedSimulator>(c.from, sims);  end
+            if !knowsSecond then sims := new List<WrappedSimulator>(c.to, sims);  end
+            i := i+1;
+        end
+        i := 0;
+        length := sims.length();
+        while i < length do
+            WrappedSimulator s := sims.get(i);
+            DE[;] de := s.content;
+            tick(de, t);
+            i := i + 1;
+        end
+        return i;
+    end
+end
+
+main
+    DE[; Int outPort, Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
+    DE[Int inPort; Int outPort, Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
+    WrappedSimulator s1 := new WrappedSimulator(de1);
+    WrappedSimulator s2 := new WrappedSimulator(de2);
+    Connection c := new Connection(s1, s2);
+    List<Connection> l := new List<Connection>(c, null);
+    CoSim sim := new CoSim(l);
+    Int i := 0;
+    while(i <= 50) do
+        sim.round(1);
+        Int df1 := de1.outPort;
+        Int df2 := de2.outPort;
+        print("---");
+        print(df1);
+        print(df2);
+        i := i + 1;
+    end
+end
+
