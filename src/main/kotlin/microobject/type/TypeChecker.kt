@@ -239,6 +239,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         val gens = generics.getOrDefault(className, listOf()).map { GenericType(it) }
         val thisType = if(gens.isNotEmpty()) ComposedType(BaseType(className), gens) else BaseType(className)
 
+        //Check rule annotation
+        if(mtCtx.builtinrule != null && mtCtx.paramList() != null)
+            log("rule-method $className.$name has non-empty parameter list.", mtCtx)
+
         //Check return type: must be known
         if(containsUnknown(translateType(mtCtx.type(), className), classes))
             log("Method $className.$name has unknown return type ${mtCtx.type()}.", mtCtx.type())

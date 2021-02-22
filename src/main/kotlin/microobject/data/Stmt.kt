@@ -232,7 +232,7 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
     }
 }
 
-// For simulation interaface
+// For simulation interface
 data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := simulate($path, ${params.joinToString(",")})"
     override fun getRDF(): String {

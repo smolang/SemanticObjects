@@ -8,10 +8,11 @@ import com.github.ajalt.clikt.parameters.types.path
 import microobject.runtime.REPL
 import java.io.File
 import java.nio.file.Paths
+import kotlin.system.exitProcess
 
 
 class Main : CliktCommand() {
-    private val ninteractive by option("--non-interactive","-n",help="Does not enter the interactive shell.").flag()
+    private val ninteractive by option("--non-interactive","-n",help="Does not enter the interactive shell, but executes the loaded file if no replay file is given.").flag()
     private val verbose      by option("--verbose","-v",help="Verbose output.").flag()
     private val tmp          by option("--tmp","-t",help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val apache       by option("--jena","-j",help="path to the bin/ directory of an apache jena installation (used for SHACL and SPARQL queries).").path()
@@ -23,6 +24,11 @@ class Main : CliktCommand() {
     override fun run() {
         val pathJena = if( apache == null ) "" else apache.toString()
         org.apache.jena.query.ARQ.init()
+
+        if(ninteractive && load == null){
+            println("Error: Missing option \"--load\".")
+            exitProcess(-1)
+        }
 
         var backgr = ""
         if(back != null){
@@ -55,6 +61,8 @@ class Main : CliktCommand() {
                 val splits = next.split(" ", limit = 2)
                 val left = if(splits.size == 1) "" else splits[1]
             } while (!repl.command(splits.first(), left))
+        }else if(replay == null){
+            repl.command("auto", "")
         }
         repl.terminate()
     }

@@ -8,7 +8,7 @@ import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
 
 class SimulatorObject(val path : String, memory : Memory){
-    fun read(name: String): LiteralExpr { //TODO: add buffer
+    fun read(name: String): LiteralExpr {
         val v = sim.modelDescription.getModelVariable(name)
         if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE.name)
         if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE.name)
