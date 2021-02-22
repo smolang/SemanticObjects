@@ -1,13 +1,45 @@
-package microobject.data
+package microobject.type
 
 //Internal Type Structure
-interface Type {
-    fun isFullyConcrete() : Boolean
-    fun getPrimary() : SimpleType
-    fun containsUnknown(types: Set<String>): Boolean
+abstract class Type {
+    abstract fun isFullyConcrete() : Boolean
+    abstract fun getPrimary() : SimpleType
+    abstract fun containsUnknown(types: Set<String>): Boolean
+    fun isAssignable(rhs : Type, extends : MutableMap<String, String>) : Boolean {
+        if (this == ERRORTYPE || rhs == ERRORTYPE) return false   //errors are not assignable
+        if (rhs == NULLTYPE) return true
+        if (this == rhs) return true  //no need for complex typing
+        if (this is BaseType && rhs is BaseType) {
+            return rhs.isBelow(this, extends)
+        } else if (this is GenericType && rhs is GenericType) {
+            return this == rhs
+        } else if (this is SimulatorType && rhs is SimulatorType) {
+            return rhs.inVar.containsAll(this.inVar) && rhs.outVar.containsAll(this.outVar)
+        } else if (this.javaClass != rhs.javaClass) {
+            return false
+        }  else { //if (lhs is ComposedType && rhs is ComposedType)
+            val cLhs = this as ComposedType
+            val cRhs = rhs as ComposedType
+            if(cLhs.params.size != cRhs.params.size) return false
+
+            var ret = cLhs.name.isAssignable(cRhs.name, extends)
+            for( i in cLhs.params.indices){
+                if(!ret) break
+                ret = ret && cLhs.params[i].isAssignable(cRhs.params[i], extends)
+            }
+            return ret
+        }
+    }
+    fun isBelow(t2: Type, extends : MutableMap<String, String>) : Boolean {
+        if(this == t2) return true
+        if(this == NULLTYPE) return true
+        if(this is GenericType || this is ComposedType) return false
+        if(extends.containsKey(this.getPrimary().getNameString())) return BaseType(extends.getOrDefault(this.getPrimary().getNameString(), "Object")).isBelow(t2, extends)
+        return false
+    }
 }
 
-abstract class SimpleType : Type {
+abstract class SimpleType : Type() {
     abstract fun getNameString() : String
     override fun getPrimary(): SimpleType = this
 }
@@ -35,7 +67,7 @@ data class BaseType(val name : String) : SimpleType(){
     override fun containsUnknown(types: Set<String>): Boolean = false //contract
 }
 
-data class ComposedType(val name : Type, val params : List<Type>) : Type {
+data class ComposedType(val name : Type, val params : List<Type>) : Type() {
     override fun getPrimary() : SimpleType {
         if(name is ComposedType) return name.getPrimary()
         return name as SimpleType
@@ -51,3 +83,4 @@ val STRINGTYPE = BaseType("String")
 val OBJECTTYPE = BaseType("Object")
 val NULLTYPE = BaseType("Null")
 val ERRORTYPE = BaseType("ERROR")
+val UNITTYPE = BaseType("Unit")

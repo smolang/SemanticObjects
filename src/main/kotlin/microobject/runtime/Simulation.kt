@@ -1,7 +1,7 @@
 package microobject.runtime
 
-import microobject.data.BOOLEANTYPE
-import microobject.data.INTTYPE
+import microobject.type.BOOLEANTYPE
+import microobject.type.INTTYPE
 import microobject.data.LiteralExpr
 import org.javafmi.modeldescription.SimpleType
 import org.javafmi.wrapper.Simulation

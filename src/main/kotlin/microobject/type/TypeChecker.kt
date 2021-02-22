@@ -1,10 +1,9 @@
-package microobject.data
+package microobject.type
 
 import antlr.microobject.gen.WhileParser
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
-import java.io.File
 import java.lang.Exception
 import java.nio.file.Files
 import java.nio.file.Paths
@@ -327,7 +326,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         translateType(ctx.type(), className)
                     } else getType(ctx.expression(0), inner, vars, thisType, false)
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType)
-                if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !isAssignable(lhsType, rhsType))
+                if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
             }
             is WhileParser.Super_statementContext -> {
@@ -353,7 +352,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     }
 
 
-                if (lhsType != null && !isAssignable(lhsType, metType))
+                if (lhsType != null && !lhsType.isAssignable(metType, extends))
                     log("Return value of super call cannot be assigned to type.", ctx)
 
 
@@ -379,7 +378,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             val targetType = callParams[match] //of method decl
                             val realType =
                                 getType(ctx.expression(i), inner, vars, thisType)                    //of call
-                            if (targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(realType, targetType))
+                            if (targetType != ERRORTYPE && realType != ERRORTYPE && !realType.isAssignable(targetType, extends))
                                 log("Type $realType is not assignable to $targetType.", ctx)
 
                         }
@@ -433,18 +432,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                   val targetType = callParams[match] //of method decl
                                   val realType = getType(ctx.expression(i), inner, vars, thisType)                    //of call
                                   val finalType = instantiateGenerics(targetType, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
-                                  if (targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(
-                                          realType,
-                                          finalType
-                                      )
-                                  ) {
+                                  if (targetType != ERRORTYPE && realType != ERRORTYPE && !realType.isAssignable(finalType, extends))
                                       log("Type $realType is not assignable to $targetType.", ctx)
-                                  }
                               }
                               if (lhsType != null) { //result type
                                   val metRet = translateType(met.type(), otherClassName) // type as declared
                                   val finalType = instantiateGenerics(metRet, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
-                                  if (!isAssignable(lhsType, finalType)) {
+                                  if (!lhsType.isAssignable(finalType, extends)) {
                                       log(
                                           "Type $finalType is not assignable to $lhsType.",
                                           ctx
@@ -492,7 +486,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         val targetType = creationParameters[i-1]
                         val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
                         val realType = getType(ctx.expression(i), inner, vars, thisType)
-                        if(targetType != ERRORTYPE && realType != ERRORTYPE && !isAssignable(finalType, realType)) {
+                        if(targetType != ERRORTYPE && realType != ERRORTYPE && !finalType.isAssignable(realType, extends)) {
                             log("Type $realType is not assignable to $finalType", ctx)
                         }
                     }
@@ -502,7 +496,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
 
 
-                if(lhsType != ERRORTYPE && !isAssignable(lhsType, newType) ) {
+                if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
                     log("Type $createClass is not assignable to $lhsType", ctx)
                 }
 
@@ -535,7 +529,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             }
             is WhileParser.Return_statementContext -> {
                 val innerType = getType(ctx.expression(), inner, vars, thisType)
-                if(innerType != ERRORTYPE && innerType != metType && !isAssignable(metType, innerType))
+                if(innerType != ERRORTYPE && innerType != metType && !metType.isAssignable(innerType, extends))
                     log("Type $innerType of return statement does not match method type ${metType}.",ctx)
                 return true
             }
@@ -583,7 +577,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
                     if(ctx.type() != null) {
                         val declType = translateType(ctx.type(), className)
-                        if(!isAssignable(declType, simType))
+                        if(!declType.isAssignable(simType, extends))
                             log("Type $simType is not assignable to $declType", ctx)
                         if (ctx.target !is WhileParser.Var_expressionContext) {
                             log("Variable declaration must declare a variable.", ctx)
@@ -594,7 +588,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         }
                     }else{
                         val declType = getType(ctx.target, inner, vars, thisType, false)
-                        if(!isAssignable(declType, simType))
+                        if(!declType.isAssignable(simType, extends))
                             log("Type $simType is not assignable to $declType", ctx)
                     }
 
@@ -656,7 +650,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
                 log("Malformed multiplication with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -664,7 +658,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
                 log("Malformed addition with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -673,7 +667,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 // do not throw an error twice
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return INTTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
                 log("Malformed subtraction with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -681,7 +675,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
-                if(isAssignable(t1, t2) || isAssignable(t2, t1)) return BOOLEANTYPE
+                if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison <> with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -689,7 +683,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
-                if(isAssignable(t1, t2) || isAssignable(t2, t1)) return BOOLEANTYPE
+                if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison = with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -697,7 +691,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return BOOLEANTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
                 log("Malformed comparison <= with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -705,7 +699,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(isAssignable(INTTYPE, t1) && isAssignable(INTTYPE, t2)) return BOOLEANTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
                 log("Malformed comparison >= with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
@@ -754,44 +748,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
     /**********************************************************************
     Helper to handle types
      ***********************************************************************/
-
-    /* checks whether @rhs is assignable to @lhs */
-    private fun isAssignable(lhs: Type, rhs : Type) : Boolean {
-        if (lhs == ERRORTYPE || rhs == ERRORTYPE) return false   //errors are not assignable
-        if (rhs == NULLTYPE) return true
-        if (lhs == rhs) return true  //no need for complex typing
-        if (lhs is BaseType && rhs is BaseType) {
-            return isBelow(rhs, lhs)
-        } else if (lhs is GenericType && rhs is GenericType) {
-            return lhs == rhs
-        } else if (lhs is SimulatorType && rhs is SimulatorType) {
-            return rhs.inVar.containsAll(lhs.inVar) && rhs.outVar.containsAll(lhs.outVar)
-        } else if (lhs.javaClass != rhs.javaClass) {
-            return false
-        }  else { //if (lhs is ComposedType && rhs is ComposedType)
-            val cLhs = lhs as ComposedType
-            val cRhs = rhs as ComposedType
-            if(cLhs.params.size != cRhs.params.size) return false
-
-            var ret = isAssignable(cLhs.name, cRhs.name)
-            for( i in cLhs.params.indices){
-                if(!ret) break
-                ret = ret && isAssignable(cLhs.params[i], cRhs.params[i])
-            }
-            return ret
-        }
-    }
-
-    /* checks whether t1 is below t2 in the type hierarchy*/
-    private fun isBelow(t1: Type, t2: Type): Boolean {
-        if(t1 == t2) return true
-        if(t1 == NULLTYPE) return true
-        if(t1 is GenericType || t1 is ComposedType) return false
-        if(extends.containsKey(t1.getPrimary().getNameString())) return isBelow(BaseType(extends.getOrDefault(t1.getPrimary().getNameString(), "Object")), t2)
-        return false
-    }
-
-
     private fun getParameterTypes(met: WhileParser.Method_defContext, otherClassName: String): List<Type> =
         if(met.paramList() == null) listOf() else met.paramList().param().map { translateType(it.type(), otherClassName) }
 
@@ -864,13 +820,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
     private fun applyMatching(metRet: Type, matching: Map<GenericType, Type>, gens : List<String>) : Type {
         when(metRet){
             is GenericType -> {
-                return if(matching.containsKey(metRet)){
-                    matching.getOrDefault(metRet, ERRORTYPE)
-                } else if(gens.contains(metRet.name)) {
-                    metRet
-                } else {
-                    log("Applying the matching on $metRet failed.", null)
-                    ERRORTYPE
+                return when {
+                    matching.containsKey(metRet) -> matching.getOrDefault(metRet, ERRORTYPE)
+                    gens.contains(metRet.name) -> metRet
+                    else -> {
+                        log("Applying the matching on $metRet failed.", null)
+                        ERRORTYPE
+                    }
                 }
             }
             is BaseType -> return metRet

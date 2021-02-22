@@ -7,7 +7,7 @@ import antlr.microobject.gen.WhileParser
 import microobject.data.Expression
 import microobject.data.RuleGenerator
 import microobject.data.Translate
-import microobject.data.TypeChecker
+import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
