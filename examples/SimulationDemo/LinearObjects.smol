@@ -42,10 +42,12 @@ class Connection(WrappedSimulator from, WrappedSimulator to)
     Int propagate()
         Int leak := this.from.content.leak;
         if leak >= 10 then
+            print("big leak");
             this.from.content.inPort := 0;
             this.to.content.inPort := 2;
         else
             if leak >= 1 then
+                print("small leak");
                 this.from.content.inPort := 1;
                 this.to.content.inPort := 1;
             end
@@ -54,24 +56,21 @@ class Connection(WrappedSimulator from, WrappedSimulator to)
     end
 end
 
-class CoSim(List<Connection> list)
+class CoSim(List<Connection> list, List<WrappedSimulator> sims)
     Int round(Int t)
         Int i := 0;
+        if this.list = null then return i; end
         Int length := this.list.length();
-        List<WrappedSimulator> sims := null;
         while i < length do
             Connection c := this.list.get(i);
             c.propagate();
-            Boolean knowsFirst := sims.contains(c.from);
-            Boolean knowsSecond := sims.contains(c.to);
-            if !knowsFirst then sims := new List<WrappedSimulator>(c.from, sims);  end
-            if !knowsSecond then sims := new List<WrappedSimulator>(c.to, sims);  end
             i := i+1;
         end
         i := 0;
-        length := sims.length();
+        if this.sims = null then return i; end
+        length := this.sims.length();
         while i < length do
-            WrappedSimulator s := sims.get(i);
+            WrappedSimulator s := this.sims.get(i);
             DE[;] de := s.content;
             tick(de, t);
             i := i + 1;
@@ -81,13 +80,16 @@ class CoSim(List<Connection> list)
 end
 
 main
-    DE[; Int outPort, Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
+    DE[Int inPort; Int outPort, Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
     DE[Int inPort; Int outPort, Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
     WrappedSimulator s1 := new WrappedSimulator(de1);
     WrappedSimulator s2 := new WrappedSimulator(de2);
     Connection c := new Connection(s1, s2);
     List<Connection> l := new List<Connection>(c, null);
-    CoSim sim := new CoSim(l);
+    List<WrappedSimulator> sl := new List<WrappedSimulator>(s1, null);
+    List<WrappedSimulator> sl2 := new List<WrappedSimulator>(s2, null);
+    sl.append(sl2);
+    CoSim sim := new CoSim(l, sl);
     Int i := 0;
     while(i <= 50) do
         sim.round(1);

@@ -451,7 +451,7 @@ class Interpreter(
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.NOT) {
-                    if (expr.params.size != 2) throw Exception("Operator.NOT requires one parameter")
+                    if (expr.params.size != 1) throw Exception("Operator.NOT requires one parameter")
                     val first = eval(expr.params[0], stack, heap, simMemory, obj)
                     if (first == FALSEEXPR) return TRUEEXPR
                     else return FALSEEXPR

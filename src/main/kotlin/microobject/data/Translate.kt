@@ -222,7 +222,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
 
     override fun visitMinus_expression(ctx: Minus_expressionContext?): ProgramElement {
-        return ArithExpr(Operator.PLUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+        return ArithExpr(Operator.MINUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
 
     override fun visitGeq_expression(ctx: Geq_expressionContext?): ProgramElement {
@@ -249,6 +249,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
     override fun visitNeq_expression(ctx: Neq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.NEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+
+    override fun visitNot_expression(ctx: Not_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.NOT, listOf(visit(ctx!!.expression()) as Expression))
     }
 
     override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {

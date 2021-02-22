@@ -5,7 +5,7 @@ abstract class Type {
     abstract fun isFullyConcrete() : Boolean
     abstract fun getPrimary() : SimpleType
     abstract fun containsUnknown(types: Set<String>): Boolean
-    fun isAssignable(rhs : Type, extends : MutableMap<String, String>) : Boolean {
+    fun isAssignable(rhs : Type, extends : MutableMap<String, String>) : Boolean { //TODO: finish refactoring
         if (this == ERRORTYPE || rhs == ERRORTYPE) return false   //errors are not assignable
         if (rhs == NULLTYPE) return true
         if (this == rhs) return true  //no need for complex typing

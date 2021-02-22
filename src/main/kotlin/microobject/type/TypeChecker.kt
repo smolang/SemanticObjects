@@ -567,8 +567,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                 if (mVar.typeName != "Integer" && mVar.typeName != "Boolean")
                                     log("Simulation fails to initialize variable ${mVar.name}: only Integer variables are supported",ctx)
                             }
-                            if(mVar.causality == "input")
-                                ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
+//                            if(mVar.causality == "input")
+//                                ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
                         }
                         if((mVar.causality == "output" || mVar.initial == "calculated") && inits.containsKey(mVar.name)) {
                             log("Cannot initialize output or/and calculated variable ${mVar.name}",ctx)
@@ -878,6 +878,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 }
             }
             is BaseType -> return metRet
+            is SimulatorType -> return metRet
             is ComposedType -> {
                 return ComposedType(
                     applyMatching(metRet.name, matching, gens),
