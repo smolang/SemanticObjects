@@ -691,6 +691,28 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 log("Malformed comparison = with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
+            is WhileParser.And_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == BOOLEANTYPE && t1 == BOOLEANTYPE)) return BOOLEANTYPE
+                if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
+                log("Malformed comparison && with subtypes $t1 and $t2", eCtx)
+                return ERRORTYPE
+            }
+            is WhileParser.Or_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == BOOLEANTYPE && t1 == BOOLEANTYPE)) return BOOLEANTYPE
+                if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
+                log("Malformed comparison || with subtypes $t1 and $t2", eCtx)
+                return ERRORTYPE
+            }
+            is WhileParser.Not_expressionContext -> {
+                val t1 = getType(eCtx.expression(), fields, vars, thisType)
+                if(t1 == ERRORTYPE || t1 == BOOLEANTYPE) return BOOLEANTYPE
+                log("Malformed negation ! with subtypes $t1", eCtx)
+                return ERRORTYPE
+            }
             is WhileParser.Leq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
@@ -700,6 +722,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 return ERRORTYPE
             }
             is WhileParser.Geq_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
+                log("Malformed comparison >= with subtypes $t1 and $t2", eCtx)
+                return ERRORTYPE
+            }
+            is WhileParser.Lt_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
+                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
+                log("Malformed comparison <= with subtypes $t1 and $t2", eCtx)
+                return ERRORTYPE
+            }
+            is WhileParser.Gt_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
                 if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE

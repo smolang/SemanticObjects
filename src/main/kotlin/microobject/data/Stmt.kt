@@ -11,7 +11,7 @@ package microobject.data
  */
 
 enum class Operator {
-    PLUS, MINUS, MULT, NEQ, GEQ, EQ, LEQ
+    PLUS, MINUS, MULT, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT
 }
 
 interface ProgramElement{
@@ -331,3 +331,6 @@ object Names{
     fun getVarName() : LocalVar = LocalVar("_v${i++}")
     fun getStackId() : Int = j++
 }
+
+val FALSEEXPR = LiteralExpr("False", "boolean")
+val TRUEEXPR = LiteralExpr("True", "boolean")

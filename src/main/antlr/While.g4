@@ -57,6 +57,7 @@ MULT : '*';
 MINUS : '-';
 AND : '&';
 OR : '|';
+NOT : '!';
 
 //Keywords: others
 DOT : '.';
@@ -119,6 +120,11 @@ expression :      THIS                           # this_expression
                 | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression
                 | expression LEQ expression      # leq_expression
+                | expression GT expression       # gt_expression
+                | expression LT expression       # lt_expression
+                | expression AND expression      # and_expression
+                | expression OR expression       # or_expression
+                | NOT expression                 # not_expression
                 | OPARAN expression CPARAN       # nested_expression
                 ;
 

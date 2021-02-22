@@ -231,6 +231,18 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitLeq_expression(ctx: Leq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.LEQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
+    override fun visitGt_expression(ctx: Gt_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.GT, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+    override fun visitLt_expression(ctx: Lt_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.LT, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+    override fun visitAnd_expression(ctx: And_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.AND, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
+    override fun visitOr_expression(ctx: Or_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.OR, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
 
     override fun visitEq_expression(ctx: Eq_expressionContext?): ProgramElement {
         return ArithExpr(Operator.EQ, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
