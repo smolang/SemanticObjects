@@ -24,6 +24,41 @@ data class TypeError(val msg: String, val line: Int, val severity: Severity)
 
 class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
+    companion object{
+        /**********************************************************************
+        Handling type data structures
+         ***********************************************************************/
+        //translates a string text to a type, even accessed within class createClass (needed to determine generics)
+        private fun stringToType(text: String, createClass: String, generics : MutableMap<String, List<String>>) : Type {
+            return when {
+                generics.getOrDefault(createClass, listOf()).contains(text) -> GenericType(text)
+                text == INTTYPE.name -> INTTYPE
+                text == BOOLEANTYPE.name -> BOOLEANTYPE
+                text == STRINGTYPE.name -> STRINGTYPE
+                else -> BaseType(text)
+            }
+        }
+
+        //translates a type AST text to a type, even accessed within class createClass (needed to determine generics)
+        fun translateType(ctx : WhileParser.TypeContext, className : String, generics : MutableMap<String, List<String>>) : Type {
+            return when(ctx){
+                is WhileParser.Simple_typeContext -> stringToType(ctx.text, className, generics)
+                is WhileParser.Nested_typeContext -> {
+                    val lead = stringToType(ctx.NAME().text, className, generics)
+                    ComposedType(lead, ctx.typelist().type().map { translateType(it, className, generics) })
+                }
+                is WhileParser.Fmu_typeContext -> {
+                    val ins = if(ctx.`in` != null) ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    else emptyList()
+                    val outs = if(ctx.out != null) ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    else emptyList()
+                    SimulatorType(ins,outs)
+                }
+                else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
+            }
+        }
+    }
+
     //Known classes
     private val classes : MutableSet<String> = mutableSetOf("Int", "Boolean", "Unit", "String", "Object")
 
@@ -67,39 +102,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         error = error + TypeError(msg, node?.getStart()?.line ?: 0, severity)
     }
 
-    /**********************************************************************
-    Handling type data structures
-    ***********************************************************************/
-    //translates a string text to a type, even accessed within class createClass (needed to determine generics)
-    private fun stringToType(text: String, createClass: String) : Type {
-        return when {
-            generics.getOrDefault(createClass, listOf()).contains(text) -> GenericType(text)
-            text == INTTYPE.name -> INTTYPE
-            text == BOOLEANTYPE.name -> BOOLEANTYPE
-            text == STRINGTYPE.name -> STRINGTYPE
-            else -> BaseType(text)
-        }
-    }
 
 
-    //translates a type AST text to a type, even accessed within class createClass (needed to determine generics)
-    private fun translateType(ctx : WhileParser.TypeContext, className : String) : Type {
-        return when(ctx){
-            is WhileParser.Simple_typeContext -> stringToType(ctx.text, className)
-            is WhileParser.Nested_typeContext -> {
-                val lead = stringToType(ctx.NAME().text, className)
-                ComposedType(lead, ctx.typelist().type().map { translateType(it, className) })
-            }
-            is WhileParser.Fmu_typeContext -> {
-                val ins = if(ctx.`in` != null) ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
-                          else emptyList()
-                val outs = if(ctx.out != null) ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className)) }
-                           else emptyList()
-                SimulatorType(ins,outs)
-            }
-            else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
-        }
-    }
+
 
     /**********************************************************************
     Preprocessing
@@ -119,7 +124,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                 generics[name] = clCtx.namelist().NAME().map { it.text }
             if(clCtx.method_def() != null)
                 methods[name] = clCtx.method_def()
-            fields[name] = if(clCtx.paramList() == null) mapOf() else clCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), name)) }.toMap()
+            fields[name] = if(clCtx.paramList() == null) mapOf() else clCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), name, generics)) }.toMap()
             parameters[name] = if(clCtx.paramList() == null) listOf() else clCtx.paramList().param().map { it.NAME().text }
         }
     }
@@ -169,7 +174,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         if(clCtx.paramList() != null){
             for( param in clCtx.paramList().param()){
                 val paramName = param.NAME().text
-                val paramType = translateType(param.type(), name)
+                val paramType = translateType(param.type(), name, generics)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.",param)
             }
@@ -192,13 +197,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             )
         }
         for (superMet in allMets) {
-            if (translateType(superMet.type(), className) != translateType(mtCtx.type(), className))
+            if (translateType(superMet.type(), className, generics) != translateType(mtCtx.type(), className, generics))
                 log(
                     "Method $name is declared as overriding in $className, but a superclass has a different return type: ${
                         translateType(
                             superMet.type(),
                             className
-                        )
+                            , generics)
                     }.", mtCtx
                 )
             if(mtCtx.paramList() != null) {
@@ -213,8 +218,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         for (i in mtCtx.paramList().param().indices) {
                             val myName = mtCtx.paramList().param(i).NAME().text
                             val otherName = superMet.paramList().param(i).NAME().text
-                            val myType = translateType(mtCtx.paramList().param(i).type(), className)
-                            val otherType = translateType(superMet.paramList().param(i).type(), className)
+                            val myType = translateType(mtCtx.paramList().param(i).type(), className, generics)
+                            val otherType = translateType(superMet.paramList().param(i).type(), className, generics)
                             if (myName != otherName)
                                 log(
                                     "Method $name is declared as overriding in $className, but parameter $i ($myType $myName) has a different name in a superclass of $className: $otherName.",
@@ -244,13 +249,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             log("rule-method $className.$name has non-empty parameter list.", mtCtx)
 
         //Check return type: must be known
-        if(containsUnknown(translateType(mtCtx.type(), className), classes))
+        if(containsUnknown(translateType(mtCtx.type(), className, generics), classes))
             log("Method $className.$name has unknown return type ${mtCtx.type()}.", mtCtx.type())
 
         //Check parameters: no shadowing, types must be known
         if(mtCtx.paramList() != null){
             for(param in mtCtx.paramList().param()){
-                val paramType = translateType(param.type(), className)
+                val paramType = translateType(param.type(), className, generics)
                 val paramName = param.NAME().text
                 if(containsUnknown(paramType, classes))
                     log("Method $className.$name has unknown parameter type $paramType for parameter $paramName.", mtCtx.type())
@@ -277,8 +282,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
         }
 
         //Check statement
-        val initVars = if(mtCtx.paramList() != null) mtCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), className)) }.toMap().toMutableMap() else mutableMapOf()
-        val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className), thisType, className)
+        val initVars = if(mtCtx.paramList() != null) mtCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }.toMap().toMutableMap() else mutableMapOf()
+        val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className)
 
         if(!ret) log("Method ${mtCtx.NAME().text} has a path without a final return statement.", mtCtx)
     }
@@ -325,9 +330,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         } else {
                             val name = lhs.NAME().text
                             if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                            else vars[name] = translateType(ctx.type(), className)
+                            else vars[name] = translateType(ctx.type(), className, generics)
                         }
-                        translateType(ctx.type(), className)
+                        translateType(ctx.type(), className, generics)
                     } else getType(ctx.expression(0), inner, vars, thisType, false)
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
@@ -343,9 +348,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             } else {
                                 val name = lhs.NAME().text
                                 if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                                else vars[name] = translateType(ctx.type(), className)
+                                else vars[name] = translateType(ctx.type(), className, generics)
                             }
-                            translateType(ctx.type(), className)
+                            translateType(ctx.type(), className, generics)
                         }
                         ctx.target != null -> {
                             getType(ctx.expression(0), inner, vars, thisType)
@@ -399,9 +404,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                             } else {
                                 val name = lhs.NAME().text
                                 if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                                else vars[name] = translateType(ctx.type(), className)
+                                else vars[name] = translateType(ctx.type(), className, generics)
                             }
-                            translateType(ctx.type(), className)
+                            translateType(ctx.type(), className, generics)
                         }
                         ctx.target != null -> {
                             getType(ctx.expression(0), inner, vars, thisType, false)
@@ -440,7 +445,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                                       log("Type $realType is not assignable to $targetType.", ctx)
                               }
                               if (lhsType != null) { //result type
-                                  val metRet = translateType(met.type(), otherClassName) // type as declared
+                                  val metRet = translateType(met.type(), otherClassName, generics) // type as declared
                                   val finalType = instantiateGenerics(metRet, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
                                   if (!lhsType.isAssignable(finalType, extends)) {
                                       log(
@@ -463,9 +468,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         } else {
                             val name = lhs.NAME().text
                             if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                            else vars[name] = translateType(ctx.type(), className)
+                            else vars[name] = translateType(ctx.type(), className, generics)
                         }
-                        translateType(ctx.type(), className)
+                        translateType(ctx.type(), className, generics)
                     } else getType(ctx.expression(0), inner, vars, thisType, false)
                 val createClass = ctx.NAME().text
                 val createDecl = recoverDef[createClass]
@@ -473,7 +478,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
 
                 if(ctx.namelist() != null)
                     newType = ComposedType(newType, ctx.namelist().NAME().map {
-                        stringToType(it.text, className)
+                        stringToType(it.text, className, generics)
                     })
 
                 if(createDecl?.namelist() != null){
@@ -514,7 +519,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     } else {
                         val name = lhs.NAME().text
                         if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                        else vars[name] = translateType(ctx.type(), className)
+                        else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
             }
@@ -527,7 +532,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     } else {
                         val name = lhs.NAME().text
                         if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                        else vars[name] = translateType(ctx.type(), className)
+                        else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
             }
@@ -580,7 +585,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     val simType = SimulatorType(ins, outs)
 
                     if(ctx.type() != null) {
-                        val declType = translateType(ctx.type(), className)
+                        val declType = translateType(ctx.type(), className, generics)
                         if(!declType.isAssignable(simType, extends))
                             log("Type $simType is not assignable to $declType", ctx)
                         if (ctx.target !is WhileParser.Var_expressionContext) {
@@ -588,7 +593,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                         } else {
                             val name = ((ctx.target) as WhileParser.Var_expressionContext).NAME().text
                             if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                            else vars[name] = translateType(ctx.type(), className)
+                            else vars[name] = translateType(ctx.type(), className, generics)
                         }
                     }else{
                         val declType = getType(ctx.target, inner, vars, thisType, false)
@@ -791,7 +796,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
     Helper to handle types
      ***********************************************************************/
     private fun getParameterTypes(met: WhileParser.Method_defContext, otherClassName: String): List<Type> =
-        if(met.paramList() == null) listOf() else met.paramList().param().map { translateType(it.type(), otherClassName) }
+        if(met.paramList() == null) listOf() else met.paramList().param().map { translateType(it.type(), otherClassName, generics) }
 
 
     private fun getParameterTypes(className: String): List<Type> {

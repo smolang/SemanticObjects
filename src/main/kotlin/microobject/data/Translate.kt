@@ -5,6 +5,8 @@ package microobject.data
 import antlr.microobject.gen.WhileBaseVisitor
 import antlr.microobject.gen.WhileParser.*
 import microobject.runtime.*
+import microobject.type.Type
+import microobject.type.TypeChecker
 import org.antlr.v4.runtime.RuleContext
 
 /**
@@ -20,6 +22,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         for(cl in ctx!!.class_def()){
+            var cName = ""
             if(cl.NAME(1) != null){
                 var maps = hierarchy[cl.NAME(1).text]
                 if(maps == null) maps = mutableSetOf()
@@ -28,7 +31,16 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.NAME(0).text
             }
-            val fields = if(cl.paramList() != null) paramListTranslate(cl.paramList()) else listOf()
+            val fields = if(cl.paramList() != null) {
+                var res = listOf<Pair<String, Type>>()
+                if(cl.paramList().param() != null) {
+                    for (nm in cl.paramList().param())
+                        res += Pair(nm.NAME().text, TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()))
+                }
+                res
+            } else {
+                listOf()
+            }
 
             val res = mutableMapOf<String, MethodEntry>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>

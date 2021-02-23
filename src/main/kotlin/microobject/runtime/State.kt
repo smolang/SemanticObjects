@@ -2,6 +2,9 @@ package microobject.runtime
 
 import microobject.data.LiteralExpr
 import microobject.data.Statement
+import microobject.type.INTTYPE
+import microobject.type.STRINGTYPE
+import microobject.type.Type
 import java.util.*
 
 //This will be used for snapshots
@@ -30,7 +33,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         """                     
         smol:null rdf:type owl:NamedIndividual , smol:Object .
         prog:_Entry_ rdf:type owl:NamedIndividual , smol:Class .
-
+        
         """.trimIndent()
     }
 
@@ -41,18 +44,14 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
 
         //records all classes and their fields
         for(obj in staticInfo.fieldTable){
-            res += "run:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
+            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
             for(obj2 in obj.value){
-                res += "run:$obj2 rdfs:subPropertyOf smol:Field.\n"
-                res += "prog:${obj.key} smol:hasField run:$obj2.\n"
-                res += """
-                prog:${obj.key} rdfs:subClassOf [
-                    rdf:type owl:Restriction;
-                    owl:onProperty run:$obj2 ;
-                    owl:cardinality 1
-                ] .
-
-                """.trimIndent()
+                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
+                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
+                } else {
+                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
+                }
+                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
             }
         }
 
@@ -128,7 +127,7 @@ Heap memory is barely the opposite of local memory, we have no assumptions about
 typealias Memory = MutableMap<String, LiteralExpr>       // Maps variable names to values
 typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name literals to local memories
 typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
-typealias FieldEntry = List<String>                   //list of fields
+typealias FieldEntry = List<Pair<String, Type>>                   //list of fields
 typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
 
 data class StaticTable(

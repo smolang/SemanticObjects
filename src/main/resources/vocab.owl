@@ -2,8 +2,13 @@
 ######## Classes
 ####  Semantic static layer
 smol:Class                rdf:type owl:Class.
-smol:Field                rdf:type owl:ObjectProperty.
-smol:Port                 rdf:type owl:ObjectProperty.
+smol:Field                rdfs:subPropertyOf owl:FunctionalProperty.
+smol:ObjectField          rdfs:subPropertyOf owl:ObjectProperty.
+smol:DataField            rdfs:subPropertyOf owl:DataProperty.
+smol:ObjectField          rdfs:subPropertyOf smol:Field .
+smol:DataField            rdfs:subPropertyOf smol:Field .
+smol:Port                 rdfs:subPropertyOf owl:DataProperty.
+smol:Port                 rdfs:subPropertyOf owl:FunctionalProperty.
 smol:Method               rdf:type owl:Class.
 smol:Simulation           rdf:type owl:Class.
 
@@ -75,7 +80,7 @@ smol:extends    rdf:type owl:ObjectProperty ;
                 rdfs:range smol:Class .
 
 
-smol:modelName  rdf:type owl:DatatypeProperty ;
+smol:modelName  rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range xsd:String .
 
