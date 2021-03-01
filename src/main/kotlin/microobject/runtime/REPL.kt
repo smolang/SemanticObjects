@@ -7,6 +7,7 @@ import antlr.microobject.gen.WhileParser
 import microobject.data.Expression
 import microobject.data.RuleGenerator
 import microobject.data.Translate
+import microobject.main.Settings
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -52,10 +53,7 @@ class Command(
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val apache: String,
-           private val outPath: String,
-           private val verbose: Boolean,
-           private val back : String,
-           private val domain : String) {
+           private val settings: Settings) {
     private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
@@ -69,11 +67,11 @@ class REPL(private val apache: String,
     }
 
     private fun initOntology(){
-        val dir = File("$outPath/output.ttl")
+        val dir = File("${settings.outpath}/output.ttl")
         dir.parentFile.mkdirs()
         if (!dir.exists()) dir.createNewFile()
         m = OWLManager.createOWLOntologyManager()
-        ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+        ontology = m.loadOntologyFromOntologyDocument(File("${settings.outpath}/output.ttl"))
         reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
     }
 
@@ -105,9 +103,9 @@ class REPL(private val apache: String,
         if (!validDump) {
 
             val res = interpreter!!.dumpTtl()
-            if(verbose) printRepl(res)
+            if(settings.verbose) printRepl(res)
 
-            val output = File("$outPath/output.ttl")
+            val output = File("${settings.outpath}/output.ttl")
             output.parentFile.mkdirs()
             if (!output.exists()) output.createNewFile()
             output.writeText(res)
@@ -149,10 +147,8 @@ class REPL(private val apache: String,
             initGlobalStore,
             mutableMapOf(),
             pair.second,
-            outPath,
-            back,
+            settings,
             rules,
-            domain
         )
         iB.interpreter = interpreter
     }
@@ -209,7 +205,7 @@ class REPL(private val apache: String,
             "validate",
             this,
             { str ->
-                val p = Runtime.getRuntime().exec("$apache/shacl validate --data $outPath/output.ttl --shapes $str")
+                val p = Runtime.getRuntime().exec("$apache/shacl validate --data ${settings.outpath}/output.ttl --shapes $str")
                 p.waitFor()
                 var out = "jena output: \n"
                 val lineReader = BufferedReader(InputStreamReader(p.inputStream))
@@ -244,7 +240,7 @@ class REPL(private val apache: String,
             this,
             { str ->
                 val command =
-                    "$apache/sparql --data=$outPath/output.ttl --query=$str"
+                    "$apache/sparql --data=${settings.outpath}/output.ttl --query=$str"
                 val p = Runtime.getRuntime().exec(command)
                 p.waitFor()
                 var out = "jena output: \n"

@@ -2,13 +2,14 @@ package microobject.runtime
 
 import microobject.data.LiteralExpr
 import microobject.data.Statement
+import microobject.main.Settings
 import microobject.type.INTTYPE
 import microobject.type.STRINGTYPE
 import microobject.type.Type
 import java.util.*
 
 //This will be used for snapshots
-class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: SimulationMemory, initInfo : StaticTable, private val background : String) {
+class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: SimulationMemory, initInfo : StaticTable, private val settings: Settings) {
     private val stack: Stack<StackEntry> = initStack.clone() as Stack<StackEntry>
     private val heap: GlobalMemory = initHeap.toMutableMap()
     private val staticInfo: StaticTable = initInfo.copy()
@@ -17,10 +18,6 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
     companion object{
         private val HEADER =
         """
-        @prefix : <urn:> .
-        @prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
-        @prefix prog: <urn:> .
-        @prefix run: <urn:> .
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
         @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
@@ -39,7 +36,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
 
     fun dump() : String{
         //Builds always known information and meta data
-        var res = HEADER + "\n" + VOCAB + "\n" + background + "\n" + MINIMAL
+        var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB + "\n" + settings.background + "\n" + MINIMAL
 
 
         //records all classes and their fields

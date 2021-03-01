@@ -5,6 +5,7 @@
 package microobject.runtime
 
 import microobject.data.*
+import microobject.main.Settings
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -31,10 +32,8 @@ class Interpreter(
     private var heap: GlobalMemory,             // This is a map from objects to their heap memory
     private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
-    private val outPath: String,                // Path to the output directory (e.g., /tmp/mo)
-    private val back : String,                  // Background knowledge (Should be a string with OWL class definitions)
+    val settings : Settings,                    // Settings from the user
     private val rules : String,                 // Additional rules for jena
-    private val domainPrefix : String           // Interface prefix for the domain
 ) {
 
     fun coreCopy() : Interpreter{
@@ -47,7 +46,8 @@ class Interpreter(
             newHeap,
             mutableMapOf(),
             staticInfo,
-            outPath, back, rules, domainPrefix
+            settings,
+            rules
         )
     }
 
@@ -55,36 +55,31 @@ class Interpreter(
     private val prefix =
         """
                     PREFIX : <urn:>
-                    PREFIX smol: <https://github.com/Edkamb/SemanticObjects#>
-                    PREFIX prog: <urn:>
-                    PREFIX run: <urn:>
+                    PREFIX smol: <${settings.langPrefix}>
+                    PREFIX prog: <${settings.progPrefix}>
+                    PREFIX run: <${settings.runPrefix}>
                     PREFIX owl: <http://www.w3.org/2002/07/owl#> 
                     PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
                     PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
                     PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
-                    PREFIX domain: <$domainPrefix> 
+                    PREFIX domain: <${settings.domainPrefix}> 
                 """.trimIndent()
 
     fun query(str: String): ResultSet? {
         val out = "$prefix\n\n $str\n"
 
         var model : Model = ModelFactory.createOntologyModel()
-        val uri = File("$outPath/output.ttl").toURL().toString()
+        val uri = File("${settings.outpath}/output.ttl").toURL().toString()
         model.read(uri, "TTL")
 
-        if(back != "") {
+        if(settings.background != "") {
             println("Using background knowledge...")
             model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
         }
 
         if(rules != "") {
             println("Loading generated builtin rules $rules...")
-            val prefixes  =
-            """@prefix : <urn:> .
-               @prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
-               @prefix prog: <urn:> .
-               @prefix domain: <$domainPrefix> .
-               @prefix run: <urn:> .""".trimIndent()
+            val prefixes  = settings.prefixes()
             val reader = (prefixes+"\n"+rules).byteInputStream().bufferedReader()
             val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
             val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rParsed))
@@ -101,9 +96,10 @@ class Interpreter(
 
 
     private fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
-        val out = str.replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
+        val out = settings.replaceKnownPrefixes(str)
+       // str.replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
         val m = OWLManager.createOWLOntologyManager()
-        val ontology = m.loadOntologyFromOntologyDocument(File("$outPath/output.ttl"))
+        val ontology = m.loadOntologyFromOntologyDocument(File("${settings.outpath}/output.ttl"))
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)
@@ -111,14 +107,14 @@ class Interpreter(
     }
 
     private fun dump() {
-        val output = File("$outPath/output.ttl")
+        val output = File("${settings.outpath}/output.ttl")
         output.parentFile.mkdirs()
         if (!output.exists()) output.createNewFile()
         output.writeText(dumpTtl())
     }
 
     fun dumpTtl() : String{
-        return State(stack, heap, simMemory, staticInfo, back).dump() // snapshot management goes here
+        return State(stack, heap, simMemory, staticInfo, settings).dump() // snapshot management goes here
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
