@@ -125,7 +125,7 @@ class REPL(private val apache: String,
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-        val tC = TypeChecker(tree)
+        val tC = TypeChecker(tree, settings)
         tC.check()
         tC.report()
 

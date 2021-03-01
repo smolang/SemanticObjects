@@ -1,6 +1,7 @@
 package microobject.type
 
 import antlr.microobject.gen.WhileParser
+import microobject.main.Settings
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
@@ -22,7 +23,7 @@ data class TypeError(val msg: String, val line: Int, val severity: Severity)
  *
  */
 
-class TypeChecker(private val ctx: WhileParser.ProgramContext) {
+class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings) {
 
     companion object{
         /**********************************************************************
@@ -512,6 +513,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
             }
             is WhileParser.Sparql_statementContext -> {
                 log("Type checking (C)SSA is not supported yet ", ctx, Severity.WARNING)
+
+                var expType : Type? = null
                 if(ctx.declType != null){
                     val lhs = ctx.expression(0)
                     if(lhs !is WhileParser.Var_expressionContext){
@@ -519,8 +522,18 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext) {
                     } else {
                         val name = lhs.NAME().text
                         if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                        else vars[name] = translateType(ctx.type(), className, generics)
+                        else {
+                            expType = translateType(ctx.type(), className, generics)
+                            vars[name] = expType
+                        }
                     }
+                }else{
+                    expType = getType(ctx.target, inner, vars, thisType, false)
+                }
+                if(expType != null) {
+                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType)
+                    val typable = qc.type()
+                    println(typable)
                 }
             }
             is WhileParser.Owl_statementContext -> {

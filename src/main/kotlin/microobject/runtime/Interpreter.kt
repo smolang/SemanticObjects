@@ -87,7 +87,7 @@ class Interpreter(
             //infModel.prepare()
             model = infModel
         }
-        //println("execute CSSA: $out")
+        if(settings.verbose) println("execute CSSA\n: $out")
         val query = QueryFactory.create(out)
         val qexec = QueryExecutionFactory.create(query, model)
 
@@ -252,7 +252,7 @@ class Interpreter(
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
-                        val found = obres.toString().removePrefix("urn:")
+                        val found = obres.toString().removePrefix(settings.runPrefix)
                         for (ob in heap.keys) {
                             if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)

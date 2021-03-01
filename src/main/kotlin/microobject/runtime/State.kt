@@ -16,7 +16,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
     private val simulation : SimulationMemory = simMemory.toMap().toMutableMap()
 
     companion object{
-        private val HEADER =
+        public val HEADER =
         """
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -24,9 +24,9 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         """.trimIndent()
 
-        private val VOCAB = this::class.java.classLoader.getResource("vocab.owl").readText()
+        public val VOCAB = this::class.java.classLoader.getResource("vocab.owl").readText()
 
-        private val MINIMAL =
+        public val MINIMAL =
         """                     
         smol:null rdf:type owl:NamedIndividual , smol:Object .
         prog:_Entry_ rdf:type owl:NamedIndividual , smol:Class .

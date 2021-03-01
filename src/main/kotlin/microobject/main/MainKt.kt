@@ -16,7 +16,7 @@ data class Settings(val verbose : Boolean,      //Verbosity
                     val background : String,    //owl background knowledge
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
-                    val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run#${System.currentTimeMillis()}#",    //prefix for this run (run:)
+                    val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
                     val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#"
                     ){
     fun replaceKnownPrefixes(string: String) : String{
