@@ -2,6 +2,7 @@ package microobject.type
 
 import microobject.main.Settings
 import microobject.runtime.State
+import microobject.runtime.StaticTable
 import org.apache.jena.graph.Node_Concrete
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.core.PathBlock
@@ -39,9 +40,9 @@ class QueryChecker(private val settings: Settings, private val query: String, pr
         return inner.toString()
     }
 
-    fun type() : Boolean{
+    fun type(staticTable: StaticTable) : Boolean{
         try {
-            val test = settings.prefixes() + "\n"+ State.HEADER + "\n" + State.VOCAB + "\n" + settings.background + "\n" + State.MINIMAL
+            val test = settings.prefixes() + "\n"+ State.HEADER + "\n" + State.VOCAB + "\n" + settings.background + "\n" + State.MINIMAL + "\n" + staticTable.dumpClasses()
             val m = OWLManager.createOWLOntologyManager()
             val ontology = m.loadOntologyFromOntologyDocument(test.byteInputStream())
 

@@ -81,6 +81,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     //Easy access by mapping each class name to its definition
     private val recoverDef :  MutableMap<String, WhileParser.Class_defContext> = mutableMapOf()
 
+
+    /**********************************************************************
+    CSSA
+     ***********************************************************************/
+    public val queryCheckers = mutableListOf<QueryChecker>()
+
+
     /**********************************************************************
     Error handling
      ***********************************************************************/
@@ -532,8 +539,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
                 if(expType != null) {
                     val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType)
-                    val typable = qc.type()
-                    println(typable)
+                    queryCheckers.add(qc)
                 }
             }
             is WhileParser.Owl_statementContext -> {

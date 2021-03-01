@@ -16,7 +16,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
     private val simulation : SimulationMemory = simMemory.toMap().toMutableMap()
 
     companion object{
-        public val HEADER =
+        val HEADER =
         """
         @prefix owl: <http://www.w3.org/2002/07/owl#> .
         @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
@@ -24,9 +24,9 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
         """.trimIndent()
 
-        public val VOCAB = this::class.java.classLoader.getResource("vocab.owl").readText()
+        val VOCAB = this::class.java.classLoader.getResource("vocab.owl").readText()
 
-        public val MINIMAL =
+        val MINIMAL =
         """                     
         smol:null rdf:type owl:NamedIndividual , smol:Object .
         prog:_Entry_ rdf:type owl:NamedIndividual , smol:Class .
@@ -39,33 +39,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB + "\n" + settings.background + "\n" + MINIMAL
 
 
-        //records all classes and their fields
-        for(obj in staticInfo.fieldTable){
-            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
-            for(obj2 in obj.value){
-                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
-                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
-                } else {
-                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
-                }
-                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
-            }
-        }
-
-        //records all methods
-        for(obj in staticInfo.methodTable){
-            for(obj2 in obj.value){
-                res += "prog:${obj.key} smol:hasMethod prog:${obj2.key}.\n"
-                res += "prog:${obj2.key} rdf:type owl:NamedIndividual , smol:Method.\n"
-            }
-        }
-
-        //records type hierarchy
-        for(obj in staticInfo.hierarchy.entries){
-            for(obj2 in obj.value){
-                res += "prog:$obj2 smol:extends prog:${obj.key}.\n"
-            }
-        }
+        res += staticInfo.dumpClasses()
 
         //dumps individuals
         var i = 0
@@ -156,6 +130,50 @@ MethodTable     : $methodTable
             current = getSuper(current)
         }
         return null
+    }
+
+    fun dumpClasses() : String{
+        var res = ""
+        for(obj in fieldTable){
+            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
+            for(obj2 in obj.value){
+                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
+                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
+                } else {
+                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
+                }
+                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
+            }
+        }
+        //records all classes and their fields
+        for(obj in fieldTable){
+            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
+            for(obj2 in obj.value){
+                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
+                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
+                } else {
+                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
+                }
+                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
+            }
+        }
+
+        //records all methods
+        for(obj in methodTable){
+            for(obj2 in obj.value){
+                res += "prog:${obj.key} smol:hasMethod prog:${obj2.key}.\n"
+                res += "prog:${obj2.key} rdf:type owl:NamedIndividual , smol:Method.\n"
+            }
+        }
+
+        //records type hierarchy
+        for(obj in hierarchy.entries){
+            for(obj2 in obj.value){
+                res += "prog:$obj2 smol:extends prog:${obj.key}.\n"
+            }
+        }
+
+        return res
     }
 }
 

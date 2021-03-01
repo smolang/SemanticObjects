@@ -132,6 +132,9 @@ class REPL(private val apache: String,
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
+        for(qc in tC.queryCheckers ){
+            println(qc.type(pair.second))
+        }
 
 
         val iB = InterpreterBridge(null)
