@@ -1,4 +1,4 @@
 auto
-query SELECT ?obj WHERE {?obj a :Overloaded }
+query SELECT ?obj WHERE {?obj a domain:Overloaded }
 auto
-query SELECT ?obj WHERE {?obj a :Overloaded }
+query SELECT ?obj WHERE {?obj a domain:Overloaded }

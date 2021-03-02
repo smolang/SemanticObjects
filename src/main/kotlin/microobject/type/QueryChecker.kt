@@ -1,22 +1,26 @@
 package microobject.type
 
+import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
 import microobject.runtime.State
 import microobject.runtime.StaticTable
 import org.apache.jena.graph.Node_Concrete
 import org.apache.jena.query.QueryFactory
-import org.apache.jena.sparql.core.PathBlock
 import org.apache.jena.sparql.syntax.ElementGroup
 import org.apache.jena.sparql.syntax.ElementPathBlock
 import org.semanticweb.HermiT.Configuration
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLClass
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
 import uk.ac.manchester.cs.owl.owlapi.OWLSubClassOfAxiomImpl
 
-class QueryChecker(private val settings: Settings, private val query: String, private val type:Type) {
+class QueryChecker(
+    private val settings: Settings,
+    private val query: String,
+    private val type: Type,
+    private val ctx: WhileParser.Sparql_statementContext
+    ) : TypeErrorLogger() {
     private val sparqlPrefix =
         """
                     PREFIX : <urn:>
@@ -31,12 +35,16 @@ class QueryChecker(private val settings: Settings, private val query: String, pr
                 """.trimIndent()
 
 
-    fun extractTypeClass() : String? {
-        if(type !is ComposedType || (type is ComposedType && type.getPrimary() != BaseType("List")) )
+    private fun extractTypeClass() : String? {
+        if(type !is ComposedType || (type is ComposedType && type.getPrimary() != BaseType("List")) ) {
+            log("Access statements are only allowed to target List type variables with concrete parameter type", ctx)
             return null //only storing in lists
+        }
         val inner = type.params.first()
-        if(inner !is BaseType)
+        if(inner !is BaseType) {
+            log("Access statements are only allowed to target List type variables with concrete parameter type", ctx)
             return null //simple classes only
+        }
         return inner.toString()
     }
 
@@ -54,7 +62,7 @@ class QueryChecker(private val settings: Settings, private val query: String, pr
                           else return false
 
             val owlSub = OWLClassImpl(IRI.create(qString))
-            val owlSup = OWLClassImpl(IRI.create(settings.progPrefix+":"+tString))
+            val owlSup = OWLClassImpl(IRI.create(settings.progPrefix+tString))
             val axiom = OWLSubClassOfAxiomImpl(owlSub, owlSup, emptyList())
             return reasoner.isEntailed(axiom)
         } catch (e: Exception){
@@ -63,28 +71,53 @@ class QueryChecker(private val settings: Settings, private val query: String, pr
         }
     }
 
-    fun extractQueryClass() : String? {
+    private fun extractQueryClass() : String? {
         val toCheck = "$sparqlPrefix\n\n $query\n"
-        if(toCheck.contains("%")) return null   // No checks for constants
+        if(toCheck.contains("%")) {
+            log("%n constants are not supported yet", ctx)
+            return null
+        }
 
         val query = QueryFactory.create(toCheck)
-        if(!query.isSelectType) return null            //select only
+        if(!query.isSelectType) {
+            log("non-select queries are not supported yet", ctx)
+            return null
+        }
 
-        if(query.projectVars.size != 1) return null
-        if(query.projectVars.first().name != "obj") return null
+        if(query.projectVars.size != 1 || query.projectVars.first().name != "obj"){
+            log("Queries must have a single extracted variable called ?obj", ctx)
+            return null
+        }
 
         val pattern = query.queryPattern
-        if(pattern !is ElementGroup || pattern.elements.size != 1) return null
+        if(pattern !is ElementGroup || pattern.elements.size != 1) {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
         val elem = pattern.elements.first()
-        if(elem !is ElementPathBlock) return null
+        if(elem !is ElementPathBlock) {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
         val subpattern = elem.pattern
-        if(subpattern.list.size != 1) return null
+        if(subpattern.list.size != 1) {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
         val triple = subpattern.list.first().asTriple()
-        if(triple.predicate !is Node_Concrete) return null
+        if(triple.predicate !is Node_Concrete) {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
         val pred = triple.predicate.toString()
-        if(triple.predicate.toString() != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") return null
-        if(triple.`object` !is Node_Concrete)
-            if(triple.subject != query.projectVars.first()) return null
+        if(pred != "http://www.w3.org/1999/02/22-rdf-syntax-ns#type") {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
+        if(triple.`object` !is Node_Concrete&&triple.subject != query.projectVars.first()) {
+            log("Only instance queries are supported", ctx)
+            return null
+        }
         return triple.`object`.toString()
     }
 }

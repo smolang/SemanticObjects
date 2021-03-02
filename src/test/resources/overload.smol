@@ -27,7 +27,7 @@ class Server(List<Task> taskList)
 end
 class Scheduler(List<Server> serverList)
     Int reschedule()
-        List<Server> over := access("SELECT ?obj WHERE{?obj a :Overloaded }");
+        List<Server> over := access("SELECT ?obj WHERE{?obj a domain:Overloaded }");
         //breakpoint;
         List<Task> tasks := this.collectExcessiveTasks(over);
         //breakpoint;

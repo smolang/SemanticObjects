@@ -132,8 +132,10 @@ class REPL(private val apache: String,
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
+        //query chacking is post-poned, because we need the full static class table
         for(qc in tC.queryCheckers ){
-            println(qc.type(pair.second))
+            qc.type(pair.second)
+            println(qc.report())
         }
 
 

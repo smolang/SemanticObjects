@@ -36,7 +36,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
 
     fun dump() : String{
         //Builds always known information and meta data
-        var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB + "\n" + settings.background + "\n" + MINIMAL
+        var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB  + "\n" + MINIMAL
 
 
         res += staticInfo.dumpClasses()
@@ -85,7 +85,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             val sim = simulation.getValue(obj)
             res += sim.dump("run:${obj.literal}")
         }
-        return res
+        return res + "\n" + settings.background
     }
 }
 
@@ -135,26 +135,18 @@ MethodTable     : $methodTable
     fun dumpClasses() : String{
         var res = ""
         for(obj in fieldTable){
-            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
+            res += "prog:${obj.key} rdf:type smol:Class.\n"
+            res += "prog:${obj.key} rdf:type owl:Class.\n"
             for(obj2 in obj.value){
-                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
-                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
-                } else {
-                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
-                }
                 res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
-            }
-        }
-        //records all classes and their fields
-        for(obj in fieldTable){
-            res += "prog:${obj.key} rdf:type owl:NamedIndividual , smol:Class.\n"
-            for(obj2 in obj.value){
+                res += "prog:${obj2.first} rdf:type smol:Field.\n"
                 if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
-                    res += "prog:${obj2.first} rdf:type smol:DataField.\n"
+                    res += "prog:${obj2.first} rdf:type owl:DatatypeProperty.\n"
                 } else {
-                    res += "prog:${obj2.first} rdf:type smol:ObjectField.\n"
+                    res += "prog:${obj2.first} rdf:type owl:FunctionalProperty.\n"
+                    res += "prog:${obj2.first} rdf:type owl:ObjectProperty.\n"
                 }
-                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
+                res += "prog:${obj2.first} rdfs:domain prog:${obj.key}.\n"
             }
         }
 

@@ -2,16 +2,11 @@ package microobject.type
 
 import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
-import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
 import java.lang.Exception
 import java.nio.file.Files
 import java.nio.file.Paths
-
-//Error Messages
-enum class Severity { WARNING, ERROR }
-data class TypeError(val msg: String, val line: Int, val severity: Severity)
 
 
 /**
@@ -23,7 +18,7 @@ data class TypeError(val msg: String, val line: Int, val severity: Severity)
  *
  */
 
-class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings) {
+class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings) : TypeErrorLogger() {
 
     companion object{
         /**********************************************************************
@@ -86,30 +81,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     CSSA
      ***********************************************************************/
     public val queryCheckers = mutableListOf<QueryChecker>()
-
-
-    /**********************************************************************
-    Error handling
-     ***********************************************************************/
-
-    //Final output: collected errors
-    internal var error : List<TypeError> = listOf()
-
-    /* interface: prints all errors and returns whether one of them is an error */
-    fun report(silent : Boolean = false) : Boolean {
-        var ret = true
-        for( e in error ){
-            if(e.severity == Severity.ERROR) ret = false
-            if(!silent) println("Line ${e.line}, ${e.severity}: ${e.msg}")
-        }
-        return ret
-    }
-
-    /* adds new error/warning */
-    private fun log(msg: String, node : ParserRuleContext?, severity: Severity = Severity.ERROR){
-        error = error + TypeError(msg, node?.getStart()?.line ?: 0, severity)
-    }
-
 
 
 
@@ -538,7 +509,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     expType = getType(ctx.target, inner, vars, thisType, false)
                 }
                 if(expType != null) {
-                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType)
+                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
                     queryCheckers.add(qc)
                 }
             }
