@@ -58,10 +58,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     }
 
     //Known classes
-    private val classes : MutableSet<String> = mutableSetOf("Int", "Boolean", "Unit", "String", "Object")
+    private val classes : MutableSet<String> = mutableSetOf("Int", "Boolean", "Unit", "String", "Object", "Double")
 
     //Type hierarchy. Null is handled as a special case during the analysis itself.
-    private val extends : MutableMap<String, String> = mutableMapOf(Pair("Int", "Object"), Pair("Boolean", "Object"), Pair("Unit", "Object"), Pair("String", "Object"))
+    private val extends : MutableMap<String, String> = mutableMapOf(Pair("Double", "Object"), Pair("Int", "Object"), Pair("Boolean", "Object"), Pair("Unit", "Object"), Pair("String", "Object"))
 
     //List of declared generic type names per class
     private val generics : MutableMap<String, List<String>> = mutableMapOf()
@@ -562,10 +562,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         if(mVar.causality == "input" || mVar.causality == "state"){
                             if(!mVar.hasStartValue() && !inits.containsKey(mVar.name))
                                 log("Simulation fails to initialize variable ${mVar.name}: no initial value given", ctx)
-                            if(inits.containsKey(mVar.name)) {
-                                if (mVar.typeName != "Integer" && mVar.typeName != "Boolean")
-                                    log("Simulation fails to initialize variable ${mVar.name}: only Integer variables are supported",ctx)
-                            }
 //                            if(mVar.causality == "input")
 //                                ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
                         }
@@ -615,7 +611,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun getSimType(typeName: String): Type =
         when(typeName) {
             "Integer" -> INTTYPE
-            "Real" -> ERRORTYPE
+            "Real" -> DOUBLETYPE
             "String" -> STRINGTYPE
             "Boolean" -> BOOLEANTYPE
             else -> ERRORTYPE
@@ -631,6 +627,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     ) : Type {
         when(eCtx){
             is WhileParser.Const_expressionContext -> return INTTYPE
+            is WhileParser.Double_expressionContext -> return DOUBLETYPE
             is WhileParser.String_expressionContext -> return STRINGTYPE
             is WhileParser.False_expressionContext -> return BOOLEANTYPE
             is WhileParser.True_expressionContext -> return BOOLEANTYPE
@@ -736,9 +733,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(t1 is SimulatorType){
                     return if(read){
                         val inVar = t1.outVar.firstOrNull { it.first == eCtx.NAME().text }
+                        if(inVar == null)
+                            log("Trying to read from a field that is not an outport: ${eCtx.NAME().text}", eCtx)
                         inVar?.second ?: ERRORTYPE
                     } else {
                         val inVar = t1.inVar.firstOrNull { it.first == eCtx.NAME().text }
+                        if(inVar == null)
+                            log("Trying to write into a field that is not an inport: ${eCtx.NAME().text}", eCtx)
                         inVar?.second ?: ERRORTYPE
                     }
                 }

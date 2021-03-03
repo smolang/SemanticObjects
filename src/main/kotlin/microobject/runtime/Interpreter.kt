@@ -179,7 +179,7 @@ class Interpreter(
                 when (stmt.target) {
                     is LocalVar -> stackMemory[stmt.target.name] = res
                     is OwnVar -> {
-                        if (!(staticInfo.fieldTable[obj.tag]
+                        if (!(staticInfo.fieldTable[(obj.tag as BaseType).name]
                                 ?: error("")).contains(stmt.target.name)
                         ) throw Exception("This field is unknown: ${stmt.target.name}")
                         heapObj[stmt.target.name] = res
@@ -190,7 +190,7 @@ class Interpreter(
                         if(heap.containsKey(key)) {
                             val otherHeap = heap[key]
                                 ?: throw Exception("This object is unknown: $key")
-                            if (!(staticInfo.fieldTable[key.tag]
+                            if (!(staticInfo.fieldTable[(key.tag as BaseType).name]
                                     ?: error("")).any{ it.first == stmt.target.name}
                             ) throw Exception("This field is unknown: $key")
                             otherHeap[stmt.target.name] = res
@@ -205,7 +205,7 @@ class Interpreter(
             }
             is CallStmt -> {
                 val newObj = eval(stmt.callee, stackMemory, heap, simMemory, obj)
-                val mt = staticInfo.methodTable[newObj.tag]
+                val mt = staticInfo.methodTable[(newObj.tag as BaseType).name]
                     ?: throw Exception("This class is unknown: ${newObj.tag} when executing $stmt")
                 val m = mt[stmt.method]
                     ?: throw Exception("This method is unknown: ${stmt.method}")
