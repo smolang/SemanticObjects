@@ -55,6 +55,7 @@ ASS : ':=';
 PLUS : '+';
 MULT : '*';
 MINUS : '-';
+DIV : '/';
 AND : '&';
 OR : '|';
 NOT : '!';
@@ -74,6 +75,7 @@ fragment LET : [a-zA-Z_];
 fragment LOD : LET | DIG;
 NAME : LET LOD*;
 CONSTANT :  DIG+;
+FLOAT : DIG DOT DIG;
 
 namelist : NAME (COMMA NAME)*;
 
@@ -111,10 +113,12 @@ expression :      THIS                           # this_expression
                 | TRUE                           # true_expression
                 | FALSE                          # false_expression
                 | STRING                         # string_expression
+                | FLOAT                          # double_expression
                 | NULL                           # null_expression
                 | expression DOT NAME			 # external_field_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression
+                | expression DIV expression      # div_expression
                 | expression MULT expression     # mult_expression
                 | expression EQ expression       # eq_expression
                 | expression NEQ expression      # neq_expression

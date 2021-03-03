@@ -5,8 +5,7 @@ package microobject.data
 import antlr.microobject.gen.WhileBaseVisitor
 import antlr.microobject.gen.WhileParser.*
 import microobject.runtime.*
-import microobject.type.Type
-import microobject.type.TypeChecker
+import microobject.type.*
 import org.antlr.v4.runtime.RuleContext
 
 /**
@@ -231,7 +230,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitMult_expression(ctx: Mult_expressionContext?): ProgramElement {
         return ArithExpr(Operator.MULT, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
-
+    override fun visitDiv_expression(ctx: Div_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.DIV, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
 
     override fun visitMinus_expression(ctx: Minus_expressionContext?): ProgramElement {
         return ArithExpr(Operator.MINUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
@@ -269,13 +270,13 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {
         val inner = ctx!!.CONSTANT()!!.text
-        return if(inner.toIntOrNull() != null) LiteralExpr(inner, "integer") else LiteralExpr(inner, "ERROR")
+        return if(inner.toIntOrNull() != null) LiteralExpr(inner, INTTYPE) else LiteralExpr(inner, ERRORTYPE)
     }
     override fun visitTrue_expression(ctx: True_expressionContext?): ProgramElement {
-        return LiteralExpr("True", "boolean")
+        return TRUEEXPR
     }
     override fun visitFalse_expression(ctx: False_expressionContext?): ProgramElement {
-        return LiteralExpr("False", "boolean")
+        return FALSEEXPR
     }
 
     override fun visitNull_expression(ctx: Null_expressionContext?): ProgramElement {
@@ -284,7 +285,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitString_expression(ctx: String_expressionContext?): ProgramElement {
         val inner = ctx!!.STRING().text
-        return LiteralExpr(inner, "string")
+        return LiteralExpr(inner, STRINGTYPE)
+    }
+
+    override fun visitDouble_expression(ctx: Double_expressionContext?): ProgramElement {
+        val inner = ctx!!.FLOAT().text
+        return LiteralExpr(inner, DOUBLETYPE)
     }
 
     override fun visitNested_expression(ctx: Nested_expressionContext?): ProgramElement {

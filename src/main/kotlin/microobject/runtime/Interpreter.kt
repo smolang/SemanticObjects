@@ -6,6 +6,10 @@ package microobject.runtime
 
 import microobject.data.*
 import microobject.main.Settings
+import microobject.type.BaseType
+import microobject.type.DOUBLETYPE
+import microobject.type.INTTYPE
+import microobject.type.STRINGTYPE
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -157,7 +161,9 @@ class Interpreter(
 
         when (stmt){
             is SuperStmt -> {
-                val m = staticInfo.getSuperMethod(obj.tag, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
+                if(obj.tag !is BaseType) throw Exception("This object is unknown: $obj")
+                val cName = obj
+                val m = staticInfo.getSuperMethod(obj.tag.name, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = obj
                 for (i in m.second.indices) {
@@ -229,7 +235,7 @@ class Interpreter(
             }
             is SparqlStmt -> {
                 val query = eval(stmt.query, stackMemory, heap, simMemory, obj)
-                if (query.tag != "string")
+                if (query.tag != STRINGTYPE)
                     throw Exception("Query is not a string: $query")
                 var str = query.literal
                 var i = 1
@@ -259,8 +265,8 @@ class Interpreter(
                             }
                         }
                         if (!newMemory.containsKey("content")) {
-                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, "string")
-                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, "integer")
+                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
+                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
                         newMemory["next"] = list
@@ -278,7 +284,7 @@ class Interpreter(
                 ) {
                     throw Exception("Could not find List class in this model")
                 }
-                if (stmt.query !is LiteralExpr || stmt.query.tag != "string") {
+                if (stmt.query !is LiteralExpr || stmt.query.tag != STRINGTYPE) {
                     throw Exception("Please provide a string as the input to a derive statement")
                 }
 
@@ -368,7 +374,7 @@ class Interpreter(
                 val target = eval(stmt.fmu, stackMemory, heap, simMemory, obj)
                 if(!simMemory.containsKey(target)) throw Exception("Object $target is no a simulation object")
                 val tickTime = eval(stmt.tick, stackMemory, heap, simMemory, obj)
-                simMemory[target]!!.tick(tickTime.literal.toInt())
+                simMemory[target]!!.tick(tickTime.literal.toDouble())
                 return Pair(null, emptyList())
             }
             is SequenceStmt -> {
@@ -453,22 +459,46 @@ class Interpreter(
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.PLUS) {
-                    return expr.params.fold(LiteralExpr("0"), { acc, nx ->
+                    val first = eval(expr.params.first(), stack, heap, simMemory, obj)
+                    if(first.tag == DOUBLETYPE)
+                        return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                            val enx = eval(nx, stack, heap, simMemory, obj)
+                            LiteralExpr((acc.literal.removePrefix("urn:").toDouble() + enx.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
+                        })
+                    else return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
                         val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
+                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
                     })
                 }
                 if (expr.Op == Operator.MULT) {
-                    return expr.params.fold(LiteralExpr("1"), { acc, nx ->
+                    val first = eval(expr.params.first(), stack, heap, simMemory, obj)
+                    if(first.tag == DOUBLETYPE)
+                        return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                            val enx = eval(nx, stack, heap, simMemory, obj)
+                            LiteralExpr((acc.literal.removePrefix("urn:").toDouble() * enx.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
+                        })
+                    else return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
                         val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:").toInt()).toString(), "integer")
+                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
                     })
+                }
+                if (expr.Op == Operator.DIV) {
+                    if (expr.params.size != 2) throw Exception("Operator.DIV requires two parameters")
+                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
+                    if(enx1.tag == DOUBLETYPE)
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() / enx2.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
+                    else
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() / enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
                 }
                 if (expr.Op == Operator.MINUS) {
                     if (expr.params.size != 2) throw Exception("Operator.MINUS requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    return LiteralExpr((first.literal.removePrefix("urn:").toInt() - second.literal.removePrefix("urn:").toInt()).toString(), "integer")
+                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
+                    if(enx1.tag == DOUBLETYPE)
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() - enx2.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
+                    else
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() - enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
                 }
                 throw Exception("This kind of operator is not implemented yet")
             }

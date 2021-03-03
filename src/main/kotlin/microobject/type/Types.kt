@@ -78,6 +78,7 @@ data class ComposedType(val name : Type, val params : List<Type>) : Type() {
 val INTTYPE = BaseType("Int")
 val BOOLEANTYPE = BaseType("Boolean")
 val STRINGTYPE = BaseType("String")
+val DOUBLETYPE = BaseType("Double")
 val OBJECTTYPE = BaseType("Object")
 val NULLTYPE = BaseType("Null")
 val ERRORTYPE = BaseType("ERROR")

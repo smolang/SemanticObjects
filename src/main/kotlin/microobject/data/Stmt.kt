@@ -2,6 +2,11 @@
 
 package microobject.data
 
+import microobject.type.BOOLEANTYPE
+import microobject.type.BaseType
+import microobject.type.ERRORTYPE
+import microobject.type.Type
+
 /*
  * Simple extensions:
  *  - Allows calls and creations within expressions
@@ -11,7 +16,7 @@ package microobject.data
  */
 
 enum class Operator {
-    PLUS, MINUS, MULT, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT
+    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT
 }
 
 interface ProgramElement{
@@ -311,14 +316,13 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>) : Expressi
 
 
 }
-data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Expression {
+data class LiteralExpr(val literal : String, val tag : Type = ERRORTYPE) : Expression {
     override fun toString(): String = literal
     override fun getRDF(): String {
         return """
             prog:expr${this.hashCode()} rdf:type smol:LiteralExpression.
             prog:expr${this.hashCode()} smol:hasLiteral '${literal.removePrefix("\"").removeSuffix("\"")}'.
             prog:expr${this.hashCode()} smol:hasTag '${tag}'.
-
         """.trimIndent()
     }
 }
@@ -327,10 +331,10 @@ data class LiteralExpr(val literal : String, val tag : String = "IGNORED") : Exp
 object Names{
     private var i = 0
     private var j = 0
-    fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", className)
+    fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", BaseType(className))
     fun getVarName() : LocalVar = LocalVar("_v${i++}")
     fun getStackId() : Int = j++
 }
 
-val FALSEEXPR = LiteralExpr("False", "boolean")
-val TRUEEXPR = LiteralExpr("True", "boolean")
+val FALSEEXPR = LiteralExpr("False", BOOLEANTYPE)
+val TRUEEXPR = LiteralExpr("True", BOOLEANTYPE)

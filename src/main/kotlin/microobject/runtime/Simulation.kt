@@ -3,6 +3,8 @@ package microobject.runtime
 import microobject.type.BOOLEANTYPE
 import microobject.type.INTTYPE
 import microobject.data.LiteralExpr
+import microobject.type.DOUBLETYPE
+import microobject.type.STRINGTYPE
 import org.javafmi.modeldescription.SimpleType
 import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
@@ -10,13 +12,15 @@ import org.javafmi.wrapper.variables.SingleRead
 class SimulatorObject(val path : String, memory : Memory){
     fun read(name: String): LiteralExpr {
         val v = sim.modelDescription.getModelVariable(name)
-        if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE.name)
-        if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE.name)
+        if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
+        if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE)
+        if(v.typeName == "String") return LiteralExpr(sim.read(name).asBoolean().toString(), STRINGTYPE)
+        if(v.typeName == "Double") return LiteralExpr(sim.read(name).asBoolean().toString(), DOUBLETYPE)
 
         throw Exception("Failed to read variable ${v.name}: only Integer variables are supported")
     }
-    fun tick(i : Int){
-        sim.doStep(i.toDouble())
+    fun tick(i : Double){
+        sim.doStep(i)
     }
 
     fun write(name: String, res: LiteralExpr) {
@@ -69,7 +73,8 @@ class SimulatorObject(val path : String, memory : Memory){
                 if(memory.containsKey(mVar.name)) {
                     if (mVar.typeName == "Integer") sim.write(mVar.name).with(memory[mVar.name]!!.literal.toInt())
                     else if (mVar.typeName == "Boolean") sim.write(mVar.name).with(memory[mVar.name]!!.literal.toBoolean())
-                    else throw Exception("Failed to initialize variable ${mVar.name}: only Integer and Boolean variables are supported")
+                    else if (mVar.typeName == "Double") sim.write(mVar.name).with(memory[mVar.name]!!.literal.toDouble())
+                    else /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(memory[mVar.name]!!.literal.removeSurrounding("\""))
                 }
             }
             if((mVar.causality == "output" || mVar.initial == "calculated") && memory.containsKey(mVar.name)) {

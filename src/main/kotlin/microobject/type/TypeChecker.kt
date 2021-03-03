@@ -2,6 +2,7 @@ package microobject.type
 
 import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
+import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
 import java.lang.Exception
@@ -31,6 +32,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 text == INTTYPE.name -> INTTYPE
                 text == BOOLEANTYPE.name -> BOOLEANTYPE
                 text == STRINGTYPE.name -> STRINGTYPE
+                text == DOUBLETYPE.name -> DOUBLETYPE
                 else -> BaseType(text)
             }
         }
@@ -600,8 +602,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val tickType = getType(ctx.time, inner, vars, thisType)
                 if(fmuType !is SimulatorType)
                     log("Tick statement expects a FMU as first parameter, but got $fmuType }.",ctx)
-                if(tickType != INTTYPE)
-                    log("Tick statement expects an integer as second parameter, but got $tickType }.",ctx)
+                if(tickType != DOUBLETYPE)
+                    log("Tick statement expects a Double as second parameter, but got $tickType }.",ctx)
             }
             else -> {
                 log("Statements with class ${ctx.javaClass} cannot be type checked",ctx)
@@ -650,27 +652,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             is WhileParser.Mult_expressionContext -> { // The following has a lot of code duplication and could be improved by changing the grammar
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
-                log("Malformed multiplication with subtypes $t1 and $t2", eCtx)
-                return ERRORTYPE
+                return typeForNumericalFunction(t1, t2, "*", eCtx)
             }
             is WhileParser.Plus_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
-                log("Malformed addition with subtypes $t1 and $t2", eCtx)
-                return ERRORTYPE
+                return typeForNumericalFunction(t1, t2, "+", eCtx)
             }
             is WhileParser.Minus_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                // do not throw an error twice
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return INTTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return INTTYPE
-                log("Malformed subtraction with subtypes $t1 and $t2", eCtx)
-                return ERRORTYPE
+                return typeForNumericalFunction(t1, t2, "-", eCtx)
+            }
+            is WhileParser.Div_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                return typeForNumericalFunction(t1, t2, "/", eCtx)
             }
             is WhileParser.Neq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
@@ -713,33 +710,23 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             is WhileParser.Leq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
-                log("Malformed comparison <= with subtypes $t1 and $t2", eCtx)
+                return typeForNumericalRelation(t1, t2, "<=", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Geq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
-                log("Malformed comparison >= with subtypes $t1 and $t2", eCtx)
-                return ERRORTYPE
+                return typeForNumericalRelation(t1, t2, ">=", eCtx)
             }
             is WhileParser.Lt_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
-                log("Malformed comparison <= with subtypes $t1 and $t2", eCtx)
-                return ERRORTYPE
+                return typeForNumericalRelation(t1, t2, "<", eCtx)
             }
             is WhileParser.Gt_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType)
-                if((t1 == INTTYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t1 == ERRORTYPE)) return BOOLEANTYPE
-                if(INTTYPE.isAssignable(t1, extends) && INTTYPE.isAssignable(t2, extends)) return BOOLEANTYPE
-                log("Malformed comparison >= with subtypes $t1 and $t2", eCtx)
+                return typeForNumericalRelation(t1, t2, ">", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.This_expressionContext -> return thisType
@@ -783,6 +770,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     }
 
 
+    private fun typeForNumericalFunction(t1 : Type, t2 : Type, symbol:String, ctx: ParserRuleContext) :Type {
+        if(t1 == INTTYPE && t2 == INTTYPE) return INTTYPE
+        if(t1 == DOUBLETYPE && t2 == DOUBLETYPE) return DOUBLETYPE
+        if(t1 == ERRORTYPE && (t2 == INTTYPE || t2 == DOUBLETYPE)) return t2
+        if(t2 == ERRORTYPE && (t1 == INTTYPE || t1 == DOUBLETYPE)) return t2
+        log("Malformed operator $symbol with subtypes $t1 and $t2", ctx)
+        return ERRORTYPE
+    }
+
+    private fun typeForNumericalRelation(t1 : Type, t2 : Type, symbol:String, ctx: ParserRuleContext) :Type {
+        if((t1 == INTTYPE || t1 == DOUBLETYPE || t1 == ERRORTYPE) && (t2 == INTTYPE || t2 == DOUBLETYPE || t2 == ERRORTYPE)) return BOOLEANTYPE
+        if(    (INTTYPE.isAssignable(t1, extends) || DOUBLETYPE.isAssignable(t1, extends))
+            && (INTTYPE.isAssignable(t2, extends) || DOUBLETYPE.isAssignable(t2, extends))) return BOOLEANTYPE
+        log("Malformed comparison $symbol with subtypes $t1 and $t2", ctx)
+        return ERRORTYPE
+    }
 
     /**********************************************************************
     Helper to handle types

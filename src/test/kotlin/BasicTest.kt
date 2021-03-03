@@ -1,6 +1,7 @@
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import io.kotlintest.specs.StringSpec
+import microobject.main.Settings
 import microobject.type.Severity
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
@@ -14,7 +15,7 @@ class BasicTest : StringSpec() {
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-        val tC = TypeChecker(tree)
+        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"))
         tC.check()
         tC.report()
         return tC.error.filter { it.severity == Severity.ERROR }.size

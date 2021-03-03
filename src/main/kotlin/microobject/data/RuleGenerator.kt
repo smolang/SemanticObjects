@@ -4,6 +4,7 @@ import antlr.microobject.gen.WhileParser
 import microobject.runtime.InterpreterBridge
 import microobject.runtime.Memory
 import microobject.runtime.StackEntry
+import microobject.type.BaseType
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
@@ -46,7 +47,7 @@ class RuleGenerator{
             val mem: Memory = mutableMapOf()
             val obj = LiteralExpr(
                 thisVar.toString().removePrefix("urn:"),
-                cl.NAME(0).text
+                BaseType(cl.NAME(0).text) //TODO: check
             )
             mem["this"] = obj
             val se = StackEntry(met.first, mem, obj, Names.getStackId())

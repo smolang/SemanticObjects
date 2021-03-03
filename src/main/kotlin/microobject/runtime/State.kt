@@ -3,9 +3,7 @@ package microobject.runtime
 import microobject.data.LiteralExpr
 import microobject.data.Statement
 import microobject.main.Settings
-import microobject.type.INTTYPE
-import microobject.type.STRINGTYPE
-import microobject.type.Type
+import microobject.type.*
 import java.util.*
 
 //This will be used for snapshots
@@ -44,13 +42,13 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         //dumps individuals
         var i = 0
         for(obj in heap.keys){
-            res += "run:${obj.literal} smol:instanceOf prog:${obj.tag}.\n"
+            res += "run:${obj.literal} smol:instanceOf prog:${(obj.tag as BaseType).name}.\n"
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
             //and their fields
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += "run:${obj.literal} prog:$store "
-                res += if(target.tag == "IGNORE" || target.tag == "string")
+                res += if(target.tag == ERRORTYPE || target.tag == STRINGTYPE)
                     "${target.literal}.\n"
                 else if(target.literal == "null")
                     "smol:${target.literal}.\n"

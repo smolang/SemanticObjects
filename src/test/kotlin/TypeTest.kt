@@ -1,6 +1,7 @@
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import io.kotlintest.specs.StringSpec
+import microobject.main.Settings
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -15,7 +16,7 @@ class TypeTest  : StringSpec() {
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-        val tC = TypeChecker(tree)
+        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"))
         tC.collect()
         return Pair(tC, tree)
     }
