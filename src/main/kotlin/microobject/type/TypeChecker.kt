@@ -80,6 +80,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     /**********************************************************************
     CSSA
      ***********************************************************************/
+    //public val queryCheckers = mutableListOf<TreeQueryChecker>()
     public val queryCheckers = mutableListOf<QueryChecker>()
 
 
@@ -510,6 +511,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
                 if(expType != null) {
                     val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
+                    //val qc = TreeQueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
                     queryCheckers.add(qc)
                 }
             }

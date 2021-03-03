@@ -58,7 +58,7 @@ class QueryChecker(
 
             val qString = if(extractQueryClass() != null) extractQueryClass()
                           else return false
-            val tString = if(extractTypeClass() != null)extractTypeClass()
+            val tString = if(extractTypeClass() != null) extractTypeClass()
                           else return false
 
             val owlSub = OWLClassImpl(IRI.create(qString))

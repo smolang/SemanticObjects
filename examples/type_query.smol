@@ -1,0 +1,19 @@
+class <T> List(T content, List<T> next) end
+
+class A (Int sealing) end
+
+class B extends A (A aB) end
+
+class C extends A(A aCB, A aC) end
+
+main
+  A a1 := new A(1);
+  A a2 := new A(2);
+  A a3 := new A(3);
+  A a4 := new A(4);
+  B b1 := new B(5, a1);
+  B b2 := new B(6, a2);
+  C c1 := new C(7, b1, a3);
+  C c2 := new C(8, b2, a4);
+  List<C> l := access("SELECT ?obj WHERE {?obj prog:aCB ?b. ?b prog:aB ?a. ?a prog:sealing 1 }");
+end
