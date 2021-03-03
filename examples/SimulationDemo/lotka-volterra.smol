@@ -1,0 +1,42 @@
+class UnitObject()
+    Double get() return 0.0; end
+    Double set(Double v) return v; end
+    Double doStep(Double step) return step; end
+end
+class PreyObject extends UnitObject (DE[Double y; Double x] prey)
+    override Double get() return this.prey.x; end
+    override Double set(Double v) this.prey.y := v; return v; end
+    override Double doStep(Double step) tick(this.prey, step); return step; end
+end
+class PredatorObject extends UnitObject (DE[Double x; Double y] predator)
+    override Double get() return this.predator.y; end
+    override Double set(Double v) this.predator.x := v; return v; end
+    override Double doStep(Double step) tick(this.predator, step); return step; end
+end
+class CoupledPair(UnitObject a, UnitObject b, Double step)
+    Int step()
+        this.a.doStep(this.step);
+        this.b.doStep(this.step);
+        Double fromA := this.a.get();
+        Double fromB := this.b.get();
+        this.a.set(fromB);
+        this.b.set(fromA);
+        return 0;
+    end
+end
+main
+
+    //beware: path is relative to interpreter instance, not this file
+    //fmus are not uploaded, download them from the MasterSim examples: https://sourceforge.net/projects/mastersim/
+    DE[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
+    DE[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
+    PreyObject preyObj := new PreyObject(prey);
+    PredatorObject predObj := new PredatorObject(predator);
+    CoupledPair pair := new CoupledPair(preyObj, predObj, 0.1);
+    Int i := 0;
+    while (i <= 1000) do
+        pair.step();
+        print(predator.y);
+        i := i+1;
+    end
+end
