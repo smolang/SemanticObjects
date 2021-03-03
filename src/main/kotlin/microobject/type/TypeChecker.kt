@@ -83,7 +83,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     CSSA
      ***********************************************************************/
     //public val queryCheckers = mutableListOf<TreeQueryChecker>()
-    public val queryCheckers = mutableListOf<QueryChecker>()
+    val queryCheckers = mutableListOf<QueryChecker>()
 
 
 

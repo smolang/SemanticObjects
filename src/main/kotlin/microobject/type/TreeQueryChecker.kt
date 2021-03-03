@@ -1,3 +1,5 @@
+@file:Suppress("unused", "CanBeParameter")
+
 package microobject.type
 
 import antlr.microobject.gen.WhileParser
@@ -20,8 +22,8 @@ class TreeQueryChecker(
         return false
     }
 
-    fun buildTree() : MutableMap<String, MutableList<Pair<String, String>>>? {
-        var result : MutableMap<String, MutableList<Pair<String, String>>> = mutableMapOf() //Pair("?obj", mutableListOf()))
+    private fun buildTree() : MutableMap<String, MutableList<Pair<String, String>>>? {
+        val result : MutableMap<String, MutableList<Pair<String, String>>> = mutableMapOf() //Pair("?obj", mutableListOf()))
 
         val toCheck = "$sparqlPrefix\n\n $query\n"
         if(toCheck.contains("%")) {
@@ -57,9 +59,9 @@ class TreeQueryChecker(
                 log("This kind of query is not supported", ctx)
                 return null
             }
-            var sub  = f.subject
-            var pred = f.predicate
-            var obj  = f.`object`
+            val sub  = f.subject
+            val pred = f.predicate
+            val obj  = f.`object`
             if( pred.toString() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && sub.isVariable && !obj.isVariable){
                 val old = result.getOrDefault(sub.name, mutableListOf())
                 old.add(Pair("a",obj.toString()))

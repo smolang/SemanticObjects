@@ -36,7 +36,7 @@ class Interpreter(
     private var heap: GlobalMemory,             // This is a map from objects to their heap memory
     private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
-    val settings : Settings,                    // Settings from the user
+    private val settings : Settings,                    // Settings from the user
     private val rules : String,                 // Additional rules for jena
 ) {
 
@@ -187,18 +187,20 @@ class Interpreter(
                     is OthersVar -> {
                         val key = eval(stmt.target.expr, stackMemory, heap, simMemory, obj)
 
-                        if(heap.containsKey(key)) {
-                            val otherHeap = heap[key]
-                                ?: throw Exception("This object is unknown: $key")
-                            if (!(staticInfo.fieldTable[(key.tag as BaseType).name]
-                                    ?: error("")).any{ it.first == stmt.target.name}
-                            ) throw Exception("This field is unknown: $key")
-                            otherHeap[stmt.target.name] = res
+                        when {
+                            heap.containsKey(key) -> {
+                                val otherHeap = heap[key]
+                                    ?: throw Exception("This object is unknown: $key")
+                                if (!(staticInfo.fieldTable[(key.tag as BaseType).name]
+                                        ?: error("")).any{ it.first == stmt.target.name}
+                                ) throw Exception("This field is unknown: $key")
+                                otherHeap[stmt.target.name] = res
+                            }
+                            simMemory.containsKey(key) -> {
+                                simMemory[key]!!.write(stmt.target.name, res)
+                            }
+                            else -> throw Exception("This object is unknown: $key")
                         }
-                        else if(simMemory.containsKey(key)) {
-                            simMemory[key]!!.write(stmt.target.name, res)
-                        }
-                        else throw Exception("This object is unknown: $key")
                     }
                 }
                 return Pair(null, emptyList())

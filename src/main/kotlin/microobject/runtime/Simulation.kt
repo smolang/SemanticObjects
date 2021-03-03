@@ -80,18 +80,22 @@ class SimulatorObject(val path : String, memory : Memory){
                     else /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(memory[mVar.name]!!.literal.removeSurrounding("\""))
                 } else if(mVar.hasStartValue()){
                     val anyStart = mVar.start
-                    if (mVar.typeName == "Integer") sim.write(mVar.name).with(anyStart as Int)
-                    else if (mVar.typeName == "Boolean") sim.write(mVar.name).with(anyStart as Boolean)
-                    else if (mVar.typeName == "Real") sim.write(mVar.name).with(anyStart as Double)
-                    else /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(anyStart as String)
+                    when (mVar.typeName) {
+                        "Integer" -> sim.write(mVar.name).with(anyStart as Int)
+                        "Boolean" -> sim.write(mVar.name).with(anyStart as Boolean)
+                        "Real" -> sim.write(mVar.name).with(anyStart as Double)
+                        else -> /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(anyStart as String)
+                    }
                 }
             }
             if(mVar.causality == "output" && mVar.hasStartValue() && !memory.containsKey(mVar.name)){
                 val anyStart = mVar.start
-                if (mVar.typeName == "Integer") sim.write(mVar.name).with(anyStart as Int)
-                else if (mVar.typeName == "Boolean") sim.write(mVar.name).with(anyStart as Boolean)
-                else if (mVar.typeName == "Real") sim.write(mVar.name).with(anyStart as Double)
-                else /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(anyStart as String)
+                when (mVar.typeName) {
+                    "Integer" -> sim.write(mVar.name).with(anyStart as Int)
+                    "Boolean" -> sim.write(mVar.name).with(anyStart as Boolean)
+                    "Real" -> sim.write(mVar.name).with(anyStart as Double)
+                    else -> /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(anyStart as String)
+                }
             }
             if((mVar.causality == "output" || mVar.initial == "calculated") && memory.containsKey(mVar.name)) {
                 throw Exception("Cannot initialize output or/and calculated variable ${mVar.name}")

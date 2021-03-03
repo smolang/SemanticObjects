@@ -34,7 +34,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 var res = listOf<Pair<String, Type>>()
                 if(cl.paramList().param() != null) {
                     for (nm in cl.paramList().param())
-                        res += Pair(nm.NAME().text, TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()))
+                        res = res + Pair(nm.NAME().text, TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()))
                 }
                 res
             } else {
