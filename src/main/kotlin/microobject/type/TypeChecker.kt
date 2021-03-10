@@ -118,7 +118,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     val cVisibility =
                         if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                     val iVisibility =
-                        if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
+                        if (it.infer == null) Visibility.PUBLIC else if(it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                     Pair(it.NAME().text, FieldInfo(it.NAME().text, translateType(it.type(), name, generics), cVisibility, iVisibility, BaseType(name)))
                 }
                 fields[name] = next.toMap()
@@ -668,8 +668,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                if(inRule && fields[name]!!.inferenceVisibility == Visibility.PRIVATE)
-                    log("Inferprivate field $name accessed in rule-method.", eCtx)
                 return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type
             }
             is WhileParser.Nested_expressionContext -> {
@@ -794,8 +792,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             log("Field ${otherFields[eCtx.NAME().text]!!.declaredIn}.${eCtx.NAME().text} is declared protected, but accessed from $thisType.", eCtx)
                     }
 
-                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE)
+                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE && thisType != otherFields[eCtx.NAME().text]!!.declaredIn)
                         log("Inferprivate field $eCtx.NAME().text accessed in rule-method.", eCtx)
+                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PROTECTED && !otherFields[eCtx.NAME().text]!!.declaredIn.isAssignable(thisType, extends))
+                        log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
                     FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)

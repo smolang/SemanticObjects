@@ -40,6 +40,7 @@ MAIN : 'main';
 PRIVATE : 'private';
 PROTECTED : 'protected';
 INFERPRIVATE : 'inferprivate';
+INFERPROTECTED : 'inferprotected';
 
 //Keywords: constants
 TRUE : 'True';
@@ -119,10 +120,10 @@ expression :      THIS                           # this_expression
                 | FLOAT                          # double_expression
                 | NULL                           # null_expression
                 | expression DOT NAME			 # external_field_expression
-                | expression PLUS expression     # plus_expression
-                | expression MINUS expression    # minus_expression
                 | expression DIV expression      # div_expression
                 | expression MULT expression     # mult_expression
+                | expression PLUS expression     # plus_expression
+                | expression MINUS expression    # minus_expression
                 | expression EQ expression       # eq_expression
                 | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression
@@ -142,9 +143,10 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? type NAME;
+fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
 
 visibilitymodifier : PRIVATE | PROTECTED;
+infermodifier : INFERPRIVATE | INFERPROTECTED;
