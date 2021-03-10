@@ -125,19 +125,14 @@ class REPL(private val apache: String,
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-        val tC = TypeChecker(tree, settings)
-        tC.check()
-        tC.report()
+
 
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
-        //query chacking is post-poned, because we need the full static class table
-        for(qc in tC.queryCheckers ){
-            qc.type(pair.second)
-            println(qc.report())
-        }
-
+        val tC = TypeChecker(tree, settings, pair.second)
+        tC.check()
+        tC.report()
 
         val iB = InterpreterBridge(null)
         rules = RuleGenerator().generateBuiltins(tree, iB)

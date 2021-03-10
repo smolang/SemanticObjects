@@ -1,6 +1,7 @@
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import io.kotlintest.specs.StringSpec
+import microobject.data.Translate
 import microobject.main.Settings
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
@@ -16,8 +17,12 @@ class TypeTest  : StringSpec() {
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"))
+        val visitor = Translate()
+        val pair = visitor.generateStatic(tree)
+
+        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"), pair.second)
         tC.collect()
+
         return Pair(tC, tree)
     }
 
@@ -70,6 +75,15 @@ class TypeTest  : StringSpec() {
             }
         }
 
+        "Query check success"{
+            val tC = checkMet("Test", "m1", "type_query")
+            assert(tC.report(false))
+        }
+
+        "Query check fail"{
+            val tC = checkMet("Test", "m2", "type_query")
+            assertFalse(tC.report(false))
+        }
 
         "Call Test Success"{
             assert(checkMet("Test", "success", "test_call" ).report(false))

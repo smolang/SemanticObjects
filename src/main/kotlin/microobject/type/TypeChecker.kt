@@ -2,6 +2,7 @@ package microobject.type
 
 import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
+import microobject.runtime.StaticTable
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
@@ -19,7 +20,7 @@ import java.nio.file.Paths
  *
  */
 
-class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings) : TypeErrorLogger() {
+class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings, val staticTable: StaticTable) : TypeErrorLogger() {
 
     companion object{
         /**********************************************************************
@@ -82,10 +83,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     /**********************************************************************
     CSSA
      ***********************************************************************/
-    //public val queryCheckers = mutableListOf<TreeQueryChecker>()
     val queryCheckers = mutableListOf<QueryChecker>()
 
-
+    override fun report(silent: Boolean): Boolean {
+        return super.report(silent) && queryCheckers.fold(true, {acc, nx -> acc && nx.report(silent)})
+    }
 
 
     /**********************************************************************
@@ -114,7 +116,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     /**********************************************************************
     Actual type checking
      ***********************************************************************/
-
 
     /* interface */
     fun check() {
@@ -165,6 +166,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         //Check methods
         if(clCtx.method_def() != null)
             for( mtCtx in clCtx.method_def() ) checkMet(mtCtx, name)
+
+
     }
 
     private fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){
@@ -268,6 +271,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className)
 
         if(!ret) log("Method ${mtCtx.NAME().text} has a path without a final return statement.", mtCtx)
+
+
+        //check queries
+        queryCheckers.forEach { it.type(staticTable) }
     }
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()
@@ -493,8 +500,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
             }
             is WhileParser.Sparql_statementContext -> {
-                log("Type checking (C)SSA is not supported yet ", ctx, Severity.WARNING)
-
                 var expType : Type? = null
                 if(ctx.declType != null){
                     val lhs = ctx.expression(0)
@@ -513,12 +518,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
                 if(expType != null) {
                     val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
-                    //val qc = TreeQueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
                     queryCheckers.add(qc)
                 }
             }
             is WhileParser.Owl_statementContext -> {
-                log("Type checking (C)SSA is not supported yet ", ctx, Severity.WARNING)
+                log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
                 if(ctx.declType != null){
                     val lhs = ctx.expression(0)
                     if(lhs !is WhileParser.Var_expressionContext){

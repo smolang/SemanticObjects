@@ -101,7 +101,7 @@ class SimulatorObject(val path : String, memory : Memory){
                 throw Exception("Cannot initialize output or/and calculated variable ${mVar.name}")
             }
         }
-        println(sim.init(0.0))
+        sim.init(0.0)
     }
 
     private fun dumpSingle(read : SingleRead, type : SimpleType) : String{
