@@ -25,13 +25,4 @@ open class TypeErrorLogger {
         error = error + TypeError(msg, node?.getStart()?.line ?: 0, severity)
     }
 
-    fun fullReport(silent : Boolean = false) : Boolean {
-        var ret = true
-        for( e in error ){
-            if(e.severity == Severity.ERROR) ret = false
-            if(!silent) println("Line ${e.line}, ${e.severity}: ${e.msg}")
-        }
-        return ret
-    }
-
 }
