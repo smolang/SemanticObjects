@@ -431,6 +431,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                   } else {
                       val otherClassName = rhsType.getPrimary().getNameString()
                       val met = methods.getOrDefault(otherClassName, listOf()).first { it.NAME().text == calledMet }
+                      if(met.visibility != null && met.visibility.PRIVATE() != null && BaseType(otherClassName) != thisType)
+                          log("Method $otherClassName.$calledMet is declared private, but accessed from $thisType.", ctx)
+                      if(met.visibility != null && met.visibility.PROTECTED() != null && !BaseType(otherClassName).isAssignable(thisType, extends))
+                          log("Method $otherClassName.$calledMet is declared protected, but accessed from $thisType.", ctx)
                       if(met.paramList() != null) {
                           val callParams : List<Type> = getParameterTypes(met, otherClassName)
                           if (ctx.expression().size - 1 - calleeIndex != callParams.size) {

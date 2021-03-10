@@ -88,7 +88,7 @@ program : (class_def)* MAIN statement END;
 
 //classes
 class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN fieldDeclList? CPARAN  method_def* END;
-method_def :  (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
+method_def :  (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
 
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
