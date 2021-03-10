@@ -118,7 +118,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     val cVisibility =
                         if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                     val iVisibility =
-                        if (it.infer == null) Visibility.PUBLIC else if (it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                        if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
                     Pair(it.NAME().text, FieldInfo(it.NAME().text, translateType(it.type(), name, generics), cVisibility, iVisibility, BaseType(name)))
                 }
                 fields[name] = next.toMap()
@@ -140,7 +140,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         for (clCtx in ctx.class_def()) checkClass(clCtx)
 
         //check main block
-        checkStatement(ctx.statement(), false, mutableMapOf(), ERRORTYPE, ERRORTYPE, ERRORTYPE.name)
+        checkStatement(ctx.statement(), false, mutableMapOf(), ERRORTYPE, ERRORTYPE, ERRORTYPE.name, false)
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
@@ -172,8 +172,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             for( param in clCtx.fieldDeclList().fieldDecl()){
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
-                if(param.infermodifier() != null)
-                    log("Inference visibility is not supported yet (Found ${param.infermodifier()} for $name.$paramName).", param, Severity.WARNING)
+                if(param.infer != null)
+                    log("Inference visibility is not supported yet.", param, Severity.WARNING)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
             }
@@ -284,7 +284,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //Check statement
         val initVars = if(mtCtx.paramList() != null) mtCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }.toMap().toMutableMap() else mutableMapOf()
-        val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className)
+        val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className, mtCtx.builtinrule != null)
 
         if(!ret) log("Method ${mtCtx.NAME().text} has a path without a final return statement.", mtCtx)
 
@@ -299,31 +299,32 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                                vars : MutableMap<String, Type>,
                                metType : Type, //return type
                                thisType : Type,
-                               className: String) : Boolean{
+                               className: String,
+                               inRule : Boolean ) : Boolean {
         val inner : Map<String, FieldInfo> = getFields(className)
 
         when(ctx){
             is WhileParser.If_statementContext -> {
-                val innerType = getType(ctx.expression(), inner, vars, thisType)
+                val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && innerType != BOOLEANTYPE)
                     log("If statement expects a boolean in its guard, but parameter has type $innerType.",ctx)
-                val left = checkStatement(ctx.statement(0), finished, vars, metType, thisType, className)
-                val right = if(ctx.ELSE() != null) checkStatement(ctx.statement(1), finished, vars, metType, thisType, className) else true
+                val left = checkStatement(ctx.statement(0), finished, vars, metType, thisType, className, inRule)
+                val right = if(ctx.ELSE() != null) checkStatement(ctx.statement(1), finished, vars, metType, thisType, className, inRule) else true
                 return if(ctx.next != null){
-                    checkStatement(ctx.next,  (left && right) || finished, vars, metType, thisType, className)
+                    checkStatement(ctx.next,  (left && right) || finished, vars, metType, thisType, className, inRule)
                 } else (left && right) || finished
             }
             is WhileParser.While_statementContext -> {
-                val innerType = getType(ctx.expression(), inner, vars, thisType)
+                val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && innerType != BOOLEANTYPE)
                     log("While statement expects a boolean in its guard, but parameter has type $innerType.",ctx)
-                checkStatement(ctx.statement(0), finished, vars, metType, thisType, className)
+                checkStatement(ctx.statement(0), finished, vars, metType, thisType, className, inRule)
                 if(ctx.next != null)
-                    return checkStatement(ctx.next,  finished, vars, metType, thisType, className)
+                    return checkStatement(ctx.next,  finished, vars, metType, thisType, className, inRule)
             }
             is WhileParser.Sequence_statementContext -> {
-                val first = checkStatement(ctx.statement(0), finished, vars, metType, thisType, className)
-                return checkStatement(ctx.statement(1), first, vars, metType, thisType, className)
+                val first = checkStatement(ctx.statement(0), finished, vars, metType, thisType, className, inRule)
+                return checkStatement(ctx.statement(1), first, vars, metType, thisType, className, inRule)
             }
             is WhileParser.Assign_statementContext -> {
                 val lhsType =
@@ -338,7 +339,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         }
                         translateType(ctx.type(), className, generics)
                     } else getType(ctx.expression(0), inner, vars, thisType, false)
-                val rhsType = getType(ctx.expression(1), inner, vars, thisType)
+                val rhsType = getType(ctx.expression(1), inner, vars, thisType, inRule)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
             }
@@ -357,7 +358,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             translateType(ctx.type(), className, generics)
                         }
                         ctx.target != null -> {
-                            getType(ctx.expression(0), inner, vars, thisType)
+                            getType(ctx.expression(0), inner, vars, thisType, inRule)
                         }
                         else -> {
                             null
@@ -390,7 +391,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             val match = i - calleeIndex
                             val targetType = callParams[match] //of method decl
                             val realType =
-                                getType(ctx.expression(i), inner, vars, thisType)                    //of call
+                                getType(ctx.expression(i), inner, vars, thisType, inRule)                    //of call
                             if (targetType != ERRORTYPE && realType != ERRORTYPE && !realType.isAssignable(targetType, extends))
                                 log("Type $realType is not assignable to $targetType.", ctx)
 
@@ -421,7 +422,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }
 
                 val calleeIndex = if(ctx.target == null) 0 else 1
-                val rhsType = getType(ctx.expression(calleeIndex), inner, vars, thisType)
+                val rhsType = getType(ctx.expression(calleeIndex), inner, vars, thisType, inRule, inRule)
                 if(rhsType.getPrimary() !is BaseType || !methods.containsKey(rhsType.getPrimary().getNameString())){
                     log("Call on type $rhsType not possible: type $rhsType is not a class.", ctx)
                 } else {
@@ -431,6 +432,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                   } else {
                       val otherClassName = rhsType.getPrimary().getNameString()
                       val met = methods.getOrDefault(otherClassName, listOf()).first { it.NAME().text == calledMet }
+                      if(met.builtinrule == null && inRule)
+                          log("Method $otherClassName.$calledMet is not a rule-method, but accessed from one.", ctx)
                       if(met.visibility != null && met.visibility.PRIVATE() != null && BaseType(otherClassName) != thisType)
                           log("Method $otherClassName.$calledMet is declared private, but accessed from $thisType.", ctx)
                       if(met.visibility != null && met.visibility.PROTECTED() != null && !BaseType(otherClassName).isAssignable(thisType, extends))
@@ -447,7 +450,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                               for (i in calleeIndex + 1 until ctx.expression().size) {
                                   val match = i - calleeIndex - 1
                                   val targetType = callParams[match] //of method decl
-                                  val realType = getType(ctx.expression(i), inner, vars, thisType)                    //of call
+                                  val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)                    //of call
                                   val finalType = instantiateGenerics(targetType, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
                                   if (targetType != ERRORTYPE && realType != ERRORTYPE && !realType.isAssignable(finalType, extends))
                                       log("Type $realType is not assignable to $targetType.", ctx)
@@ -502,7 +505,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     for(i in 1 until ctx.expression().size){
                         val targetType = creationParameters[i-1]
                         val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
-                        val realType = getType(ctx.expression(i), inner, vars, thisType)
+                        val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)
                         if(targetType != ERRORTYPE && realType != ERRORTYPE && !finalType.isAssignable(realType, extends)) {
                             log("Type $realType is not assignable to $finalType", ctx)
                         }
@@ -554,7 +557,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
             }
             is WhileParser.Return_statementContext -> {
-                val innerType = getType(ctx.expression(), inner, vars, thisType)
+                val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && innerType != metType && !metType.isAssignable(innerType, extends))
                     log("Type $innerType of return statement does not match method type ${metType}.",ctx)
                 return true
@@ -574,7 +577,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 } else{
                     val sim = Simulation(path)
                     val inits = if(ctx.varInitList() != null)
-                                ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType)) }.toMap()
+                                ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType, inRule)) }.toMap()
                                 else
                                  emptyMap()
 
@@ -617,8 +620,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
             }
             is WhileParser.Tick_statementContext -> {
-                val fmuType = getType(ctx.fmu, inner, vars, thisType)
-                val tickType = getType(ctx.time, inner, vars, thisType)
+                val fmuType = getType(ctx.fmu, inner, vars, thisType, inRule)
+                val tickType = getType(ctx.time, inner, vars, thisType, inRule)
                 if(fmuType !is SimulatorType)
                     log("Tick statement expects a FMU as first parameter, but got $fmuType }.",ctx)
                 if(tickType != DOUBLETYPE)
@@ -646,7 +649,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         fields : Map<String, FieldInfo>,
                         vars : Map<String, Type>,
                         thisType : Type,
-                        read: Boolean = true
+                        inRule : Boolean,
+                        read: Boolean = true,
     ) : Type {
         when(eCtx){
             is WhileParser.Const_expressionContext -> return INTTYPE
@@ -664,92 +668,94 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
+                if(inRule && fields[name]!!.inferenceVisibility == Visibility.PRIVATE)
+                    log("Inferprivate field $name accessed in rule-method.", eCtx)
                 return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type
             }
             is WhileParser.Nested_expressionContext -> {
-                return getType(eCtx.expression(), fields, vars, thisType)
+                return getType(eCtx.expression(), fields, vars, thisType, inRule)
             }
             is WhileParser.Mult_expressionContext -> { // The following has a lot of code duplication and could be improved by changing the grammar
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalFunction(t1, t2, "*", eCtx)
             }
             is WhileParser.Plus_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalFunction(t1, t2, "+", eCtx)
             }
             is WhileParser.Minus_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalFunction(t1, t2, "-", eCtx)
             }
             is WhileParser.Div_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalFunction(t1, t2, "/", eCtx)
             }
             is WhileParser.Neq_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
                 if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison <> with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Eq_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == t1)) return BOOLEANTYPE
                 if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison = with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.And_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == BOOLEANTYPE && t1 == BOOLEANTYPE)) return BOOLEANTYPE
                 if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison && with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Or_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 if((t1 == ERRORTYPE && t2 == ERRORTYPE) || (t2 == BOOLEANTYPE && t1 == BOOLEANTYPE)) return BOOLEANTYPE
                 if(t1.isAssignable(t2, extends) || t2.isAssignable(t1, extends)) return BOOLEANTYPE
                 log("Malformed comparison || with subtypes $t1 and $t2", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Not_expressionContext -> {
-                val t1 = getType(eCtx.expression(), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
                 if(t1 == ERRORTYPE || t1 == BOOLEANTYPE) return BOOLEANTYPE
                 log("Malformed negation ! with subtypes $t1", eCtx)
                 return ERRORTYPE
             }
             is WhileParser.Leq_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalRelation(t1, t2, "<=", eCtx)
             }
             is WhileParser.Geq_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalRelation(t1, t2, ">=", eCtx)
             }
             is WhileParser.Lt_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalRelation(t1, t2, "<", eCtx)
             }
             is WhileParser.Gt_expressionContext -> {
-                val t1 = getType(eCtx.expression(0), fields, vars, thisType)
-                val t2 = getType(eCtx.expression(1), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalRelation(t1, t2, ">", eCtx)
             }
             is WhileParser.This_expressionContext -> return thisType
             is WhileParser.External_field_expressionContext -> { // This must resolve the generics
-                val t1 = getType(eCtx.expression(), fields, vars, thisType)
+                val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
                 if(t1 == ERRORTYPE) return ERRORTYPE
                 if(t1 is SimulatorType){
                     return if(read){
@@ -782,13 +788,14 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     if(otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE){
                         if(thisType != otherFields[eCtx.NAME().text]!!.declaredIn)
                             log("Field ${otherFields[eCtx.NAME().text]!!.declaredIn}.${eCtx.NAME().text} is declared private, but accessed from $thisType.", eCtx)
-                        //must be same class
                     }
                     if(otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PROTECTED){
                         if(!otherFields[eCtx.NAME().text]!!.declaredIn.isAssignable(thisType, extends))
                             log("Field ${otherFields[eCtx.NAME().text]!!.declaredIn}.${eCtx.NAME().text} is declared protected, but accessed from $thisType.", eCtx)
-                        //must be same class or super class
                     }
+
+                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE)
+                        log("Inferprivate field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
                     FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)

@@ -40,7 +40,6 @@ MAIN : 'main';
 PRIVATE : 'private';
 PROTECTED : 'protected';
 INFERPRIVATE : 'inferprivate';
-INFERPROTECTED : 'inferprotected';
 
 //Keywords: constants
 TRUE : 'True';
@@ -143,10 +142,9 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? type NAME;
+fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
 
-infermodifier : INFERPRIVATE | INFERPROTECTED;
 visibilitymodifier : PRIVATE | PROTECTED;

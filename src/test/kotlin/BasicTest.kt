@@ -27,9 +27,15 @@ class BasicTest : StringSpec() {
     }
 
     init {
-        for( str in listOf("double", "overload", "scene", "TwoThreeTree", "types", "poly"))
+        for( str in listOf("double", "overload", "types", "poly"))
         "parsing $str"{
             assertEquals(load(this::class.java.classLoader.getResource("$str.smol").file), 0)
+        }
+        "parsing scene"{
+            assertEquals(load(this::class.java.classLoader.getResource("scene.smol").file), 1)
+        }
+        "parsing TwoThreeTree"{
+            assertEquals(load(this::class.java.classLoader.getResource("TwoThreeTree.smol").file), 1)
         }
         "parsing test_assign"{
             assertEquals(load(this::class.java.classLoader.getResource("test_assign.smol").file), 11)

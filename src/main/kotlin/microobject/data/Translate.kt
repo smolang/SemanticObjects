@@ -34,7 +34,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 if(cl.fieldDeclList().fieldDecl() != null) {
                     for (nm in cl.fieldDeclList().fieldDecl()) {
                         val cVisibility = if(nm.visibility == null) Visibility.PUBLIC else if(nm.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else if(nm.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()),
