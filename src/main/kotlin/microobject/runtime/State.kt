@@ -96,8 +96,12 @@ Heap memory is barely the opposite of local memory, we have no assumptions about
 typealias Memory = MutableMap<String, LiteralExpr>       // Maps variable names to values
 typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name literals to local memories
 typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
-typealias FieldEntry = List<Pair<String, Type>>                   //list of fields
+typealias FieldEntry = List<FieldInfo>                   //list of fields
 typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
+
+enum class Visibility { PUBLIC, PROTECTED, PRIVATE}
+
+data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type)
 
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,               // This maps class names to their fields
@@ -136,15 +140,15 @@ MethodTable     : $methodTable
             res += "prog:${obj.key} rdf:type smol:Class.\n"
             res += "prog:${obj.key} rdf:type owl:Class.\n"
             for(obj2 in obj.value){
-                res += "prog:${obj.key} smol:hasField prog:${obj2.first}.\n"
-                res += "prog:${obj2.first} rdf:type smol:Field.\n"
-                if(obj2.second == INTTYPE || obj2.second == STRINGTYPE) {
-                    res += "prog:${obj2.first} rdf:type owl:DatatypeProperty.\n"
+                res += "prog:${obj.key} smol:hasField prog:${obj2.name}.\n"
+                res += "prog:${obj2.name} rdf:type smol:Field.\n"
+                if(obj2.type == INTTYPE || obj2.type == STRINGTYPE) {
+                    res += "prog:${obj2.name} rdf:type owl:DatatypeProperty.\n"
                 } else {
-                    res += "prog:${obj2.first} rdf:type owl:FunctionalProperty.\n"
-                    res += "prog:${obj2.first} rdf:type owl:ObjectProperty.\n"
+                    res += "prog:${obj2.name} rdf:type owl:FunctionalProperty.\n"
+                    res += "prog:${obj2.name} rdf:type owl:ObjectProperty.\n"
                 }
-                res += "prog:${obj2.first} rdfs:domain prog:${obj.key}.\n"
+                res += "prog:${obj2.name} rdfs:domain prog:${obj.key}.\n"
             }
         }
 

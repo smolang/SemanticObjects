@@ -37,6 +37,10 @@ EXTENDS : 'extends';
 RULE : 'rule';
 OVERRIDE : 'override';
 MAIN : 'main';
+PRIVATE : 'private';
+PROTECTED : 'protected';
+INFERPRIVATE : 'inferprivate';
+INFERPROTECTED : 'inferprotected';
 
 //Keywords: constants
 TRUE : 'True';
@@ -83,8 +87,8 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN paramList? CPARAN  method_def* END;
-method_def : (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
+class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN fieldDeclList? CPARAN  method_def* END;
+method_def :  (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
 
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
@@ -139,5 +143,10 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
+fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? type NAME;
+fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
+
+infermodifier : INFERPRIVATE | INFERPROTECTED;
+visibilitymodifier : PRIVATE | PROTECTED;

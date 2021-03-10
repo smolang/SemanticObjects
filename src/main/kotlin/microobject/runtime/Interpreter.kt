@@ -192,7 +192,7 @@ class Interpreter(
                                 val otherHeap = heap[key]
                                     ?: throw Exception("This object is unknown: $key")
                                 if (!(staticInfo.fieldTable[(key.tag as BaseType).name]
-                                        ?: error("")).any{ it.first == stmt.target.name}
+                                        ?: error("")).any{ it.name == stmt.target.name}
                                 ) throw Exception("This field is unknown: $key")
                                 otherHeap[stmt.target.name] = res
                             }
@@ -230,7 +230,7 @@ class Interpreter(
                     "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}"
                 )
                 for (i in m.indices) {
-                    newMemory[m[i].first] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                    newMemory[m[i].name] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 heap[name] = newMemory
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
@@ -246,7 +246,7 @@ class Interpreter(
                     //todo: check is this truly a run:literal
                     str = str.replace("%${i++}", "run:${p.literal}")
                 }
-                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.first == "content" } || !staticInfo.fieldTable["List"]!!.any { it.first == "next" }
+                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.name == "content" } || !staticInfo.fieldTable["List"]!!.any { it.name == "next" }
                 ) {
                     throw Exception("Could not find List class in this model")
                 }

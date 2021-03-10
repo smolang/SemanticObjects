@@ -85,6 +85,27 @@ class TypeTest  : StringSpec() {
             assertFalse(tC.report(false))
         }
 
+        "Visible check fail1"{
+            val tC = checkMet("A", "m1", "visible")
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 4)
+        }
+        "Visible check fail2"{
+            val tC = checkMet("B", "m2", "visible")
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 4)
+        }
+        "Visible check fail3"{
+            val tC = checkMet("C", "m3", "visible")
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 4)
+        }
+        "Visible check fail4"{
+            val tC = checkMet("D", "m4", "visible")
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 5)
+        }
+
         "Call Test Success"{
             assert(checkMet("Test", "success", "test_call" ).report(false))
         }

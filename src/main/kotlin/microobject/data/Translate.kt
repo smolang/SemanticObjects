@@ -21,7 +21,6 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         for(cl in ctx!!.class_def()){
-            var cName = ""
             if(cl.NAME(1) != null){
                 var maps = hierarchy[cl.NAME(1).text]
                 if(maps == null) maps = mutableSetOf()
@@ -30,11 +29,20 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.NAME(0).text
             }
-            val fields = if(cl.paramList() != null) {
-                var res = listOf<Pair<String, Type>>()
-                if(cl.paramList().param() != null) {
-                    for (nm in cl.paramList().param())
-                        res = res + Pair(nm.NAME().text, TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()))
+            val fields = if(cl.fieldDeclList() != null) {
+                var res = listOf<FieldInfo>()
+                if(cl.fieldDeclList().fieldDecl() != null) {
+                    for (nm in cl.fieldDeclList().fieldDecl()) {
+                        val cVisibility = if(nm.visibility == null) Visibility.PUBLIC else if(nm.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else if(nm.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                        res = res + FieldInfo(
+                            nm.NAME().text,
+                            TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()),
+                            cVisibility,
+                            iVisibility,
+                            BaseType(cl!!.NAME(0).text)
+                        )
+                    }
                 }
                 res
             } else {
