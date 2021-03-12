@@ -114,7 +114,7 @@ class SimulatorObject(val path : String, memory : Memory){
             is org.javafmi.modeldescription.v1.BooleanType -> if(read.asBoolean()) "'1'" else "'0'"
             is org.javafmi.modeldescription.v2.RealType -> "'"+read.asDouble().toString()+"'"
             is org.javafmi.modeldescription.v1.RealType -> "'"+read.asDouble().toString()+"'"
-            else -> throw java.lang.Exception("Unknown Type")
+            else -> throw Exception("Unknown Type")
         }
     }
 }

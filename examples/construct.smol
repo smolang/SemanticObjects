@@ -1,0 +1,68 @@
+class <T> List(T content, List<T> next)
+    Int length()
+        if this.next = null then return 1;
+        else Int n := this.next.length(); return n + 1;
+        end
+    end
+    Int append(List<T> last)
+        if this.next = null then
+            this.next := last;
+        else
+            this.next.append(last);
+        end
+        return 0;
+    end
+
+    T get(Int i)
+        T res := this.content;
+        if i >= 1 then
+            res := this.next.get(i-1);
+        end
+        return res;
+    end
+
+    Boolean contains(T element)
+        if this.content = element then
+            return True;
+        else
+            if this.next = null then
+                return False;
+            else
+                Boolean res := this.next.contains(element);
+                return res;
+            end
+        end
+    end
+end
+
+
+
+class A(Int i1) end
+
+class B(A a, Int i2) end
+
+class C(Int j1, Int j2) end
+
+main
+    A a1 := new A(1);
+    A a2 := new A(2);
+    A a3 := new A(1);
+    A a4 := new A(2);
+    B b0 := new B(null, 3);
+    B b1 := new B(a1, 4);
+    B b2 := new B(a2, 5);
+    B b3 := new B(a3, 6);
+    B b4 := new B(a4, 7);
+
+    List<C> v := construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:i2 ?j2.?y prog:a ?x.?x a prog:A. ?x prog:i1 ?j1 }");
+    Int i := 0;
+    Int size := v.length();
+    while( i < size) do
+        C next := v.get(i);
+        print(next.j1);
+        print(next.j2);
+        print("___");
+        i := i + 1;
+    end
+    print(size);
+end

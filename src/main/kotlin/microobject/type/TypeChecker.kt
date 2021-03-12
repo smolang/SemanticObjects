@@ -2,14 +2,12 @@ package microobject.type
 
 import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
-import microobject.runtime.FieldEntry
 import microobject.runtime.FieldInfo
 import microobject.runtime.StaticTable
 import microobject.runtime.Visibility
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
-import java.lang.Exception
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -23,7 +21,7 @@ import java.nio.file.Paths
  *
  */
 
-class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings, val staticTable: StaticTable) : TypeErrorLogger() {
+class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings, private val staticTable: StaticTable) : TypeErrorLogger() {
 
     companion object{
         /**********************************************************************
@@ -86,7 +84,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     /**********************************************************************
     CSSA
      ***********************************************************************/
-    val queryCheckers = mutableListOf<QueryChecker>()
+    private val queryCheckers = mutableListOf<QueryChecker>()
 
     override fun report(silent: Boolean): Boolean {
         return super.report(silent) && queryCheckers.fold(true, {acc, nx -> acc && nx.report(silent)})
@@ -539,8 +537,33 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     expType = getType(ctx.target, inner, vars, thisType, false)
                 }
                 if(expType != null) {
-                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx)
+                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx, "obj")
                     queryCheckers.add(qc)
+                }
+            }
+            is WhileParser.Construct_statementContext -> {
+                var expType : Type? = null
+                if(ctx.declType != null){
+                    val lhs = ctx.expression(0)
+                    if(lhs !is WhileParser.Var_expressionContext){
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = lhs.NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else {
+                            expType = translateType(ctx.type(), className, generics)
+                            vars[name] = expType
+                        }
+                    }
+                }else{
+                    expType = getType(ctx.target, inner, vars, thisType, false)
+                }
+                if(expType != null && fields.containsKey(expType.getPrimary().toString())) {
+                    val fieldName = fields[expType.getPrimary().toString()]
+                    for(f in fieldName!!.entries) {
+                        val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), f.value.type, ctx, f.key)
+                        queryCheckers.add(qc)
+                    }
                 }
             }
             is WhileParser.Owl_statementContext -> {
@@ -588,8 +611,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         if(mVar.causality == "input" || mVar.causality == "state"){
                             if(!mVar.hasStartValue() && !inits.containsKey(mVar.name))
                                 log("Simulation fails to initialize variable ${mVar.name}: no initial value given", ctx)
-//                            if(mVar.causality == "input")
-//                                ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
                         }
                         if((mVar.causality == "output" || mVar.initial == "calculated") && inits.containsKey(mVar.name)) {
                             log("Cannot initialize output or/and calculated variable ${mVar.name}",ctx)

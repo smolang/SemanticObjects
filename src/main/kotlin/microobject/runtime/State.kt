@@ -48,10 +48,10 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                 res += "run:${obj.literal} prog:$store "
-                res += if(target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-                    "${target.literal}.\n"
-                else if(target.literal == "null")
+                res +=  if(target.literal == "null")
                     "smol:${target.literal}.\n"
+                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+                    "${target.literal}.\n"
                 else
                     "run:${target.literal}.\n"
                 i++

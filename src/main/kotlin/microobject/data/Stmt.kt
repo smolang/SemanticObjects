@@ -26,7 +26,10 @@ interface ProgramElement{
 
 interface Statement : ProgramElement
 interface Expression : ProgramElement
-interface Location : Expression
+interface Location : Expression{
+    fun getType() : Type
+    fun setType(targetType: Type)
+}
 
 /** Statement **/
 
@@ -224,6 +227,26 @@ data class SparqlStmt(val target : Location, val query: Expression, val params :
         // '${literal.removePrefix("\"").removeSuffix("\"")}'
     }
 }
+// For ontology-based reflexion
+data class ConstructStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1) : Statement {
+    override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
+    override fun getRDF(): String {
+        var s = """
+            prog:stmt${this.hashCode()} rdf:type smol:ConstructStatement.
+            prog:stmt${this.hashCode()} smol:hasTarget prog:loc${target.hashCode()}.
+            prog:stmt${this.hashCode()} smol:hasQuery prog:expr${query.hashCode()}.
+            prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
+
+        """.trimIndent()
+        for (i in params.indices){
+            s += "prog:stmt${this.hashCode()} smol:hasParameter [smol:hasParameterIndex $i ; smol:hasParameterValue prog:expr${params[i].hashCode()}; ].\n"
+            s += params[i].getRDF()
+        }
+        // return s + target.getRDF()
+        return s + target.getRDF() + query.getRDF()
+        // '${literal.removePrefix("\"").removeSuffix("\"")}'
+    }
+}
 data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target := derive($query)"
     override fun getRDF(): String {
@@ -265,8 +288,10 @@ data class VarInit(val name : String, val expr: Expression) : ProgramElement {
 /** Expressions **/
 
 
-data class LocalVar(val name : String) : Location { // local variable
+data class LocalVar(val name : String, var tag : Type = ERRORTYPE) : Location { // local variable
     override fun toString(): String = name
+    override fun getType(): Type = tag
+    override fun setType(type: Type) { tag = type }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:LocalVarLocation.
@@ -275,8 +300,10 @@ data class LocalVar(val name : String) : Location { // local variable
         """.trimIndent()
     }
 }
-data class OwnVar(val name : String) : Location {   // field of own object
+data class OwnVar(val name : String, var tag : Type = ERRORTYPE) : Location {   // field of own object
     override fun toString(): String = "this.$name"
+    override fun getType(): Type = tag
+    override fun setType(type: Type) { tag = type }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:OwnVarLocation.
@@ -285,8 +312,10 @@ data class OwnVar(val name : String) : Location {   // field of own object
         """.trimIndent()
     }
 }
-data class OthersVar(val expr: Expression, val name : String) : Location { // field of (possibly) other object
+data class OthersVar(val expr: Expression, val name : String, var tag : Type = ERRORTYPE) : Location { // field of (possibly) other object
     override fun toString(): String = "$expr.$name"
+    override fun getType(): Type = tag
+    override fun setType(type: Type) { tag = type }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:OthersVarLocation.
@@ -298,7 +327,7 @@ data class OthersVar(val expr: Expression, val name : String) : Location { // fi
 }
 
 
-data class ArithExpr(val Op : Operator, val params: List<Expression>) : Expression {
+data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : Type = ERRORTYPE) : Expression {
     override fun toString(): String = "($Op ${params.joinToString(" ")})"
     override fun getRDF(): String {
         var s = """
@@ -332,7 +361,7 @@ object Names{
     private var i = 0
     private var j = 0
     fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", BaseType(className))
-    fun getVarName() : LocalVar = LocalVar("_v${i++}")
+    fun getVarName(tag : Type = ERRORTYPE) : LocalVar = LocalVar("_v${i++}", tag)
     fun getStackId() : Int = j++
 }
 

@@ -6,10 +6,7 @@ package microobject.runtime
 
 import microobject.data.*
 import microobject.main.Settings
-import microobject.type.BaseType
-import microobject.type.DOUBLETYPE
-import microobject.type.INTTYPE
-import microobject.type.STRINGTYPE
+import microobject.type.*
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -153,6 +150,25 @@ class Interpreter(
         return !debug
     }
 
+    private fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+        val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
+        if (query.tag != STRINGTYPE)
+            throw Exception("Query is not a string: $query")
+        var str = query.literal
+        var i = 1
+        for (expr in params) {
+            val p = eval(expr, stackMemory, heap, simMemory, obj)
+            //todo: check is this truly a run:literal
+            str = str.replace("%${i++}", "run:${p.literal}")
+        }
+        if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.name == "content" } || !staticInfo.fieldTable["List"]!!.any { it.name == "next" }
+        ) {
+            throw Exception("Could not find List class in this model")
+        }
+        dump()
+        return str
+    }
+
     private fun eval(stmt: Statement, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, id: Int) : Pair<StackEntry?, List<StackEntry>>{
         if(heap[obj] == null) throw Exception("This object is unknown: $obj")
 
@@ -162,7 +178,6 @@ class Interpreter(
         when (stmt){
             is SuperStmt -> {
                 if(obj.tag !is BaseType) throw Exception("This object is unknown: $obj")
-                val cName = obj
                 val m = staticInfo.getSuperMethod(obj.tag.name, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = obj
@@ -236,21 +251,7 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
             }
             is SparqlStmt -> {
-                val query = eval(stmt.query, stackMemory, heap, simMemory, obj)
-                if (query.tag != STRINGTYPE)
-                    throw Exception("Query is not a string: $query")
-                var str = query.literal
-                var i = 1
-                for (expr in stmt.params) {
-                    val p = eval(expr, stackMemory, heap, simMemory, obj)
-                    //todo: check is this truly a run:literal
-                    str = str.replace("%${i++}", "run:${p.literal}")
-                }
-                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.name == "content" } || !staticInfo.fieldTable["List"]!!.any { it.name == "next" }
-                ) {
-                    throw Exception("Could not find List class in this model")
-                }
-                dump()
+                val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
                 val results = query(str.removePrefix("\"").removeSuffix("\""))
                 var list = LiteralExpr("null")
                 if (results != null) {
@@ -276,7 +277,42 @@ class Interpreter(
                         list = name
                     }
                 }
+                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+            }
+            is ConstructStmt -> {
+                val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
+                val results = query(str.removePrefix("\"").removeSuffix("\""))
+                var list = LiteralExpr("null")
+                val targetType = stmt.target.getType()
+                if (targetType !is ComposedType || targetType.getPrimary().getNameString() != "List" || targetType.params.first() !is BaseType )
+                    throw Exception("Could not perform construction from query results: unknown type $targetType")
+                val className = (targetType.params.first() as BaseType).name
+                if (results != null) {
+                    for (r in results) {
+                        val newListName = Names.getObjName("List")
+                        val newListMemory: Memory = mutableMapOf()
 
+                        val m = staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
+                        val newObjName = Names.getObjName(className)
+                        val newObjMemory: Memory = mutableMapOf()
+                        for(f in m){
+                            if(!r.varNames().asSequence().contains(f.name))
+                                throw Exception("Could find variable for field ${f.name} in query $str")
+                            val extractedName  = r.getResource(f.name).toString().removePrefix(settings.runPrefix)
+                            if(!Type.isAtomic(f.type)) {
+                                val foundAny = heap.keys.any { it.literal == extractedName }
+                                if (!foundAny)
+                                    throw Exception("Query returned unknown object/literal: $extractedName")
+                            }
+                            newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
+                        }
+                        heap[newObjName] = newObjMemory
+                        newListMemory["content"] = newObjName
+                        newListMemory["next"] = list
+                        heap[newListName] = newListMemory
+                        list = newListName
+                    }
+                }
                 return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
@@ -294,7 +330,6 @@ class Interpreter(
                 dump()
                 val res : NodeSet<OWLNamedIndividual> = owlQuery(stmt.query.literal)
                 var list = LiteralExpr("null")
-                if (res != null) {
                     for (r in res) {
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
@@ -309,7 +344,6 @@ class Interpreter(
                         heap[name] = newMemory
                         list = name
                     }
-                }
                 return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
             }
             is ReturnStmt -> {

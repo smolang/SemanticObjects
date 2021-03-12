@@ -22,18 +22,19 @@ import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
 data class DLNode(val str : String, val isVar : Boolean)
 data class DLEdge(val from : DLNode, val label : String, val to : DLNode)
 
-class DLGraph(val query : Query, val logger : TypeErrorLogger, val ctx: WhileParser.Sparql_statementContext)
+class DLGraph(val query : Query, val logger : TypeErrorLogger, val ctx: WhileParser.StatementContext)
 
 
 class QueryChecker(
     private val settings: Settings,
     private val query: String,
     private val type: Type,
-    private val ctx: WhileParser.Sparql_statementContext
+    private val ctx: WhileParser.StatementContext,
+    private val varName : String
 ) : TypeErrorLogger()  {
 
-    val incidence : MutableMap<DLNode, MutableSet<DLEdge>> = mutableMapOf()
-    var formula = ""
+    private val incidence : MutableMap<DLNode, MutableSet<DLEdge>> = mutableMapOf()
+    private var formula = ""
 
     fun type(staticTable: StaticTable) : Boolean{
         val successBuild = buildTree()
@@ -137,7 +138,7 @@ class QueryChecker(
     }
 
     private fun buildFormula() : Boolean {
-        val ret = build(DLNode("obj", true), mutableSetOf())
+        val ret = build(DLNode(varName, true), mutableSetOf())
         if(ret != null){
             formula = ret
         }
@@ -158,8 +159,11 @@ class QueryChecker(
             return false
         }
 
-        if(query.projectVars.size != 1 || query.projectVars.first().name != "obj"){
-            log("Queries must have a single extracted variable called ?obj", ctx)
+        if(varName == "obj" && (query.projectVars.size != 1 || query.projectVars.first().name != varName)){
+            log("access-queries must have a single extracted variable called ?obj", ctx)
+            return false
+        }else if(!query.projectVars.any { it.name == varName }){
+            log("variable $varName not found in query", ctx)
             return false
         }
 

@@ -2,6 +2,11 @@ package microobject.type
 
 //Internal Type Structure
 abstract class Type {
+    companion object{
+        fun isAtomic(type : Type) : Boolean{
+            return type == INTTYPE || type == BOOLEANTYPE || type == STRINGTYPE || type == DOUBLETYPE
+        }
+    }
     abstract fun isFullyConcrete() : Boolean
     abstract fun getPrimary() : SimpleType
     abstract fun containsUnknown(types: Set<String>): Boolean

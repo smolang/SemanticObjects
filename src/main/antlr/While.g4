@@ -25,6 +25,7 @@ DO : 'do';
 PRINTLN : 'print';
 END : 'end';
 ACCESS : 'access';
+CONSTRUCT : 'construct';
 DERIVE : 'derive';
 SIMULATE : 'simulate';
 TICK : 'tick';
@@ -100,6 +101,7 @@ statement :   SKIP_S SEMI                                                       
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                                                                                               # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
+			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| TICK OPARAN fmu=expression COMMA time=expression CPARAN SEMI                                                                              # tick_statement

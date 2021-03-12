@@ -160,11 +160,32 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val targetType =
+                TypeChecker.translateType(ctx.declType, getClassDecl(ctx)!!.NAME(0).text, mutableMapOf())
+            target.setType(targetType)
+        }
         val query = visit(ctx!!.query) as Expression
         var ll = emptyList<Expression>()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         return SparqlStmt(target, query, ll, ctx!!.start.line)
+    }
+
+    override fun visitConstruct_statement(ctx: Construct_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val decl = getClassDecl(ctx)
+            val className = if(decl == null) ERRORTYPE.name else decl!!.NAME(0).text
+            val targetType =
+                TypeChecker.translateType(ctx.declType, className, mutableMapOf())
+            target.setType(targetType)
+        }
+        val query = visit(ctx!!.query) as Expression
+        var ll = emptyList<Expression>()
+        for(i in 2 until ctx!!.expression().size)
+            ll += visit(ctx.expression(i)) as Expression
+        return ConstructStmt(target, query, ll, ctx!!.start.line)
     }
 
     override fun visitOwl_statement(ctx: Owl_statementContext?): ProgramElement {
@@ -322,5 +343,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitVarInit(ctx: VarInitContext?): ProgramElement {
         return VarInit(ctx!!.NAME().text, visit(ctx.expression()) as Expression)
+    }
+
+    private fun getClassDecl(ctx : RuleContext): Class_defContext? {
+        if(ctx.parent == null) return null
+        if(ctx.parent is Class_defContext) return ctx.parent as Class_defContext
+        return getClassDecl(ctx.parent)
     }
 }
