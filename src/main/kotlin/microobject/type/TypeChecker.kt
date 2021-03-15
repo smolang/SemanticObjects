@@ -30,7 +30,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         //translates a string text to a type, even accessed within class createClass (needed to determine generics)
         private fun stringToType(text: String, createClass: String, generics : MutableMap<String, List<String>>) : Type {
             return when {
-                generics.getOrDefault(createClass, listOf()).contains(text) -> GenericType(text)
+                //generics.getOrDefault(createClass, listOf()).contains(text) -> GenericType(text)
+                generics.values.flatten().contains(text) -> GenericType(text)
                 text == INTTYPE.name -> INTTYPE
                 text == BOOLEANTYPE.name -> BOOLEANTYPE
                 text == STRINGTYPE.name -> STRINGTYPE
@@ -63,7 +64,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private val classes : MutableSet<String> = mutableSetOf("Int", "Boolean", "Unit", "String", "Object", "Double")
 
     //Type hierarchy. Null is handled as a special case during the analysis itself.
-    private val extends : MutableMap<String, String> = mutableMapOf(Pair("Double", "Object"), Pair("Int", "Object"), Pair("Boolean", "Object"), Pair("Unit", "Object"), Pair("String", "Object"))
+    private val extends : MutableMap<String, Type> = mutableMapOf(Pair("Double", OBJECTTYPE), Pair("Int", OBJECTTYPE), Pair("Boolean", OBJECTTYPE), Pair("Unit", OBJECTTYPE), Pair("String", OBJECTTYPE))
 
     //List of declared generic type names per class
     private val generics : MutableMap<String, List<String>> = mutableMapOf()
@@ -95,18 +96,21 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     Preprocessing
      ***********************************************************************/
     internal fun collect(){
-        //two passes for correct translation of types
+        //three passes for correct translation of types
         for(clCtx in ctx.class_def()){
-            val name = clCtx.NAME(0).text
+            val name = clCtx.className.text
             classes.add(name)
             recoverDef[name] = clCtx
         }
-        for(clCtx in ctx.class_def()){
-            val name = clCtx.NAME(0).text
-            if(clCtx.NAME(1) != null) extends[name] = clCtx.NAME(1).text
-            else                         extends[name] = OBJECTTYPE.name
+        for(clCtx in ctx.class_def()){ // do extra pass to correctly compute extends
+            val name = clCtx.className.text
             if(clCtx.namelist() != null)
                 generics[name] = clCtx.namelist().NAME().map { it.text }
+        }
+        for(clCtx in ctx.class_def()){
+            val name = clCtx.className.text
+            if(clCtx.superType != null)  extends[name] = translateType(clCtx.superType, name, generics)
+            else                         extends[name] = OBJECTTYPE
             if(clCtx.method_def() != null)
                 methods[name] = clCtx.method_def()
             if(clCtx.fieldDeclList() == null) {
@@ -142,15 +146,20 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
-        val name = clCtx.NAME(0).text
+        val name = clCtx.className.text
 
-        //Check extends: class must exist and not be generic
-        if (clCtx.NAME(1) != null) {
-            val extName = clCtx.NAME(1).text
+        //Check extends: class must exist and not *also* be generic
+        if (clCtx.superType != null) {
+            val superType = translateType(clCtx.superType, name, generics)
+            val extName = superType.getPrimary().getNameString()
             if (!classes.contains(extName)) log("Class $name extends unknown class $extName.", clCtx)
             else {
-                if(recoverDef.containsKey(extName) && recoverDef[extName]!!.namelist() != null)
-                    log("Class $name extends generic class $extName.", clCtx)
+                if(recoverDef.containsKey(extName) && recoverDef[extName]!!.namelist() != null && recoverDef[name]!!.namelist() != null)
+                    log("Generic class $name extends generic class $extName.", clCtx)
+                if(!superType.isFullyConcrete())
+                    log("Class $name extends generic class $extName but does not instantiate all generics.", clCtx)
+                if(superType is ComposedType && superType.params.size != recoverDef[extName]!!.namelist().NAME().size)
+                    log("Class $name extends generic class $extName but does not instantiate all generics.", clCtx)
             }
         }
 
@@ -181,13 +190,26 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         if(clCtx.method_def() != null)
             for( mtCtx in clCtx.method_def() ) checkMet(mtCtx, name)
 
+        //Check abstract
+        if(clCtx.abs == null) {
+            val leftOver = getLeftoverAbstract(clCtx)
+            if (leftOver.isNotEmpty())
+                log(
+                    "Class $name does not implement the following abstract methods: $leftOver",
+                    clCtx
+                )
+        }
 
     }
 
     private fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){
         val name = mtCtx.NAME().text
-        val upwards = recoverDef[className]!!.NAME(1).text
+        val upwards = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
         val allMets = getMethods(upwards).filter { it.NAME().text == name }
+        val cDecl = getClassDecl(mtCtx)
+        val match = if(cDecl != null) getGenericAssignment(cDecl) else emptyMap()
+
+
         if (allMets.isEmpty()) {
             log(
                 "Method $name is declared as overriding in $className, but no superclass of $className implements $name.",
@@ -196,7 +218,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             )
         }
         for (superMet in allMets) {
-            if (translateType(superMet.type(), className, generics) != translateType(mtCtx.type(), className, generics))
+            val beforeMatching = translateType(superMet.type(), className, generics)
+            val extracted = generics.map { it.value }.flatten()
+            val afterMatching = applyMatching(beforeMatching, match, extracted)
+            val transType = translateType(mtCtx.type(), className, generics)
+            if ( afterMatching != transType )
                 log(
                     "Method $name is declared as overriding in $className, but a superclass has a different return type: ${
                         translateType(
@@ -219,13 +245,17 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             val otherName = superMet.paramList().param(i).NAME().text
                             val myType = translateType(mtCtx.paramList().param(i).type(), className, generics)
                             val otherType = translateType(superMet.paramList().param(i).type(), className, generics)
+
+                            val beforeMatching = translateType(superMet.paramList().param(i).type(), className, generics)
+                            val extracted = generics.map { it.value }.flatten()
+                            val afterMatching = applyMatching(beforeMatching, match, extracted)
                             if (myName != otherName)
                                 log(
                                     "Method $name is declared as overriding in $className, but parameter $i ($myType $myName) has a different name in a superclass of $className: $otherName.",
                                     mtCtx,
                                     Severity.WARNING
                                 )
-                            if (myType != otherType)
+                            if (myType != afterMatching)
                                 log(
                                     "Method $name is declared as overriding in $className, but parameter $i ($myType $myName) has a different type in a superclass of $className: $otherType.",
                                     mtCtx
@@ -241,7 +271,18 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     internal fun checkMet(mtCtx: WhileParser.Method_defContext, className: String) {
         val name = mtCtx.NAME().text
         val gens = generics.getOrDefault(className, listOf()).map { GenericType(it) }
-        val thisType = if(gens.isNotEmpty()) ComposedType(BaseType(className), gens) else BaseType(className)
+        val thisType = if (gens.isNotEmpty()) ComposedType(BaseType(className), gens) else BaseType(className)
+
+        val cDef = recoverDef[className]
+        if(cDef != null){
+            if (mtCtx.abs != null && cDef.abs == null)
+                log("Abstract methods are only allowed within abstract classes", mtCtx)
+        }
+        if(mtCtx.abs != null && mtCtx.builtinrule != null)
+            log("Rule methods are not allowed to be abstract", mtCtx)
+        if(mtCtx.abs != null && mtCtx.overriding != null)
+            log("Overriding methods are not allowed to be abstract", mtCtx)
+
 
         //Check rule annotation
         if(mtCtx.builtinrule != null && mtCtx.paramList() != null)
@@ -264,16 +305,20 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
         }
 
+
+        if(mtCtx.abs != null) //
+            return
+
         //Check overriding
         if(mtCtx.overriding != null){
-            if(recoverDef[className]!!.NAME(1) != null) {
+            if(recoverDef[className]!!.superType != null) {
                 checkOverride(mtCtx, className)
             } else {
                 log("Method $name is declared as overriding in $className, but $className does not extend any other class.", mtCtx, Severity.WARNING)
             }
        }
-        if(mtCtx.overriding == null && recoverDef[className]!!.NAME(1) != null){
-            val upwards = recoverDef[className]!!.NAME(1).text
+        if(mtCtx.overriding == null && recoverDef[className]!!.superType != null){
+            val upwards = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
             val allMets = getMethods(upwards).filter { it.NAME().text == name }
             if(allMets.isNotEmpty()){
                 log("Method $name is not declared as overriding in $className, but a superclass of $className implements $name.", mtCtx, Severity.WARNING)
@@ -336,7 +381,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             else vars[name] = translateType(ctx.type(), className, generics)
                         }
                         translateType(ctx.type(), className, generics)
-                    } else getType(ctx.expression(0), inner, vars, thisType, false)
+                    } else getType(ctx.expression(0), inner, vars, thisType, false, read = false)
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType, inRule)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
@@ -470,22 +515,26 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Create_statementContext -> {
                 val lhsType =
-                    if (ctx.type() != null) {
+                    if (ctx.declType != null) {
                         val lhs = ctx.expression(0)
                         if(lhs !is WhileParser.Var_expressionContext){
                             log("Variable declaration must declare a variable.", ctx)
                         } else {
                             val name = lhs.NAME().text
                             if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                            else vars[name] = translateType(ctx.type(), className, generics)
+                            else vars[name] = translateType(ctx.declType, className, generics)
                         }
-                        translateType(ctx.type(), className, generics)
+                        translateType(ctx.declType, className, generics)
                     } else getType(ctx.expression(0), inner, vars, thisType, false)
-                val createClass = ctx.NAME().text
+                val newTypeFound =
+                    translateType(ctx.newType, className, generics)
+                val createClass = newTypeFound.getPrimary().getNameString()
                 val createDecl = recoverDef[createClass]
-                var newType : Type = BaseType(createClass)
+                if(createDecl!!.abs != null)
+                    log("Cannot instantiate abstract class $createClass", ctx)
+                val newType : Type = newTypeFound
 
-                if(ctx.namelist() != null)
+                /*if(ctx.namelist() != null)
                     newType = ComposedType(newType, ctx.namelist().NAME().map {
                         stringToType(it.text, className, generics)
                     })
@@ -496,7 +545,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }else if(createDecl.namelist().NAME().size != ctx.namelist().NAME().size){
                         log("Number of generic parameters for $createClass is wrong.", ctx)
                     }
-                }
+                }*/
 
                 val creationParameters = getParameterTypes(createClass)
                 if (creationParameters.size == (ctx.expression().size - 1)){
@@ -515,7 +564,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
 
                 if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
-                    log("Type $createClass is not assignable to $lhsType", ctx)
+                    val hue = lhsType.isAssignable(newType, extends)
+                    log("Type $newType is not assignable to $lhsType", ctx)
                 }
 
             }
@@ -858,7 +908,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun getParameterTypes(className: String): List<Type> {
         val types : List<Type> = fields.getOrDefault(className, mapOf()).map { it.value.type }
         if(extends.containsKey(className)){
-            val supertype = extends.getOrDefault(className, ERRORTYPE.name)
+            val supertype = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
             val moreTypes = getParameterTypes(supertype)
             return moreTypes + types
         }
@@ -869,7 +919,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun getMethods(className: String): List<WhileParser.Method_defContext> {
         val ret : List<WhileParser.Method_defContext> = methods.getOrDefault(className, listOf())
         if(extends.containsKey(className)){
-            val supertype = extends.getOrDefault(className, ERRORTYPE.name)
+            val supertype = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
             val more = getMethods(supertype)
             return more + ret
         }
@@ -893,11 +943,24 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun getFields(className: String): Map<String, FieldInfo> {
         val f = fields.getOrDefault(className, mapOf())
         if(extends.containsKey(className)){
-            val supertype = extends.getOrDefault(className, ERRORTYPE.name)
+            val supertype = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
             val moreFields = getFields(supertype)
             return moreFields + f
         }
         return f
+    }
+
+    private fun getLeftoverAbstract(clCtx : WhileParser.Class_defContext) : List<String> {
+        val newAbs = clCtx.method_def().filter { it.abs != null }.map { it.NAME().text }
+        if(clCtx.superType != null){
+            val over = recoverDef[extends[clCtx.NAME().text]] ?: return newAbs
+            val above = getLeftoverAbstract(over)
+            val impl = clCtx.method_def().filter { it.abs == null }.map { it.NAME().text }
+            return (above - impl) + newAbs
+        } else {
+            return newAbs
+        }
+
     }
     /**********************************************************************
     Helper to handle generics
@@ -977,5 +1040,23 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             else -> return mapOf()
         }
+    }
+
+    private fun getClassDecl(ctx : RuleContext): WhileParser.Class_defContext? {
+        if(ctx.parent == null) return null
+        if(ctx.parent is WhileParser.Class_defContext) return ctx.parent as WhileParser.Class_defContext
+        return getClassDecl(ctx.parent)
+    }
+
+    private fun getGenericAssignment(ctx : WhileParser.Class_defContext): Map<GenericType, Type> {
+        if(ctx.superType == null) return emptyMap()
+        val superType = translateType(ctx.superType, ctx.className.text, generics) //instantianted
+        val superName = superType.getPrimary().getNameString()
+        val superDecl = recoverDef[superName] ?: return emptyMap() //declaration
+        if(superType !is ComposedType) return getGenericAssignment(superDecl)
+        val absType =
+            if(superDecl.namelist() == null) BaseType(superName)
+            else ComposedType(BaseType(superName), superDecl.namelist().NAME().map { GenericType(it.text) })
+        return match(absType, superType)
     }
 }

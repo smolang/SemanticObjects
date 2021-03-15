@@ -25,7 +25,7 @@ class RuleGenerator{
     private fun buildFunctor(cl : WhileParser.Class_defContext,
                              nm : WhileParser.Method_defContext,
                              interpreterBridge: InterpreterBridge) = object : BaseBuiltin() {
-        override fun getName(): String = "${cl.NAME(0)}_${nm.NAME()}_builtin"
+        override fun getName(): String = "${cl.className.text}_${nm.NAME()}_builtin"
 
         override fun getArgLength(): Int  = 1
 
@@ -40,14 +40,14 @@ class RuleGenerator{
 
             //Construct initial state
             val classStmt =
-                myIpr.staticInfo.methodTable[cl.NAME(0).text
+                myIpr.staticInfo.methodTable[cl.className.text
                     ?: throw Exception("Error during builtin generation")]
                     ?: throw Exception("Error during builtin generation")
             val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
             val mem: Memory = mutableMapOf()
             val obj = LiteralExpr(
                 thisVar.toString().removePrefix("urn:"),
-                BaseType(cl.NAME(0).text) //TODO: check
+                BaseType(cl.className.text)
             )
             mem["this"] = obj
             val se = StackEntry(met.first, mem, obj, Names.getStackId())
@@ -91,7 +91,7 @@ class RuleGenerator{
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
                     val headString = "${builtin.name}(?this)"
-                    val thisString = "(?this smol:instanceOf prog:${cl.NAME(0)})"
+                    val thisString = "(?this smol:instanceOf prog:${cl.className.text})"
                     retString += " $ruleString $thisString -> $headString "
                 }
             }

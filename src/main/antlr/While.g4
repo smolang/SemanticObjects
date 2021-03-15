@@ -31,6 +31,7 @@ SIMULATE : 'simulate';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
+ABSTRACT : 'abstract'; //'abstract' collides with Java
 
 //Keywords: classes and methods
 CLASS : 'class';
@@ -88,8 +89,8 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : CLASS (LT namelist GT)? NAME (EXTENDS NAME)? OPARAN fieldDeclList? CPARAN  method_def* END;
-method_def :  (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN statement END;
+class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN  method_def* END;
+method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
@@ -97,7 +98,7 @@ statement :   SKIP_S SEMI                                                       
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
-			| (declType = type)? target=expression ASS NEW NAME (LT namelist GT)? OPARAN (expression (COMMA expression)*)? CPARAN SEMI                  # create_statement
+			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN SEMI                          # create_statement
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                                                                                               # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement

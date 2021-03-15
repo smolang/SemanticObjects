@@ -27,7 +27,7 @@ class TypeTest  : StringSpec() {
     }
 
     private fun retrieveClass(name : String, prog : WhileParser.ProgramContext) : List<WhileParser.Class_defContext>{
-        return prog.class_def().filter { it.NAME(0).text == name }
+        return prog.class_def().filter { it.className.text == name }
     }
 
     private fun retrieveMethod(name : String, classDef : WhileParser.Class_defContext) : List<WhileParser.Method_defContext>{

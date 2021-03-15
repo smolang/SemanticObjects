@@ -21,13 +21,13 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         for(cl in ctx!!.class_def()){
-            if(cl.NAME(1) != null){
-                var maps = hierarchy[cl.NAME(1).text]
+            if(cl.superType != null){
+                var maps = hierarchy[cl.superType.text]
                 if(maps == null) maps = mutableSetOf()
-                maps.add(cl!!.NAME(0).text)
-                hierarchy[cl.NAME(1).text] = maps
+                maps.add(cl!!.className.text)
+                hierarchy[cl.superType.text] = maps
             } else {
-                roots += cl!!.NAME(0).text
+                roots += cl!!.className.text
             }
             val fields = if(cl.fieldDeclList() != null) {
                 var res = listOf<FieldInfo>()
@@ -37,10 +37,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                         val iVisibility = if(nm.infer == null) Visibility.PUBLIC else if(nm.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                         res = res + FieldInfo(
                             nm.NAME().text,
-                            TypeChecker.translateType(nm.type(), cl.NAME(0).text, mutableMapOf()),
+                            TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
                             cVisibility,
                             iVisibility,
-                            BaseType(cl!!.NAME(0).text)
+                            BaseType(cl!!.className.text)
                         )
                     }
                 }
@@ -51,11 +51,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
             val res = mutableMapOf<String, MethodEntry>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
-                val stmt = visit(nm!!.statement()) as Statement
-                val params = if(nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                res[nm.NAME().text] = Pair(stmt, params)
+                if(nm.abs == null && nm.statement() == null)
+                    throw Exception("Non-abstract method with empty statement: ${nm.NAME().text}")
+                if(nm.abs != null && nm.statement() != null )
+                    throw Exception("Abstract method with non-empty statement: ${nm.NAME().text}")
+                if(nm.abs == null) {
+                    val stmt = visit(nm!!.statement()) as Statement
+                    val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
+                    res[nm.NAME().text] = Pair(stmt, params)
+                }
+                if(nm.abs != null) {
+                    val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
+                    res[nm.NAME().text] = Pair(SkipStmt(ctx!!.start.line), params)
+                }
             }
-            table[cl.NAME(0).text] = Pair(fields, res)
+            table[cl.className.text] = Pair(fields, res)
         }
 
         while(roots.isNotEmpty()){
@@ -151,8 +161,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         var ll = emptyList<Expression>()
         for(i in 1 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
+        val def = getClassDecl(ctx)
+        val targetType =
+            TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
         return CreateStmt(visit(ctx.target) as Location,
-                          ctx.NAME().text,
+                          targetType.getPrimary().getNameString(),
                           ll,
                           ctx!!.start.line
                          )
@@ -161,8 +174,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         if(ctx.declType != null) {
+            val cDecl = getClassDecl(ctx)
+            val className = if(cDecl == null) ERRORTYPE.name else cDecl.className.text
             val targetType =
-                TypeChecker.translateType(ctx.declType, getClassDecl(ctx)!!.NAME(0).text, mutableMapOf())
+                TypeChecker.translateType(ctx.declType, className, mutableMapOf())
             target.setType(targetType)
         }
         val query = visit(ctx!!.query) as Expression
@@ -176,7 +191,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val target = visit(ctx!!.target) as Location
         if(ctx.declType != null) {
             val decl = getClassDecl(ctx)
-            val className = if(decl == null) ERRORTYPE.name else decl!!.NAME(0).text
+            val className = if(decl == null) ERRORTYPE.name else decl!!.className.text
             val targetType =
                 TypeChecker.translateType(ctx.declType, className, mutableMapOf())
             target.setType(targetType)
