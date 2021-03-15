@@ -22,10 +22,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         for(cl in ctx!!.class_def()){
             if(cl.superType != null){
-                var maps = hierarchy[cl.superType.text]
+                val superType =
+                    TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
+                var maps = hierarchy[superType.getPrimary().getNameString()]
                 if(maps == null) maps = mutableSetOf()
                 maps.add(cl!!.className.text)
-                hierarchy[cl.superType.text] = maps
+                hierarchy[superType.getPrimary().getNameString()] = maps
             } else {
                 roots += cl!!.className.text
             }

@@ -53,10 +53,12 @@ class SimulatorObject(val path : String, memory : Memory){
         var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
         for(mVar in sim.modelDescription.modelVariables) {
             if(mVar.causality == "input") {
-                res += "$obj smol:hasInPort prog:${mVar.name}.\n"
+                res += "prog:${obj}_${mVar.name} a smol:InPort.\n"
+                res += "$obj smol:hasInPort prog:${obj}_${mVar.name}.\n"
             }
             if(mVar.causality == "output"){
-                res += "$obj smol:hasOutPort prog:${mVar.name}.\n"
+                res += "prog:${obj}_${mVar.name} a smol:OutPort.\n"
+                res += "$obj smol:hasOutPort prog:${obj}_${mVar.name}.\n"
                 res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
             }
             if(mVar.causality == "parameter"){

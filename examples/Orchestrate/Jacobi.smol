@@ -119,4 +119,11 @@ main
     cons := new List<Connection>(c2, cons);
     CoSim sim := new CoSim(cons, fmus, 0.2);
     sim.execute(200);
+
+    List<InPort<Double>> ll := access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:to ?obj}");
+    while ll <> null do
+        InPort<Double> inp := ll.content;
+        ll := ll.next;
+        print(inp);
+    end
 end

@@ -3,8 +3,12 @@
 ####  Semantic static layer
 smol:Class                rdf:type owl:Class.
 smol:Field                rdf:type owl:Class.
-smol:Port                 rdf:type owl:Class.
-smol:Port                 rdf:type owl:DatatypeProperty.
+smol:OutPort                 rdf:type owl:Class.
+smol:OutPort                 rdf:type owl:DatatypeProperty.
+smol:InPort                 rdf:type owl:Class.
+smol:InPort                 rdf:type owl:DatatypeProperty.
+smol:StatePort                 rdf:type owl:Class.
+smol:StatePort                 rdf:type owl:DatatypeProperty.
 smol:Method               rdf:type owl:Class.
 smol:Simulation           rdf:type owl:Class.
 
@@ -83,13 +87,13 @@ smol:modelName  rdf:type owl:DatatypeProperty ;
 
 smol:hasInPort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
-                rdfs:range smol:Port .
+                rdfs:range smol:InPort .
 smol:hasOutPort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
-                rdfs:range smol:Port .
+                rdfs:range smol:OutPort .
 smol:hasStatePort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
-                rdfs:range smol:Port .
+                rdfs:range smol:StatePort .
 
 ####  Semantic dynamic layer
 smol:instanceOf   rdf:type owl:ObjectProperty ;

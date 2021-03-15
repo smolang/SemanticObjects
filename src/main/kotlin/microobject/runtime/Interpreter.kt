@@ -265,6 +265,7 @@ class Interpreter(
                         for (ob in heap.keys) {
                             if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
+                                break
                             }
                         }
                         if (!newMemory.containsKey("content")) {
