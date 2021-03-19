@@ -47,7 +47,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             //and their fields
             for(store in heap[obj]!!.keys) {
                 val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += "run:${obj.literal} prog:$store "
+                res += "run:${obj.literal} prog:${obj.tag}_$store "
                 res +=  if(target.literal == "null")
                     "smol:${target.literal}.\n"
                 else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE)
@@ -140,23 +140,25 @@ MethodTable     : $methodTable
             res += "prog:${obj.key} rdf:type smol:Class.\n"
             res += "prog:${obj.key} rdf:type owl:Class.\n"
             for(obj2 in obj.value){
-                res += "prog:${obj.key} smol:hasField prog:${obj2.name}.\n"
-                res += "prog:${obj2.name} rdf:type smol:Field.\n"
+                val fieldName = obj.key+"_"+obj2.name
+                res += "prog:${obj.key} smol:hasField prog:$fieldName.\n"
+                res += "prog:$fieldName rdf:type smol:Field.\n"
                 if(obj2.type == INTTYPE || obj2.type == STRINGTYPE) {
-                    res += "prog:${obj2.name} rdf:type owl:DatatypeProperty.\n"
+                    res += "prog:$fieldName rdf:type owl:DatatypeProperty.\n"
                 } else {
-                    res += "prog:${obj2.name} rdf:type owl:FunctionalProperty.\n"
-                    res += "prog:${obj2.name} rdf:type owl:ObjectProperty.\n"
+                    res += "prog:$fieldName rdf:type owl:FunctionalProperty.\n"
+                    res += "prog:$fieldName rdf:type owl:ObjectProperty.\n"
                 }
-                res += "prog:${obj2.name} rdfs:domain prog:${obj.key}.\n"
+                res += "prog:$fieldName rdfs:domain prog:${obj.key}.\n"
             }
         }
 
         //records all methods
         for(obj in methodTable){
             for(obj2 in obj.value){
-                res += "prog:${obj.key} smol:hasMethod prog:${obj2.key}.\n"
-                res += "prog:${obj2.key} rdf:type owl:NamedIndividual , smol:Method.\n"
+                val metName = obj.key+"_"+obj2.key
+                res += "prog:${obj.key} smol:hasMethod prog:$metName.\n"
+                res += "prog:$metName rdf:type owl:NamedIndividual , smol:Method.\n"
             }
         }
 

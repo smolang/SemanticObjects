@@ -22,16 +22,16 @@
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childL ;
+                                      owl:onProperty prog:Node_childL ;
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childR ;
+                                      owl:onProperty prog:Node_childR ;
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childM ;
+                                      owl:onProperty prog:Node_childM ;
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:dataL;
+                                      owl:onProperty prog:Node_dataL;
                                       owl:someValuesFrom :TruePair]
                          )
                          ] .
@@ -43,19 +43,19 @@
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:dataR ;
+                                      owl:onProperty prog:Node_dataR ;
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childR ;
+                                      owl:onProperty prog:Node_childR ;
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:dataL;
+                                      owl:onProperty prog:Node_dataL;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childL;
+                                      owl:onProperty prog:Node_childL;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childM;
+                                      owl:onProperty prog:Node_childM;
                                       owl:someValuesFrom :TrueNode]
                          )
                          ] .
@@ -65,19 +65,19 @@
       owl:intersectionOf(
 
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:dataR;
+                                      owl:onProperty prog:Node_dataR;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childR;
+                                      owl:onProperty prog:Node_childR;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:dataL;
+                                      owl:onProperty prog:Node_dataL;
                                       owl:someValuesFrom :TruePair]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childL;
+                                      owl:onProperty prog:Node_childL;
                                       owl:someValuesFrom :TrueNode]
                                      [rdf:type owl:Restriction ;
-                                      owl:onProperty prog:childM;
+                                      owl:onProperty prog:Node_childM;
                                       owl:someValuesFrom :TrueNode]
                          )
                          ] .

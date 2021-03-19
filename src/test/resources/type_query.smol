@@ -17,7 +17,7 @@ class Test()
       B b2 := new B(6, a2);
       C c1 := new C(7, b1, a3);
       C c2 := new C(8, b2, a4);
-      List<C> l := access("SELECT ?obj WHERE {?obj prog:aCB ?b. ?b prog:aB ?a. ?a prog:sealing 1 }");
+      List<C> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 

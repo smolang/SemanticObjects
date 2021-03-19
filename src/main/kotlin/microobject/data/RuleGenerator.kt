@@ -1,6 +1,7 @@
 package microobject.data
 
 import antlr.microobject.gen.WhileParser
+import microobject.main.Settings
 import microobject.runtime.InterpreterBridge
 import microobject.runtime.Memory
 import microobject.runtime.StackEntry
@@ -16,7 +17,7 @@ import org.apache.jena.reasoner.rulesys.builtins.BaseBuiltin
 /**
  * This class generates the functors and rules for invoke statement execution from within queries
  */
-class RuleGenerator{
+class RuleGenerator(val settings: Settings){
 
     /*
        This generates a functor for cl.nm.
@@ -46,7 +47,7 @@ class RuleGenerator{
             val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
             val mem: Memory = mutableMapOf()
             val obj = LiteralExpr(
-                thisVar.toString().removePrefix("urn:"),
+                thisVar.toString().removePrefix(settings.runPrefix),
                 BaseType(cl.className.text)
             )
             mem["this"] = obj
@@ -66,10 +67,7 @@ class RuleGenerator{
                     //Build final triple and add it to the context
                     val str = if (ret.toIntOrNull() == null) ret else "smol:$ret"
                     val resNode = NodeFactory.createURI(str)
-                    /**
-                    IMPORTANT: this hardcodes the prog prefix because of the way the jena _rule_ parser messes up prefixes
-                    */
-                    val connectInNode = NodeFactory.createURI("urn:${name}_res")
+                    val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)
                     break

@@ -3,14 +3,18 @@
 ####  Semantic static layer
 smol:Class                rdf:type owl:Class.
 smol:Field                rdf:type owl:Class.
-smol:OutPort                 rdf:type owl:Class.
-smol:OutPort                 rdf:type owl:DatatypeProperty.
-smol:InPort                 rdf:type owl:Class.
-smol:InPort                 rdf:type owl:DatatypeProperty.
-smol:StatePort                 rdf:type owl:Class.
-smol:StatePort                 rdf:type owl:DatatypeProperty.
-smol:Method               rdf:type owl:Class.
-smol:Simulation           rdf:type owl:Class.
+
+
+######## FMUs
+smol:OutPort      rdf:type owl:Class.
+smol:OutPort      rdf:type owl:DatatypeProperty.
+smol:InPort       rdf:type owl:Class.
+smol:InPort       rdf:type owl:DatatypeProperty.
+smol:StatePort    rdf:type owl:Class.
+smol:StatePort    rdf:type owl:DatatypeProperty.
+smol:Method       rdf:type owl:Class.
+smol:Simulation   rdf:type owl:Class.
+smol:Measurement  rdf:type owl:Class .
 
 ####  Semantic dynamic layer
 smol:Object               rdf:type owl:Class.
@@ -80,10 +84,12 @@ smol:extends    rdf:type owl:ObjectProperty ;
                 rdfs:range smol:Class .
 
 
+
+####### FMUs
+
 smol:modelName  rdf:type owl:DatatypeProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range xsd:String .
-
 
 smol:hasInPort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
@@ -94,6 +100,24 @@ smol:hasOutPort    rdf:type owl:ObjectProperty ;
 smol:hasStatePort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range smol:StatePort .
+
+smol:atTime rdf:type owl:DatatypeProperty ;
+        rdfs:subPropertyOf owl:topDataProperty ;
+        rdf:type owl:FunctionalProperty ;
+        rdfs:domain smol:Measurement ;
+        rdfs:range xsd:double .
+
+
+smol:withValue rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdfs:domain smol:Measurement ;
+           rdfs:range xsd:double .
+
+smol:ofPort rdf:type owl:ObjectProperty ;
+       rdfs:subPropertyOf owl:topObjectProperty ;
+       rdfs:domain smol:Measurement ;
+       rdfs:range smol:OutPort .
+
 
 ####  Semantic dynamic layer
 smol:instanceOf   rdf:type owl:ObjectProperty ;

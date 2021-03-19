@@ -1,4 +1,8 @@
-//NOTE: this was written before we added types and relies on some patterns that would require a major rewrite, you can ignore all errors, it will run just fine
+/* NOTE:
+ * this was written before we added types and relies on some patterns that would require a major rewrite.
+ * You can ignore all errors, it will run just fine.
+ * Its auxiliary files are not updated anymore.
+ */
 
 class GeoElement (Int sealing, LeftHydrocarbonMigration migration)
 

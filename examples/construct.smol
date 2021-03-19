@@ -54,7 +54,7 @@ main
     B b3 := new B(a3, 6);
     B b4 := new B(a4, 7);
 
-    List<C> v := construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:i2 ?j2.?y prog:a ?x.?x a prog:A. ?x prog:i1 ?j1 }");
+    List<C> v := construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
     Int i := 0;
     Int size := v.length();
     while( i < size) do

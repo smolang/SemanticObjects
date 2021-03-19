@@ -291,7 +291,7 @@ data class VarInit(val name : String, val expr: Expression) : ProgramElement {
 data class LocalVar(val name : String, var tag : Type = ERRORTYPE) : Location { // local variable
     override fun toString(): String = name
     override fun getType(): Type = tag
-    override fun setType(type: Type) { tag = type }
+    override fun setType(targetType: Type) { tag = targetType }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:LocalVarLocation.
@@ -303,7 +303,7 @@ data class LocalVar(val name : String, var tag : Type = ERRORTYPE) : Location { 
 data class OwnVar(val name : String, var tag : Type = ERRORTYPE) : Location {   // field of own object
     override fun toString(): String = "this.$name"
     override fun getType(): Type = tag
-    override fun setType(type: Type) { tag = type }
+    override fun setType(targetType: Type) { tag = targetType }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:OwnVarLocation.
@@ -315,7 +315,7 @@ data class OwnVar(val name : String, var tag : Type = ERRORTYPE) : Location {   
 data class OthersVar(val expr: Expression, val name : String, var tag : Type = ERRORTYPE) : Location { // field of (possibly) other object
     override fun toString(): String = "$expr.$name"
     override fun getType(): Type = tag
-    override fun setType(type: Type) { tag = type }
+    override fun setType(targetType: Type) { tag = targetType }
     override fun getRDF(): String {
         return """
             prog:loc${this.hashCode()} rdf:type smol:OthersVarLocation.

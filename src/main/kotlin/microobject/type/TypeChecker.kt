@@ -564,7 +564,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
 
                 if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
-                    val hue = lhsType.isAssignable(newType, extends)
                     log("Type $newType is not assignable to $lhsType", ctx)
                 }
 

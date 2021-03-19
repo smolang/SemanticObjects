@@ -170,7 +170,8 @@ class Interpreter(
     }
 
     private fun eval(stmt: Statement, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, id: Int) : Pair<StackEntry?, List<StackEntry>>{
-        if(heap[obj] == null) throw Exception("This object is unknown: $obj")
+        if(heap[obj] == null)
+            throw Exception("This object is unknown: $obj")
 
         //get own local memory
         val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())

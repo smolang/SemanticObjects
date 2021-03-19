@@ -135,7 +135,7 @@ class REPL(private val apache: String,
         tC.report()
 
         val iB = InterpreterBridge(null)
-        rules = RuleGenerator().generateBuiltins(tree, iB)
+        rules = RuleGenerator(settings).generateBuiltins(tree, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))

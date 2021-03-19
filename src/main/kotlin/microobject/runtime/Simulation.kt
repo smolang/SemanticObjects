@@ -10,7 +10,13 @@ import org.javafmi.modeldescription.SimpleType
 import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
 
+data class Snapshot( val time : Double, val values : List<Pair<String, Double>>)
+
 class SimulatorObject(val path : String, memory : Memory){
+    private val series = mutableListOf<Snapshot>()
+    private var sim : Simulation = Simulation(path)
+    private var time : Double = 0.0
+
     fun read(name: String): LiteralExpr {
         val v = sim.modelDescription.getModelVariable(name)
         if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
@@ -20,6 +26,19 @@ class SimulatorObject(val path : String, memory : Memory){
     }
     fun tick(i : Double){
         sim.doStep(i)
+        time += i
+        addSnapshot()
+    }
+
+    private fun addSnapshot( ){
+        var list = emptyList<Pair<String, Double>>()
+        for(mVar in sim.modelDescription.modelVariables){
+            if(mVar.causality == "output" && mVar.typeName == "Real"){
+                val res = sim.read(mVar.name).asDouble()
+                list = list + Pair(mVar.name, res)
+            }
+        }
+        series.add(Snapshot(time, list))
     }
 
     fun write(name: String, res: LiteralExpr) {
@@ -43,12 +62,10 @@ class SimulatorObject(val path : String, memory : Memory){
     }
 
 
-    private var sim : Simulation = Simulation(path)
     fun terminate() {
         sim.terminate()
     }
 
-    //TODO: use serialization if available
     fun dump(obj: String): String {
         var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
         for(mVar in sim.modelDescription.modelVariables) {
@@ -59,13 +76,24 @@ class SimulatorObject(val path : String, memory : Memory){
             if(mVar.causality == "output"){
                 res += "prog:${obj}_${mVar.name} a smol:OutPort.\n"
                 res += "$obj smol:hasOutPort prog:${obj}_${mVar.name}.\n"
-                res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
+                res += "$obj prog:${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
             }
             if(mVar.causality == "parameter"){
                 res += "$obj smol:hasStatePort prog:${mVar.name}.\n"
-                res += "$obj prog:${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
+                res += "$obj prog:${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
                 mVar.type
             }
+        }
+        var mCounter = 0
+        for(snap in series){
+            val name = "measure_${obj}_$mCounter"
+            res += "run:$name a smol:Measurement.\n"
+            res += "run:$name smol:atTime '${snap.time}'.\n"
+            for( data in snap.values) {
+                res += "run:$name smol:ofPort prog:${obj}_${data.first} .\n"
+                res += "run:$name smol:withValue '${data.second}'.\n"
+            }
+            mCounter++
         }
         return res
     }
@@ -104,6 +132,7 @@ class SimulatorObject(val path : String, memory : Memory){
             }
         }
         sim.init(0.0)
+        addSnapshot()
     }
 
     private fun dumpSingle(read : SingleRead, type : SimpleType) : String{

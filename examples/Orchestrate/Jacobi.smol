@@ -91,17 +91,17 @@ class CoSim(List<Connection> list, List<DE[;]> sims, Double stepSize)
 end
 
 //example
-class PreyOutPort extends OutPort<Double>(DE[Double y; Double x] prey)
-    override Double get() return this.prey.x; end
+class PreyOutPort extends OutPort<Double>(DE[Double y; Double x] x)
+    override Double get() return this.x.x; end
 end
-class PredatorOutPort extends OutPort<Double>(DE[Double x; Double y] predator)
-    override Double get() return this.predator.y; end
+class PredatorOutPort extends OutPort<Double>(DE[Double x; Double y] y)
+    override Double get() return this.y.y; end
 end
-class PreyInPort extends InPort<Double>(DE[Double y; Double x] prey)
-    override Boolean write(Double t) this.prey.y := t; return True; end
+class PreyInPort extends InPort<Double>(DE[Double y; Double x] y)
+    override Boolean write(Double t) this.y.y := t; return True; end
 end
-class PredatorInPort extends InPort<Double>(DE[Double x; Double y] predator)
-    override Boolean write(Double t) print(t); this.predator.x := t; return True; end
+class PredatorInPort extends InPort<Double>(DE[Double x; Double y] x)
+    override Boolean write(Double t) print(t); this.x.x := t; return True; end
 end
 
 main
@@ -120,7 +120,7 @@ main
     CoSim sim := new CoSim(cons, fmus, 0.2);
     sim.execute(200);
 
-    List<InPort<Double>> ll := access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:to ?obj}");
+    List<InPort<Double>> ll := access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:ImplConnection_to ?obj}");
     while ll <> null do
         InPort<Double> inp := ll.content;
         ll := ll.next;
