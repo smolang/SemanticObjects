@@ -82,7 +82,7 @@ fragment LET : [a-zA-Z_];
 fragment LOD : LET | DIG;
 NAME : LET LOD*;
 CONSTANT :  DIG+;
-FLOAT : DIG DOT DIG;
+FLOAT : DIG* DOT DIG*;
 
 namelist : NAME (COMMA NAME)*;
 

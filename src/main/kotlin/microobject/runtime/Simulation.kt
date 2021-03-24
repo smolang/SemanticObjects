@@ -100,7 +100,7 @@ class SimulatorObject(val path : String, memory : Memory){
 
     init {
         for(mVar in sim.modelDescription.modelVariables){
-            if(mVar.causality == "input" || mVar.causality == "state"){
+            if(mVar.causality == "input" || mVar.causality == "parameter"){
                 if(!mVar.hasStartValue() && !memory.containsKey(mVar.name))
                     throw Exception("Failed to initialize variable ${mVar.name}: no initial value given")
                 if(memory.containsKey(mVar.name)) {
@@ -109,6 +109,7 @@ class SimulatorObject(val path : String, memory : Memory){
                     else if (mVar.typeName == "Real") sim.write(mVar.name).with(memory[mVar.name]!!.literal.toDouble())
                     else /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(memory[mVar.name]!!.literal.removeSurrounding("\""))
                 } else if(mVar.hasStartValue()){
+                    //println("using default start value for ${sim.modelDescription.modelName}.${mVar.name}")
                     val anyStart = mVar.start
                     when (mVar.typeName) {
                         "Integer" -> sim.write(mVar.name).with(anyStart as Int)
