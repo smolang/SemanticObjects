@@ -48,4 +48,4 @@ jar {
 
 compileKotlin.dependsOn generateGrammarSource
 
-build.dependsOn shadowJar
+assemble.dependsOn shadowJar
