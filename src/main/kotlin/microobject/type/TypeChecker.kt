@@ -634,6 +634,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Type $innerType of return statement does not match method type ${metType}.",ctx)
                 return true
             }
+            is WhileParser.Destroy_statementContext -> {
+                val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
+                if(innerType != ERRORTYPE && !OBJECTTYPE.isAssignable(innerType, extends))
+                    log("Type $innerType of destroy statement is not an object type.",ctx)
+            }
             is WhileParser.Output_statementContext -> {
                 //For now, we print everything
                 /*val innerType = getType(ctx.expression(), inner, vars, thisType)

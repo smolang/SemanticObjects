@@ -232,6 +232,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return PrintStmt(visit(ctx!!.expression()) as Expression, ctx!!.start.line)
     }
 
+    override fun visitDestroy_statement(ctx: Destroy_statementContext?): ProgramElement {
+        return DestroyStmt(visit(ctx!!.expression()) as Expression, ctx!!.start.line)
+    }
+
     override fun visitAssign_statement(ctx: Assign_statementContext?): ProgramElement {
         return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, ctx!!.start.line)
     }

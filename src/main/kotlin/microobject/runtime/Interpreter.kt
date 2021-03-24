@@ -365,6 +365,34 @@ class Interpreter(
                 }
                 throw Exception("Malformed heap")
             }
+            is DestroyStmt -> {
+                val res = eval(stmt.expr, stackMemory, heap, simMemory, obj)
+                if(!heap.containsKey(res) || res.literal == "null")
+                    throw Exception("Trying to destroy null or an unknown object: $res")
+                heap.remove(res)
+                //Replace name with ERROR. This is needed so the RDF dump does have dangling pointers and we cna derive weird things in the open world
+                for( mem in heap.values ){
+                    var rem :String? = null
+                    for( kv in mem ){
+                        if (kv.value == res) {
+                            rem = kv.key
+                            break
+                        }
+                    }
+                    if(rem != null) mem[rem] = LiteralExpr("null")
+                }
+                for( entry in stack ){
+                    var rem :String? = null
+                    for( kv in entry.store ){
+                        if (kv.value == res) {
+                            rem = kv.key
+                            break
+                        }
+                    }
+                    if(rem != null) entry.store[rem] = LiteralExpr("null")
+                }
+                return Pair(null, emptyList())
+            }
             is IfStmt -> {
                 val res = eval(stmt.guard, stackMemory, heap, simMemory, obj)
                 if (res == TRUEEXPR) return Pair(

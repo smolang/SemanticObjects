@@ -31,6 +31,7 @@ SIMULATE : 'simulate';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
+DESTROY : 'destroy';
 ABSTRACT : 'abstract'; //'abstract' collides with Java
 
 //Keywords: classes and methods
@@ -101,6 +102,7 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN SEMI                          # create_statement
 			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                                                                                               # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
+			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement

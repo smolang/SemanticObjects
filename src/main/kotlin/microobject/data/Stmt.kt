@@ -193,6 +193,19 @@ fun appendStmt (a : Statement, b: Statement) : Statement {
     return if(a !is SequenceStmt) SequenceStmt(a, b) else SequenceStmt(a.first, appendStmt(a.second,b))
 }
 
+
+data class DestroyStmt(val expr: Expression, val pos : Int = -1): Statement {
+    override fun toString(): String = "destroy($expr)"
+    override fun getRDF(): String {
+        return """
+            prog:stmt${this.hashCode()} rdf:type smol:DestroyStatement.
+            prog:stmt${this.hashCode()} smol:hasStmtExpr prog:expr${expr.hashCode()}.
+            prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
+
+        """.trimIndent() + expr.getRDF()
+    }
+}
+
 //for output
 data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
     override fun toString(): String = "println($expr)"

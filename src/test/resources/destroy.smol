@@ -1,0 +1,15 @@
+class <T> List(T content, List<T> next) end
+
+class A(Int i1) end
+
+main
+
+    A a := new A(1);
+    List<A> list := access("SELECT ?obj WHERE {?obj smol:instanceOf prog:A}");
+    print(list);
+    print(list.content);
+    destroy(a);
+    print(list.content);
+    list := access("SELECT ?obj WHERE {?obj smol:instanceOf prog:A}");
+    print(list);
+end

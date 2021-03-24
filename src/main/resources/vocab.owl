@@ -30,6 +30,7 @@ smol:TargetStatement      rdfs:subClassOf  smol:Statement.
 smol:VarLengthStatement   rdfs:subClassOf  smol:Statement.
 smol:DebugStatement       rdfs:subClassOf  smol:Statement.
 smol:PrintStatement       rdfs:subClassOf  smol:Statement.
+smol:DestroyStatement       rdfs:subClassOf  smol:Statement.
 smol:SequenceStatement    rdfs:subClassOf  smol:Statement.
 smol:SkipStatement        rdfs:subClassOf  smol:Statement.
 smol:TickStatement        rdfs:subClassOf  smol:Statement.

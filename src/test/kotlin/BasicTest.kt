@@ -27,7 +27,7 @@ class BasicTest : StringSpec() {
     }
 
     init {
-        for( str in listOf("double", "overload", "types", "poly", "Jacobi"))
+        for( str in listOf("double", "overload", "types", "poly", "Jacobi", "destroy"))
         "parsing $str"{
             assertEquals(load(this::class.java.classLoader.getResource("$str.smol").file), 0)
         }
