@@ -7,6 +7,7 @@ import microobject.type.Severity
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import java.io.File
 import kotlin.test.assertEquals
 
 class BasicTest : StringSpec() {
@@ -27,9 +28,18 @@ class BasicTest : StringSpec() {
     }
 
     init {
-        for( str in listOf("double", "overload", "types", "poly", "Jacobi", "destroy"))
+        for( str in listOf("double", "overload", "types", "poly", "destroy"))
         "parsing $str"{
             assertEquals(load(this::class.java.classLoader.getResource("$str.smol").file), 0)
+        }
+        "parsing Jacobi"{
+            if (!(File("examples/SimulationDemo/Prey.fmu").exists()
+                  && File("examples/SimulationDemo/Predator.fmu").exists())) {
+                // TODO: ignoring the test with a message would be better here
+                kotlin.test.assertTrue(true)
+            } else {
+                assertEquals(load(this::class.java.classLoader.getResource("Jacobi.smol").file), 0)
+            }
         }
         "parsing scene"{
             assertEquals(load(this::class.java.classLoader.getResource("scene.smol").file), 1)
