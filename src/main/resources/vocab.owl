@@ -80,10 +80,6 @@ smol:hasMethod  rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Method .
 
-smol:extends    rdf:type owl:ObjectProperty ;
-                rdfs:domain smol:Class ;
-                rdfs:range smol:Class .
-
 
 
 ####### FMUs

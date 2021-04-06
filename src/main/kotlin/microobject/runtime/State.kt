@@ -165,7 +165,7 @@ MethodTable     : $methodTable
         //records type hierarchy
         for(obj in hierarchy.entries){
             for(obj2 in obj.value){
-                res += "prog:$obj2 smol:extends prog:${obj.key}.\n"
+                res += "prog:$obj2 rdfs:subClassOf prog:${obj.key}.\n"
             }
         }
 
