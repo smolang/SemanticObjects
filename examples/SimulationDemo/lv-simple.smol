@@ -1,8 +1,8 @@
 main
     //beware: path is relative to interpreter instance, not this file
     //fmus are not uploaded, download them from the MasterSim examples: https://sourceforge.net/projects/mastersim/
-    DE[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
-    DE[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
+    Cont[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
+    Cont[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
     Int i := 0;
     while (i <= 2000) do
         tick(prey, 0.1);

@@ -59,7 +59,7 @@ class ImplConnection extends Connection (OutPort<Double> from, InPort<Double> to
 end
 
 //Jacobi master algorithm: propagate through all connections, advance time for all FMUs at once
-class CoSim(List<Connection> list, List<DE[;]> sims, Double stepSize)
+class CoSim(List<Connection> list, List<Cont[;]> sims, Double stepSize)
     Int round()
         Int i := 0;
         if this.list = null then return i; end
@@ -73,7 +73,7 @@ class CoSim(List<Connection> list, List<DE[;]> sims, Double stepSize)
         if this.sims = null then return i; end
         length := this.sims.length();
         while i < length do
-            DE[;] de := this.sims.get(i);
+            Cont[;] de := this.sims.get(i);
             tick(de, this.stepSize);
             i := i + 1;
         end
@@ -91,30 +91,30 @@ class CoSim(List<Connection> list, List<DE[;]> sims, Double stepSize)
 end
 
 //example
-class PreyOutPort extends OutPort<Double>(DE[Double y; Double x] prey)
+class PreyOutPort extends OutPort<Double>(Cont[Double y; Double x] prey)
     override Double get() return this.prey.x; end
 end
-class PredatorOutPort extends OutPort<Double>(DE[Double x; Double y] predator)
+class PredatorOutPort extends OutPort<Double>(Cont[Double x; Double y] predator)
     override Double get() return this.predator.y; end
 end
-class PreyInPort extends InPort<Double>(DE[Double y; Double x] prey)
+class PreyInPort extends InPort<Double>(Cont[Double y; Double x] prey)
     override Boolean write(Double t) this.prey.y := t; return True; end
 end
-class PredatorInPort extends InPort<Double>(DE[Double x; Double y] predator)
+class PredatorInPort extends InPort<Double>(Cont[Double x; Double y] predator)
     override Boolean write(Double t) print(t); this.predator.x := t; return True; end
 end
 
 main
-    DE[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
-    DE[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
+    Cont[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
+    Cont[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
     PreyOutPort preyOut := new PreyOutPort(prey);
     PredatorOutPort predOut := new PredatorOutPort(predator);
     PreyInPort preyIn := new PreyInPort(prey);
     PredatorInPort predIn := new PredatorInPort(predator);
     Connection c1 := new ImplConnection(preyOut, predIn);
     Connection c2 := new ImplConnection(predOut, preyIn);
-    List<DE[;]> fmus := new List<DE[;]>(prey, null);
-    fmus := new List<DE[;]>(predator, fmus);
+    List<Cont[;]> fmus := new List<Cont[;]>(prey, null);
+    fmus := new List<Cont[;]>(predator, fmus);
     List<Connection> cons := new List<Connection>(c1, null);
     cons := new List<Connection>(c2, cons);
     CoSim sim := new CoSim(cons, fmus, 0.2);

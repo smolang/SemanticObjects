@@ -31,8 +31,8 @@ abstract class SimpleType : Type() {
 }
 
 data class SimulatorType(val inVar : List<Pair<String, Type>>, val outVar : List<Pair<String, Type>>) : SimpleType() {
-    override fun toString() : String  = "DE[ ${inVar.joinToString(",") { it.first + ":" + it.second }}; ${outVar.joinToString(",") { it.first + ":" + it.second }}]"
-    override fun getNameString() : String  = "DE"
+    override fun toString() : String  = "Cont[ ${inVar.joinToString(",") { it.first + ":" + it.second }}; ${outVar.joinToString(",") { it.first + ":" + it.second }}]"
+    override fun getNameString() : String  = "Cont"
     override fun isFullyConcrete() : Boolean =
         inVar.map { it.second }.any { it.isFullyConcrete() } && outVar.map { it.second }.any { it.isFullyConcrete() }
     override fun containsUnknown(types: Set<String>): Boolean =

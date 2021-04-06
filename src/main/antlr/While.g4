@@ -75,6 +75,7 @@ CPARAN : ')';
 OBRACK : '[';
 CBRACK : ']';
 COMMA : ',';
+FMU : 'Cont';
 
 //Names etc.
 fragment DIG : [0-9];
@@ -143,7 +144,7 @@ expression :      THIS                           # this_expression
 
 type : NAME                                                    #simple_type
      | NAME LT typelist GT                                     #nested_type
-     | NAME OBRACK in=paramList? SEMI out=paramList? CBRACK    #fmu_type
+     | FMU OBRACK in=paramList? SEMI out=paramList? CBRACK     #fmu_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;
