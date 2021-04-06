@@ -7,14 +7,14 @@
 :TruePair rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty smol:instanceOf ;
+                owl:onProperty a ;
                 owl:hasValue prog:Pair
            ].
 
 :TrueNode rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty smol:instanceOf ;
+                owl:onProperty a ;
                 owl:hasValue prog:Node
            ].
 

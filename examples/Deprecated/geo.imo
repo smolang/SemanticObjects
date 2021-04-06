@@ -1,5 +1,5 @@
 auto
-//query SELECT ?obj WHERE { ?obj smol:instanceOf prog:GeoUnit. ?obj :sealing :1}
-//query SELECT ?obj ?dir ?elem WHERE { ?obj smol:instanceOf :GeoUnit. ?obj ?dir ?elem. ?elem smol:instanceOf prog:Fault}
-//query SELECT ?obj ?elem WHERE { ?obj smol:instanceOf prog:LeftHydrocarbonMigration. ?obj prog:gu ?elem. ?elem smol:instanceOf prog:GeoUnit}
-//query SELECT ?obj WHERE { ?obj smol:instanceOf prog:GeoUnit. ?obj prog:migration ?elem. ?elem smol:instanceOf prog:LeftHydrocarbonMigration}
+query SELECT ?obj WHERE { ?obj a prog:GeoUnit. ?obj :GeoElement_sealing :1}
+query SELECT ?obj ?dir ?elem WHERE { ?obj a :GeoUnit. ?obj ?dir ?elem. ?elem a prog:Fault}
+query SELECT ?obj ?elem WHERE { ?obj a prog:LeftHydrocarbonMigration. ?obj prog:LeftHydrocarbonMigration_gu ?elem. ?elem a prog:GeoUnit}
+query SELECT ?obj WHERE { ?obj a prog:GeoUnit. ?obj prog:GeoElement_migration ?elem. ?elem a prog:LeftHydrocarbonMigration}

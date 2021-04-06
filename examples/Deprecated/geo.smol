@@ -301,7 +301,7 @@ main
     gu55.migration := mig;
 
     //instead of mig.migrate(); we use ontology-based reflexion
-    List<LeftHydrocarbonMigration> all := access("SELECT ?obj WHERE {?obj smol:instanceOf prog:LeftHydrocarbonMigration }");
+    List<LeftHydrocarbonMigration> all := access("SELECT ?obj WHERE {?obj a prog:LeftHydrocarbonMigration }");
     all.content.migrate();
     List<Object> nulls := access("SELECT ?obj WHERE { ?obj a :HasAnyNullNext }");
     print(nulls);

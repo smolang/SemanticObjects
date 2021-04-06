@@ -42,7 +42,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         //dumps individuals
         var i = 0
         for(obj in heap.keys){
-            res += "run:${obj.literal} smol:instanceOf prog:${(obj.tag as BaseType).name}.\n"
+            res += "run:${obj.literal} a prog:${(obj.tag as BaseType).name}.\n"
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
             //and their fields
             for(store in heap[obj]!!.keys) {
@@ -50,7 +50,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                 res += "run:${obj.literal} prog:${obj.tag}_$store "
                 res +=  if(target.literal == "null")
                     "smol:${target.literal}.\n"
-                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE || target.tag == INTTYPE)
                     "${target.literal}.\n"
                 else
                     "run:${target.literal}.\n"

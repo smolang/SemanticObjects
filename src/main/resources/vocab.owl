@@ -1,8 +1,8 @@
 
 ######## Classes
 ####  Semantic static layer
-smol:Class                rdf:type owl:Class.
-smol:Field                rdf:type owl:Class.
+smol:Class    rdfs:subClassOf owl:Class.
+smol:Field    rdf:type owl:Class.
 
 
 ######## FMUs
@@ -121,10 +121,6 @@ smol:ofPort rdf:type owl:ObjectProperty ;
 
 
 ####  Semantic dynamic layer
-smol:instanceOf   rdf:type owl:ObjectProperty ;
-                rdfs:domain smol:Object ;
-                rdfs:range smol:Class .
-
 smol:runsOnObject rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Process ;
                 rdfs:range smol:Object .
