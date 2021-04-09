@@ -46,6 +46,12 @@ java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/overload.smo
 To change the interpretation of `:Overloaded` modify examples/overload.back, e.g., change the last line to `owl:equivalentClass :ThreeServer.` to consider a server as being overloaded if 2 tasks run.
 Note that the implementation is *not* guaranteeing that no server is overloaded afterwards, but is used to demonstrate the principle of using a domain-specific query to control the execution of the program.
 
+### FMUs 
+To execute an example for Hybrid SMOL, download the required FMUs as described in `examples/SimulationDemo/lv-simple.smol` and run the following
+```
+./gradlew build
+java -jar build/libs/MicroObjects-0.2-all.jar -l examples/SimulationDemo/lv-simple.smol -n
+```
 ### Geometric Scene
 
 * examples/scene.mo contains an example to illustrate `rule`, the computational semantic state access (CSSA).
