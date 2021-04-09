@@ -2,9 +2,9 @@
 #     docker build -t smol .
 # To run smol in the current directory:
 #     docker run -it --rm -v "$PWD":/root/smol smol
-FROM openjdk:11
+FROM ubuntu:latest
 RUN apt-get -y update \
-    && apt-get -y install python3 python3-pip \
+    && DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-11-jdk-headless python3 python3-pip liblapack3 \
     && rm -rf /var/lib/apt/lists/*
 RUN pip3 install pyzmq
 COPY . /usr/local/src/smol
