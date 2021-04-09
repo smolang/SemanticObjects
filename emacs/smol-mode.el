@@ -9,13 +9,19 @@
 
 (defconst smol-keywords
   (regexp-opt
-   '("skip" "return" "if" "fi" "then" "new" "else" "while" "do" "main" "print" "abstract" "class" "end" "extends" "access" "derive" "breakpoint" "rule")
+   ;; taken from `While.g4'
+   '("skip" "return" "if" "then" "new" "else" "while" "do" "print" "end"
+     "access" "construct" "derive" "simulate" "tick" "breakpoint"
+     "super" "destroy" "abstract"
+     "class" "extends" "rule" "override" "main"
+     "private" "protected" "inferprivate" "inferprotected"
+      )
    'words)
   "List of SMOL keywords.")
 
 (defconst smol-constants
   (regexp-opt
-   '("True" "False" "null" "this")
+   '("True" "False" "null" "this" "Cont")
    'words)
   "List of SMOL constants.")
 
