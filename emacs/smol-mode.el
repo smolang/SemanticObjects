@@ -9,7 +9,7 @@
 
 (defconst smol-keywords
   (regexp-opt
-   '("skip" "return" "if" "fi" "then" "new" "else" "while" "do" "main" "print" "class" "end" "extends" "access" "derive" "breakpoint" "rule")
+   '("skip" "return" "if" "fi" "then" "new" "else" "while" "do" "main" "print" "abstract" "class" "end" "extends" "access" "derive" "breakpoint" "rule")
    'words)
   "List of SMOL keywords.")
 
