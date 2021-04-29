@@ -13,11 +13,22 @@ import org.javafmi.wrapper.variables.SingleRead
 data class Snapshot( val time : Double, val values : List<Pair<String, Double>>)
 
 class SimulatorObject(val path : String, memory : Memory){
+    companion object Constants {
+        val ROLEFIELDNAME = "role"
+        val PSEUDOOFFSETFIELDNAME = "pseudoOffset"
+    }
     private val series = mutableListOf<Snapshot>()
     private var sim : Simulation = Simulation(path)
     private var time : Double = 0.0
 
+    //additional fields
+    private var role : String = ""
+    private var pseudoOffset : Double = 0.0
+
     fun read(name: String): LiteralExpr {
+        if(name == ROLEFIELDNAME) return LiteralExpr(role, STRINGTYPE)
+        if(name == PSEUDOOFFSETFIELDNAME) return LiteralExpr(pseudoOffset.toString(), DOUBLETYPE)
+
         val v = sim.modelDescription.getModelVariable(name)
         if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
         if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE)
@@ -42,6 +53,14 @@ class SimulatorObject(val path : String, memory : Memory){
     }
 
     fun write(name: String, res: LiteralExpr) {
+        if(name == ROLEFIELDNAME) {
+            role = res.literal
+            return
+        }
+        if(name == PSEUDOOFFSETFIELDNAME) {
+            pseudoOffset = res.literal.toDouble()
+            return
+        }
         for(mVar in sim.modelDescription.modelVariables){
             if(mVar.name == name){
                 if(mVar.causality == "input" && mVar.typeName == "Integer"){
@@ -68,6 +87,8 @@ class SimulatorObject(val path : String, memory : Memory){
 
     fun dump(obj: String): String {
         var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
+        if(role != "")
+        res += "$obj smol:roleName '${sim.modelDescription.modelName}'.\n"
         for(mVar in sim.modelDescription.modelVariables) {
             if(mVar.causality == "input") {
                 res += "${obj}_${mVar.name} a smol:InPort.\n"
@@ -84,16 +105,14 @@ class SimulatorObject(val path : String, memory : Memory){
                 mVar.type
             }
         }
-        var mCounter = 0
-        for(snap in series){
+        for((mCounter, snap) in series.withIndex()){
             val name = "measure_${obj.split(":")[1]}_$mCounter"
             res += "run:$name a smol:Measurement.\n"
-            res += "run:$name smol:atTime '${snap.time}'.\n"
+            res += "run:$name smol:atTime '${snap.time + pseudoOffset}'.\n"
             for( data in snap.values) {
                 res += "run:$name smol:ofPort ${obj}_${data.first} .\n"
                 res += "run:$name smol:withValue '${data.second}'.\n"
             }
-            mCounter++
         }
         return res
     }

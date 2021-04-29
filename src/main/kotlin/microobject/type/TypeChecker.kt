@@ -3,6 +3,7 @@ package microobject.type
 import antlr.microobject.gen.WhileParser
 import microobject.main.Settings
 import microobject.runtime.FieldInfo
+import microobject.runtime.SimulatorObject
 import microobject.runtime.StaticTable
 import microobject.runtime.Visibility
 import org.antlr.v4.runtime.ParserRuleContext
@@ -741,6 +742,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Field_expressionContext -> {
                 val name = eCtx.NAME().text
+                if(name == SimulatorObject.ROLEFIELDNAME && thisType is SimulatorType)
+                    return STRINGTYPE
+                if(name == SimulatorObject.PSEUDOOFFSETFIELDNAME && thisType is SimulatorType)
+                    return DOUBLETYPE
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
                 return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type

@@ -91,6 +91,7 @@ smol:modelName  rdf:type owl:DatatypeProperty ;
 smol:hasInPort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range smol:InPort .
+
 smol:hasOutPort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range smol:OutPort .
@@ -114,6 +115,11 @@ smol:ofPort rdf:type owl:ObjectProperty ;
        rdfs:subPropertyOf owl:topObjectProperty ;
        rdfs:domain smol:Measurement ;
        rdfs:range smol:OutPort .
+
+smol:roleName rdf:type owl:DatatypeProperty ;
+       rdfs:subPropertyOf owl:topObjectProperty ;
+       rdfs:domain smol:Measurement ;
+           rdfs:range xsd:String .
 
 
 ####  Semantic dynamic layer
