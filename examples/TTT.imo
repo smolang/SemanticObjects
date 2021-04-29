@@ -1,4 +1,3 @@
 auto
 query SELECT ?obj WHERE {?obj a :TwoNode}
-validate tree_shapes.ttl
 class <prog:Node_parent> value <smol:null>

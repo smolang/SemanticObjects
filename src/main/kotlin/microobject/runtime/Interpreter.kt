@@ -426,12 +426,16 @@ class Interpreter(
                 return Pair(null, emptyList())
             }
             is SimulationStmt -> {
-                val simObj = SimulatorObject(stmt.path,stmt.params.map { Pair(it.name,eval(
-                    it.expr,
-                    stackMemory,
-                    heap, simMemory,
-                    obj
-                )) }.toMap().toMutableMap())
+                val simObj = SimulatorObject(stmt.path, stmt.params.associate {
+                    Pair(
+                        it.name, eval(
+                            it.expr,
+                            stackMemory,
+                            heap, simMemory,
+                            obj
+                        )
+                    )
+                }.toMutableMap())
                 val name = Names.getObjName("CoSimulation")
                 simMemory[name] = simObj
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
@@ -527,26 +531,38 @@ class Interpreter(
                 if (expr.Op == Operator.PLUS) {
                     val first = eval(expr.params.first(), stack, heap, simMemory, obj)
                     if(first.tag == DOUBLETYPE)
-                        return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                        return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
                             val enx = eval(nx, stack, heap, simMemory, obj)
-                            LiteralExpr((acc.literal.removePrefix("urn:").toDouble() + enx.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
-                        })
-                    else return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                            LiteralExpr(
+                                (acc.literal.removePrefix("urn:").toDouble() + enx.literal.removePrefix("urn:")
+                                    .toDouble()).toString(), DOUBLETYPE
+                            )
+                        }
+                    else return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
                         val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
-                    })
+                        LiteralExpr(
+                            (acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:")
+                                .toInt()).toString(), INTTYPE
+                        )
+                    }
                 }
                 if (expr.Op == Operator.MULT) {
                     val first = eval(expr.params.first(), stack, heap, simMemory, obj)
                     if(first.tag == DOUBLETYPE)
-                        return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                        return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
                             val enx = eval(nx, stack, heap, simMemory, obj)
-                            LiteralExpr((acc.literal.removePrefix("urn:").toDouble() * enx.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
-                        })
-                    else return expr.params.subList(1, expr.params.count()).fold(first, { acc, nx ->
+                            LiteralExpr(
+                                (acc.literal.removePrefix("urn:").toDouble() * enx.literal.removePrefix("urn:")
+                                    .toDouble()).toString(), DOUBLETYPE
+                            )
+                        }
+                    else return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
                         val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr((acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
-                    })
+                        LiteralExpr(
+                            (acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:")
+                                .toInt()).toString(), INTTYPE
+                        )
+                    }
                 }
                 if (expr.Op == Operator.DIV) {
                     if (expr.params.size != 2) throw Exception("Operator.DIV requires two parameters")

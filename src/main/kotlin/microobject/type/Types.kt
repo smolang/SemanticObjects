@@ -63,15 +63,20 @@ data class ComposedType(val name : Type, val params : List<Type>) : Type() {
         return name as SimpleType
     }
     override fun toString() : String  = name.toString() + "<" + params.joinToString { it.toString() }+">"
-    override fun isFullyConcrete() : Boolean = params.fold(name.isFullyConcrete(), { it,nx -> it && nx.isFullyConcrete()})
-    override fun containsUnknown(types: Set<String>): Boolean = params.fold( name.containsUnknown(types), {acc,nx -> acc || nx.containsUnknown(types)})
+    override fun isFullyConcrete() : Boolean = params.fold(name.isFullyConcrete()) { it, nx -> it && nx.isFullyConcrete() }
+    override fun containsUnknown(types: Set<String>): Boolean = params.fold( name.containsUnknown(types)) { acc, nx ->
+        acc || nx.containsUnknown(
+            types
+        )
+    }
+
     override fun isAssignable(rhs : Type, extends : MutableMap<String, Type>) : Boolean {
         if(super.isAssignable(rhs, extends)) return true
         if(rhs !is ComposedType) {
             val rhsSuper = extends[rhs.getPrimary().getNameString()]
-            if (rhsSuper == null) return false
+            return if (rhsSuper == null) false
             else {
-                return this.isAssignable(rhsSuper, extends)
+                this.isAssignable(rhsSuper, extends)
             }
         }
         if(rhs !is ComposedType)

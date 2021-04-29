@@ -3,4 +3,3 @@ examine
 class <smol:Object>
 query SELECT ?obj WHERE { ?obj a prog:List }
 query SELECT ?obj WHERE { ?obj rdf:type smol:Field }
-validate examples/shape.ttl

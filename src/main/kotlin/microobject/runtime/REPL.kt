@@ -19,9 +19,7 @@ import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.reasoner.OWLReasoner
-import java.io.BufferedReader
 import java.io.File
-import java.io.InputStreamReader
 import java.util.*
 
 class Command(
@@ -32,17 +30,12 @@ class Command(
     val requiresParameter: Boolean = false,
     val parameterHelp: String = "",
     val requiresDump: Boolean = false,
-    val requiresApache: Boolean = false,
     val invalidatesDump: Boolean = false
 ){
-    fun execute(param: String, apache: String) : Boolean {
+    fun execute(param: String) : Boolean {
         if(requiresDump) repl.dump()
         if(requiresParameter && param == ""){
             repl.printRepl("Command $name expects 1 parameter $parameterHelp.")
-            return false
-        }
-        if(requiresApache && apache == ""){
-            repl.printRepl("Command $name requires that a path to an apache jena installation is provided.")
             return false
         }
         val res = command(param)
@@ -52,8 +45,7 @@ class Command(
 }
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
-class REPL(private val apache: String,
-           private val settings: Settings) {
+class REPL(private val settings: Settings) {
     private var interpreter: Interpreter? = null
     var validDump = false
     private lateinit var m : OWLOntologyManager
@@ -88,7 +80,7 @@ class REPL(private val apache: String,
             printRepl("No file loaded. Please \"read\" a file to continue.")
         } else if (commands.containsKey(str)) {
             return try{
-                commands[str]!!.execute(param, apache)
+                commands[str]!!.execute(param)
             } catch (e: Exception) {
                 printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
                 e.printStackTrace()
@@ -201,24 +193,7 @@ class REPL(private val apache: String,
         )
         commands["step"] = step
         commands["s"] = step
-        commands["validate"] = Command(
-            "validate",
-            this,
-            { str ->
-                val p = Runtime.getRuntime().exec("$apache/shacl validate --data ${settings.outpath}/output.ttl --shapes $str")
-                p.waitFor()
-                var out = "jena output: \n"
-                val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if (x != null) out += "$x\n" }
-                printRepl(out)
-                false
-            },
-            "validates against a SHACL file",
-            parameterHelp = "path to a SHACL file",
-            requiresParameter = true,
-            requiresApache = true,
-            requiresDump = true
-        )
+
         val query =  Command(
             "query",
             this,
@@ -234,27 +209,6 @@ class REPL(private val apache: String,
         )
         commands["query"] = query
         commands["q"] = query
-
-        commands["query-file"] = Command(
-            "query-file",
-            this,
-            { str ->
-                val command =
-                    "$apache/sparql --data=${settings.outpath}/output.ttl --query=$str"
-                val p = Runtime.getRuntime().exec(command)
-                p.waitFor()
-                var out = "jena output: \n"
-                val lineReader = BufferedReader(InputStreamReader(p.inputStream))
-                lineReader.lines().forEach { x: String? -> if (x != null) out += "$x\n" }
-                printRepl(out)
-                false
-            },
-            "executes a SPARQL query from a file",
-            parameterHelp = "SPARQL file",
-            requiresParameter = true,
-            requiresApache = true,
-            requiresDump = true
-        )
 
         commands["consistency"] = Command(
             "consistency",

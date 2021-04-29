@@ -70,10 +70,10 @@ java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/scene.smol -
 * examples/tree_shapes.ttl contains a SHACL query that ensures that all objects implement a class.
 * examples/TTT.imo contains an example session (The one from the companion paper).
 
-To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
+To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -j $(dirname $(which jena)) -l src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 
@@ -86,18 +86,16 @@ java -jar build/libs/MicroObjects-0.2-all.jar -j $(dirname $(which jena)) -l src
  * examples/double.ttl contains a SHACL query that ensures that all objects implement a class.
  * examples/double.imo contains a simple test session.
 
-To execute it, run the following. If no jena path is provided (remove `-j $(dirname $(which jena))`), only the validate command fails.
+To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -j $(dirname $(which jena)) -l src/test/resources/double.smol -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/double.smol -r examples/double.imo 
 ```
 
 
 
 
 ## Misc.
- 
-  * REPL: `validate` and `query-file` use the shell to call the Apache Jena installation, all other commands have no extra dependencies.
   * REPL: If you use `-b` to load background knowledge, OWL reasoning is used for all queries. This may slow down execution.
   * SMOL: If you use the `query` *statement*, a `List` class with fields `content` and `next` is assumed to exist. The result of the command is a list with all results for the variable `?obj`. 
   * SMOL: A method modified by `rule` is not allowed to have parameters. 

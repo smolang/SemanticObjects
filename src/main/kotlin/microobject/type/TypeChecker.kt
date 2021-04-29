@@ -89,7 +89,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private val queryCheckers = mutableListOf<QueryChecker>()
 
     override fun report(silent: Boolean): Boolean {
-        return super.report(silent) && queryCheckers.fold(true, {acc, nx -> acc && nx.report(silent)})
+        return super.report(silent) && queryCheckers.fold(true) { acc, nx -> acc && nx.report(silent) }
     }
 
 
@@ -170,7 +170,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             for(col in collisions)
                 log("Class $name has type parameter ${col.text} that shadows a known type.", clCtx)
 
-            val globalColl = clCtx.namelist().NAME().filter { it -> generics.filter { it.key != name }.values.fold(listOf<String>(), { acc, nx -> acc + nx}).contains(it.text) }
+            val globalColl = clCtx.namelist().NAME().filter { it -> generics.filter { it.key != name }.values.fold(listOf<String>()) { acc, nx -> acc + nx }
+                .contains(it.text) }
             for(col in globalColl)
                 log("Class $name has type parameter ${col.text} that shadows another type parameter (type parameters share a global namespace).", clCtx)
         }
@@ -327,7 +328,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         }
 
         //Check statement
-        val initVars = if(mtCtx.paramList() != null) mtCtx.paramList().param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }.toMap().toMutableMap() else mutableMapOf()
+        val initVars = if(mtCtx.paramList() != null) mtCtx.paramList().param()
+            .associate { Pair(it.NAME().text, translateType(it.type(), className, generics)) }.toMutableMap() else mutableMapOf()
         val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className, mtCtx.builtinrule != null)
 
         if(!ret) log("Method ${mtCtx.NAME().text} has a path without a final return statement.", mtCtx)
@@ -655,8 +657,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 } else{
                     val sim = Simulation(path)
                     val inits = if(ctx.varInitList() != null)
-                                ctx.varInitList().varInit().map { Pair(it.NAME().text,getType(it.expression(), inner, vars, thisType, inRule)) }.toMap()
-                                else
+                        ctx.varInitList().varInit()
+                            .associate { Pair(it.NAME().text, getType(it.expression(), inner, vars, thisType, inRule)) }
+                    else
                                  emptyMap()
 
                     var ins = listOf<Pair<String,Type>>()
@@ -944,8 +947,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         else -> {
             val composType = type as ComposedType
             composType.params.fold(
-                containsUnknown(composType.name, types),
-                { acc, nx -> acc || containsUnknown(nx, types) })
+                containsUnknown(composType.name, types)
+            ) { acc, nx -> acc || containsUnknown(nx, types) }
         }
     }
 

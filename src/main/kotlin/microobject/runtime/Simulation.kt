@@ -14,8 +14,8 @@ data class Snapshot( val time : Double, val values : List<Pair<String, Double>>)
 
 class SimulatorObject(val path : String, memory : Memory){
     companion object Constants {
-        val ROLEFIELDNAME = "role"
-        val PSEUDOOFFSETFIELDNAME = "pseudoOffset"
+        const val ROLEFIELDNAME = "role"
+        const val PSEUDOOFFSETFIELDNAME = "pseudoOffset"
     }
     private val series = mutableListOf<Snapshot>()
     private var sim : Simulation = Simulation(path)
