@@ -340,7 +340,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()
     // TODO: move this to an antlr visitor
-    private fun checkStatement(ctx : WhileParser.StatementContext,
+    internal fun checkStatement(ctx : WhileParser.StatementContext,
                                finished : Boolean,
                                vars : MutableMap<String, Type>,
                                metType : Type, //return type

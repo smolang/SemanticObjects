@@ -74,7 +74,7 @@ class CoSim(List<Connection> list, List<Cont[;]> sims, Double stepSize)
         length := this.sims.length();
         while i < length do
             Cont[;] de := this.sims.get(i);
-            tick(de, this.stepSize);
+            de.tick(this.stepSize);
             i := i + 1;
         end
         return i;

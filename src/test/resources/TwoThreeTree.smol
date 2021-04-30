@@ -185,5 +185,6 @@ main
     //res := ww.lookup();
     List<String> res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);
+    breakpoint;
     print("done");
 end

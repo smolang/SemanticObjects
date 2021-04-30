@@ -13,34 +13,40 @@ import microobject.runtime.StackEntry
 import microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
+import java.io.File
 import java.util.*
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
-    protected val settings = Settings(false,  "/tmp/mo","","urn:")
-    protected fun loadString(program : String) : WhileParser.ProgramContext{
+    protected var settings = Settings(false,  "/tmp/mo","","urn:")
+    protected fun loadBackground(path : String){
+        val file = File(path)
+        val backgr = file.readText()
+        settings = Settings(false,  "/tmp/mo",backgr,"urn:")
+    }
+    private fun loadString(program : String) : WhileParser.ProgramContext{
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()
     }
 
-    protected fun loadPath(path : String) : WhileParser.ProgramContext{
+    private fun loadPath(path : String) : WhileParser.ProgramContext{
         val lexer = WhileLexer(CharStreams.fromFileName(path))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()
     }
 
-    protected fun loadClass(classString : String) : WhileParser.ProgramContext{
-        val program = classString + "\n main skip; end"
+    private fun loadClass(classString : String) : WhileParser.ProgramContext{
+        val program = "$classString\n main skip; end"
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()
     }
 
-    protected fun loadStatement(stmtString : String) : WhileParser.ProgramContext{
+    private fun loadStatement(stmtString : String) : WhileParser.ProgramContext{
         val program = "main $stmtString end"
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
@@ -104,5 +110,9 @@ open class MicroObjectTest : StringSpec() {
 
     protected fun retrieveMethod(name : String, classDef : WhileParser.Class_defContext) : List<WhileParser.Method_defContext>{
         return classDef.method_def().filter { it.NAME().text == name }
+    }
+
+    protected fun executeUntilBreak(interpreter : Interpreter){
+        while(interpreter.makeStep());
     }
 }

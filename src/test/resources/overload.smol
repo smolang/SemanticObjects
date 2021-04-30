@@ -99,5 +99,9 @@ main
 
     Scheduler sch := new Scheduler(sl3);
     breakpoint;
+    List<Server> pre := access("SELECT ?obj WHERE{?obj a domain:Overloaded }");
     sch.reschedule();
+    List<Server> post := access("SELECT ?obj WHERE{?obj a domain:Overloaded }");
+    breakpoint;
+    print(sch);
 end
