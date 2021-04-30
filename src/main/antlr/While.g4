@@ -28,6 +28,7 @@ ACCESS : 'access';
 CONSTRUCT : 'construct';
 DERIVE : 'derive';
 SIMULATE : 'simulate';
+VALIDATE : 'validate';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
@@ -101,12 +102,13 @@ statement :   SKIP_S SEMI                                                       
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
 			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN SEMI                          # create_statement
-			| BREAKPOINT (OPARAN expression CPARAN)? SEMI                                                                                               # debug_statement
+			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
+			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| TICK OPARAN fmu=expression COMMA time=expression CPARAN SEMI                                                                              # tick_statement
 			| IF expression THEN statement (ELSE statement)? END next=statement?                                                                        # if_statement

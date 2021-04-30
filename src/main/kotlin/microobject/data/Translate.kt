@@ -209,7 +209,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val target = visit(ctx!!.target) as Location
         val query = visit(ctx!!.query) as Expression
         return OwlStmt(target, query, ctx!!.start.line)
+    }
 
+    override fun visitValidate_statement(ctx: Validate_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        val query = visit(ctx!!.query) as Expression
+        return ValidateStmt(target, query, ctx!!.start.line)
     }
 
     override fun visitSimulate_statement(ctx: Simulate_statementContext?): ProgramElement {

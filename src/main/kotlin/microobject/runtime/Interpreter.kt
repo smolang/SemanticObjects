@@ -15,6 +15,9 @@ import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
 import org.apache.jena.reasoner.rulesys.Rule
+import org.apache.jena.riot.RDFDataMgr
+import org.apache.jena.shacl.ShaclValidator
+import org.apache.jena.shacl.Shapes
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -24,6 +27,8 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.BufferedReader
 import java.io.File
 import java.util.*
+import javax.swing.text.html.HTML.Attribute.SHAPES
+
 
 //There is probably something in the standard library for this pattern
 class InterpreterBridge(var interpreter: Interpreter?)
@@ -316,6 +321,21 @@ class Interpreter(
                     }
                 }
                 return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+            }
+            is ValidateStmt -> {
+                if(stmt.query !is LiteralExpr) throw Exception("validate takes a file path in a String as a parameter")
+                val fileName = stmt.query.literal
+                val file = File(fileName)
+                if(!file.exists()) throw Exception("file $fileName does not exist")
+                dump()
+                val shapesGraph = RDFDataMgr.loadGraph(fileName)
+                val dataGraph = RDFDataMgr.loadGraph("${settings.outpath}/output.ttl")
+
+                val shapes: Shapes = Shapes.parse(shapesGraph)
+
+                val report = ShaclValidator.get().validate(shapes, dataGraph)
+                val resLit = if(report.conforms()) TRUEEXPR else FALSEEXPR
+                return Pair(StackEntry(AssignStmt(stmt.target, resLit), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
                 if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(

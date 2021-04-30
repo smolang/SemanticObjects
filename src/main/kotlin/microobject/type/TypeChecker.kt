@@ -631,6 +631,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }
                 }
             }
+            is WhileParser.Validate_statementContext -> {
+                log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
+                val inner = getType(ctx.query, inner, vars, thisType, inRule)
+                if(inner != STRINGTYPE)
+                    log("Validate expects a string to a SHACL shape file as its parameter",ctx)
+                if(ctx.declType != null){
+                    val lhs = ctx.expression(0)
+                    if(lhs !is WhileParser.Var_expressionContext){
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = lhs.NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else vars[name] = translateType(ctx.type(), className, generics)
+                    }
+                }
+            }
             is WhileParser.Return_statementContext -> {
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && innerType != metType && !metType.isAssignable(innerType, extends))

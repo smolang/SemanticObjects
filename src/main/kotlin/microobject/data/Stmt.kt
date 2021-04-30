@@ -272,6 +272,18 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
         """.trimIndent() + target.getRDF() + query.getRDF()
     }
 }
+data class ValidateStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
+    override fun toString(): String = "$target := validate($query)"
+    override fun getRDF(): String {
+        return """
+            prog:stmt${this.hashCode()} rdf:type smol:ShaclStatement.
+            prog:stmt${this.hashCode()} smol:hasTarget prog:loc${target.hashCode()}.
+            prog:stmt${this.hashCode()} smol:hasQuery prog:expr${query.hashCode()}.
+            prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
+
+        """.trimIndent() + target.getRDF() + query.getRDF()
+    }
+}
 
 // For simulation interface
 data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1) : Statement {
