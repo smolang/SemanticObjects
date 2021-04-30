@@ -22,9 +22,6 @@ import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
 data class DLNode(val str : String, val isVar : Boolean)
 data class DLEdge(val from : DLNode, val label : String, val to : DLNode)
 
-class DLGraph(val query : Query, val logger : TypeErrorLogger, val ctx: WhileParser.StatementContext)
-
-
 class QueryChecker(
     private val settings: Settings,
     private val query: String,

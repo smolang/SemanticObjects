@@ -161,6 +161,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Class $name extends generic class $extName but does not instantiate all generics.", clCtx)
                 if(superType is ComposedType && superType.params.size != recoverDef[extName]!!.namelist().NAME().size)
                     log("Class $name extends generic class $extName but does not instantiate all generics.", clCtx)
+                if(recoverDef[extName]!!.namelist() != null && superType !is ComposedType )
+                    log("Class $name extends generic class $extName but does not instantiate all generics.", clCtx)
             }
         }
 
@@ -761,10 +763,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Field_expressionContext -> {
                 val name = eCtx.NAME().text
-                if(name == SimulatorObject.ROLEFIELDNAME && thisType is SimulatorType)
-                    return STRINGTYPE
-                if(name == SimulatorObject.PSEUDOOFFSETFIELDNAME && thisType is SimulatorType)
-                    return DOUBLETYPE
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
                 return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type
@@ -855,6 +853,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
                 if(t1 == ERRORTYPE) return ERRORTYPE
                 if(t1 is SimulatorType){
+                    if(eCtx.NAME().text == SimulatorObject.ROLEFIELDNAME)
+                        return STRINGTYPE
+                    if(eCtx.NAME().text == SimulatorObject.PSEUDOOFFSETFIELDNAME)
+                        return DOUBLETYPE
                     return if(read){
                         val inVar = t1.outVar.firstOrNull { it.first == eCtx.NAME().text }
                         if(inVar == null)
@@ -981,7 +983,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun getLeftoverAbstract(clCtx : WhileParser.Class_defContext) : List<String> {
         val newAbs = clCtx.method_def().filter { it.abs != null }.map { it.NAME().text }
         if(clCtx.superType != null){
-            val over = recoverDef[extends[clCtx.NAME().text]] ?: return newAbs
+            val over = recoverDef[extends[clCtx.NAME().text]?.getPrimary()?.getNameString()] ?: return newAbs
             val above = getLeftoverAbstract(over)
             val impl = clCtx.method_def().filter { it.abs == null }.map { it.NAME().text }
             return (above - impl) + newAbs
@@ -1036,7 +1038,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     applyMatching(metRet.name, matching, gens),
                     metRet.params.map { applyMatching(it, matching, gens) })
             }
-            else -> return ERRORTYPE
+            else -> return ERRORTYPE //not needed, but type system fails otherwise
         }
     }
 

@@ -50,7 +50,7 @@ class BasicTest : StringSpec() {
             assertEquals(load(this::class.java.classLoader.getResource("TwoThreeTree.smol").file), 1)
         }
         "parsing test_assign"{
-            assertEquals(load(this::class.java.classLoader.getResource("test_assign.smol").file), 11)
+            assertEquals(load(this::class.java.classLoader.getResource("test_assign.smol").file), 15)
         }
         "parsing test_call"{
             assertEquals(load(this::class.java.classLoader.getResource("test_call.smol").file), 8)

@@ -11,6 +11,12 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
             assert(checkMet("Test", "assignSuccess2", "test_assign" ).report(false))
             assert(checkMet("TestGen", "success", "test_assign" ).report(false))
         }
+        "OP Test Success"{
+            assert(checkMet("Test", "opsuccess", "test_assign" ).report(false))
+        }
+        "OP Test Fail"{
+            assertFalse(checkMet("Test", "opfail", "test_assign" ).report(false))
+        }
         for(i in 1..7) {
             "Assign Test Fail $i"{
                 val tC = checkMet("Test", "fail$i", "test_assign")
@@ -99,6 +105,50 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
             val tC = checkClass("Fail7", "test_override" )
             assertFalse(tC.report(false))
             assertEquals(tC.error.size, 1)
+        }
+
+        "Generic inheritance fail 1"{
+            val tC = checkClass("D", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 3)
+        }
+        "Generic inheritance fail 2"{
+            val tC = checkClass("E", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic inheritance fail 3"{
+            val tC = checkClass("F", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic inheritance fail 4"{
+            val tC = checkClass("H", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic inheritance fail 5"{
+            val tC = checkClass("I", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic inheritance fail 6"{
+            val tC = checkClass("B", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic fail 7"{
+            val tC = checkClass("J", "test_generic" )
+            assertFalse(tC.report(false))
+            assertEquals(tC.error.size, 1)
+        }
+        "Generic inheritance succ 1"{
+            val tC = checkClass("A", "test_generic" )
+            assert(tC.report(false))
+        }
+        "Generic inheritance succ 2"{
+            val tC = checkClass("G", "test_generic" )
+            assert(tC.report(false))
         }
     }
 }

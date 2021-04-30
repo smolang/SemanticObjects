@@ -10,6 +10,27 @@ class Test()
     return 0;
   end
 
+  Int opsuccess()
+    Boolean b1 := True;
+    Boolean b2 := False;
+    Double d1 := 1.0;
+    Double d2 := 2.0;
+    if(!(d1 <> d2) & b2) then d2 := d1/d2; end
+    if(!(d1 > d2) | b1 | (d1 < d2)) then d2 := d1/d2; end
+    return 0;
+  end
+
+  Int opfail()
+    Boolean b1 := True;
+    Boolean b2 := False;
+    Double d1 := 1.0;
+    Double d2 := 2.0;
+    Int i1 := 1;
+    if(!d1) then d2 := d1/d2; end
+    if(d1 <> b1) then d2 := d1/d2; end
+    if(b2 < b1) then d2 := i1/d2; end
+    return 0;
+  end
 
   Int assignSuccess2()
     C c := new D(1, null);

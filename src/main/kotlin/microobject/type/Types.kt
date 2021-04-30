@@ -79,7 +79,6 @@ data class ComposedType(val name : Type, val params : List<Type>) : Type() {
                 this.isAssignable(rhsSuper, extends)
             }
         }
-        if(rhs !is ComposedType)
         if (this.params.size != rhs.params.size) return false
 
         var ret = this.name.isAssignable(rhs.name, extends)

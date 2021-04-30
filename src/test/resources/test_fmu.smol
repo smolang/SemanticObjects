@@ -22,6 +22,35 @@ class SuccessClass()
         fmu1 := fmu5;
         return 1;
     end
+
+    Int fieldfail1()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Double g := fmu1.ra;
+    end
+    Int fieldfail2()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        fmu1.rc := 1.0;
+    end
+    Int fieldfail3()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        fmu1.rc := 1;
+    end
+    Int fieldfail4()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        fmu1.rd := 1;
+    end
+    Int fieldfail5()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Double dd := fmu1.rd;
+    end
+    Int extra(String str, Double param)
+        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
+        fmu4.role := str;
+        fmu4.pseudoOffset := param;
+        String read := fmu4.role;
+        Double pseudoOffset := fmu4.pseudoOffset;
+        return 0;
+    end
 end
 
 class FailClass()
