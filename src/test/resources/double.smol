@@ -58,5 +58,6 @@ main
   breakpoint;
   print(a.next.next.content);
   Boolean val := validate("examples/double.ttl");
+  breakpoint;
   print(val);
 end
