@@ -1,6 +1,6 @@
 grammar While;
 /**
-TODO: casts, unit, constraints on generics, drop special treatment of atomic types
+TODO: casts, unit, constraints on generics, drop special treatment of atomic types, FMU state copies
 **/
 @header {
 package antlr.microobject.gen;
@@ -100,6 +100,7 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
+			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
 			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN SEMI                          # create_statement
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
@@ -110,7 +111,6 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
-			| TICK OPARAN fmu=expression COMMA time=expression CPARAN SEMI                                                                              # tick_statement
 			| IF expression THEN statement (ELSE statement)? END next=statement?                                                                        # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
             | statement statement                                                                                                                       # sequence_statement

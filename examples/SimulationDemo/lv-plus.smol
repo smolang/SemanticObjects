@@ -10,7 +10,7 @@ main
                                            sysC := 0.05);
     Int i := 0;
     while (i <= 6000) do
-        tick(mig1, 0.1);
+        mig1.tick(0.1);
         print(mig1.nrPrey);
         i := i+1;
     end

@@ -162,12 +162,17 @@ MethodTable     : $methodTable
             }
         }
 
+
+        var all = methodTable.keys
         //records type hierarchy
         for(obj in hierarchy.entries){
             for(obj2 in obj.value){
                 res += "prog:$obj2 rdfs:subClassOf prog:${obj.key}.\n"
+                all -= obj2
             }
         }
+        for(obj in all)
+            res += "prog:$obj rdfs:subClassOf prog:Object.\n"
 
         return res
     }

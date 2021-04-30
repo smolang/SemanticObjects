@@ -1,59 +1,10 @@
-import antlr.microobject.gen.WhileLexer
-import antlr.microobject.gen.WhileParser
-import io.kotlintest.specs.StringSpec
-import microobject.data.Translate
-import microobject.main.Settings
-import microobject.type.TypeChecker
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
+package microobject.test.type
+
 import kotlin.test.assertEquals
 import kotlin.test.assertFalse
 
-class TypeTest  : StringSpec() {
-    private fun initTest(filename: String): Pair<TypeChecker, WhileParser.ProgramContext> {
-        val path = this::class.java.classLoader.getResource("$filename.smol").file
-        val lexer = WhileLexer(CharStreams.fromFileName(path))
-        val tokens = CommonTokenStream(lexer)
-        val parser = WhileParser(tokens)
-        val tree = parser.program()
 
-        val visitor = Translate()
-        val pair = visitor.generateStatic(tree)
-
-        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"), pair.second)
-        tC.collect()
-
-        return Pair(tC, tree)
-    }
-
-    private fun retrieveClass(name : String, prog : WhileParser.ProgramContext) : List<WhileParser.Class_defContext>{
-        return prog.class_def().filter { it.className.text == name }
-    }
-
-    private fun retrieveMethod(name : String, classDef : WhileParser.Class_defContext) : List<WhileParser.Method_defContext>{
-        return classDef.method_def().filter { it.NAME().text == name }
-    }
-
-    private fun checkMet(className : String, metName : String, filename: String) : TypeChecker{
-        val pair = initTest(filename)
-        val classes = retrieveClass(className, pair.second)
-        assert(classes.size == 1)
-        val methods = retrieveMethod(metName, classes[0])
-        assert(methods.size == 1)
-        val met = methods[0]
-        pair.first.checkMet(met, className)
-        return pair.first
-    }
-
-    private fun checkClass(className : String, filename: String) : TypeChecker{
-        val pair = initTest(filename)
-        val classes = retrieveClass(className, pair.second)
-        assert(classes.size == 1)
-        val classDef = classes[0]
-        pair.first.checkClass(classDef)
-        return pair.first
-    }
-
+open class MOLTypeTest  : MicroObjectTypeTest() {
     init {
         "Assign Test Success"{
             assert(checkMet("Test", "assignSuccess1", "test_assign" ).report(false))
@@ -75,15 +26,6 @@ class TypeTest  : StringSpec() {
             }
         }
 
-        "Query check success"{
-            val tC = checkMet("Test", "m1", "type_query")
-            assert(tC.report(false))
-        }
-
-        "Query check fail"{
-            val tC = checkMet("Test", "m2", "type_query")
-            assertFalse(tC.report(false))
-        }
 
         "Visible check fail1"{
             val tC = checkMet("A", "m1", "visible")

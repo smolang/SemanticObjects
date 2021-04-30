@@ -1,0 +1,56 @@
+class SuccessClass()
+    Int start()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[Double ra, Double rb; ] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[Double rb; Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
+        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
+        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
+        return 1;
+    end
+
+    Int assign()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[Double ra, Double rb; ] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[Double rb; Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
+        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
+        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
+        fmu2 := fmu1;
+        fmu3 := fmu1;
+        fmu4 := fmu1;
+        fmu4 := fmu2;
+        fmu4 := fmu3;
+        fmu1 := fmu5;
+        return 1;
+    end
+end
+
+class FailClass()
+    Int fail1()
+        Cont[Int ra, Int rb; Int rc] fmu1 := simulate("src/test/resources/adder.fmu"); //wrong type
+        return 1;
+    end
+    Int fail2()
+        Cont[Double rc; Double ra, Double rb] fmu5 := simulate("src/test/resources/adder.fmu"); //wrong order
+        return 1;
+    end
+    Int fail3()
+        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", rc := 0.0); //inits output
+        return 1;
+    end
+    Int fail4()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[Int ia, Int ib; Int ic] fmu2 := simulate("src/test/resources/adder.fmu");
+        fmu2 := fmu1;
+        return 1;
+    end
+    Int fail5()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[;] fmu2 := simulate("src/test/resources/adder.fmu");
+        fmu1 := fmu2;
+        return 1;
+    end
+end
+
+main
+skip;
+end

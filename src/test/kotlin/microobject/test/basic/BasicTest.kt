@@ -1,3 +1,5 @@
+package microobject.test.basic
+
 import antlr.microobject.gen.WhileLexer
 import antlr.microobject.gen.WhileParser
 import io.kotlintest.specs.StringSpec

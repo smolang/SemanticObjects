@@ -19,8 +19,8 @@ main
         print("---");
         print(df1);
         print(df2);
-        tick(de1, 1);
-        tick(de2, 1);
+        de1.tick(1);
+        de2.tick(1);
         i := i + 1;
     end
 end

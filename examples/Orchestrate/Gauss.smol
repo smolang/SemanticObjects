@@ -58,7 +58,7 @@ class ImplConnection extends Connection (OutPort<Double> from, InPort<Double> to
     end
 end
 
-//Jacobi master algorithm: propagate through all connections, advance time for all FMUs at once
+//Gauss master algorithm: propagate through all FMUs, advance time for all FMUs at once
 class CoSim(List<Connection> list, List<Cont[;]> sims, Double stepSize)
     Int round()
         Int i := 0;
@@ -68,8 +68,8 @@ class CoSim(List<Connection> list, List<Cont[;]> sims, Double stepSize)
         while i < length do
             Connection c := this.list.get(i);
             c.propagate();
-            Cont[;] de := this.sims.get(i);
-            tick(de, this.stepSize);
+            Cont[;] de := this.sims.get(i); //note: we do check here that we do not advance twice if an FMU has two output connections
+            de.tick(this.stepSize);
             i := i+1;
         end
         return i;
@@ -112,8 +112,8 @@ main
     fmus := new List<Cont[;]>(predator, fmus);
     List<Connection> cons := new List<Connection>(c1, null);
     cons := new List<Connection>(c2, cons);
-    CoSim sim := new CoSim(cons, fmus, 0.2);
-    sim.execute(200);
+    CoSim sim := new CoSim(cons, fmus, 0.05);
+    sim.execute(4000);
 
     List<InPort<Double>> ll := access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:ImplConnection_to ?obj}");
     while ll <> null do

@@ -6,33 +6,36 @@ class B extends A (A aB) end
 
 class C extends A(A aCB, A aC) end
 
+class D() end
+
+class E extends C () end
+
 class Test()
 
-    Int m1()
-      A a1 := new A(1);
-      A a2 := new A(2);
-      A a3 := new A(3);
-      A a4 := new A(4);
-      B b1 := new B(5, a1);
-      B b2 := new B(6, a2);
-      C c1 := new C(7, b1, a3);
-      C c2 := new C(8, b2, a4);
+    Int mSuccess1()
       List<C> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 
-           Int m2()
-             A a1 := new A(1);
-             A a2 := new A(2);
-             A a3 := new A(3);
-             A a4 := new A(4);
-             B b1 := new B(5, a1);
-             B b2 := new B(6, a2);
-             C c1 := new C(7, b1, a3);
-             C c2 := new C(8, b2, a4);
-             List<D> ld := access("SELECT ?obj WHERE {?obj prog:aCB ?b. ?b prog:aB ?a. ?a prog:sealing 1 }");
-             return 1;
-           end
+    Int mSuccess2()
+      List<A> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      return 1;
+    end
+
+    Int mSuccess3()
+      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      return 1;
+    end
+
+    Int mFail1()
+      List<B> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      return 1;
+    end
+
+   Int mFail2()
+     List<E> ld := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+     return 1;
+   end
 end
 
 main

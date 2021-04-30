@@ -3,7 +3,7 @@
 ####  Semantic static layer
 smol:Class    rdfs:subClassOf owl:Class.
 smol:Field    rdf:type owl:Class.
-
+prog:Object   rdf:type smol:Class.
 
 ######## FMUs
 smol:OutPort      rdf:type owl:Class.

@@ -5,8 +5,8 @@ main
     Cont[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
     Int i := 0;
     while (i <= 2000) do
-        tick(prey, 0.1);
-        tick(predator, 0.1);
+        prey.tick(0.1);
+        predator.tick(0.1);
         prey.y := predator.y;
         predator.x := prey.x;
         print(predator.y);
