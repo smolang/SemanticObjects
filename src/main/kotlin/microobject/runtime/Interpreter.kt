@@ -324,7 +324,7 @@ class Interpreter(
             }
             is ValidateStmt -> {
                 if(stmt.query !is LiteralExpr) throw Exception("validate takes a file path in a String as a parameter")
-                val fileName = stmt.query.literal
+                val fileName = stmt.query.literal.removeSurrounding("\"")
                 val file = File(fileName)
                 if(!file.exists()) throw Exception("file $fileName does not exist")
                 dump()
