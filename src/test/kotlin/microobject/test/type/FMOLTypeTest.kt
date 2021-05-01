@@ -12,7 +12,7 @@ class FMOLTypeTest : MicroObjectTypeTest()  {
             val tC = checkMet("SuccessClass", "assign", "test_fmu")
             assert(tC.report(false))
         }
-        for( i in 1..5)
+        for( i in 1..6)
         "Simulate fail $i"{
             val tC = checkMet("FailClass", "fail$i", "test_fmu")
             assertFalse(tC.report(false))

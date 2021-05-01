@@ -78,6 +78,10 @@ class FailClass()
         fmu1 := fmu2;
         return 1;
     end
+    Int fail6()
+        Cont[Int rb; Int rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        return 1;
+    end
 end
 
 main
