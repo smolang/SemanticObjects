@@ -4,6 +4,7 @@ import microobject.data.LiteralExpr
 import microobject.data.LocalVar
 import microobject.test.MicroObjectTest
 import microobject.type.DOUBLETYPE
+import microobject.type.INTTYPE
 import kotlin.test.assertEquals
 
 class FMOLExecutionTest: MicroObjectTest() {
@@ -19,6 +20,19 @@ class FMOLExecutionTest: MicroObjectTest() {
             assert(t.report())
             executeUntilBreak(a)
             assertEquals(LiteralExpr("2.0", DOUBLETYPE), a.evalTopMost(LocalVar("res", DOUBLETYPE)))
+        }
+        "linear 1" {
+            val stmt = """
+                Cont[; Int outPort] fmu1 := simulate("src/test/resources/linear.fmu", inPort := 1);
+                fmu1.tick(1.0);
+                Int res := fmu1.outPort;
+                breakpoint;
+                print(outPort);
+            """.trimIndent()
+            val (a,t) = initInterpreter(stmt,StringLoad.STMT)
+            assert(t.report())
+            executeUntilBreak(a)
+            assertEquals(LiteralExpr("1", INTTYPE), a.evalTopMost(LocalVar("res", DOUBLETYPE)))
         }
     }
 }
