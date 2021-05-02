@@ -10,6 +10,7 @@ main
     print(list.content);
     destroy(a);
     print(list.content);
-    list := access("SELECT ?obj WHERE {?obj a prog:A}");
+    List<A> list2 := access("SELECT ?obj WHERE {?obj a prog:A}");
+    breakpoint;
     print(list);
 end

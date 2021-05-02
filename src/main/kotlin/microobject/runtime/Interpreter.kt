@@ -112,7 +112,7 @@ class Interpreter(
         return reasoner.getInstances(parser.parseClassExpression(out))
     }
 
-    private fun dump() {
+    internal fun dump() {
         val output = File("${settings.outpath}/output.ttl")
         output.parentFile.mkdirs()
         if (!output.exists()) output.createNewFile()
@@ -155,7 +155,7 @@ class Interpreter(
         return !debug
     }
 
-    private fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    internal fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")

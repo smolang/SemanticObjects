@@ -7,6 +7,9 @@ import kotlin.test.assertFalse
 open class MOLTypeTest  : MicroObjectTypeTest() {
     init {
         "Assign Test Success"{
+            assert(checkClass("C","types").report(false))
+            assert(checkClass("C","poly").report(false))
+            assert(checkClass("D","poly").report(false))
             assert(checkMet("Test", "assignSuccess1", "test_assign" ).report(false))
             assert(checkMet("Test", "assignSuccess2", "test_assign" ).report(false))
             assert(checkMet("TestGen", "success", "test_assign" ).report(false))

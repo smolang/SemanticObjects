@@ -26,5 +26,14 @@ class SMOLTypeTest : MicroObjectTypeTest() {
             val tC = checkMet("Test", "mFail2", "type_query")
             assertFalse(tC.report(false))
         }
+        "Query rule success"{
+            val tC = checkMet("F", "getI", "type_query")
+            assert(tC.report(false))
+        }
+
+        "Query rule fail"{
+            val tC = checkMet("F", "errorGet", "type_query")
+            assertFalse(tC.report(false))
+        }
     }
 }

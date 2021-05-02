@@ -6,8 +6,11 @@ import microobject.data.TRUEEXPR
 import microobject.test.MicroObjectTest
 import microobject.type.BaseType
 import microobject.type.ERRORTYPE
+import org.apache.jena.query.ResultSetFormatter
+import org.apache.jena.rdf.model.impl.LiteralImpl
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
+import kotlin.test.assertNotNull
 
 class SMOLExecutionTest: MicroObjectTest() {
     init {
@@ -26,6 +29,21 @@ class SMOLExecutionTest: MicroObjectTest() {
             executeUntilBreak(a)
             assertEquals(1, a.stack.size)
             assertEquals(TRUEEXPR, a.evalTopMost(LocalVar("val", BaseType("List"))))
+        }
+        "scene"{
+            val (a, _) = initInterpreter("scene", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(0, a.stack.size)
+            a.dump()
+            val res = a.query("SELECT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
+            assertNotNull(res)
+            var i = 0
+            while(res.hasNext()){
+                val r = res.next()
+                i++
+                assertEquals("10", (r["obj"] as LiteralImpl).string)
+            }
+            assertEquals(1, i)
         }
     }
 }

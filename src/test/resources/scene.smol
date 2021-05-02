@@ -1,5 +1,5 @@
 class Scene(Int scaling)
-    Int getScale()
+    rule Int getScale()
         return this.scaling;
     end
 end

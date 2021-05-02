@@ -38,6 +38,12 @@ class Test()
    end
 end
 
+class F(Int i)
+     rule Int getI() return this.i; end
+     Int nonRule() return this.i; end
+     rule Int errorGet() Int v := this.nonRule(); return v; end
+end
+
 main
     skip;
 end

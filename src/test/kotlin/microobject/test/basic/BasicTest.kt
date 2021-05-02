@@ -30,10 +30,6 @@ class BasicTest : StringSpec() {
     }
 
     init {
-        for( str in listOf("double", "overload", "types", "poly", "destroy"))
-        "parsing $str"{
-            assertEquals(load(this::class.java.classLoader.getResource("$str.smol").file), 0)
-        }
         "parsing Jacobi"{
             if (!(File("examples/SimulationDemo/Prey.fmu").exists()
                   && File("examples/SimulationDemo/Predator.fmu").exists())) {
@@ -42,21 +38,6 @@ class BasicTest : StringSpec() {
             } else {
                 assertEquals(load(this::class.java.classLoader.getResource("Jacobi.smol").file), 0)
             }
-        }
-        "parsing scene"{
-            assertEquals(load(this::class.java.classLoader.getResource("scene.smol").file), 1)
-        }
-        "parsing TwoThreeTree"{
-            assertEquals(load(this::class.java.classLoader.getResource("TwoThreeTree.smol").file), 1)
-        }
-        "parsing test_assign"{
-            assertEquals(load(this::class.java.classLoader.getResource("test_assign.smol").file), 15)
-        }
-        "parsing test_call"{
-            assertEquals(load(this::class.java.classLoader.getResource("test_call.smol").file), 8)
-        }
-        "parsing test_override"{
-            assertEquals(load(this::class.java.classLoader.getResource("test_override.smol").file), 5)
         }
     }
 }

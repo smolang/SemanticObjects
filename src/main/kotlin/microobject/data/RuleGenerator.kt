@@ -65,8 +65,7 @@ class RuleGenerator(val settings: Settings){
                     val ret = myIpr.evalTopMost(res).literal
 
                     //Build final triple and add it to the context
-                    val str = if (ret.toIntOrNull() == null) ret else "smol:$ret"
-                    val resNode = NodeFactory.createURI(str)
+                    val resNode = if (ret.toIntOrNull() != null) NodeFactory.createLiteral(ret) else NodeFactory.createURI("smol:$ret")
                     val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)
@@ -80,7 +79,7 @@ class RuleGenerator(val settings: Settings){
 
     fun generateBuiltins(ctx: WhileParser.ProgramContext?, interpreterBridge: InterpreterBridge) : String{
         var num = 0
-        var retString = "["
+        var rules = listOf<String>()
         for(cl in ctx!!.class_def()){
             for(nm in cl.method_def()) {
                 if(nm.builtinrule != null){
@@ -89,12 +88,12 @@ class RuleGenerator(val settings: Settings){
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
                     val headString = "${builtin.name}(?this)"
-                    val thisString = "(?this smol:instanceOf prog:${cl.className.text})"
-                    retString += " $ruleString $thisString -> $headString "
+                    val thisString = "(?this rdf:type prog:${cl.className.text})"
+                    rules += "[$ruleString $thisString -> $headString]"
                 }
             }
         }
-        val str = if(retString != "[") "$retString]" else ""
+        val str = rules.joinToString("")
         if(str != "") println("rules: $str")
         return str
     }

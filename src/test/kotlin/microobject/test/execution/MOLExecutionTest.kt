@@ -6,9 +6,12 @@ import microobject.data.LiteralExpr
 import microobject.data.LocalVar
 import microobject.data.TRUEEXPR
 import microobject.test.MicroObjectTest
+import microobject.type.BaseType
 import microobject.type.DOUBLETYPE
+import microobject.type.ERRORTYPE
 import microobject.type.INTTYPE
 import kotlin.test.assertEquals
+import kotlin.test.assertNotEquals
 
 class MOLExecutionTest : MicroObjectTest() {
     init {
@@ -67,6 +70,13 @@ class MOLExecutionTest : MicroObjectTest() {
             assertEquals(1, a.stack.size)
             assert(a.stack.peek().store.containsKey("v"))
             assertEquals(FALSEEXPR, a.stack.peek().store["v"])
+        }
+        "destroy"{
+            val (a, _) = initInterpreter("destroy", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertNotEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("list", BaseType("List"))))
+            assertEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("list2", BaseType("List"))))
         }
     }
 }
