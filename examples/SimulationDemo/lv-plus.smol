@@ -1,39 +1,32 @@
 main
-
-    Cont[Double sysC; Double migrate] mig1 := simulate("examples/lkv_dual/DoubleMigration.fmu",
-                                           sysAlpha := 0.1,
-                                           sysBeta := 0.02,
-                                           sysDelta := 0.4,
-                                           sysGamma := 0.02,
-                                           sysX0 := 10,
-                                           sysY0 := 12,
-                                           sysC := 0.05);
+    //beware: path is relative to interpreter instance, not this file
+    //fmus are not uploaded, download them from the MasterSim examples: https://sourceforge.net/projects/mastersim/
+    Cont[Double y; Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
+    prey.role := "prey";
+    Cont[Double x; Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
     Int i := 0;
-    while (i <= 6000) do
-        mig1.tick(0.1);
-        print(mig1.nrPrey);
+    while (i <= 1000) do
+        prey.tick(0.1);
+        predator.tick(0.1);
+        prey.y := predator.y;
+        predator.x := prey.x;
+        print(predator.y);
+        i := i+1;
+    end
+    Double adv := prey.time;
+    prey := simulate("examples/SimulationDemo/Prey.fmu", y := predator.y);
+    prey.role := "prey";
+    print(adv);
+    print("next:");
+    prey.pseudoOffset := adv;
+    i := 0;
+    while (i <= 1000) do
+        prey.tick(0.1);
+        predator.tick(0.1);
+        prey.y := predator.y;
+        predator.x := prey.x;
+        print(predator.y);
         i := i+1;
     end
 end
-  /*Cont[Double migrate; ] immi := simulate("examples/lkv_dual/DoubleImmigration.fmu",
-                                              sysAlpha := 0.1,
-                                              sysBeta := 0.02,
-                                              sysDelta := 0.4,
-                                              sysGamma := 0.02,
-                                              sysX0 := 60,
-                                              sysY0 := 5,
-                                              migrate := 0);
-       */
-    /*Cont[Double sysC; Double migrate] mig2 := simulate("examples/lkv_dual/DoubleMigration.fmu",
-                                           sysAlpha := 0.1,
-                                           sysBeta := 0.02,
-                                           sysDelta := 0.4,
-                                           sysGamma := 0.02,
-                                           sysX0 := 40,
-                                           sysY0 := 40,
-                                           sysC := 0.05);
-    */
-        //tick(mig2, 0.1);
-        //Double nextMig := mig1.migrate + mig2.migrate;
-        //immi.migrate := nextMig;
-        //tick(immi, 0.1);
+//query SELECT ?at ?val WHERE { ?m smol:roleName "prey". ?m smol:withValue ?val. ?m smol:atTime ?at. FILTER (?at >= 90 && ?at <= 110) }  ORDER BY ASC(?at)

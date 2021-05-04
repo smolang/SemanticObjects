@@ -857,6 +857,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         return STRINGTYPE
                     if(eCtx.NAME().text == SimulatorObject.PSEUDOOFFSETFIELDNAME)
                         return DOUBLETYPE
+                    if(eCtx.NAME().text == SimulatorObject.TIMEFIELDNAME && read)
+                        return DOUBLETYPE
+                    if(eCtx.NAME().text == SimulatorObject.TIMEFIELDNAME && !read) {
+                        log("Trying to write the time of an FMU object. Do you mean ${SimulatorObject.PSEUDOOFFSETFIELDNAME}? ${eCtx.NAME().text}", eCtx)
+                        return DOUBLETYPE
+                    }
                     return if(read){
                         val inVar = t1.outVar.firstOrNull { it.first == eCtx.NAME().text }
                         if(inVar == null)
