@@ -99,6 +99,10 @@ smol:hasStatePort    rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Simulation ;
                 rdfs:range smol:StatePort .
 
+smol:withName rdf:type owl:DatatypeProperty ;
+       rdfs:domain smol:OutPort ;
+       rdfs:range xsd:String .
+
 smol:atTime rdf:type owl:DatatypeProperty ;
         rdfs:subPropertyOf owl:topDataProperty ;
         rdf:type owl:FunctionalProperty ;

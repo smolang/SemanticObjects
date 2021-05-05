@@ -210,6 +210,56 @@ class REPL(private val settings: Settings) {
         commands["query"] = query
         commands["q"] = query
 
+        commands["plot"] = Command(
+            "plot",
+            this,
+            { str ->
+                val params = str.split(" ")
+                if(params.size != 4 && params.size != 2) {
+                    printRepl("plot expects 2 or 4 parameters, separated by blanks, got ${params.size}.")
+                }else {
+                    val q = if(params.size == 4)
+                         "SELECT ?at ?val WHERE { ?m smol:roleName \"${params[0]}\"; smol:ofPort [smol:withName \"${params[1]}\"]; smol:withValue ?val; smol:atTime ?at. FILTER (?at >= ${params[2]} && ?at <= ${params[3]}) }  ORDER BY ASC(?at)"
+                    else "SELECT ?at ?val WHERE { ?m smol:roleName \"${params[0]}\"; smol:ofPort [smol:withName \"${params[1]}\"]; smol:withValue ?val; smol:atTime ?at }  ORDER BY ASC(?at)"
+                    val results = interpreter!!.query(q)
+
+                    printRepl("Executed $q")
+                    if(results != null) {
+                        var out = ""
+                        for (r in results) {
+                            out += r.getLiteral("at").double.toString() + "\t"+r.getLiteral("val").double.toString() + "\n"
+                        }
+
+                        val output = File("${settings.outpath}/plotting.data")
+                        if (!output.exists()) output.createNewFile()
+                        output.writeText(out)
+                        val output2 = File("${settings.outpath}/plotting.gnu")
+                        if (!output2.exists()) output.createNewFile()
+                        output2.writeText("set terminal postscript \n set output \"${settings.outpath}/out.ps\" \n plot \"${settings.outpath}/plotting.data\" with linespoints")
+
+
+                        val rt = Runtime.getRuntime()
+                        val proc = rt.exec("which gnuplot")
+                        proc.waitFor()
+                        val exitVal = proc.exitValue()
+                        val proc2 = rt.exec("which atril")
+                        proc2.waitFor()
+                        val exitVal2 = proc2.exitValue()
+                        if(exitVal != 0 || exitVal2 != 0){
+                            printRepl("Cannot find gnuplot or atril, try to plot and display the files in ${settings.outpath} manually.")
+                        } else {
+                            printRepl("Plotting....")
+                            Runtime.getRuntime().exec("gnuplot ${settings.outpath}/plotting.gnu")
+                            Runtime.getRuntime().exec("atril ${settings.outpath}/out.ps")
+                        }
+                    }
+                }
+                false
+            },
+            "plot ROLE PORT FROM TO runs gnuplot on port PORT of role ROLE from FROM to TO. FROM and TO are optional",
+            requiresDump = true,
+            requiresParameter = true
+        )
         commands["consistency"] = Command(
             "consistency",
             this,

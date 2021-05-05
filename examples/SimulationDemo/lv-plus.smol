@@ -10,23 +10,26 @@ main
         predator.tick(0.1);
         prey.y := predator.y;
         predator.x := prey.x;
-        print(predator.y);
         i := i+1;
     end
     Double adv := prey.time;
-    prey := simulate("examples/SimulationDemo/Prey.fmu", y := predator.y);
+    prey := simulate("examples/SimulationDemo/Prey.fmu", y := predator.y, x := prey.x);
     prey.role := "prey";
-    print(adv);
-    print("next:");
     prey.pseudoOffset := adv;
     i := 0;
     while (i <= 1000) do
-        prey.tick(0.1);
-        predator.tick(0.1);
         prey.y := predator.y;
         predator.x := prey.x;
-        print(predator.y);
+        prey.tick(0.1);
+        predator.tick(0.1);
         i := i+1;
     end
+    print("Finished");
 end
-//query SELECT ?at ?val WHERE { ?m smol:roleName "prey". ?m smol:withValue ?val. ?m smol:atTime ?at. FILTER (?at >= 90 && ?at <= 110) }  ORDER BY ASC(?at)
+/*
+query SELECT ?at ?val WHERE { ?m smol:roleName "prey";
+                                 smol:ofPort [smol:withName "x"];
+                                 smol:withValue ?val;
+                                 smol:atTime ?at.
+                              FILTER (?at >= 90 && ?at <= 110) }  ORDER BY ASC(?at)
+*/

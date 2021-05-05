@@ -101,6 +101,7 @@ class SimulatorObject(val path : String, memory : Memory){
                 res += "${obj}_${mVar.name} a smol:OutPort.\n"
                 res += "$obj smol:hasOutPort ${obj}_${mVar.name}.\n"
                 res += "$obj ${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
+                res += "${obj}_${mVar.name} smol:withName '${mVar.name}'.\n"
             }
             if(mVar.causality == "parameter"){
                 res += "$obj smol:hasStatePort prog:${mVar.name}.\n"
@@ -151,7 +152,7 @@ class SimulatorObject(val path : String, memory : Memory){
                     else -> /*if (mVar.typeName == "String")*/ sim.write(mVar.name).with(anyStart as String)
                 }
             }
-            if((mVar.causality == "output" || mVar.initial == "calculated") && memory.containsKey(mVar.name)) {
+            if((mVar.causality == "output" && mVar.initial == "calculated") && memory.containsKey(mVar.name)) {
                 throw Exception("Cannot initialize output or/and calculated variable ${mVar.name}")
             }
         }
