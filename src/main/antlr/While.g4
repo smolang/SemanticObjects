@@ -3,7 +3,7 @@ grammar While;
 TODO: casts, unit, constraints on generics, drop special treatment of atomic types, FMU state copies
 **/
 @header {
-package antlr.microobject.gen;
+package no.uio.microobject.antlr;
 }
 //Strings
 STRING : '"' .*? '"' ;

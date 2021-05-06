@@ -19,7 +19,7 @@
           <option name="outputDir" value="$PROJECT_DIR$/generated-src/" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
-          <option name="pkg" value="antlr.microobject.gen" />
+          <option name="pkg" value="no.uio.microobject.antlr" />
           <option name="language" value="" />
           <option name="generateVisitor" value="true" />
         </PerGrammarGenerationSettings>
@@ -29,7 +29,7 @@
           <option name="outputDir" value="$PROJECT_DIR$/generated-src" />
           <option name="libDir" value="" />
           <option name="encoding" value="" />
-          <option name="pkg" value="antlr.microobject.gen" />
+          <option name="pkg" value="no.uio.microobject.antlr" />
           <option name="language" value="" />
           <option name="generateVisitor" value="true" />
         </PerGrammarGenerationSettings>

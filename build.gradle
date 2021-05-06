@@ -34,7 +34,7 @@ dependencies {
 }
 
 generateGrammarSource {
-    outputDirectory = file("build/generated-src/main/antlr/microobject/gen")
+    outputDirectory = file("build/generated-src/main/no/uio/microobject/antlr")
     arguments += ["-visitor"]
 }
 compileKotlin {
@@ -42,7 +42,7 @@ compileKotlin {
 }
 jar {
     manifest {
-        attributes 'Main-Class': 'microobject.main.MainKtKt'
+        attributes 'Main-Class': 'no.uio.microobject.main.MainKtKt'
     }
 }
 
