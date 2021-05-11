@@ -274,6 +274,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
     internal fun checkMet(mtCtx: WhileParser.Method_defContext, className: String) {
         val name = mtCtx.NAME().text
+        if(name == "port")
+            log("Methods are not allows to be called \"port\".", mtCtx)
         val gens = generics.getOrDefault(className, listOf()).map { GenericType(it) }
         val thisType = if (gens.isNotEmpty()) ComposedType(BaseType(className), gens) else BaseType(className)
 
@@ -849,6 +851,26 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 return typeForNumericalRelation(t1, t2, ">", eCtx)
             }
             is WhileParser.This_expressionContext -> return thisType
+            is WhileParser.Fmu_field_expressionContext -> {
+                val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                if(t1 == ERRORTYPE) return ERRORTYPE
+                if(t1 !is SimulatorType) {
+                    log("Port method is specific to FMU objects.", eCtx)
+                    return ERRORTYPE
+                }
+                val name = eCtx.STRING().text.removeSurrounding("\"")
+                return if(read){
+                    val inVar = t1.outVar.firstOrNull { it.first == name }
+                    if(inVar == null)
+                        log("Trying to read from a field that is not an outport: $name", eCtx)
+                    inVar?.second ?: ERRORTYPE
+                } else {
+                    val inVar = t1.inVar.firstOrNull { it.first == name}
+                    if(inVar == null)
+                        log("Trying to write into a field that is not an inport: $name", eCtx)
+                    inVar?.second ?: ERRORTYPE
+                }
+            }
             is WhileParser.External_field_expressionContext -> { // This must resolve the generics
                 val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
                 if(t1 == ERRORTYPE) return ERRORTYPE

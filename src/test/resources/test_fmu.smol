@@ -23,6 +23,13 @@ class SuccessClass()
         return 1;
     end
 
+    Int portTest()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Double dd := fmu1.port("rc");
+        fmu1.port("ra") := 2.0;
+        return 1;
+    end
+
     Int fieldfail1()
         Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double g := fmu1.ra;
@@ -42,6 +49,10 @@ class SuccessClass()
     Int fieldfail5()
         Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double dd := fmu1.rd;
+    end
+    Int fieldfail6()
+        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Double dd := fmu1.port("rd");
     end
     Int extra(String str, Double param)
         Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
