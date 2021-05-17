@@ -34,10 +34,10 @@
 (define-derived-mode smol-mode prog-mode "SMOL"
   "Major mode for editing SMOL files."
   :group 'smol
-  (set (make-local-variable 'comment-use-syntax) t)
-  (set (make-local-variable 'comment-start) "//")
-  (set (make-local-variable 'comment-end) "")
-  (set (make-local-variable 'comment-start-skip) "//+\\s-*")
+  (setq-local comment-use-syntax t
+              comment-start "//"
+              comment-end ""
+              comment-start-skip "//+\\s-*")
   (setq font-lock-defaults (list 'smol-font-lock-defaults)))
 
 ;;;###autoload
