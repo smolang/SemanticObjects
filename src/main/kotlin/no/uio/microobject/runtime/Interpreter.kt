@@ -593,6 +593,15 @@ class Interpreter(
                     else
                         return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() / enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
                 }
+                if (expr.Op == Operator.MOD) {
+                    if (expr.params.size != 2) throw Exception("Operator.MOD requires two parameters")
+                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
+                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
+                    if(enx1.tag == DOUBLETYPE)
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() % enx2.literal.removePrefix("urn:").toInt()).toString(), DOUBLETYPE)
+                    else
+                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() % enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
+                }
                 if (expr.Op == Operator.MINUS) {
                     if (expr.params.size != 2) throw Exception("Operator.MINUS requires two parameters")
                     val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)

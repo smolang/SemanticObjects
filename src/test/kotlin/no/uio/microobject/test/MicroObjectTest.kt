@@ -32,7 +32,8 @@ open class MicroObjectTest : StringSpec() {
     }
 
     private fun loadPath(path : String) : WhileParser.ProgramContext{
-        val lexer = WhileLexer(CharStreams.fromFileName(path))
+        val localPath = if(System.getProperty("os.name").contains("Windows")) path.removePrefix("/") else path
+        val lexer = WhileLexer(CharStreams.fromFileName(localPath))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()

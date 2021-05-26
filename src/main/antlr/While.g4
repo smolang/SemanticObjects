@@ -64,6 +64,7 @@ PLUS : '+';
 MULT : '*';
 MINUS : '-';
 DIV : '/';
+MOD : '%';
 AND : '&';
 OR : '|';
 NOT : '!';
@@ -131,6 +132,7 @@ expression :      THIS                           # this_expression
                 | expression DOT PORT OPARAN STRING CPARAN	# fmu_field_expression
                 | expression DOT NAME			 # external_field_expression
                 | expression DIV expression      # div_expression
+                | expression MOD expression      # mod_expression
                 | expression MULT expression     # mult_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression

@@ -16,7 +16,7 @@ import no.uio.microobject.type.Type
  */
 
 enum class Operator {
-    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT
+    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD
 }
 
 interface ProgramElement{

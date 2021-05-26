@@ -14,7 +14,8 @@ import kotlin.test.assertEquals
 
 class BasicTest : StringSpec() {
     private fun load(path : String) : Int {
-        val lexer = WhileLexer(CharStreams.fromFileName(path))
+        val localPath = if(System.getProperty("os.name").contains("Windows")) path.removePrefix("/") else path
+        val lexer = WhileLexer(CharStreams.fromFileName(localPath))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         val tree = parser.program()

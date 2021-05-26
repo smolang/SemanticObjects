@@ -792,6 +792,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
                 return typeForNumericalFunction(t1, t2, "/", eCtx)
             }
+            is WhileParser.Mod_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
+                if(t2 != INTTYPE) log("Second parameter of % must be an integer, got $t2", ctx)
+                if(t1 != INTTYPE && t1 != DOUBLETYPE) log("First parameter of % must be numeric, got $t1", ctx)
+                return INTTYPE
+            }
             is WhileParser.Neq_expressionContext -> {
                 val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
                 val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)

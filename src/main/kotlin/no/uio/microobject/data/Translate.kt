@@ -288,6 +288,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitDiv_expression(ctx: Div_expressionContext?): ProgramElement {
         return ArithExpr(Operator.DIV, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
     }
+    override fun visitMod_expression(ctx: Mod_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.MOD, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
 
     override fun visitMinus_expression(ctx: Minus_expressionContext?): ProgramElement {
         return ArithExpr(Operator.MINUS, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
