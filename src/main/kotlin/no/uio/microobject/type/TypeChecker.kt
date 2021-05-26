@@ -17,7 +17,7 @@ import java.nio.file.Paths
  *
  * This has for now the following quirks:
  *  - Generic arguments share a global namespace
- *  - Variables cannot declared twice in a method, even if the scopes do not overlap
+ *  - Variables cannot be declared twice in a method, even if the scopes do not overlap
  *  - Generic classes cannot be extended
  *
  */
@@ -112,8 +112,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             val name = clCtx.className.text
             if(clCtx.superType != null)  extends[name] = translateType(clCtx.superType, name, generics)
             else                         extends[name] = OBJECTTYPE
-            if(clCtx.method_def() != null)
-                methods[name] = clCtx.method_def()
+
+            methods[name] = computeMethods(name)
+
             if(clCtx.fieldDeclList() == null) {
                 fields[name] = mapOf()
             }else {
@@ -128,6 +129,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             parameters[name] = if(clCtx.fieldDeclList() == null) listOf() else clCtx.fieldDeclList().fieldDecl().map { it.NAME().text }
         }
+    }
+
+    private fun computeMethods(className: String) : List<WhileParser.Method_defContext>{
+        val current = ctx.class_def().firstOrNull { it.className.text == className } ?: return emptyList()
+        val above = if(current.superType != null) computeMethods(current.superType.text) else emptyList()
+        val own = if(current.method_def() != null) current.method_def() else emptyList()
+        return above + own
     }
 
     /**********************************************************************
@@ -477,7 +485,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Call on type $rhsType not possible: type $rhsType is not a class.", ctx)
                 } else {
                   val calledMet = ctx.NAME().text
-                  if(!methods.getOrDefault(rhsType.getPrimary().getNameString(), listOf()).map { it.NAME().text }.contains(calledMet)){
+                  val nName = rhsType.getPrimary().getNameString()
+                  if(!methods.getOrDefault(nName, listOf()).map { it.NAME().text }.contains(calledMet)){
                       log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
                   } else {
                       val otherClassName = rhsType.getPrimary().getNameString()

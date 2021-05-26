@@ -82,7 +82,7 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
         "Override Test Fail 2"{
             val tC = checkClass("Fail2", "test_override" )
             assertFalse(tC.report(false))
-            assertEquals(tC.error.size, 1)
+            assertEquals(tC.error.size, 2)
         }
         "Override Test Fail 3"{
             val tC = checkClass("Fail3", "test_override" )
@@ -92,7 +92,7 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
         "Override Test Fail 4"{
             val tC = checkClass("Fail4", "test_override" )
             assertFalse(tC.report(false))
-            assertEquals(tC.error.size, 2)
+            assertEquals(tC.error.size, 1)
         }
         "Override Test Fail 5"{
             val tC = checkClass("Fail5", "test_override" )

@@ -15,7 +15,7 @@ class Fail1 extends E () //lacks modifier
     C m(C c) C ret := super(c); return ret; end
 end
 class Fail2 extends E () //changes signature
-    override C m(D c) C ret := super(c); return ret; end
+    override C m(E c) C ret := super(c); return ret; end
 end
 class Fail3 extends E () //changes signature
     override C m(C d) C ret := super(d); return ret; end
