@@ -1,0 +1,145 @@
+/*
+//beware, bug ahead
+class <T> List(T content, List<T> next) end
+class DynamicList extends List<Dynamic>()
+    Int advance(Double t)
+        this.content.advance(t);
+        if(this.next <> null) then this.next.advance(t); end
+        return 0;
+    end
+end*/
+abstract class Dynamic()
+    abstract Int propagate()         //pull
+    abstract Int advance(Double db)
+end
+abstract class Wall extends Dynamic()
+    abstract Double getH()
+end
+class Outside (Double temp) end
+class Room extends Dynamic(Cont[Double h_InnerWall, Double h_OuterWall, Double h_powerHeater; Double T_room] dynamics,
+                           Wall inner,
+                           Wall outer,
+                           Controller ctrl,
+                           Boolean isFirst)
+    override Int propagate()
+            Double hIn := this.inner.getH();
+            this.dynamics.h_InnerWall := hIn;
+            Double hOut := this.outer.getH();
+            this.dynamics.h_OuterWall := hOut;
+            if(this.isFirst) then
+                this.dynamics.h_powerHeater := this.ctrl.dynamics.h_room1;
+            else
+                this.dynamics.h_powerHeater := this.ctrl.dynamics.h_room2;
+            end
+        return 0;
+    end
+    override Int advance(Double db)
+        this.dynamics.tick(db);
+        return 0;
+    end
+end
+class Controller extends Dynamic(Cont[Double T_room1, Double T_room2, Double T_clock; Double h_room1, Double h_room2] dynamics,
+                                 Cont[; Double Clock] clock,
+                                 Room r1,
+                                 Room r2)
+    override Int propagate()
+            this.dynamics.T_room1 := this.r1.dynamics.T_room;
+            this.dynamics.T_room2 := this.r2.dynamics.T_room;
+            this.dynamics.T_clock := this.clock.Clock;
+            return 0;
+    end
+    override Int advance(Double db)
+        this.dynamics.tick(db);
+        this.clock.tick(db);
+        return 0;
+    end
+end
+class InnerWall extends Wall(Cont[Double T_room1, Double T_room2; Double h_wall] dynamics, Room left, Room right)
+    override Int propagate()
+            this.dynamics.T_room1   := this.left.dynamics.T_room;
+            this.dynamics.T_room2   := this.right.dynamics.T_room;
+            return 0;
+    end
+    override Int advance(Double db)
+        this.dynamics.tick(db);
+        return 0;
+    end
+    override Double getH()
+        return this.dynamics.h_wall;
+    end
+end
+class OuterWall1 extends Wall(Cont[Double T_room1, Double T_outside; Double h_wall] dynamics, Room inner, Outside outside)
+    override Int propagate()
+            this.dynamics.T_room1   := this.inner.dynamics.T_room;
+            this.dynamics.T_outside := this.outside.temp;
+            return 0;
+    end
+    override Double getH()
+        return this.dynamics.h_wall;
+    end
+    override Int advance(Double db)
+        this.dynamics.tick(db);
+        return 0;
+    end
+end
+class OuterWall2 extends Wall(Cont[Double T_room2, Double T_outside; Double h_wall] dynamics, Room inner, Outside outside)
+    override Int propagate()
+            this.dynamics.T_room2   := this.inner.dynamics.T_room;
+            this.dynamics.T_outside := this.outside.temp;
+            return 0;
+    end
+    override Double getH()
+        return this.dynamics.h_wall;
+    end
+    override Int advance(Double db)
+        this.dynamics.tick(db);
+        return 0;
+    end
+end
+
+main
+    Cont[Double T_room1, Double T_room2; Double h_wall] i := simulate("examples\House\fmus\InnerWall.fmu");
+    Cont[Double T_room1, Double T_outside; Double h_wall] o1 := simulate("examples\House\fmus\OuterWall1.fmu");
+    Cont[Double T_room2, Double T_outside; Double h_wall] o2 := simulate("examples\House\fmus\OuterWall2.fmu");
+    Cont[Double h_InnerWall, Double h_OuterWall, Double h_powerHeater; Double T_room] r1 := simulate("examples\House\fmus\Room1.fmu");
+    Cont[Double h_InnerWall, Double h_OuterWall, Double h_powerHeater; Double T_room] r2 := simulate("examples\House\fmus\Room2.fmu");
+    Cont[Double T_room1, Double T_room2, Double T_clock; Double h_room1, Double h_room2] ctrl := simulate("examples\House\fmus\TempController.fmu");
+    Cont[;Double Clock] cl := simulate("examples\House\fmus\Clock.fmu", Reset := 100);
+
+
+    Outside outside1 := new Outside(5.3);
+    Outside outside2 := new Outside(4.9);
+    Room room1 := new Room(r1, null, null, null, True);
+    Room room2 := new Room(r2, null, null, null, False);
+    Wall inner  := new InnerWall(i, room1, room2);
+    Wall outer1 := new OuterWall1(o1, room1, outside1);
+    Wall outer2 := new OuterWall2(o2, room2, outside2);
+    Controller control := new Controller(ctrl, cl, room1, room2);
+    room1.ctrl := control;
+    room1.inner := inner;
+    room1.outer := outer1;
+    room2.ctrl := control;
+    room2.inner := inner;
+    room2.outer := outer2;
+
+    Double step := 0.01;
+    Int at := 0;
+    Int limit := 60000;
+    while at < limit do
+        room1.propagate();
+        room2.propagate();
+        outer1.propagate();
+        outer2.propagate();
+        inner.propagate();
+        control.propagate();
+        room1.advance(step);
+        room2.advance(step);
+        outer1.advance(step);
+        outer2.advance(step);
+        inner.advance(step);
+        control.advance(step);
+        at := at + 1;
+        if(at % 100 = 0) then print(room2.dynamics.T_room); end
+        //print(step);
+    end
+end
