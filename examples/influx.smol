@@ -1,0 +1,8 @@
+class <T> List(T content, List<T> next) end
+
+main
+    List<Double> list := access(
+      "from(bucket: \"petwin\")  |>  range(start: -1h, stop: -1m) |> filter(fn: (r) => r[\"_measurement\"] == \"chili\") |> filter(fn: (r) => r[\"_field\"] == \"temperature\")  |> filter(fn: (r) => r[\"name\"] == \"faarikaal1\") |> aggregateWindow(every: 5m, fn: mean, createEmpty: false) |> yield(name: \"mean\")",
+      INFLUXDB("petwin.yml"));
+    print(list);
+end

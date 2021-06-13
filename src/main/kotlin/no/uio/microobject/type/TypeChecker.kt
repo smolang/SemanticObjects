@@ -585,25 +585,29 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
             }
             is WhileParser.Sparql_statementContext -> {
-                var expType : Type? = null
-                if(ctx.declType != null){
-                    val lhs = ctx.expression(0)
-                    if(lhs !is WhileParser.Var_expressionContext){
-                        log("Variable declaration must declare a variable.", ctx)
-                    } else {
-                        val name = lhs.NAME().text
-                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
-                        else {
-                            expType = translateType(ctx.type(), className, generics)
-                            vars[name] = expType
+                if(ctx.lang is WhileParser.Influx_modeContext){
+                    log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
+                }else {
+                    var expType: Type? = null
+                    if (ctx.declType != null) {
+                        val lhs = ctx.expression(0)
+                        if (lhs !is WhileParser.Var_expressionContext) {
+                            log("Variable declaration must declare a variable.", ctx)
+                        } else {
+                            val name = lhs.NAME().text
+                            if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                            else {
+                                expType = translateType(ctx.type(), className, generics)
+                                vars[name] = expType
+                            }
                         }
+                    } else {
+                        expType = getType(ctx.target, inner, vars, thisType, false)
                     }
-                }else{
-                    expType = getType(ctx.target, inner, vars, thisType, false)
-                }
-                if(expType != null) {
-                    val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx, "obj")
-                    queryCheckers.add(qc)
+                    if (expType != null) {
+                        val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), expType, ctx, "obj")
+                        queryCheckers.add(qc)
+                    }
                 }
             }
             is WhileParser.Construct_statementContext -> {

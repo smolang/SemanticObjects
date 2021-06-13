@@ -50,8 +50,10 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                 res += "run:${obj.literal} prog:${obj.tag}_$store "
                 res +=  if(target.literal == "null")
                     "smol:${target.literal}.\n"
-                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE || target.tag == INTTYPE)
+                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE )
                     "${target.literal}.\n"
+                else if(target.tag == INTTYPE)
+                    "\"${target.literal}\"^^xsd:integer.\n"
                 else
                     "run:${target.literal}.\n"
                 i++

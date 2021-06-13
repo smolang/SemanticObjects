@@ -186,7 +186,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         var ll = emptyList<Expression>()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        return SparqlStmt(target, query, ll, ctx!!.start.line)
+        val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode else InfluxDBMode((ctx.modeexpression() as Influx_modeContext).STRING().text)
+        return AccessStmt(target, query, ll, ctx!!.start.line, mode)
     }
 
     override fun visitConstruct_statement(ctx: Construct_statementContext?): ProgramElement {

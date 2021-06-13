@@ -19,6 +19,12 @@ enum class Operator {
     PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD
 }
 
+abstract class AccessMode
+data class InfluxDBMode(val config : String) : AccessMode()
+object SparqlMode : AccessMode()
+
+
+
 interface ProgramElement{
     fun getRDF() : String
 }
@@ -221,11 +227,11 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
 
 
 // For ontology-based reflexion
-data class SparqlStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1) : Statement {
+data class AccessStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1, val mode : AccessMode = SparqlMode) : Statement {
     override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
-            prog:stmt${this.hashCode()} rdf:type smol:SparqlStatement.
+            prog:stmt${this.hashCode()} rdf:type smol:AccessStatement.
             prog:stmt${this.hashCode()} smol:hasTarget prog:loc${target.hashCode()}.
             prog:stmt${this.hashCode()} smol:hasQuery prog:expr${query.hashCode()}.
             prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
