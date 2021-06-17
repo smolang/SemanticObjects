@@ -312,12 +312,13 @@ class Interpreter(
                 var list = LiteralExpr("null")
                 if (results != null) {
                     for (r in results) {
-                        val obres = r.getResource("?obj")
+                        val obres = r.get("?obj")
                             ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
-                        val found = obres.toString().removePrefix(settings.runPrefix)
+                        var found = obres.toString().removePrefix(settings.runPrefix)
+                        if(found.startsWith("\\\"")) found = found.replace("\\\"","\"")
                         for (ob in heap.keys) {
                             if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
