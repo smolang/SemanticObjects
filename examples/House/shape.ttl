@@ -1,7 +1,6 @@
 @prefix schema: <http://schema.org/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 
-//this is just a test, OSP is more restrictive with its port names
 schema:TestShape
     a sh:NodeShape ;
     sh:targetClass prog:Room ;
