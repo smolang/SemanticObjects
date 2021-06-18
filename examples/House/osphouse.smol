@@ -102,7 +102,9 @@ main
     Cont[Double T_room1, Double T_outside; Double h_wall] o1 := simulate("examples\House\fmus\OuterWall1.fmu");
     Cont[Double T_room2, Double T_outside; Double h_wall] o2 := simulate("examples\House\fmus\OuterWall2.fmu");
     Cont[Double h_InnerWall, Double h_OuterWall, Double h_powerHeater; Double T_room] r1 := simulate("examples\House\fmus\Room1.fmu");
+    r1.role := "room1";
     Cont[Double h_InnerWall, Double h_OuterWall, Double h_powerHeater; Double T_room] r2 := simulate("examples\House\fmus\Room2.fmu");
+    r2.role := "room2";
     Cont[Double T_room1, Double T_room2, Double T_clock; Double h_room1, Double h_room2] ctrl := simulate("examples\House\fmus\TempController.fmu");
     Cont[;Double Clock] cl := simulate("examples\House\fmus\Clock.fmu", Reset := 100);
 
@@ -121,6 +123,8 @@ main
     room2.ctrl := control;
     room2.inner := inner;
     room2.outer := outer2;
+    Boolean b := validate("examples\House\shape.ttl");
+    print(b);
 
     Double step := 0.01;
     Int at := 0;
@@ -140,6 +144,6 @@ main
         control.advance(step);
         at := at + 1;
         if(at % 100 = 0) then print(room2.dynamics.T_room); end
-        //print(step);
     end
+
 end

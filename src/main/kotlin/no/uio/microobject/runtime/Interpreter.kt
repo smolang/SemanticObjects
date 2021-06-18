@@ -327,8 +327,12 @@ class Interpreter(
                 val fileName = stmt.query.literal.removeSurrounding("\"")
                 val file = File(fileName)
                 if(!file.exists()) throw Exception("file $fileName does not exist")
+                val newFile = File("${settings.outpath}/shape.ttl")
                 dump()
-                val shapesGraph = RDFDataMgr.loadGraph(fileName)
+                if(!newFile.exists()) newFile.createNewFile()
+                newFile.writeText(settings.prefixes() + "\n"+State.HEADER + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
+                newFile.appendText(file.readText())
+                val shapesGraph = RDFDataMgr.loadGraph("${settings.outpath}/shape.ttl")
                 val dataGraph = RDFDataMgr.loadGraph("${settings.outpath}/output.ttl")
 
                 val shapes: Shapes = Shapes.parse(shapesGraph)

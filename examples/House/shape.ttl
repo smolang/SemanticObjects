@@ -1,0 +1,23 @@
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+//this is just a test, OSP is more restrictive with its port names
+schema:TestShape
+    a sh:NodeShape ;
+    sh:targetClass prog:Room ;
+    sh:or (
+    [
+        sh:property [
+            sh:path prog:Room_inner ;
+            sh:class prog:InnerWall ;
+            sh:name "No isolated room - left" ;
+        ]
+    ]
+    [
+        sh:property [
+            sh:path prog:Room_outer ;
+            sh:class prog:InnerWall ;
+            sh:name "No isolated room - right" ;
+        ]
+    ]
+    ).
