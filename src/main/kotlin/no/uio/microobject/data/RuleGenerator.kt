@@ -6,6 +6,7 @@ import no.uio.microobject.runtime.InterpreterBridge
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.BaseType
+import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
@@ -65,7 +66,8 @@ class RuleGenerator(val settings: Settings){
                     val ret = myIpr.evalTopMost(res).literal
 
                     //Build final triple and add it to the context
-                    val resNode = if (ret.toIntOrNull() != null) NodeFactory.createLiteral(ret) else NodeFactory.createURI("smol:$ret")
+                    val resNode = if (ret.toIntOrNull() != null) NodeFactory.createLiteral(ret) else
+                        if(ret.startsWith("\"")) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
                     val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)

@@ -6,7 +6,7 @@ TODO: casts, unit, constraints on generics, drop special treatment of atomic typ
 package no.uio.microobject.antlr;
 }
 //Strings
-STRING : '"' .*? '"' ;
+STRING : '"' ('\\"'|.)*? '"' ;
 
 //Whitespace and comments
 WS           : [ \t\r\n\u000C]+ -> channel(HIDDEN);
@@ -79,6 +79,8 @@ CBRACK : ']';
 COMMA : ',';
 FMU : 'Cont';
 PORT : 'port';
+SPARQLMODE : 'SPARQL';
+INFLUXMODE : 'INFLUXDB';
 
 //Names etc.
 fragment DIG : [0-9];
@@ -108,7 +110,7 @@ statement :   SKIP_S SEMI                                                       
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
-			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
+			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA lang=modeexpression)? (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
@@ -118,7 +120,9 @@ statement :   SKIP_S SEMI                                                       
             | statement statement                                                                                                                       # sequence_statement
             ;
 
-
+modeexpression : SPARQLMODE                         #sparql_mode
+               | INFLUXMODE OPARAN STRING CPARAN    #influx_mode
+               ;
 //Expressions
 expression :      THIS                           # this_expression
                 | THIS DOT NAME                  # field_expression

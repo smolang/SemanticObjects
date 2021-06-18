@@ -4,6 +4,16 @@
 
 package no.uio.microobject.runtime
 
+import kotlinx.coroutines.launch
+import com.influxdb.client.kotlin.InfluxDBClientKotlin
+import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
+import com.sksamuel.hoplite.ConfigLoader
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.channels.filter
+import kotlinx.coroutines.channels.take
+import kotlinx.coroutines.flow.consumeAsFlow
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
@@ -27,9 +37,32 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.BufferedReader
 import java.io.File
 import java.util.*
-import javax.swing.text.html.HTML.Attribute.SHAPES
 
-
+data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
+    private var influxDBClient : InfluxDBClientKotlin? = null
+    private fun connect(){
+        influxDBClient = InfluxDBClientKotlinFactory.create(url, token.toCharArray(), org)
+    }
+    fun queryOneSeries(flux : String) : List<Double>{
+        connect()
+        val results = influxDBClient!!.getQueryKotlinApi().query(flux.replace("\\\"","\""))
+        var next = emptyList<Double>()
+        runBlocking {
+            launch(Dispatchers.Unconfined) {
+                next = results.consumeAsFlow().toList().map { it.value as Double }
+                /*for(n in next){
+                    // println(n.field + " " + n.measurement + " " + n.time + " " + n.measurement + " " + n.value )
+                     println(n)
+                }*/
+            }
+        }
+        disconnect()
+        return next
+    }
+    private fun disconnect(){
+        influxDBClient?.close()
+    }
+}
 //There is probably something in the standard library for this pattern
 class InterpreterBridge(var interpreter: Interpreter?)
 
@@ -256,18 +289,36 @@ class Interpreter(
                 heap[name] = newMemory
                 return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
             }
-            is SparqlStmt -> {
+            is AccessStmt -> { // should be refactored once we support more modes
+                if(stmt.mode is InfluxDBMode){
+                    val path = stmt.mode.config.removeSurrounding("\"")
+                    val config = ConfigLoader().loadConfigOrThrow<InfluxDBConnection>(File(path))
+                    val vals = config.queryOneSeries((stmt.query as LiteralExpr).literal.removeSurrounding("\""))
+                    var list = LiteralExpr("null")
+                    for(r in vals){
+                        val name = Names.getObjName("List")
+                        val newMemory: Memory = mutableMapOf()
+                        newMemory["content"] = LiteralExpr(r.toString(), DOUBLETYPE)
+                        newMemory["next"] = list
+                        heap[name] = newMemory
+                        list = name
+                    }
+                    return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+                }
+
+                /* stmt.mode == SparqlMode */
                 val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
                 val results = query(str.removePrefix("\"").removeSuffix("\""))
                 var list = LiteralExpr("null")
                 if (results != null) {
                     for (r in results) {
-                        val obres = r.getResource("?obj")
+                        val obres = r.get("?obj")
                             ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
-                        val found = obres.toString().removePrefix(settings.runPrefix)
+                        var found = obres.toString().removePrefix(settings.runPrefix)
+                        if(found.startsWith("\\\"")) found = found.replace("\\\"","\"")
                         for (ob in heap.keys) {
                             if (ob.literal == found) {
                                 newMemory["content"] = LiteralExpr(found, ob.tag)
@@ -277,6 +328,7 @@ class Interpreter(
                         if (!newMemory.containsKey("content")) {
                             if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
                             else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
                         newMemory["next"] = list
