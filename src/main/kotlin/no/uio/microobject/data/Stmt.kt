@@ -2,6 +2,7 @@
 
 package no.uio.microobject.data
 
+import no.uio.microobject.backend.JavaBackend
 import no.uio.microobject.type.BOOLEANTYPE
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.ERRORTYPE
@@ -16,7 +17,27 @@ import no.uio.microobject.type.Type
  */
 
 enum class Operator {
-    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD
+    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD;
+    companion object{
+        fun toJava(op : Operator) : String {
+            return when(op){
+                PLUS  -> "+"
+                MINUS -> "-"
+                MULT  -> "*"
+                DIV   -> "/"
+                NEQ   -> "!="
+                GEQ   -> ">="
+                EQ    -> "=="
+                LEQ   -> "<="
+                LT    -> "<"
+                GT    -> ">"
+                AND   -> "&&"
+                OR    -> "||"
+                NOT   -> "!"
+                MOD   -> "%"
+            }
+        }
+    }
 }
 
 abstract class AccessMode
@@ -27,6 +48,9 @@ object SparqlMode : AccessMode()
 
 interface ProgramElement{
     fun getRDF() : String
+    fun toJava(builder: JavaBackend) {
+            throw Exception("translating ${this.javaClass.name} is not supported yet")
+    }
 }
 
 
@@ -43,6 +67,9 @@ interface Location : Expression{
 data class SkipStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "skip"
     override fun getRDF(): String = "prog:stmt${this.hashCode()} rdf:type smol:SkipStatement.\nprog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.\n"
+    override fun toJava(builder: JavaBackend) {
+        builder.addText(";/*empty statement*/")
+    }
 }
 
 
@@ -50,10 +77,14 @@ data class SkipStmt(val pos : Int = -1) : Statement{
 data class DebugStmt(val pos : Int = -1) : Statement{
     override fun toString(): String = "breakpoint"
     override fun getRDF(): String = "prog:stmt${this.hashCode()} rdf:type smol:DebugStatement.\nprog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.\n"
+    override fun toJava(builder: JavaBackend) {
+        builder.addText(";/*debug statement*/")
+    }
 }
 
+
 // Assignment, where value cannot refer to calls or object creations.
-data class AssignStmt(val target : Location, val value : Expression, val pos : Int = -1) : Statement {
+data class AssignStmt(val target : Location, val value : Expression, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := $value"
     override fun getRDF(): String {
         return """
@@ -64,10 +95,19 @@ data class AssignStmt(val target : Location, val value : Expression, val pos : I
 
         """.trimIndent()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        target.toJava(builder)
+        builder.addText(" = ")
+        value.toJava(builder)
+        builder.addText(";")
+
+    }
 }
 
 // Super call. MethodName is merely saved for easier access for the interpreter
-data class SuperStmt(val target : Location, val methodName : String, val params : List<Expression>, val pos : Int = -1) :
+data class SuperStmt(val target : Location, val methodName : String, val params : List<Expression>, val pos : Int = -1, val declares: Type?) :
     Statement {
     override fun toString(): String = "$target := super(${params.joinToString(",")})"
     override fun getRDF(): String {
@@ -83,10 +123,25 @@ data class SuperStmt(val target : Location, val methodName : String, val params 
         }
         return s + target.getRDF()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        if(declares != null) builder.addText("$declares ")
+        target.toJava(builder)
+        builder.addText(" = ")
+        builder.addText("super(")
+        for(i in params.indices){
+            params[i].toJava(builder)
+            if(i != params.size -1)
+                builder.addText(", ")
+        }
+        params.forEach { it.toJava(builder) }
+        builder.addText(");\n ")
+    }
 }
 
 // Method call. We have the ABS-style split between calls and expressions to make the rules more simple
-data class CallStmt(val target : Location, val callee : Location, val method : String, val params : List<Expression>, val pos : Int = -1) :
+data class CallStmt(val target : Location, val callee : Location, val method : String, val params : List<Expression>, val pos : Int = -1, val declares : Type?) :
     Statement {
     override fun toString(): String = "$target := $callee.$method(${params.joinToString(",")})"
     override fun getRDF(): String {
@@ -104,10 +159,26 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
         }
         return s + target.getRDF() + callee.getRDF()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        if(declares != null) builder.addText("$declares ")
+        target.toJava(builder)
+        builder.addText(" = ")
+        callee.toJava(builder)
+        builder.addText(".$method(")
+        for(i in params.indices){
+            params[i].toJava(builder)
+            if(i != params.size -1)
+                builder.addText(", ")
+        }
+        params.forEach { it.toJava(builder) }
+        builder.addText(");\n ")
+    }
 }
 
 // Object creation. There is no constructor, but we
-data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1) : Statement {
+data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := new $className(${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
@@ -123,6 +194,21 @@ data class CreateStmt(val target : Location, val className: String, val params :
         }
         return s + target.getRDF()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        if(declares != null) builder.addText("$declares ")
+        target.toJava(builder)
+        builder.addText(" = new ")
+        builder.addText("$className(")
+        for(i in params.indices){
+            params[i].toJava(builder)
+            if(i != params.size -1)
+                builder.addText(", ")
+        }
+        params.forEach { it.toJava(builder) }
+        builder.addText(");\n ")
+    }
 }
 
 // Return statement
@@ -136,9 +222,16 @@ data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
 
         """.trimIndent() + value.getRDF()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        builder.addText("return ")
+        value.toJava(builder)
+        builder.addText(";\n")
+    }
 }
 
-// This is a no.uio.microobject.runtime-syntax only statement which models that we will write the return value of the next method in the stack into target
+// This is a runtime-syntax only statement which models that we will write the return value of the next method in the stack into target
 data class StoreReturnStmt(val target : Location, val pos : Int = -1) : Statement {
     override fun toString(): String = "$target <- stack"
     override fun getRDF(): String {
@@ -164,6 +257,21 @@ data class IfStmt(val guard : Expression, val thenBranch : Statement, val elseBr
 
         """.trimIndent() + guard.getRDF() + thenBranch.getRDF() + elseBranch.getRDF()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        builder.addText("if(")
+        guard.toJava(builder)
+        builder.addText("){")
+        builder.offsetDepth(1)
+        thenBranch.toJava(builder)
+        builder.offsetDepth(-1)
+        builder.addText("} else {")
+        builder.offsetDepth(1)
+        elseBranch.toJava(builder)
+        builder.offsetDepth(-1)
+        builder.addText("}")
+    }
 }
 
 data class WhileStmt(val guard : Expression, val loopBody : Statement, val pos : Int = -1) : Statement {
@@ -176,6 +284,17 @@ data class WhileStmt(val guard : Expression, val loopBody : Statement, val pos :
             prog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.
 
         """.trimIndent() + guard.getRDF() + loopBody.getRDF()
+    }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addIntend()
+        builder.addText("while(")
+        guard.toJava(builder)
+        builder.addText("){")
+        builder.offsetDepth(1)
+        loopBody.toJava(builder)
+        builder.offsetDepth(-1)
+        builder.addText("}")
     }
 }
 
@@ -190,6 +309,11 @@ data class SequenceStmt(val first: Statement, val second : Statement) : Statemen
             prog:stmt${this.hashCode()} smol:second prog:stmt${second.hashCode()}.
 
         """.trimIndent() + first.getRDF() + second.getRDF()
+    }
+
+    override fun toJava(builder: JavaBackend) {
+        first.toJava(builder)
+        second.toJava(builder)
     }
 }
 
@@ -227,7 +351,7 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
 
 
 // For ontology-based reflexion
-data class AccessStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1, val mode : AccessMode = SparqlMode) : Statement {
+data class AccessStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1, val mode : AccessMode = SparqlMode, val declares: Type?) : Statement {
     override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
@@ -247,7 +371,7 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
     }
 }
 // For ontology-based reflexion
-data class ConstructStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1) : Statement {
+data class ConstructStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := access($query, ${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
@@ -266,7 +390,7 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
         // '${literal.removePrefix("\"").removeSuffix("\"")}'
     }
 }
-data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
+data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := derive($query)"
     override fun getRDF(): String {
         return """
@@ -278,7 +402,7 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
         """.trimIndent() + target.getRDF() + query.getRDF()
     }
 }
-data class ValidateStmt(val target : Location, val query: Expression, val pos : Int = -1) : Statement {
+data class ValidateStmt(val target : Location, val query: Expression, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := validate($query)"
     override fun getRDF(): String {
         return """
@@ -292,7 +416,7 @@ data class ValidateStmt(val target : Location, val query: Expression, val pos : 
 }
 
 // For simulation interface
-data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1) : Statement {
+data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target := simulate($path, ${params.joinToString(",")})"
     override fun getRDF(): String {
         //TODO: extend ontology
@@ -314,6 +438,7 @@ data class VarInit(val name : String, val expr: Expression) : ProgramElement {
         //TODO: extend ontology
         return ""
     }
+
 }
 
 /** Expressions **/
@@ -330,6 +455,10 @@ data class LocalVar(val name : String, var tag : Type = ERRORTYPE) : Location { 
 
         """.trimIndent()
     }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addText(name)
+    }
 }
 data class OwnVar(val name : String, var tag : Type = ERRORTYPE) : Location {   // field of own object
     override fun toString(): String = "this.$name"
@@ -341,6 +470,9 @@ data class OwnVar(val name : String, var tag : Type = ERRORTYPE) : Location {   
             prog:loc${this.hashCode()} smol:hasName '${name}'.
 
         """.trimIndent()
+    }
+    override fun toJava(builder: JavaBackend) {
+        builder.addText("this.$name")
     }
 }
 data class OthersVar(val expr: Expression, val name : String, var tag : Type = ERRORTYPE) : Location { // field of (possibly) other object
@@ -354,6 +486,10 @@ data class OthersVar(val expr: Expression, val name : String, var tag : Type = E
             prog:loc${this.hashCode()} smol:hasName '${name}'.
 
         """.trimIndent()
+    }
+    override fun toJava(builder: JavaBackend) {
+        expr.toJava(builder)
+        builder.addText(".$name")
     }
 }
 
@@ -373,8 +509,23 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : 
         return s
     }
 
-
-
+    override fun toJava(builder: JavaBackend) {
+        when(params.size){
+            1 -> {
+                builder.addText(Operator.toJava(Op)+"(")
+                params.first().toJava(builder)
+                builder.addText(")")
+            }
+            2 -> {
+                builder.addText("(")
+                params[1].toJava(builder)
+                builder.addText(")"+Operator.toJava(Op)+"(")
+                params[1].toJava(builder)
+                builder.addText(")")
+            }
+            else -> throw Exception("only unary and binary operators are support in the java backend")
+        }
+    }
 }
 data class LiteralExpr(val literal : String, val tag : Type = ERRORTYPE) : Expression {
     override fun toString(): String = literal
@@ -384,6 +535,10 @@ data class LiteralExpr(val literal : String, val tag : Type = ERRORTYPE) : Expre
             prog:expr${this.hashCode()} smol:hasLiteral '${literal.removePrefix("\"").removeSuffix("\"")}'.
             prog:expr${this.hashCode()} smol:hasTag '${tag}'.
         """.trimIndent()
+    }
+
+    override fun toJava(builder: JavaBackend) {
+        builder.addText(literal)
     }
 }
 

@@ -4,15 +4,13 @@
 
 package no.uio.microobject.runtime
 
-import kotlinx.coroutines.launch
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
 import com.sksamuel.hoplite.ConfigLoader
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.channels.filter
-import kotlinx.coroutines.channels.take
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
@@ -287,7 +285,7 @@ class Interpreter(
                     newMemory[m[i].name] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 heap[name] = newMemory
-                return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is AccessStmt -> { // should be refactored once we support more modes
                 if(stmt.mode is InfluxDBMode){
@@ -303,7 +301,7 @@ class Interpreter(
                         heap[name] = newMemory
                         list = name
                     }
-                    return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+                    return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
                 }
 
                 /* stmt.mode == SparqlMode */
@@ -336,7 +334,7 @@ class Interpreter(
                         list = name
                     }
                 }
-                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is ConstructStmt -> {
                 val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
@@ -372,7 +370,7 @@ class Interpreter(
                         list = newListName
                     }
                 }
-                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is ValidateStmt -> {
                 if(stmt.query !is LiteralExpr) throw Exception("validate takes a file path in a String as a parameter")
@@ -391,7 +389,7 @@ class Interpreter(
 
                 val report = ShaclValidator.get().validate(shapes, dataGraph)
                 val resLit = if(report.conforms()) TRUEEXPR else FALSEEXPR
-                return Pair(StackEntry(AssignStmt(stmt.target, resLit), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, resLit, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
                 if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
@@ -422,20 +420,20 @@ class Interpreter(
                         heap[name] = newMemory
                         list = name
                     }
-                return Pair(StackEntry(AssignStmt(stmt.target, list), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is ReturnStmt -> {
                 val over = stack.pop()
                 if (over.active is StoreReturnStmt) {
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                    return Pair(StackEntry(AssignStmt(over.active.target, res), over.store, over.obj, id), listOf())
+                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, id), listOf())
                 }
                 if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
                     val active = over.active.first
                     val next = over.active.second
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                     return Pair(
-                        StackEntry(appendStmt(AssignStmt(active.target, res), next), over.store, over.obj, id),
+                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, id),
                         listOf()
                     )
                 }
@@ -514,7 +512,7 @@ class Interpreter(
                 }.toMutableMap())
                 val name = Names.getObjName("CoSimulation")
                 simMemory[name] = simObj
-                return Pair(StackEntry(AssignStmt(stmt.target, name), stackMemory, obj, id), listOf())
+                return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is TickStmt -> {
                 val target = eval(stmt.fmu, stackMemory, heap, simMemory, obj)

@@ -107,6 +107,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitSuper_statement(ctx: Super_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
         var met : RuleContext? = ctx
         while(met != null && met !is Method_defContext){
             met = met.parent
@@ -120,7 +123,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             return SuperStmt(Names.getVarName(),
                 method,
                 ll,
-                ctx!!.start.line
+                ctx!!.start.line,
+                declares
             )
         } else {
             for(i in 0 until ctx.expression().size)
@@ -129,14 +133,17 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 visit(ctx.target) as Location,
                 method,
                 ll,
-                ctx!!.start.line
+                ctx!!.start.line,
+                declares
             )
         }
     }
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
-
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
         if(ctx!!.target == null){
             for(i in 1 until ctx.expression().size)
                 ll += visit(ctx.expression(i)) as Expression
@@ -144,7 +151,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 visit(ctx.expression(0)) as Location,
                 ctx.NAME().text,
                 ll,
-                ctx!!.start.line
+                ctx!!.start.line,
+                declares
             )
         } else {
             for(i in 2 until ctx.expression().size)
@@ -154,7 +162,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 visit(ctx.expression(1)) as Location,
                 ctx.NAME().text,
                 ll,
-                ctx!!.start.line
+                ctx!!.start.line,
+                declares
             )
         }
     }
@@ -169,7 +178,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),
                           ll,
-                          ctx!!.start.line
+                          ctx!!.start.line,
+                            targetType
                          )
     }
 
@@ -187,7 +197,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode else InfluxDBMode((ctx.modeexpression() as Influx_modeContext).STRING().text)
-        return AccessStmt(target, query, ll, ctx!!.start.line, mode)
+        return AccessStmt(target, query, ll, ctx!!.start.line, mode, target.getType())
     }
 
     override fun visitConstruct_statement(ctx: Construct_statementContext?): ProgramElement {
@@ -203,19 +213,25 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         var ll = emptyList<Expression>()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        return ConstructStmt(target, query, ll, ctx!!.start.line)
+        return ConstructStmt(target, query, ll, ctx!!.start.line, target.getType())
     }
 
     override fun visitOwl_statement(ctx: Owl_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         val query = visit(ctx!!.query) as Expression
-        return OwlStmt(target, query, ctx!!.start.line)
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return OwlStmt(target, query, ctx!!.start.line, declares)
     }
 
     override fun visitValidate_statement(ctx: Validate_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         val query = visit(ctx!!.query) as Expression
-        return ValidateStmt(target, query, ctx!!.start.line)
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return ValidateStmt(target, query, ctx!!.start.line, declares)
     }
 
     override fun visitSimulate_statement(ctx: Simulate_statementContext?): ProgramElement {
@@ -227,7 +243,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             for (nm in ctx!!.varInitList()!!.varInit())
                 res += visit(nm) as VarInit
         }
-        return SimulationStmt(target, path,  res)
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return SimulationStmt(target, path,  res, ctx!!.start.line, declares)
     }
 
     override fun visitTick_statement(ctx: Tick_statementContext?): ProgramElement {
@@ -243,7 +262,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitAssign_statement(ctx: Assign_statementContext?): ProgramElement {
-        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, ctx!!.start.line)
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, ctx!!.start.line, declares)
     }
 
     override fun visitSkip_statment(ctx: Skip_statmentContext?): ProgramElement {

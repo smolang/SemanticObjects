@@ -117,8 +117,6 @@ class REPL(private val settings: Settings) {
         val parser = WhileParser(tokens)
         val tree = parser.program()
 
-
-
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 

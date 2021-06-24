@@ -6,7 +6,6 @@ import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.State
 import no.uio.microobject.runtime.StaticTable
-import org.apache.jena.query.Query
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.syntax.ElementGroup
 import org.apache.jena.sparql.syntax.ElementPathBlock
