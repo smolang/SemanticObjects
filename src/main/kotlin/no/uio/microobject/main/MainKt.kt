@@ -59,6 +59,7 @@ class Main : CliktCommand() {
     private val back         by option("--back","-b",help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
     private val domainPrefix by option("--domain","-d",help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
     private val jPackage     by option("--package","-p",help="Java package.").default("no.uio.microobject")
+    private val jOut         by option("--output","-o",help="Java output.").path().default(Paths.get("/tmp/mo/java"))
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -90,7 +91,8 @@ class Main : CliktCommand() {
             tC.check()
             tC.report()
 
-            val backend = JavaBackend(tree, pair.second)
+            val backend = JavaBackend(tree, pair.second, jPackage)
+            backend.writeOutput(jOut)
             print(backend.getOutput())
             return
         }

@@ -5,23 +5,40 @@ import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.runtime.StaticTable
 import no.uio.microobject.type.TypeChecker
 import org.antlr.v4.runtime.tree.ParseTreeWalker
+import java.io.File
+import java.nio.file.Path
+import java.nio.file.Paths
+import java.util.regex.Pattern
 
-class JavaBackend(val prog: WhileParser.ProgramContext, val staticTable: StaticTable) : WhileBaseListener() {
+class JavaBackend(val prog: WhileParser.ProgramContext, val staticTable: StaticTable, val jPackage: String) : WhileBaseListener() {
     var depth = 0
-    var classes = mutableListOf<StringBuilder>()
+    private var classes = mutableListOf<Pair<String,StringBuilder>>()
     var active : WhileParser.Class_defContext? = null
     var builder = StringBuilder()
+    fun writeOutput(jOut: Path){
+        val packages = jPackage.split(".")
+        val newRoot = Paths.get(jOut.toString() + "/"+packages.joinToString("/")).toFile()
+        newRoot.mkdirs()
+        for((name, c) in classes) {
+            val content = c.toString()
+            val newFile = Paths.get(newRoot.path, "$name.java").toFile()
+            newFile.createNewFile()
+            newFile.writeText(content)
+        }
+
+    }
+
     init {
         ParseTreeWalker.DEFAULT.walk(this, prog)
-        classes.add(StringBuilder(
+        classes.add(Pair("SMOLObject", StringBuilder(
             """
-        package no.uio.microobject.translate; //GENERATES:SMOLObject;
+        package $jPackage; //GENERATES:SMOLObject;
         
         interface SMOLObject { public String naiveRDF(); }
-        """.trimIndent()))
-        classes.add(StringBuilder(
+        """.trimIndent())))
+        classes.add(Pair("SMOLManager",StringBuilder(
             """
-package no.uio.microobject.translate; //GENERATES:SMOLManager;
+package $jPackage; //GENERATES:SMOLManager;
 
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
@@ -32,7 +49,7 @@ class SMOLManager{
    static public SMOLManager instance = new SMOLManager();
    private SMOLManager() {}
 }
-        """.trimIndent()))
+        """.trimIndent())))
     }
     fun offsetDepth(off : Int){
         depth += off
@@ -54,7 +71,7 @@ class SMOLManager{
     override fun enterClass_def(ctx: WhileParser.Class_defContext?) {
         builder = StringBuilder()
         active = ctx
-        addLine("package no.uio.microobject.translate; //GENERATES:${ctx!!.NAME().text};")
+        addLine("package $jPackage; //GENERATES:${ctx!!.NAME().text};")
         addLine("")
         val generics = if(ctx.namelist() != null) "<"+ctx.namelist().NAME().joinToString(",") { it.text }+">" else ""
         val prefix = "public" + if(ctx.abs != null) " abstract" else ""
@@ -95,7 +112,7 @@ class SMOLManager{
         addLine("}")
         depth--
         addLine("}")
-        classes.add(builder)
+        classes.add(Pair(className,builder))
     }
 
     override fun enterMethod_def(ctx: WhileParser.Method_defContext?) {

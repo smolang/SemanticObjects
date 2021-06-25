@@ -518,7 +518,7 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : 
             }
             2 -> {
                 builder.addText("(")
-                params[1].toJava(builder)
+                params[0].toJava(builder)
                 builder.addText(")"+Operator.toJava(Op)+"(")
                 params[1].toJava(builder)
                 builder.addText(")")
