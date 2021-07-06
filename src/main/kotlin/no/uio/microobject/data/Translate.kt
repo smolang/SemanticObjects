@@ -281,8 +281,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitIf_statement(ctx: If_statementContext?): ProgramElement {
-        val stm1 = visit(ctx!!.statement(0)) as Statement
-        val stm2 = if(ctx.statement(1) != null) visit(ctx.statement(1)) as Statement else SkipStmt()
+        val stm1 = visit(ctx!!.thenS) as Statement
+        val stm2 = if(ctx.elseE != null) visit(ctx.elseE) as Statement else SkipStmt()
         val stmNext =  if(ctx.next != null) visit(ctx.next) as Statement else SkipStmt()
         val guard = visit(ctx.expression()) as Expression
         return appendStmt(IfStmt(guard, stm1, stm2, ctx!!.start.line), stmNext)

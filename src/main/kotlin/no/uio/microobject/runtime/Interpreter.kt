@@ -66,7 +66,7 @@ class InterpreterBridge(var interpreter: Interpreter?)
 
 class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
-    private var heap: GlobalMemory,             // This is a map from objects to their heap memory
+    var heap: GlobalMemory,             // This is a map from objects to their heap memory
     private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
     private val settings : Settings,                    // Settings from the user
@@ -91,7 +91,6 @@ class Interpreter(
     private var debug = false
     private val prefix =
         """
-                    PREFIX : <urn:>
                     PREFIX smol: <${settings.langPrefix}>
                     PREFIX prog: <${settings.progPrefix}>
                     PREFIX run: <${settings.runPrefix}>
@@ -110,12 +109,12 @@ class Interpreter(
         model.read(uri, "TTL")
 
         if(settings.background != "") {
-            println("Using background knowledge...")
+            if(settings.verbose) println("Using background knowledge...")
             model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
         }
 
         if(rules != "") {
-            println("Loading generated builtin rules $rules...")
+            if(settings.verbose) println("Loading generated builtin rules $rules...")
             val prefixes  = settings.prefixes()
             val reader = (prefixes+"\n"+rules).byteInputStream().bufferedReader()
             val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))

@@ -2,19 +2,19 @@ package no.uio.microobject.backend
 
 import no.uio.microobject.antlr.WhileBaseListener
 import no.uio.microobject.antlr.WhileParser
+import no.uio.microobject.data.Statement
 import no.uio.microobject.runtime.StaticTable
 import no.uio.microobject.type.TypeChecker
 import org.antlr.v4.runtime.tree.ParseTreeWalker
-import java.io.File
 import java.nio.file.Path
 import java.nio.file.Paths
-import java.util.regex.Pattern
 
-class JavaBackend(val prog: WhileParser.ProgramContext, val staticTable: StaticTable, val jPackage: String) : WhileBaseListener() {
+class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, val staticTable: StaticTable, val jPackage: String, enforceSemantic : Boolean) : WhileBaseListener() {
     var depth = 0
     private var classes = mutableListOf<Pair<String,StringBuilder>>()
     var active : WhileParser.Class_defContext? = null
     var builder = StringBuilder()
+    var detector = FragmentDetector(prog)
     fun writeOutput(jOut: Path){
         val packages = jPackage.split(".")
         val newRoot = Paths.get(jOut.toString() + "/"+packages.joinToString("/")).toFile()
@@ -30,26 +30,54 @@ class JavaBackend(val prog: WhileParser.ProgramContext, val staticTable: StaticT
 
     init {
         ParseTreeWalker.DEFAULT.walk(this, prog)
+        if(enforceSemantic) detector.semantic = true
         classes.add(Pair("SMOLObject", StringBuilder(
             """
         package $jPackage; //GENERATES:SMOLObject;
         
-        interface SMOLObject { public String naiveRDF(); }
+        interface SMOLObject { ${if(detector.semantic) "public String naiveRDF();" else ""} }
         """.trimIndent())))
-        classes.add(Pair("SMOLManager",StringBuilder(
-            """
-package $jPackage; //GENERATES:SMOLManager;
+        builder = StringBuilder()
+        addLine("package $jPackage;")
+        addLine("")
+        addLine("class SMOLMain {")
+        depth++
+        addLine("public static void main(String[] args) {")
+        depth++
+        main.toJava(this, enforceSemantic)
+        addText("\n")
+        depth--
+        addLine("}")
+        depth--
+        addLine("}")
 
-import java.lang.ref.WeakReference;
-import java.util.ArrayList;
 
-class SMOLManager{
-   private ArrayList<WeakReference<SMOLObject>> registered = new ArrayList<>();
-   public void register(SMOLObject obj){ registered.add(new WeakReference(obj)); }
-   static public SMOLManager instance = new SMOLManager();
-   private SMOLManager() {}
-}
-        """.trimIndent())))
+
+        classes.add(Pair(
+            "SMOLMain",
+            builder
+        ))
+        if(detector.semantic) {
+            classes.add(
+                Pair(
+                    "SMOLManager", StringBuilder(
+                        """
+        package $jPackage; //GENERATES:SMOLManager;
+        
+        import java.lang.ref.WeakReference;
+        import java.util.ArrayList;
+        
+        class SMOLManager{
+           private ArrayList<WeakReference<SMOLObject>> registered = new ArrayList<>();
+           public void register(SMOLObject obj){ registered.add(new WeakReference(obj)); }
+           static public SMOLManager instance = new SMOLManager();
+           private SMOLManager() {}
+        }
+        """.trimIndent()
+                    )
+                )
+            )
+        }
     }
     fun offsetDepth(off : Int){
         depth += off
@@ -98,33 +126,36 @@ class SMOLManager{
         val otherFields = fields - myFields
         addLine("super(${otherFields.joinToString(","){it.second}});")
         for(f in myFields) addLine("this.${f.second} = ${f.second};")
-        addLine("SMOLManager.instance.register(this);")
+        if(detector.semantic) addLine("SMOLManager.instance.register(this);")
         depth--
         addLine("}")
-
-        addLine("public String naiveRDF() {")
-        depth++
-        addLine("String str = super();")
-        addLine("str += this + \" a smol:$className.\\n\";")
-        for(f in myFields) addLine("str += this + \" smol:${className}_${f.second} \" + ${f.second} +\".\\n\";")
-        addLine("return str;")
-        depth--
-        addLine("}")
+        if(detector.semantic) {
+            addLine("public String naiveRDF() {")
+            depth++
+            addLine("String str = super();")
+            addLine("str += this + \" a smol:$className.\\n\";")
+            for (f in myFields) addLine("str += this + \" smol:${className}_${f.second} \" + ${f.second} +\".\\n\";")
+            addLine("return str;")
+            depth--
+            addLine("}")
+        }
         depth--
         addLine("}")
         classes.add(Pair(className,builder))
     }
 
     override fun enterMethod_def(ctx: WhileParser.Method_defContext?) {
-        if(ctx!!.paramList() == null)
-            addLine("public ${getType(ctx.type())} ${ctx.NAME().text}(){")
+        var type = getType(ctx!!.type()).toString()
+        if(type == "Int") type = "int"
+        if(ctx.paramList() == null)
+            addLine("public $type ${ctx.NAME().text}(){")
         else {
-            addLine("public ${getType(ctx.type())} ${ctx.NAME().text}(")
+            addLine("public $type ${ctx.NAME().text}(")
             depth++
             for( p in 0 until ctx.paramList().param().size) {
                 val param = ctx.paramList().param()[p]
                 val suffix = if( p == ctx.paramList().param().size - 1 ) "" else ", "
-                addLine(getType(param.type()).toString() + " " + param.NAME().text + suffix)
+                addLine(type + " " + param.NAME().text + suffix)
             }
             depth--
             addLine("){")
@@ -138,28 +169,4 @@ class SMOLManager{
         depth--
         addLine("}")
     }
-
-    /*
-    override fun enterReturn_statement(ctx: WhileParser.Return_statementContext?) {
-        addIntend()
-        addText("return ")
-    }
-
-    override fun exitReturn_statement(ctx: WhileParser.Return_statementContext?) {
-        addText(";\n")
-    }
-
-    override fun enterThis_expression(ctx: WhileParser.This_expressionContext?) {
-        addText("this")
-    }
-
-    override fun enterField_expression(ctx: WhileParser.Field_expressionContext?) {
-        addText("this."+ctx!!.NAME().text)
-    }
-
-    override fun enterVar_expression(ctx: WhileParser.Var_expressionContext?) {
-        addText(ctx!!.NAME().text)
-    }
-    */
-
 }

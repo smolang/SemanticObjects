@@ -5,7 +5,8 @@ import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.InterpreterBridge
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
-import no.uio.microobject.type.BaseType
+import no.uio.microobject.type.INTTYPE
+import no.uio.microobject.type.STRINGTYPE
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
@@ -47,9 +48,10 @@ class RuleGenerator(val settings: Settings){
                     ?: throw Exception("Error during builtin generation")
             val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
             val mem: Memory = mutableMapOf()
+            val objName = thisVar.toString().removePrefix(settings.runPrefix)
             val obj = LiteralExpr(
-                thisVar.toString().removePrefix(settings.runPrefix),
-                BaseType(cl.className.text)
+                objName,
+                myIpr.heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated
             )
             mem["this"] = obj
             val se = StackEntry(met.first, mem, obj, Names.getStackId())
@@ -63,11 +65,12 @@ class RuleGenerator(val settings: Settings){
                     //Evaluate final return expressions
                     val resStmt = myIpr.stack.peek().active as ReturnStmt
                     val res = resStmt.value
-                    val ret = myIpr.evalTopMost(res).literal
+                    val topmost = myIpr.evalTopMost(res)
+                    val ret = topmost.literal
 
                     //Build final triple and add it to the context
-                    val resNode = if (ret.toIntOrNull() != null) NodeFactory.createLiteral(ret) else
-                        if(ret.startsWith("\"")) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
+                    val resNode = if (topmost.tag == INTTYPE) NodeFactory.createLiteral(ret.removeSurrounding("\""), XSDDatatype.XSDint) else
+                        if(topmost.tag == STRINGTYPE) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
                     val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)

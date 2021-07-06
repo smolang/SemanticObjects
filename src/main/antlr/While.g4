@@ -115,7 +115,7 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
-			| IF expression THEN statement (ELSE statement)? END next=statement?                                                                        # if_statement
+			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                                        # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
             | statement statement                                                                                                                       # sequence_statement
             ;

@@ -73,8 +73,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     //List of declared fields (with type and visibility) per class
     private val fields : MutableMap<String, Map<String, FieldInfo>> = mutableMapOf()
 
-    //List of declared parameters per class (TODO: remove)
-    private val parameters : MutableMap<String, List<String>> = mutableMapOf()
 
     //List of declared methods per class
     private val methods : MutableMap<String, List<WhileParser.Method_defContext>> = mutableMapOf()
@@ -114,20 +112,22 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             else                         extends[name] = OBJECTTYPE
 
             methods[name] = computeMethods(name)
-
-            if(clCtx.fieldDeclList() == null) {
-                fields[name] = mapOf()
-            }else {
-                val next = clCtx.fieldDeclList().fieldDecl().map {
-                    val cVisibility =
-                        if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                    val iVisibility =
-                        if (it.infer == null) Visibility.PUBLIC else if(it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                    Pair(it.NAME().text, FieldInfo(it.NAME().text, translateType(it.type(), name, generics), cVisibility, iVisibility, BaseType(name)))
-                }
-                fields[name] = next.toMap()
+            fields[name] = computeFields(name).associate {
+                val cVisibility =
+                    if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                val iVisibility =
+                    if (it.infer == null) Visibility.PUBLIC else if (it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                Pair(
+                    it.NAME().text,
+                    FieldInfo(
+                        it.NAME().text,
+                        translateType(it.type(), name, generics),
+                        cVisibility,
+                        iVisibility,
+                        BaseType(name)
+                    )
+                )
             }
-            parameters[name] = if(clCtx.fieldDeclList() == null) listOf() else clCtx.fieldDeclList().fieldDecl().map { it.NAME().text }
         }
     }
 
@@ -135,6 +135,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         val current = ctx.class_def().firstOrNull { it.className.text == className } ?: return emptyList()
         val above = if(current.superType != null) computeMethods(current.superType.text) else emptyList()
         val own = if(current.method_def() != null) current.method_def() else emptyList()
+        return above + own
+    }
+
+    private fun computeFields(className: String) : List<WhileParser.FieldDeclContext>{
+        val current = ctx.class_def().firstOrNull { it.className.text == className } ?: return emptyList()
+        val above = if(current.superType != null) computeFields(current.superType.text) else emptyList()
+        val own = if(current.fieldDeclList() != null) current.fieldDeclList().fieldDecl() else emptyList()
         return above + own
     }
 
@@ -511,8 +518,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                                   val targetType = callParams[match] //of method decl
                                   val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)                    //of call
                                   val finalType = instantiateGenerics(targetType, rhsType, otherClassName, generics.getOrDefault(className, listOf()))
-                                  if (targetType != ERRORTYPE && realType != ERRORTYPE && !realType.isAssignable(finalType, extends))
+                                  if (targetType != ERRORTYPE && realType != ERRORTYPE && !finalType.isAssignable(realType, extends)) {
                                       log("Type $realType is not assignable to $targetType.", ctx)
+                                  }
                               }
                               if (lhsType != null) { //result type
                                   val metRet = translateType(met.type(), otherClassName, generics) // type as declared
@@ -984,13 +992,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
 
     private fun getParameterTypes(className: String): List<Type> {
-        val types : List<Type> = fields.getOrDefault(className, mapOf()).map { it.value.type }
-        if(extends.containsKey(className)){
-            val supertype = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
-            val moreTypes = getParameterTypes(supertype)
-            return moreTypes + types
-        }
-        return types
+        return fields.getOrDefault(className, mapOf()).map { it.value.type }
     }
 
 

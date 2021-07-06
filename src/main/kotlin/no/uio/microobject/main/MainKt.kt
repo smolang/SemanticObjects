@@ -33,8 +33,7 @@ data class Settings(val verbose : Boolean,      //Verbosity
             .replace("smol:", "$langPrefix:")
     }
     fun prefixes() : String =
-        """@prefix : <urn:> .
-           @prefix smol: <${langPrefix}> .
+        """@prefix smol: <${langPrefix}> .
            @prefix prog: <${progPrefix}>.
            @prefix domain: <${domainPrefix}>.
            @prefix run: <${runPrefix}> .""".trimIndent()
@@ -42,24 +41,20 @@ data class Settings(val verbose : Boolean,      //Verbosity
 
 class Main : CliktCommand() {
     val mainMode by option().switch(
-        "--compile" to "compile",
-        "-c" to "compile",
-        "--execute" to "execute",
-        "-e" to "execute",
-        "--load" to "repl",
-        "-l" to "repl",
+        "--compile" to "compile", "-c" to "compile",
+        "--execute" to "execute", "-e" to "execute",
+        "--load" to "repl",       "-l" to "repl",
     ).default("repl")
 
-//    private val ninteractive by option("--non-interactive","-n",help="Does not enter the interactive shell, but executes the loaded file if no replay file is given.").flag()
-//    private val cross        by option("--cross-compile","-c",help="Translates the .smol file loaded with -l into java.").flag()
-    private val verbose      by option("--verbose","-v",help="Verbose output.").flag()
-    private val tmp          by option("--tmp","-t",help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
-    private val replay       by option("--replay","-r",help="path to a file containing a series of shell commands.").path()
-    private val input        by option("--input","-i",help="path to a .smol file which is loaded on startup.").path()
-    private val back         by option("--back","-b",help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
-    private val domainPrefix by option("--domain","-d",help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
-    private val jPackage     by option("--package","-p",help="Java package.").default("no.uio.microobject")
-    private val jOut         by option("--output","-o",help="Java output.").path().default(Paths.get("/tmp/mo/java"))
+    private val back         by option("--back",     "-b", help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
+    private val domainPrefix by option("--domain",   "-d", help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
+    private val input        by option("--input",    "-i", help="path to a .smol file which is loaded on startup.").path()
+    private val jOut         by option("--output",   "-o", help="Java output.").path().default(Paths.get("/tmp/mo/java"))
+    private val jPackage     by option("--package",  "-p", help="Java package.").default("no.uio.microobject")
+    private val jEnforce     by option("--semantic", "-s", help="Enforces a semantic translation, even in a non-semantic fragment.").flag()
+    private val replay       by option("--replay",   "-r", help="path to a file containing a series of shell commands.").path()
+    private val tmp          by option("--tmp",      "-t", help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
+    private val verbose      by option("--verbose",  "-v", help="Verbose output.").flag()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -91,7 +86,7 @@ class Main : CliktCommand() {
             tC.check()
             tC.report()
 
-            val backend = JavaBackend(tree, pair.second, jPackage)
+            val backend = JavaBackend(tree, pair.first.active, pair.second, jPackage, jEnforce)
             backend.writeOutput(jOut)
             print(backend.getOutput())
             return
