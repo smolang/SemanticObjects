@@ -1,0 +1,183 @@
+class <T> List(T content, List<T> next) end
+
+abstract class GeoLayer(Int thickness, GeoLayer above, GeoLayer below) //in m
+    rule Int depth()
+        Int res := 0;
+        if(this.above <> null) then
+            res := this.above.depth();
+            res := res + this.above.thickness;
+        end
+        return res;
+    end
+    abstract Boolean canPropagate()
+    abstract Boolean migrate()
+end
+
+class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
+    Int cook()
+        if(this.dinoStatus < 3 & this.dinoStatus > 0) then
+            print("cooking");
+            this.dinoStatus := this.dinoStatus +1;
+        end
+        return this.dinoStatus;
+    end
+    Int burn()
+        this.dinoStatus := 0;
+        print("burning");
+        return this.dinoStatus;
+    end
+    override Boolean canPropagate()
+        return False;
+    end
+    override Boolean migrate()
+        if(this.above <> null) then
+            Boolean unsealed := this.above.canPropagate();
+            if(unsealed) then
+                this.above.migrate();
+                this.dinoStatus := 0;
+                return False;
+            end
+        else
+            this.dinoStatus := 0;
+            return False;
+        end
+        return True;
+    end
+end
+
+class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium, 3 = low
+    Int compact()
+        if(this.porosity < 3) then this.porosity := this.porosity +1; end
+        print("compacting");
+        return this.porosity;
+    end
+    override Boolean canPropagate()
+        return this.porosity < 3;
+    end
+    override Boolean migrate()
+        this.hasHC := True;
+        if(this.above <> null) then
+            Boolean unsealed := this.above.canPropagate();
+            if(unsealed) then
+                this.above.migrate();
+                this.hasHC := False;
+                return False;
+            end
+        else
+            print("escape");
+            this.hasHC := False;
+            return False;
+        end
+        if(this.hasHC) then print("deposit"); end
+        return True;
+    end
+end
+
+class Bedrock extends GeoLayer()
+    override Boolean canPropagate()
+        return False;
+    end
+    override Boolean migrate()
+        return False;
+    end
+end
+
+//create only one: ids are not implemented yet
+class Scenario(Bedrock basis, GeoLayer top)
+    Boolean deposit(GeoLayer newLayer)
+        newLayer.below := this.top;
+        this.top.above := newLayer;
+        this.top := newLayer;
+        return False;
+    end
+    Boolean erode(Int meters) //beware, no null check this.top.below
+        if(this.top.thickness <= meters) then
+            GeoLayer old := this.top;
+            Int up := meters - old.thickness;
+            this.top := this.top.below;
+            this.top.above := null;
+            destroy(old);
+            this.erode(up);
+        else
+            this.top.thickness := this.top.thickness - meters;
+        end
+        return False;
+    end
+    Boolean empty()
+        skip;
+        return False;
+    end
+
+    Boolean processes()
+       List<Sand> geos := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. FILTER(?depth >= 3000) }");
+       while(geos <> null) do
+            Sand next := geos.content;
+            next.compact();
+            geos := geos.next;
+       end
+       List<Shale> geos2 := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. FILTER(?depth >= 2000). FILTER(?depth <= 4000) }");
+       while(geos2 <> null) do
+            Shale next2 := geos2.content;
+            next2.cook();
+            geos2 := geos2.next;
+       end
+       geos2 := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. FILTER(?depth > 4000) }");
+       while(geos2 <> null) do
+           next2 := geos2.content;
+           next2.burn();
+           geos2 := geos2.next;
+       end
+       geos := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. FILTER(?depth >= 4000) }");
+       while(geos <> null) do
+           next := geos.content;
+           next.hasHC := False; //burning in sand
+           geos := geos.next;
+       end
+       geos2 := access("SELECT ?obj WHERE { ?obj prog:Shale_dinoStatus 3 }");
+       while(geos2 <> null) do
+           next2 := geos2.content;
+           next2.migrate();
+           geos2 := geos2.next;
+       end
+       return False;
+    end
+
+    Boolean run()
+        Shale shale := new Shale(1000, null, null, 1);
+        this.deposit(shale);
+        this.processes();
+
+        Sand sand := new Sand(1000, null, null, 1, False);
+        this.deposit(sand);
+        this.processes();
+
+        sand := new Sand(1000, null, null, 1, False);
+        this.deposit(sand);
+        this.processes();
+
+        this.empty();
+        this.processes();
+
+        this.erode(1500);
+        this.processes();
+
+        sand := new Sand(1000, null, null, 1, False);
+        this.deposit(sand);
+        this.processes();
+
+        sand := new Sand(1000, null, null, 1, False);
+        this.deposit(sand);
+        this.processes();
+
+        this.empty();
+        this.processes();
+
+        return False;
+    end
+end
+
+main
+    Bedrock bed := new Bedrock(1000, null, null);
+    Scenario scen := new Scenario(bed, bed);
+    scen.run();
+end
