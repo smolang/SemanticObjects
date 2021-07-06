@@ -35,12 +35,12 @@ class QueryChecker(
     fun type(staticTable: StaticTable) : Boolean{
         val successBuild = buildTree()
         if(!successBuild) {
-            log("Building the tree for the query failed", ctx)
+            log("Building the tree for the query failed", ctx, Severity.WARNING)
             return false
         }
         val successQuery = buildFormula()
         if(!successQuery){
-            log("Building the tree for the query failed", ctx)
+            log("Building the tree for the query failed", ctx, Severity.WARNING)
             return false
         }
         return check(staticTable)
@@ -167,18 +167,18 @@ class QueryChecker(
 
         val pattern = query.queryPattern
         if(pattern !is ElementGroup || pattern.elements.size != 1) {
-            log("This kind of query is not supported", ctx)
+            log("This kind of query is not supported", ctx, Severity.WARNING)
             return false
         }
         val elem = pattern.elements.first()
         if(elem !is ElementPathBlock) {
-            log("This kind of query is not supported", ctx)
+            log("This kind of query is not supported", ctx, Severity.WARNING)
             return false
         }
 
         for(f in elem.pattern.list){
             if(!f.isTriple){
-                log("This kind of query is not supported", ctx)
+                log("This kind of query is not supported", ctx, Severity.WARNING)
                 return false
             }
             val sub  = f.subject
@@ -204,7 +204,7 @@ class QueryChecker(
                     incidence[objNode] = old2
                 }
             } else {
-                log("This kind of query is not supported", ctx)
+                log("This kind of query is not supported", ctx, Severity.WARNING)
                 return false
             }
         }
@@ -215,7 +215,6 @@ class QueryChecker(
 
     private val sparqlPrefix =
         """
-                    PREFIX : <urn:>
                     PREFIX smol: <${settings.langPrefix}>
                     PREFIX prog: <${settings.progPrefix}>
                     PREFIX run: <${settings.runPrefix}>
