@@ -88,7 +88,7 @@ class RuleGenerator(val settings: Settings){
         for(cl in ctx!!.class_def()){
             for(nm in cl.method_def()) {
                 if(nm.builtinrule != null){
-                    println("Generating builtin functor and rule for ${nm.NAME()}...")
+                    if(settings.verbose) println("Generating builtin functor and rule for ${nm.NAME()}...")
                     val builtin : Builtin = buildFunctor(cl, nm, interpreterBridge)
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
@@ -99,7 +99,7 @@ class RuleGenerator(val settings: Settings){
             }
         }
         val str = rules.joinToString("")
-        if(str != "") println("rules: $str")
+        if(str != "" && settings.verbose) println("rules: $str")
         return str
     }
 }
