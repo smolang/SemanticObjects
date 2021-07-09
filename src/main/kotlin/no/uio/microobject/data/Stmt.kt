@@ -3,10 +3,7 @@
 package no.uio.microobject.data
 
 import no.uio.microobject.backend.JavaBackend
-import no.uio.microobject.type.BOOLEANTYPE
-import no.uio.microobject.type.BaseType
-import no.uio.microobject.type.ERRORTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
 
 /*
  * Simple extensions:
@@ -54,7 +51,10 @@ interface ProgramElement{
 }
 
 
-interface Statement : ProgramElement
+interface Statement : ProgramElement {
+    fun getLast(): Statement = this
+}
+
 interface Expression : ProgramElement
 interface Location : Expression{
     fun getType() : Type
@@ -317,6 +317,7 @@ data class WhileStmt(val guard : Expression, val loopBody : Statement, val pos :
 // We use a binary tree instead of a list to make the interpreter more simple.
 // The value of first is NOT allowed to be another SequenceStmt. Use appendStmt below to build trees.
 data class SequenceStmt(val first: Statement, val second : Statement) : Statement {
+    override fun getLast(): Statement = second
     override fun toString(): String = "$first; $second"
     override fun getRDF(): String {
         return """
@@ -586,3 +587,4 @@ object Names{
 
 val FALSEEXPR = LiteralExpr("False", BOOLEANTYPE)
 val TRUEEXPR = LiteralExpr("True", BOOLEANTYPE)
+val UNITEXPR = LiteralExpr("unit", UNITTYPE)

@@ -163,7 +163,6 @@ class Interpreter(
     Note that rewritings are also one executing steps
      */
     fun makeStep() : Boolean {
-        debug = false
         if(stack.isEmpty()) return false // program terminated
 
         //get current frame
@@ -182,7 +181,7 @@ class Interpreter(
             stack.push(se)
         }
 
-        return !debug
+        return true
     }
 
     internal fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
@@ -194,7 +193,10 @@ class Interpreter(
         for (expr in params) {
             val p = eval(expr, stackMemory, heap, simMemory, obj)
             //todo: check is this truly a run:literal
-            str = str.replace("%${i++}", "run:${p.literal}")
+            if(p.tag == INTTYPE)
+                str = str.replace("%${i++}", "\"${p.literal}\"^^xsd:integer")
+            else
+                str = str.replace("%${i++}", "run:${p.literal}")
         }
         if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.name == "content" } || !staticInfo.fieldTable["List"]!!.any { it.name == "next" }
         ) {

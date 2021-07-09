@@ -37,6 +37,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 text == BOOLEANTYPE.name -> BOOLEANTYPE
                 text == STRINGTYPE.name -> STRINGTYPE
                 text == DOUBLETYPE.name -> DOUBLETYPE
+                text == UNITTYPE.name -> UNITTYPE
                 else -> BaseType(text)
             }
         }
@@ -293,7 +294,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             log("Methods are not allows to be called \"port\".", mtCtx)
         val gens = generics.getOrDefault(className, listOf()).map { GenericType(it) }
         val thisType = if (gens.isNotEmpty()) ComposedType(BaseType(className), gens) else BaseType(className)
-
+        val retType = translateType(mtCtx.type(), className, generics)
         val cDef = recoverDef[className]
         if(cDef != null){
             if (mtCtx.abs != null && cDef.abs == null)
@@ -310,7 +311,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             log("rule-method $className.$name has non-empty parameter list.", mtCtx)
 
         //Check return type: must be known
-        if(containsUnknown(translateType(mtCtx.type(), className, generics), classes))
+        if(containsUnknown(retType, classes))
             log("Method $className.$name has unknown return type ${mtCtx.type()}.", mtCtx.type())
 
         //Check parameters: no shadowing, types must be known
@@ -351,7 +352,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             .associate { Pair(it.NAME().text, translateType(it.type(), className, generics)) }.toMutableMap() else mutableMapOf()
         val ret = checkStatement(mtCtx.statement(), false, initVars, translateType(mtCtx.type(), className, generics), thisType, className, mtCtx.builtinrule != null)
 
-        if(!ret) log("Method ${mtCtx.NAME().text} has a path without a final return statement.", mtCtx)
+        if(!ret && retType != UNITTYPE) {
+            log("Method ${mtCtx.NAME().text} has non-Unit return type a path without a final return statement.", mtCtx)
+        }
 
         //check queries
         queryCheckers.forEach { it.type(staticTable) }

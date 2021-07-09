@@ -106,6 +106,9 @@ class REPL(private val settings: Settings) {
         validDump = true
     }
 
+    fun runAndTerminate(){
+        while (!interpreter!!.stack.empty() && interpreter!!.makeStep());
+    }
 
     fun printRepl(str: String) {
         println("MO> $str \n")

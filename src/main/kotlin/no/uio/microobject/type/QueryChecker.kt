@@ -145,7 +145,7 @@ class QueryChecker(
 
         val toCheck = "$sparqlPrefix\n\n $query\n"
         if(toCheck.contains("%")) {
-            log("%n constants are not supported yet", ctx)
+            log("%n constants are not supported yet", ctx, Severity.WARNING)
             return false
         }
 

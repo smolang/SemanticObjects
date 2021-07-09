@@ -51,6 +51,7 @@ TRUE : 'True';
 FALSE : 'False';
 NULL : 'null';
 THIS: 'this';
+UNIT: 'unit';
 
 //Keywords: operators
 EQ : '=';
@@ -133,6 +134,7 @@ expression :      THIS                           # this_expression
                 | STRING                         # string_expression
                 | FLOAT                          # double_expression
                 | NULL                           # null_expression
+                | UNIT                           # unit_expression
                 | expression DOT PORT OPARAN STRING CPARAN	# fmu_field_expression
                 | expression DOT NAME			 # external_field_expression
                 | expression DIV expression      # div_expression

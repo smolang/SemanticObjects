@@ -58,7 +58,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 if(nm.abs != null && nm.statement() != null )
                     throw Exception("Abstract method with non-empty statement: ${nm.NAME().text}")
                 if(nm.abs == null) {
-                    val stmt = visit(nm!!.statement()) as Statement
+                    var stmt = visit(nm!!.statement()) as Statement
+                    val last = stmt.getLast();
+                    val metType = TypeChecker.translateType(nm.type(), cl.NAME().text, mutableMapOf())
+                    if(metType == UNITTYPE && last !is ReturnStmt){//just to be sure
+                        stmt = appendStmt(stmt, ReturnStmt(UNITEXPR))
+                    }
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
                     res[nm.NAME().text] = Pair(stmt, params)
                 }
@@ -358,6 +363,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
     override fun visitFalse_expression(ctx: False_expressionContext?): ProgramElement {
         return FALSEEXPR
+    }
+    override fun visitUnit_expression(ctx: Unit_expressionContext?): ProgramElement {
+        return UNITEXPR
     }
 
     override fun visitNull_expression(ctx: Null_expressionContext?): ProgramElement {
