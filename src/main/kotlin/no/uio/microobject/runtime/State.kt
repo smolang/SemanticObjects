@@ -61,6 +61,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         }
 
         // dumps processes
+        /*
         res += "\n"
         var prevStackEntry: StackEntry? = null
         for (stackEntry in stack){
@@ -78,7 +79,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             res += "run:pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
             res += stackEntry.active.getRDF()
         }
-
+        */
         // dumps simulation processes
         for(obj in simulation.keys){
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Simulation.\n"

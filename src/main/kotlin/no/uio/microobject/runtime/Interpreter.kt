@@ -113,10 +113,10 @@ class Interpreter(
             model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
         }
 
-        if(rules != "") {
-            if(settings.verbose) println("Loading generated builtin rules $rules...")
+        if(rules != "" || settings.backgroundrules != "") {
+            if(settings.verbose) println("Loading generated builtin rules $rules and domain rules ${settings.backgroundrules}")
             val prefixes  = settings.prefixes()
-            val reader = (prefixes+"\n"+rules).byteInputStream().bufferedReader()
+            val reader = (prefixes+"\n"+rules+"\n"+settings.backgroundrules).byteInputStream().bufferedReader()
             val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
             val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rParsed))
             val infModel = ModelFactory.createInfModel(reasoner, model)
