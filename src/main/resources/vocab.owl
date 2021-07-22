@@ -221,3 +221,9 @@ smol:hasParameter         rdf:type owl:ObjectProperty ;
 smol:hasOperand           rdf:type owl:ObjectProperty ;
                         rdfs:domain smol:ArithExpression ;
                         rdfs:range smol:Operand .
+
+
+
+domain:models rdf:type owl:ObjectProperty ;
+              rdfs:subPropertyOf owl:topObjectProperty ;
+              rdf:type owl:FunctionalProperty.

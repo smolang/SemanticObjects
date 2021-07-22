@@ -46,9 +46,9 @@ domain:triggeredBy rdf:type owl:ObjectProperty ;
 
 
 ###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#models
-domain:models rdf:type owl:ObjectProperty ;
-                                                  rdfs:subPropertyOf owl:topObjectProperty ;
-                                                  rdf:type owl:FunctionalProperty.
+#domain:models rdf:type owl:ObjectProperty ;
+#                                                  rdfs:subPropertyOf owl:topObjectProperty ;
+#                                                  rdf:type owl:FunctionalProperty.
                                                   #rdfs:domain prog:Sand ;
                                                   #rdfs:range [ owl:intersectionOf ( domain:Stratigraphic_Layer
                                                   #                                  [ rdf:type owl:Restriction ;
