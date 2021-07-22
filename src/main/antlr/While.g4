@@ -45,6 +45,7 @@ PRIVATE : 'private';
 PROTECTED : 'protected';
 INFERPRIVATE : 'inferprivate';
 INFERPROTECTED : 'inferprotected';
+MODELS : 'models';
 
 //Keywords: constants
 TRUE : 'True';
@@ -97,7 +98,7 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN  method_def* END;
+class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN (owldescription=STRING)? method_def* END;
 method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 //Statements
@@ -107,7 +108,7 @@ statement :   SKIP_S SEMI                                                       
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
-			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN SEMI                          # create_statement
+			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                          # create_statement
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement

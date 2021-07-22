@@ -575,8 +575,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }*/
 
                 val creationParameters = getParameterTypes(createClass)
-                if (creationParameters.size == (ctx.expression().size - 1)){
-                    for(i in 1 until ctx.expression().size){
+                if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
+                    for(i in 1 until creationParameters.size){
+                        if(ctx.expression() == ctx.owldescription) continue
                         val targetType = creationParameters[i-1]
                         val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
                         val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)
@@ -592,6 +593,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
                 if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
                     log("Type $newType is not assignable to $lhsType", ctx)
+                }
+
+                if(ctx.owldescription != null && getType(ctx.owldescription, inner, vars, thisType, false) != STRINGTYPE){
+                    log("Models clause must be a String: ${ctx.owldescription}", ctx)
                 }
 
             }

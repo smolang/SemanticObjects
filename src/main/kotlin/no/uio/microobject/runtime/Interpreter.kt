@@ -283,7 +283,14 @@ class Interpreter(
                     "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}"
                 )
                 for (i in m.indices) {
+                    if(!m[i].name.startsWith("__"))
                     newMemory[m[i].name] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                }
+                if(stmt.modeling != null) {
+                    val str = eval(stmt.modeling, stackMemory, heap, simMemory, obj).literal
+                    val rdfName = Names.getNodeName()
+                    newMemory["__describe"] = LiteralExpr(rdfName + " " + str.removeSurrounding("\"") , STRINGTYPE)
+                    newMemory["__models"] = LiteralExpr(rdfName , STRINGTYPE)
                 }
                 heap[name] = newMemory
                 return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())

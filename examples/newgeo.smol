@@ -69,11 +69,11 @@ class UnknownLayer extends GeoLayer()
 end
 
 class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
+            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]."
     Unit cook()
-        if(this.dinoStatus < 3 & this.dinoStatus > 0) then
-            print("cooking");
-            this.dinoStatus := this.dinoStatus +1;
-        end
+        //if(this.dinoStatus < 3 & this.dinoStatus > 0) then
+        print("cooking");
+        this.dinoStatus := this.dinoStatus +1;
     end
     Unit burn()
         this.dinoStatus := 0;
@@ -103,6 +103,7 @@ class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = keroge
 end
 
 class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium, 3 = low
+           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone]."
     Unit compact()
         if(this.porosity < 3) then this.porosity := this.porosity +1; end
         print("compacting");
@@ -186,7 +187,8 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
             next.compact();
             geos := geos.next;
        end
-       List<Shale> geos2 := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. ?obj prog:Shale_scenId %1. FILTER(?depth >= 2000). FILTER(?depth <= 4000) }", this.scenId);
+       List<Shale> geos2 :=
+       access("SELECT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y domain:depth ?depth; domain:constitutedBy [ domain:contains [ a domain:Kerogen ] ]. FILTER(?depth >= 2000) }", this.scenId);
        while(geos2 <> null) do
             Shale next2 := geos2.content;
             next2.cook();
@@ -247,7 +249,7 @@ main
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
+    layer := new Sand(0, 1000, null, null, 1, False); // models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 
@@ -256,8 +258,7 @@ main
 
     Bedrock bed := new Bedrock(1, 1000, null, null);
     Scenario scen := new Scenario(1, bed, bed);
-    breakpoint;
+
     actions := actions.reverse();
-    breakpoint;
     scen.run(actions);
 end

@@ -46,17 +46,25 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
             //and their fields
             for(store in heap[obj]!!.keys) {
-                val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                res += "run:${obj.literal} prog:${obj.tag}_$store "
-                res +=  if(target.literal == "null")
-                    "smol:${target.literal}.\n"
-                else if(target.tag == ERRORTYPE || target.tag == STRINGTYPE )
-                    "${target.literal}.\n"
-                else if(target.tag == INTTYPE)
-                    "\"${target.literal}\"^^xsd:integer.\n"
-                else
-                    "run:${target.literal}.\n"
-                i++
+                if (store == "__models") {
+                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
+                    res += "run:${obj.literal} domain:models $target.\n"
+                } else if (store == "__describe") {
+                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
+                    res += target
+                } else {
+                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
+                    res += "run:${obj.literal} prog:${obj.tag}_$store "
+                    res += if (target.literal == "null")
+                        "smol:${target.literal}.\n"
+                    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+                        "${target.literal}.\n"
+                    else if (target.tag == INTTYPE)
+                        "\"${target.literal}\"^^xsd:integer.\n"
+                    else
+                        "run:${target.literal}.\n"
+                    i++
+                }
             }
         }
 

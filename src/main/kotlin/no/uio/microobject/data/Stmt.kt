@@ -191,7 +191,7 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
 }
 
 // Object creation. There is no constructor, but we
-data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1, val declares: Type?) : Statement {
+data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1, val declares: Type?, val modeling : Expression? = null) : Statement {
     override fun toString(): String = "$target := new $className(${params.joinToString(",")})"
     override fun getRDF(): String {
         var s = """
@@ -580,9 +580,11 @@ data class LiteralExpr(val literal : String, val tag : Type = ERRORTYPE) : Expre
 object Names{
     private var i = 0
     private var j = 0
+    private var k = 0
     fun getObjName(className : String) : LiteralExpr = LiteralExpr("obj${i++}", BaseType(className))
     fun getVarName(tag : Type = ERRORTYPE) : LocalVar = LocalVar("_v${i++}", tag)
     fun getStackId() : Int = j++
+    fun getNodeName() : String = "domain:model${k++}"
 }
 
 val FALSEEXPR = LiteralExpr("False", BOOLEANTYPE)

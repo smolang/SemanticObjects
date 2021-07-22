@@ -23,7 +23,7 @@ class BasicTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
-        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:"), pair.second)
+        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:", ""), pair.second)
 
         tC.check()
         tC.report()

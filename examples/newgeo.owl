@@ -1,0 +1,177 @@
+#@prefix : <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#> .
+#@prefix owl: <http://www.w3.org/2002/07/owl#> .
+#@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+#@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+#@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+#@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+#@prefix domain: <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#> .
+#@base <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain> .
+#@prefix prog: <https://github.com/Edkamb/SemanticObjects/Program#>.
+#@prefix run: <https://github.com/Edkamb/SemanticObjects/Run#>.
+#@prefix smol: <https://github.com/Edkamb/SemanticObjects#>.
+#
+#<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain> rdf:type owl:Ontology .
+
+#prog:Sand rdfs:subClassOf [ rdf:type owl:Restriction ;
+#                            owl:onProperty domain:models ;
+#                            owl:minQualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+#                            owl:onClass domain:Stratigraphic_Layer
+#                          ] .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constitutedBy
+domain:constitutedBy rdf:type owl:ObjectProperty ;
+                     rdfs:subPropertyOf owl:topObjectProperty ;
+                     rdf:type owl:FunctionalProperty ;
+                     rdfs:domain domain:Stratigraphic_Layer ;
+                     rdfs:range domain:Rock .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#contains
+domain:contains rdf:type owl:ObjectProperty ;
+                rdfs:subPropertyOf owl:topObjectProperty ;
+                rdfs:domain domain:Sedimentary_Rock ;
+                rdfs:range domain:Organic_Matter .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#triggeredBy
+domain:triggeredBy rdf:type owl:ObjectProperty ;
+                   rdfs:subPropertyOf owl:topObjectProperty ;
+                   rdfs:domain domain:Process ;
+                   rdfs:range domain:Stratigraphic_Layer .
+
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#models
+domain:models rdf:type owl:ObjectProperty ;
+                                                  rdfs:subPropertyOf owl:topObjectProperty ;
+                                                  rdf:type owl:FunctionalProperty.
+                                                  #rdfs:domain prog:Sand ;
+                                                  #rdfs:range [ owl:intersectionOf ( domain:Stratigraphic_Layer
+                                                  #                                  [ rdf:type owl:Restriction ;
+                                                  #                                    owl:onProperty domain:constitutedBy ;
+                                                  #                                    owl:someValuesFrom domain:Sandstone
+                                                  #                                  ]
+                                                  #                               ) ;
+                                                  #             rdf:type owl:Class
+                                                  #           ] .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#depth
+domain:depth rdf:type owl:DatatypeProperty ,
+                      owl:FunctionalProperty ;
+             rdfs:domain domain:Stratigraphic_Layer ;
+             rdfs:range xsd:integer .
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#thickness
+domain:thickness rdf:type owl:DatatypeProperty ,
+                      owl:FunctionalProperty ;
+             rdfs:domain domain:Stratigraphic_Layer ;
+             rdfs:range xsd:integer .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Cooking
+domain:Cooking rdf:type owl:Class ;
+               rdfs:subClassOf domain:Process ,
+                               [ rdf:type owl:Restriction ;
+                                 owl:onProperty domain:triggeredBy ;
+                                 owl:someValuesFrom domain:CookingTrigger
+                               ] .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#CookingTrigger
+domain:CookingTrigger rdf:type owl:Class ;
+                      owl:equivalentClass [ owl:intersectionOf ( domain:Stratigraphic_Layer
+                                                                 [ rdf:type owl:Restriction ;
+                                                                   owl:onProperty domain:constitutedBy ;
+                                                                   owl:someValuesFrom [ rdf:type owl:Restriction ;
+                                                                                        owl:onProperty domain:contains ;
+                                                                                        owl:someValuesFrom domain:Kerogen
+                                                                                      ]
+                                                                 ]
+                                                                 [ rdf:type owl:Restriction ;
+                                                                   owl:onProperty domain:depth ;
+                                                                   owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                                       owl:onDatatype xsd:integer ;
+                                                                                       owl:withRestrictions ( [ xsd:minInclusive 2000
+                                                                                                              ]
+                                                                                                            )
+                                                                                     ]
+                                                                 ]
+                                                               ) ;
+                                            rdf:type owl:Class
+                                          ] ;
+                      rdfs:subClassOf domain:Trigger .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Kerogen
+domain:Kerogen rdf:type owl:Class ;
+               rdfs:subClassOf domain:Organic_Matter .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Oil
+domain:Oil rdf:type owl:Class ;
+           rdfs:subClassOf domain:Organic_Matter .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Organic_Matter
+domain:Organic_Matter rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Process
+domain:Process rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Rock
+domain:Rock rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Sandstone
+domain:Sandstone rdf:type owl:Class ;
+                 rdfs:subClassOf domain:Siliciclastic_Rock .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Sedimentary_Rock
+domain:Sedimentary_Rock rdf:type owl:Class ;
+                        rdfs:subClassOf domain:Rock .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Shale
+domain:Shale rdf:type owl:Class ;
+             rdfs:subClassOf domain:Siliciclastic_Rock .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Siliciclastic_Rock
+domain:Siliciclastic_Rock rdf:type owl:Class ;
+                          rdfs:subClassOf domain:Sedimentary_Rock .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Stratigraphic_Layer
+domain:Stratigraphic_Layer rdf:type owl:Class ;
+                           rdfs:subClassOf [ rdf:type owl:Restriction ;
+                                             owl:onProperty domain:constitutedBy ;
+                                             owl:allValuesFrom domain:Siliciclastic_Rock
+                                           ] ,
+                                           [ rdf:type owl:Restriction ;
+                                             owl:onProperty domain:constitutedBy ;
+                                             owl:qualifiedCardinality "1"^^xsd:nonNegativeInteger ;
+                                             owl:onClass domain:Rock
+                                           ] .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#Trigger
+domain:Trigger rdf:type owl:Class .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi

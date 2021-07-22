@@ -16,11 +16,13 @@ import org.antlr.v4.runtime.RuleContext
 class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
+    private val owldescr : MutableMap<String, String> = mutableMapOf()
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         for(cl in ctx!!.class_def()){
+            if(cl.owldescription != null) owldescr[cl!!.className.text] = cl.owldescription.text
             if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
@@ -175,17 +177,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {
         var ll = emptyList<Expression>()
-        for(i in 1 until ctx!!.expression().size)
-            ll += visit(ctx.expression(i)) as Expression
+        for(i in 1 until ctx!!.expression().size) {
+            if(ctx.expression(i) != ctx.owldescription)
+                ll += visit(ctx.expression(i)) as Expression
+        }
         val def = getClassDecl(ctx)
         val targetType =
             TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        val modeling = if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
+            ?.let { LiteralExpr(it, STRINGTYPE) } else if(ctx.owldescription != null) visit(ctx.owldescription) as Expression else null
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),
                           ll,
                           ctx!!.start.line,
-                            targetType
-                         )
+                          targetType,
+                          modeling )
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
