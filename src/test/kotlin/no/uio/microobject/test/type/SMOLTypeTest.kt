@@ -29,7 +29,7 @@ class SMOLTypeTest : MicroObjectTypeTest() {
 
         "Query check fail 3"{
             val tC = checkMet("Test", "mFail3", "type_query")
-            assertFalse(tC.report(false))
+            assert(tC.report(false)) //%parameters are a warning now
         }
         "Query rule success"{
             val tC = checkMet("F", "getI", "type_query")

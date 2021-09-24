@@ -88,7 +88,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private val queryCheckers = mutableListOf<QueryChecker>()
 
     override fun report(silent: Boolean): Boolean {
-        return super.report(silent) && queryCheckers.fold(true) { acc, nx -> acc && nx.report(silent) }
+        return queryCheckers.fold(super.report(silent)) { acc, nx -> acc && nx.report(silent) }
     }
 
 
@@ -589,7 +589,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
                 val creationParameters = getParameterTypes(createClass)
                 if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
-                    for(i in 1 until creationParameters.size){
+                    for(i in 1 until creationParameters.size+1){
                         if(ctx.expression() == ctx.owldescription) continue
                         val targetType = creationParameters[i-1]
                         val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))

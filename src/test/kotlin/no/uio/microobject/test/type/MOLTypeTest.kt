@@ -23,6 +23,7 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
         for(i in 1..7) {
             "Assign Test Fail $i"{
                 val tC = checkMet("Test", "fail$i", "test_assign")
+                println(tC.report(false))
                 assertFalse(tC.report(false))
                 assertEquals(tC.error.size, 1)
             }

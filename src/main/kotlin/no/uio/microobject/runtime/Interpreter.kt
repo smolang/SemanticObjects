@@ -186,6 +186,10 @@ class Interpreter(
             stack.push(se)
         }
 
+        if(debug){
+            debug = false
+            return false
+        }
         return true
     }
 
