@@ -150,12 +150,17 @@ class Interpreter(
     }
 
     fun dumpTtl() : String{
-        return State(stack, heap, simMemory, staticInfo, settings).dump() // snapshot management goes here
+        return State(stack, heap, simMemory, staticInfo, settings, this).dump() // snapshot management goes here
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
         if(stack.isEmpty()) return LiteralExpr("ERROR") // program terminated
         return eval(expr, stack.peek().store, heap, simMemory, stack.peek().obj)
+    }
+
+
+    fun evalClassLevel(expr: Expression, obj: LiteralExpr): Any {
+        return eval(expr, mutableMapOf(), heap, simMemory, obj)
     }
 
     /*
@@ -232,9 +237,9 @@ class Interpreter(
                 when (stmt.target) {
                     is LocalVar -> stackMemory[stmt.target.name] = res
                     is OwnVar -> {
-                        if (!(staticInfo.fieldTable[(obj.tag as BaseType).name]
-                                ?: error("")).contains(stmt.target.name)
-                        ) throw Exception("This field is unknown: ${stmt.target.name}")
+                        val got = staticInfo.fieldTable[(obj.tag as BaseType).name] ?: throw Exception("Cannot find class ${obj.tag.name}")
+                        if (!got.map {it.name} .contains(stmt.target.name))
+                            throw Exception("This field is unknown: ${stmt.target.name}")
                         heapObj[stmt.target.name] = res
                     }
                     is OthersVar -> {
@@ -704,5 +709,6 @@ ${stack.joinToString(
         for(sim in simMemory.values)
             sim.terminate()
     }
+
 
 }

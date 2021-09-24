@@ -10,6 +10,7 @@ import no.uio.microobject.type.STRINGTYPE
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.NodeFactory
+import org.apache.jena.graph.Node_Blank
 import org.apache.jena.graph.Triple
 import org.apache.jena.reasoner.rulesys.Builtin
 import org.apache.jena.reasoner.rulesys.BuiltinRegistry
@@ -35,6 +36,7 @@ class RuleGenerator(val settings: Settings){
         override fun headAction(args: Array<out Node>?, length: Int, context: RuleContext?) {
             //Get target object
             val thisVar = getArg(0, args, context)
+            if(thisVar is Node_Blank) return //weird effects when we have blank nodes
 
             //Get current state and make a copy
             val ipr = interpreterBridge.interpreter
@@ -49,6 +51,7 @@ class RuleGenerator(val settings: Settings){
             val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
             val mem: Memory = mutableMapOf()
             val objName = thisVar.toString().removePrefix(settings.runPrefix)
+
             val obj = LiteralExpr(
                 objName,
                 myIpr.heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated

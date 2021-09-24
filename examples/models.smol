@@ -1,0 +1,14 @@
+class <T> List(T content, List<T> next) end
+
+class M(Int i)
+   models( this.i = 0 ) "rdf:type domain:zero.";
+   models( this.i = 1 ) "rdf:type domain:single.";
+   models "rdf:type domain:any.";
+end
+
+main
+   M v0 := new M(0);
+   M v1 := new M(1);
+   M v2 := new M(2);
+   List<M> acc := access("SELECT ?obj WHERE {?obj rdf:type prog:M}");
+end

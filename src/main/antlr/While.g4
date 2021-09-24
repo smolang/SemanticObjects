@@ -98,9 +98,15 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN (owldescription=STRING)? method_def* END;
+class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
+            (models_block)?
+            method_def*
+            END;
 method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
+models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
+             | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
+             ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement

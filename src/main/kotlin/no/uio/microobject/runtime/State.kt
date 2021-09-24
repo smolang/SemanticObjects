@@ -1,13 +1,15 @@
 package no.uio.microobject.runtime
 
+import no.uio.microobject.data.Expression
 import no.uio.microobject.data.LiteralExpr
 import no.uio.microobject.data.Statement
+import no.uio.microobject.data.TRUEEXPR
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
 import java.util.*
 
 //This will be used for snapshots
-class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: SimulationMemory, initInfo : StaticTable, private val settings: Settings) {
+class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: SimulationMemory, initInfo : StaticTable, private val settings: Settings, private val interpreter: Interpreter? = null) {
     private val stack: Stack<StackEntry> = initStack.clone() as Stack<StackEntry>
     private val heap: GlobalMemory = initHeap.toMutableMap()
     private val staticInfo: StaticTable = initInfo.copy()
@@ -44,12 +46,31 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         for(obj in heap.keys){
             res += "run:${obj.literal} a prog:${(obj.tag as BaseType).name}.\n"
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
+
+            var useDefaultModels = true
+            if(staticInfo.modelsTable[obj.tag.name] != null && staticInfo.modelsTable[obj.tag.name]!!.isNotEmpty()){
+                for(mEntry in staticInfo.modelsTable[obj.tag.name]!!){
+                    if(interpreter != null) {
+                        val ret = interpreter.evalClassLevel(mEntry.first, obj)
+                        if(ret == TRUEEXPR){
+                            useDefaultModels = false
+                            val target = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
+                            val descr = mEntry.second.removeSurrounding("\"")
+                            res += "$target $descr\n"
+                            break
+                        }
+                    }
+                }
+            }
+
+
             //and their fields
             for(store in heap[obj]!!.keys) {
                 if (store == "__models") {
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
                     res += "run:${obj.literal} domain:models $target.\n"
                 } else if (store == "__describe") {
+                    if(!useDefaultModels) continue
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
                     res += target
                 } else {
@@ -109,15 +130,17 @@ typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name li
 typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
 typealias FieldEntry = List<FieldInfo>                   //list of fields
 typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
+typealias ModelsEntry = Pair<Expression, String>      //guard expression and models string
 
 enum class Visibility { PUBLIC, PROTECTED, PRIVATE}
 
 data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type)
 
 data class StaticTable(
-    val fieldTable: Map<String, FieldEntry>,               // This maps class names to their fields
+    val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields
     val methodTable: Map<String, Map<String, MethodEntry>>, // This maps class names to a map that maps method names to their definition
-    val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf()
+    val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(),
+    val modelsTable: Map<String, List<ModelsEntry>>                // This maps class names to models blocks
 ) { // DOWNWARDS class hierarchy
     override fun toString(): String =
 """

@@ -7,6 +7,7 @@ import no.uio.microobject.antlr.WhileParser.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
+import org.eclipse.rdf4j.model.util.Models
 
 /**
  * This class handles multiple tasks related to translating ANTLR structures to the internal representation
@@ -18,11 +19,32 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
 
+
+    private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
+        if(ctx is Simple_models_blockContext)
+            return Pair(emptyList(), ctx.owldescription.text)
+        if(ctx is Complex_models_blockContext) {
+            val expr = visit(ctx.expression()) as Expression
+            val str = ctx.owldescription.text
+            val tail = translateModels(ctx.models_block())
+            return Pair(tail.first + Pair(expr,str), tail.second)
+        }
+        throw Exception("Unknown models clause: $ctx") //making the type checker happy
+    }
+
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
+        var modelsTable : Map<String, List<ModelsEntry>> = emptyMap()
         for(cl in ctx!!.class_def()){
-            if(cl.owldescription != null) owldescr[cl!!.className.text] = cl.owldescription.text
+            val modelsList =
+            if(cl.models_block() != null){
+                val models = translateModels(cl.models_block())
+                owldescr[cl!!.className.text] = models.second
+                models.first
+            } else emptyList()
+            modelsTable = modelsTable + Pair(cl.className.text, modelsList)
+
             if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
@@ -99,7 +121,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable)
                    )
     }
 
@@ -401,6 +423,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitExternal_field_expression(ctx: External_field_expressionContext?): ProgramElement {
+        if(ctx!!.expression() is This_expressionContext)
+            return OwnVar(ctx.NAME().text)
         return OthersVar(visit(ctx!!.expression()) as Expression, ctx.NAME().text)
     }
     override fun visitFmu_field_expression(ctx: Fmu_field_expressionContext?): ProgramElement {

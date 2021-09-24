@@ -69,7 +69,9 @@ class UnknownLayer extends GeoLayer()
 end
 
 class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
-            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]."
+            models(this.dinoStatus = 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models(this.dinoStatus = 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale].";
     Unit cook()
         //if(this.dinoStatus < 3 & this.dinoStatus > 0) then
         print("cooking");
@@ -103,7 +105,8 @@ class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = keroge
 end
 
 class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium, 3 = low
-           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone]."
+           models(this.hasHC) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone];  domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
     Unit compact()
         if(this.porosity < 3) then this.porosity := this.porosity +1; end
         print("compacting");
@@ -181,6 +184,7 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
     end
 
     Unit processes()
+       print("pr");
        List<Sand> geos := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 3000) }", this.scenId);
        while(geos <> null) do
             Sand next := geos.content;
@@ -215,7 +219,6 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
     end
 
     Unit run(List<Action> actions)
-        print(actions);
         List<Action> current := actions;
         while(current <> null) do
             Action next := current.content;

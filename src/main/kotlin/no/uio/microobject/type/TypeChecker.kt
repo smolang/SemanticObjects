@@ -165,6 +165,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
         val name = clCtx.className.text
 
+
         //Check extends: class must exist and not *also* be generic
         if (clCtx.superType != null) {
             val superType = translateType(clCtx.superType, name, generics)
@@ -219,7 +220,19 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     clCtx
                 )
         }
+        //Only booleans in model block
+        if(clCtx.models_block() != null) checkModels(clCtx.models_block(), fields[name]!!, BaseType(name))
 
+    }
+
+    private fun checkModels(modelsBlock: WhileParser.Models_blockContext,
+                            fields : Map<String, FieldInfo>,
+                            thisType : Type) {
+        if(modelsBlock is WhileParser.Complex_models_blockContext){
+            val t = getType(modelsBlock.guard, fields, emptyMap(), thisType, false)
+            if(t != BOOLEANTYPE) log("Models guards must be booleans over the fields", modelsBlock)
+            checkModels(modelsBlock.models_block(), fields, thisType)
+        }
     }
 
     private fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){

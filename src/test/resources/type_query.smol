@@ -36,6 +36,10 @@ class Test()
      List<E> ld := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
      return 1;
    end
+   Int mFail3()
+     List<List<String>> ld := access("SELECT ?obj WHERE {?obj prog:List_head %1}", 42);
+     return 1;
+   end
 end
 
 class F(Int i)
