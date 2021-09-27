@@ -205,6 +205,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Inference visibility is not supported yet.", param, Severity.WARNING)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
+                if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE )
+                    log("Domain fields must be literal types, but $paramType found", param)
             }
         }
 
@@ -369,6 +371,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         if(!ret && retType != UNITTYPE) {
             log("Method ${mtCtx.NAME().text} has non-Unit return type a path without a final return statement.", mtCtx)
         }
+
+        if(mtCtx.domainrule != null && retType != INTTYPE && retType != BOOLEANTYPE && retType != STRINGTYPE )
+            log("Domain metnhod must have literal retur types, but $retType found", mtCtx)
 
         //check queries
         queryCheckers.forEach { it.type(staticTable) }
