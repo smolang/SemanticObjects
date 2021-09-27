@@ -38,16 +38,18 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         var res = ""
         if(overrideStr == null) res = "run:${obj.literal} $prefix:${obj.tag}_$store "
         else res =  "$overrideStr $prefix:${obj.tag}_$store "
-        res += if (target.literal == "null")
-            "smol:${target.literal}.\n"
-        else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-            "${target.literal}.\n"
-        else if (target.tag == INTTYPE)
-            "\"${target.literal}\"^^xsd:integer.\n"
-        else
-            "run:${target.literal}.\n"
+        res += getTTLLiteral(target) + ".\n"
         return res;
     }
+
+    private fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
+        "smol:${target.literal}"
+    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+        "${target.literal}"
+    else if (target.tag == INTTYPE)
+        "\"${target.literal}\"^^xsd:integer"
+    else
+        "run:${target.literal}"
 
     fun dump(forceRule : Boolean = false) : String{
         //Builds always known information and meta data
@@ -96,6 +98,25 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                     }
                 }
             }
+
+            if(staticInfo.methodTable[obj.tag.name] != null) {
+                for (m in staticInfo.methodTable[obj.tag.name]!!.entries) {
+                    if (m.value.isRule) {
+                        val retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                        //println("pre adding ${retVal.second.literal}")
+                        val finalRet = getTTLLiteral(retVal.second)
+                        res += "run:${obj.literal} prog:${m.value.declaringClass}_${m.key}_builtin_res $finalRet.\n"
+                        if (m.value.isDomain && heap[obj]!!.containsKey("__models")) {
+                            val models =
+                                heap[obj]!!.getOrDefault(
+                                    "__models",
+                                    LiteralExpr("ERROR")
+                                ).literal.removeSurrounding("\"")
+                            res += "$models domain:${m.value.declaringClass}_${m.key}_builtin_res $finalRet.\n"
+                        }
+                    }
+                }
+            }
         }
 
 
@@ -140,16 +161,15 @@ typealias Memory = MutableMap<String, LiteralExpr>       // Maps variable names 
 typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name literals to local memories
 typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
 typealias FieldEntry = List<FieldInfo>                   //list of fields
-typealias MethodEntry = Pair<Statement, List<String>> //method body and list of parameters
 typealias ModelsEntry = Pair<Expression, String>      //guard expression and models string
 
 enum class Visibility { PUBLIC, PROTECTED, PRIVATE}
 
 data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type, val isDomain : Boolean)
-
+data class MethodInfo(val stmt: Statement, val params: List<String>, val isRule : Boolean, val isDomain: Boolean, val declaringClass: String)
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields
-    val methodTable: Map<String, Map<String, MethodEntry>>, // This maps class names to a map that maps method names to their definition
+    val methodTable: Map<String, Map<String, MethodInfo>>, // This maps class names to a map that maps method names to their definition
     val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(),
     val modelsTable: Map<String, List<ModelsEntry>>                // This maps class names to models blocks
 ) { // DOWNWARDS class hierarchy
@@ -169,7 +189,7 @@ MethodTable     : $methodTable
         return null
     }
 
-    fun getSuperMethod(className : String, methodName : String) : MethodEntry?{
+    fun getSuperMethod(className : String, methodName : String) : MethodInfo?{
         var current = getSuper(className)
         while(current != null && current != "Object"){
             if(!methodTable.containsKey(current)) return null

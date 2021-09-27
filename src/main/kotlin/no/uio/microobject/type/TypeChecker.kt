@@ -424,6 +424,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType, inRule)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
+                if(ctx.expression(0) !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Super_statementContext -> {
                 val lhsType =
@@ -480,6 +482,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         }
                     }
                 }
+
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Call_statementContext -> {
                 val lhsType =
@@ -553,6 +558,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                       }
                   }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Create_statementContext -> {
                 val lhsType =
@@ -613,6 +620,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Models clause must be a String: ${ctx.owldescription}", ctx)
                 }
 
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
@@ -639,6 +647,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         queryCheckers.add(qc)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Construct_statementContext -> {
                 var expType : Type? = null
@@ -664,6 +674,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         queryCheckers.add(qc)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Owl_statementContext -> {
                 log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
@@ -677,6 +689,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Validate_statementContext -> {
                 log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
@@ -693,6 +707,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Return_statementContext -> {
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
@@ -704,6 +720,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && !OBJECTTYPE.isAssignable(innerType, extends))
                     log("Type $innerType of destroy statement is not an object type.",ctx)
+
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Output_statementContext -> {
                 //For now, we print everything
@@ -760,8 +778,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }
 
                 }
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Tick_statementContext -> {
+                if(inRule) log("Non-local access in rule method.", ctx)
                 val fmuType = getType(ctx.fmu, inner, vars, thisType, inRule)
                 val tickType = getType(ctx.time, inner, vars, thisType, inRule)
                 if(fmuType !is SimulatorType)

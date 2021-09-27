@@ -40,62 +40,39 @@ class RuleGenerator(val settings: Settings){
             if(thisVar is Node_Blank) return //weird effects when we have blank nodes
 
             //Get current state and make a copy
-            val ipr = interpreterBridge.interpreter
+            val myIpr = interpreterBridge.interpreter
                 ?: throw Exception("Builtin functor cannot be expanded if the interpreter is unknown.")
-            val myIpr = ipr.coreCopy()
 
-            //Construct initial state
-            val classStmt =
-                myIpr.staticInfo.methodTable[cl.className.text
-                    ?: throw Exception("Error during builtin generation")]
-                    ?: throw Exception("Error during builtin generation")
-            val met = classStmt[nm.NAME().text] ?: throw Exception("Error during builtin generation")
-            val mem: Memory = mutableMapOf()
-            val objName = thisVar.toString().removePrefix(settings.runPrefix)
+            val (obj, topmost) = myIpr.evalCall(thisVar.toString().removePrefix(settings.runPrefix),
+                                                cl.className.text,
+                                                nm.NAME().text)
+            val ret = topmost.literal
 
-            val obj = LiteralExpr(
-                objName,
-                myIpr.heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated
-            )
-            mem["this"] = obj
-            val se = StackEntry(met.first, mem, obj, Names.getStackId())
-            myIpr.stack.push(se)
-
-            //Run your own mini-REPL
-            //But 1. We ignore `breakpoint` and
-            //    2. we do not terminate the interpreter but stop at the last return so we get the last return value
-            while (true) {
-                if (myIpr.stack.peek().active is ReturnStmt && myIpr.stack.size == 1) {
-                    //Evaluate final return expressions
-                    val resStmt = myIpr.stack.peek().active as ReturnStmt
-                    val res = resStmt.value
-                    val topmost = myIpr.evalTopMost(res)
-                    val ret = topmost.literal
-
-                    //Build final triple and add it to the context
-                    val resNode = if (topmost.tag == INTTYPE) NodeFactory.createLiteral(ret.removeSurrounding("\""), XSDDatatype.XSDint) else
-                        if(topmost.tag == STRINGTYPE) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
-                    val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
-                    val triple = Triple.create(thisVar, connectInNode, resNode)
+            //Build final triple and add it to the context
+            val resNode = if (topmost.tag == INTTYPE) NodeFactory.createLiteral(ret.removeSurrounding("\""), XSDDatatype.XSDint) else
+                if(topmost.tag == STRINGTYPE) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
+            val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
+            val triple = Triple.create(thisVar, connectInNode, resNode)
+            context!!.add(triple)
+            println("adding $triple")
+            if(domain){
+                val modelsTarget = myIpr.heap[obj]?.get("__models")
+                if(modelsTarget != null) {
+                    val targetVar = NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(modelsTarget!!.literal))
+                    val targetInNode = NodeFactory.createURI("${settings.domainPrefix}${name}_res")
+                    val triple = Triple.create(targetVar, targetInNode, resNode)
                     context!!.add(triple)
-                    if(domain){
-                        val modelsTarget = ipr.heap[obj]?.get("__models")
-                        if(modelsTarget != null) {
-                            val targetVar = NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(modelsTarget!!.literal))
-                            val targetInNode = NodeFactory.createURI("${settings.domainPrefix}${name}_res")
-                            val triple = Triple.create(targetVar, targetInNode, resNode)
-                            context!!.add(triple)
-                        }
-                    }
-                    break
+                    println("adding $triple")
                 }
-                myIpr.makeStep()
             }
+
         }
     }
 
 
     fun generateBuiltins(ctx: WhileParser.ProgramContext?, interpreterBridge: InterpreterBridge) : String{
+        return ""
+        /*
         var num = 0
         var rules = listOf<String>()
         for(cl in ctx!!.class_def()){
@@ -115,5 +92,6 @@ class RuleGenerator(val settings: Settings){
         val str = rules.joinToString("")
         if(str != "" && settings.verbose) println("rules: $str")
         return str
+        */
     }
 }

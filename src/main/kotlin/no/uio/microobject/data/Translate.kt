@@ -16,7 +16,7 @@ import org.eclipse.rdf4j.model.util.Models
  */
 class Translate : WhileBaseVisitor<ProgramElement>() {
 
-    private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
+    private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
 
 
@@ -76,7 +76,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 listOf()
             }
 
-            val res = mutableMapOf<String, MethodEntry>()
+            val res = mutableMapOf<String, MethodInfo>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
                 if(nm.abs == null && nm.statement() == null)
                     throw Exception("Non-abstract method with empty statement: ${nm.NAME().text}")
@@ -90,11 +90,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                         stmt = appendStmt(stmt, ReturnStmt(UNITEXPR))
                     }
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = Pair(stmt, params)
+                    res[nm.NAME().text] = MethodInfo(stmt, params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
                 }
                 if(nm.abs != null) {
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = Pair(SkipStmt(ctx!!.start.line), params)
+                    res[nm.NAME().text] = MethodInfo(SkipStmt(ctx!!.start.line), params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
                 }
             }
             table[cl.className.text] = Pair(fields, res)
@@ -113,11 +113,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         }
 
         //refactor this first
-        var fieldTable : Map<String,FieldEntry> = emptyMap()
-        var methodTable : Map<String,Map<String,MethodEntry>> = emptyMap()
+        val fieldTable : MutableMap<String, FieldEntry> = mutableMapOf()
+        val methodTable : MutableMap<String, Map<String, MethodInfo>> = mutableMapOf()
         for(entry in table){
-            fieldTable = fieldTable + Pair(entry.key, entry.value.first)
-            methodTable += Pair(entry.key, entry.value.second)
+            fieldTable +=  Pair(entry.key, entry.value.first)
+            methodTable +=  Pair(entry.key, entry.value.second)
         }
 
         return Pair(

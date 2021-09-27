@@ -12,9 +12,14 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
+import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
+import org.apache.jena.datatypes.xsd.XSDDatatype
+import org.apache.jena.graph.Node
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.graph.Triple
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -72,6 +77,42 @@ class Interpreter(
     private val settings : Settings,                    // Settings from the user
     private val rules : String,                 // Additional rules for jena
 ) {
+
+    //evaluates a call on cl.nm on thisVar
+    //Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
+    //First return value is the created object, the second the return value
+    fun evalCall(objName: String, className: String, metName: String): Pair<LiteralExpr, LiteralExpr> {
+        //Construct initial state
+        val classStmt =
+            staticInfo.methodTable[className]
+                ?: throw Exception("Error during builtin generation")
+        val met = classStmt[metName] ?: throw Exception("Error during builtin generation")
+        val mem: Memory = mutableMapOf()
+
+        val obj = LiteralExpr(
+            objName,
+            heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated
+        )
+        mem["this"] = obj
+        val myId = Names.getStackId()
+        val se = StackEntry(met.stmt, mem, obj, myId)
+        stack.push(se)
+
+        //Run your own mini-REPL
+        //But 1. We ignore `breakpoint` and
+        //    2. we do not terminate the interpreter but stop at the return of the added stack frame so we get the return value
+        while (true) {
+            if (stack.peek().active is ReturnStmt && stack.peek().id == myId) {
+                //Evaluate final return expressions
+                val resStmt = stack.peek().active as ReturnStmt
+                val res = resStmt.value
+                val topmost = evalTopMost(res)
+                stack.pop() //clean up
+                return Pair(obj, topmost)
+            }
+            makeStep()
+        }
+    }
 
     fun coreCopy() : Interpreter{
         val newHeap = mutableMapOf<LiteralExpr, Memory>()
@@ -227,12 +268,12 @@ class Interpreter(
                 val m = staticInfo.getSuperMethod(obj.tag.name, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = obj
-                for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                for (i in m.params.indices) {
+                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.first, newMemory, obj, Names.getStackId()))
+                    listOf(StackEntry(m.stmt, newMemory, obj, Names.getStackId()))
                 )
             }
             is AssignStmt -> {
@@ -274,12 +315,12 @@ class Interpreter(
                     ?: throw Exception("This method is unknown: ${stmt.method}")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = newObj
-                for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                for (i in m.params.indices) {
+                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.first, newMemory, newObj, Names.getStackId()))
+                    listOf(StackEntry(m.stmt, newMemory, newObj, Names.getStackId()))
                 )
             }
             is CreateStmt -> {
@@ -442,14 +483,14 @@ class Interpreter(
                 val over = stack.pop()
                 if (over.active is StoreReturnStmt) {
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, id), listOf())
+                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, over.id), listOf())
                 }
                 if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
                     val active = over.active.first
                     val next = over.active.second
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                     return Pair(
-                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, id),
+                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, over.id),
                         listOf()
                     )
                 }
@@ -712,6 +753,7 @@ ${stack.joinToString(
         for(sim in simMemory.values)
             sim.terminate()
     }
+
 
 
 }

@@ -161,7 +161,7 @@ class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, va
             addLine("){")
         }
         depth++
-        val stmt = staticTable.methodTable[active!!.className.text]!![ctx.NAME().text]!!.first
+        val stmt = staticTable.methodTable[active!!.className.text]!![ctx.NAME().text]!!.stmt
         stmt.toJava(this)
     }
 
