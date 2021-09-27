@@ -211,6 +211,7 @@ MethodTable     : $methodTable
             res += "prog:${obj.key} rdf:type smol:Class.\n"
             res += "prog:${obj.key} rdf:type owl:Class.\n"
             for(obj2 in obj.value){
+                if(obj2.inferenceVisibility == Visibility.PRIVATE) continue
                 val fieldName = obj.key+"_"+obj2.name
                 res += "prog:${obj.key} smol:hasField prog:$fieldName.\n"
                 res += "prog:$fieldName rdf:type smol:Field.\n"
