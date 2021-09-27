@@ -117,7 +117,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val cVisibility =
                     if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                 val iVisibility =
-                    if (it.infer == null) Visibility.PUBLIC else if (it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                    if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
                 Pair(
                     it.NAME().text,
                     FieldInfo(

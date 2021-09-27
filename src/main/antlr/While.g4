@@ -43,8 +43,7 @@ OVERRIDE : 'override';
 MAIN : 'main';
 PRIVATE : 'private';
 PROTECTED : 'protected';
-INFERPRIVATE : 'inferprivate';
-INFERPROTECTED : 'inferprotected';
+INFERPRIVATE : 'nonsemantic';
 MODELS : 'models';
 DOMAIN : 'domain';
 
@@ -169,10 +168,9 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
+fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
 
 visibilitymodifier : PRIVATE | PROTECTED;
-infermodifier : INFERPRIVATE | INFERPROTECTED;

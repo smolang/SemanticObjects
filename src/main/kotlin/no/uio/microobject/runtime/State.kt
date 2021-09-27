@@ -89,7 +89,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                     if(!useDefaultModels) continue
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
                     res += target
-                } else {
+                } else if(staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     res += funVal(obj, store, target, "prog")
 

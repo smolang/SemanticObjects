@@ -1,4 +1,4 @@
-class <T> List(T content, List<T> next)
+class <T> List(nonsemantic T content, nonsemantic List<T> next)
     List<T> reverse()
         if(this.next = null) then
             return this;
@@ -11,11 +11,11 @@ class <T> List(T content, List<T> next)
     end
 end
 
-abstract class Action (Boolean advance)
+abstract class Action (nonsemantic Boolean advance)
     abstract Unit execute(Scenario scen)
 end
 
-class DepositAction extends Action (GeoLayer deposit)
+class DepositAction extends Action (nonsemantic GeoLayer deposit)
     override Unit execute(Scenario scen)
         //print("deposit");
         this.deposit.scenId := scen.scenId;
@@ -26,7 +26,7 @@ class DepositAction extends Action (GeoLayer deposit)
     end
 end
 
-class ErodeAction extends Action (Int depth)
+class ErodeAction extends Action (nonsemantic Int depth)
     override Unit execute(Scenario scen)
         //print("erode");
         scen.erode(this.depth);
