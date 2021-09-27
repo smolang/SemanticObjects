@@ -1,3 +1,1 @@
-[(?X domain:models ?Y), (?X prog:Shale_thickness ?Z) -> (?Y domain:thickness ?Z)]
-[(?X domain:models ?Y), (?X prog:Sand_thickness ?Z) -> (?Y domain:thickness ?Z)]
 [(?X domain:models ?Y), (?X prog:GeoLayer_depth_builtin_res ?Z) -> (?Y domain:depth ?Z)]

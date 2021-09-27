@@ -34,7 +34,22 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         """.trimIndent()
     }
 
-    fun dump() : String{
+    private fun funVal(obj:LiteralExpr, store:String, target:LiteralExpr, prefix:String, overrideStr : String? = null) : String {
+        var res = ""
+        if(overrideStr == null) res = "run:${obj.literal} $prefix:${obj.tag}_$store "
+        else res =  "$overrideStr $prefix:${obj.tag}_$store "
+        res += if (target.literal == "null")
+            "smol:${target.literal}.\n"
+        else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+            "${target.literal}.\n"
+        else if (target.tag == INTTYPE)
+            "\"${target.literal}\"^^xsd:integer.\n"
+        else
+            "run:${target.literal}.\n"
+        return res;
+    }
+
+    fun dump(forceRule : Boolean = false) : String{
         //Builds always known information and meta data
         var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB  + "\n" + MINIMAL
 
@@ -42,7 +57,6 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         res += staticInfo.dumpClasses()
 
         //dumps individuals
-        var i = 0
         for(obj in heap.keys){
             res += "run:${obj.literal} a prog:${(obj.tag as BaseType).name}.\n"
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
@@ -75,19 +89,16 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                     res += target
                 } else {
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                    res += "run:${obj.literal} prog:${obj.tag}_$store "
-                    res += if (target.literal == "null")
-                        "smol:${target.literal}.\n"
-                    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-                        "${target.literal}.\n"
-                    else if (target.tag == INTTYPE)
-                        "\"${target.literal}\"^^xsd:integer.\n"
-                    else
-                        "run:${target.literal}.\n"
-                    i++
+                    res += funVal(obj, store, target, "prog")
+
+                    if(staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.isDomain } && heap[obj]!!.containsKey("__models") ){
+                        res += funVal(obj, store, target, "domain",heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\""))
+                    }
                 }
             }
         }
+
+
 
         // dumps processes
         /*
@@ -134,7 +145,7 @@ typealias ModelsEntry = Pair<Expression, String>      //guard expression and mod
 
 enum class Visibility { PUBLIC, PROTECTED, PRIVATE}
 
-data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type)
+data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type, val isDomain : Boolean)
 
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields

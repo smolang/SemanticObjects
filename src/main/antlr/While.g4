@@ -46,6 +46,7 @@ PROTECTED : 'protected';
 INFERPRIVATE : 'inferprivate';
 INFERPROTECTED : 'inferprotected';
 MODELS : 'models';
+DOMAIN : 'domain';
 
 //Keywords: constants
 TRUE : 'True';
@@ -102,7 +103,7 @@ class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS su
             (models_block)?
             method_def*
             END;
-method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
+method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
@@ -168,7 +169,7 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? type NAME;
+fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;

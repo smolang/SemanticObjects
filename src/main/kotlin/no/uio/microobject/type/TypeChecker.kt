@@ -83,9 +83,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
 
     /**********************************************************************
-    CSSA
+    ISSA
      ***********************************************************************/
-    private val queryCheckers = mutableListOf<QueryChecker>()
+    internal val queryCheckers = mutableListOf<QueryChecker>()
 
     override fun report(silent: Boolean): Boolean {
         return queryCheckers.fold(super.report(silent)) { acc, nx -> acc && nx.report(silent) }
@@ -125,7 +125,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         translateType(it.type(), name, generics),
                         cVisibility,
                         iVisibility,
-                        BaseType(name)
+                        BaseType(name),
+                        it.domain != null
                     )
                 )
             }
@@ -809,7 +810,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type
+                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)).type
             }
             is WhileParser.Nested_expressionContext -> {
                 return getType(eCtx.expression(), fields, vars, thisType, inRule)
@@ -976,7 +977,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
-                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)
+                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
             }

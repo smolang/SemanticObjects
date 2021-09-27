@@ -66,7 +66,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
                             cVisibility,
                             iVisibility,
-                            BaseType(cl!!.className.text)
+                            BaseType(cl!!.className.text),
+                            nm.domain != null
                         )
                     }
                 }

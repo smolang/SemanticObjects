@@ -132,8 +132,7 @@ class Interpreter(
 
 
     private fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
-        val out = settings.replaceKnownPrefixes(str)
-       // str.replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
+        val out = settings.replaceKnownPrefixesNoColon(str.removeSurrounding("\""))
         val m = OWLManager.createOWLOntologyManager()
         val ontology = m.loadOntologyFromOntologyDocument(File("${settings.outpath}/output.ttl"))
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
@@ -142,14 +141,14 @@ class Interpreter(
         return reasoner.getInstances(parser.parseClassExpression(out))
     }
 
-    internal fun dump() {
+    internal fun dump(forceRule : Boolean = false) {
         val output = File("${settings.outpath}/output.ttl")
         output.parentFile.mkdirs()
         if (!output.exists()) output.createNewFile()
         output.writeText(dumpTtl())
     }
 
-    fun dumpTtl() : String{
+    fun dumpTtl(forceRule : Boolean = false) : String{
         return State(stack, heap, simMemory, staticInfo, settings, this).dump() // snapshot management goes here
     }
 
@@ -409,12 +408,12 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, resLit, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
-                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
+                /*if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
                         "next"
                     )
                 ) {
                     throw Exception("Could not find List class in this model")
-                }
+                }*/
                 if (stmt.query !is LiteralExpr || stmt.query.tag != STRINGTYPE) {
                     throw Exception("Please provide a string as the input to a derive statement")
                 }

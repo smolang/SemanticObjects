@@ -28,7 +28,8 @@ class RuleGenerator(val settings: Settings){
      */
     private fun buildFunctor(cl : WhileParser.Class_defContext,
                              nm : WhileParser.Method_defContext,
-                             interpreterBridge: InterpreterBridge) = object : BaseBuiltin() {
+                             interpreterBridge: InterpreterBridge,
+                             domain : Boolean) = object : BaseBuiltin() {
         override fun getName(): String = "${cl.className.text}_${nm.NAME()}_builtin"
 
         override fun getArgLength(): Int  = 1
@@ -77,6 +78,15 @@ class RuleGenerator(val settings: Settings){
                     val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
                     val triple = Triple.create(thisVar, connectInNode, resNode)
                     context!!.add(triple)
+                    if(domain){
+                        val modelsTarget = ipr.heap[obj]?.get("__models")
+                        if(modelsTarget != null) {
+                            val targetVar = NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(modelsTarget!!.literal))
+                            val targetInNode = NodeFactory.createURI("${settings.domainPrefix}${name}_res")
+                            val triple = Triple.create(targetVar, targetInNode, resNode)
+                            context!!.add(triple)
+                        }
+                    }
                     break
                 }
                 myIpr.makeStep()
@@ -91,8 +101,9 @@ class RuleGenerator(val settings: Settings){
         for(cl in ctx!!.class_def()){
             for(nm in cl.method_def()) {
                 if(nm.builtinrule != null){
+                    val domain = nm.domainrule != null
                     if(settings.verbose) println("Generating builtin functor and rule for ${nm.NAME()}...")
-                    val builtin : Builtin = buildFunctor(cl, nm, interpreterBridge)
+                    val builtin : Builtin = buildFunctor(cl, nm, interpreterBridge, domain)
                     BuiltinRegistry.theRegistry.register(builtin)
                     val ruleString = "rule${num++}:"
                     val headString = "${builtin.name}(?this)"
