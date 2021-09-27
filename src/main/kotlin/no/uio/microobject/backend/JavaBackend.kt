@@ -9,12 +9,12 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 import java.nio.file.Path
 import java.nio.file.Paths
 
-class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, val staticTable: StaticTable, val jPackage: String, enforceSemantic : Boolean) : WhileBaseListener() {
-    var depth = 0
+class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, private val staticTable: StaticTable, private val jPackage: String, enforceSemantic : Boolean) : WhileBaseListener() {
+    private var depth = 0
     private var classes = mutableListOf<Pair<String,StringBuilder>>()
-    var active : WhileParser.Class_defContext? = null
-    var builder = StringBuilder()
-    var detector = FragmentDetector(prog)
+    private var active : WhileParser.Class_defContext? = null
+    private var builder = StringBuilder()
+    private var detector = FragmentDetector(prog)
     fun writeOutput(jOut: Path){
         val packages = jPackage.split(".")
         val newRoot = Paths.get(jOut.toString() + "/"+packages.joinToString("/")).toFile()
@@ -82,7 +82,7 @@ class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, va
     fun offsetDepth(off : Int){
         depth += off
     }
-    fun addLine(str : String, offset : Int = 0)  {
+    private fun addLine(str : String, offset : Int = 0)  {
         builder.appendLine("\t".repeat(depth + offset) + str)
     }
     fun addIntend()  {
@@ -123,7 +123,7 @@ class JavaBackend(val prog: WhileParser.ProgramContext, val main : Statement, va
         addLine("public $className($pList) {")
         depth++
         val myFields = ctx.fieldDeclList().fieldDecl().map { Pair(getType(it.type()).toString(), it.NAME().text) }
-        val otherFields = fields - myFields
+        val otherFields = fields - myFields.toSet()
         addLine("super(${otherFields.joinToString(","){it.second}});")
         for(f in myFields) addLine("this.${f.second} = ${f.second};")
         if(detector.semantic) addLine("SMOLManager.instance.register(this);")

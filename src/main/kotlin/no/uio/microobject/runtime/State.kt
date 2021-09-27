@@ -36,16 +36,16 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
 
     private fun funVal(obj:LiteralExpr, store:String, target:LiteralExpr, prefix:String, overrideStr : String? = null) : String {
         var res = ""
-        if(overrideStr == null) res = "run:${obj.literal} $prefix:${obj.tag}_$store "
-        else res =  "$overrideStr $prefix:${obj.tag}_$store "
+        res = if(overrideStr == null) "run:${obj.literal} $prefix:${obj.tag}_$store "
+        else "$overrideStr $prefix:${obj.tag}_$store "
         res += getTTLLiteral(target) + ".\n"
-        return res;
+        return res
     }
 
     private fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
         "smol:${target.literal}"
     else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-        "${target.literal}"
+        target.literal
     else if (target.tag == INTTYPE)
         "\"${target.literal}\"^^xsd:integer"
     else
@@ -99,19 +99,25 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                 }
             }
 
-            if(staticInfo.methodTable[obj.tag.name] != null) {
-                for (m in staticInfo.methodTable[obj.tag.name]!!.entries) {
-                    if (m.value.isRule) {
-                        val retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
-                        //println("pre adding ${retVal.second.literal}")
-                        val finalRet = getTTLLiteral(retVal.second)
-                        res += "run:${obj.literal} prog:${m.value.declaringClass}_${m.key}_builtin_res $finalRet.\n"
+            if(!settings.useRule) {
+                if (staticInfo.methodTable[obj.tag.name] != null) {
+                    for (m in staticInfo.methodTable[obj.tag.name]!!.entries) {
+                        var retVal : Pair<LiteralExpr, LiteralExpr>? = null
+                        if (m.value.isRule) {
+                            retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                            val finalRet = getTTLLiteral(retVal.second)
+                            res += "run:${obj.literal} prog:${m.value.declaringClass}_${m.key}_builtin_res $finalRet.\n"
+
+                        }
                         if (m.value.isDomain && heap[obj]!!.containsKey("__models")) {
                             val models =
                                 heap[obj]!!.getOrDefault(
                                     "__models",
                                     LiteralExpr("ERROR")
                                 ).literal.removeSurrounding("\"")
+
+                            if(retVal == null) retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                            val finalRet = getTTLLiteral(retVal.second)
                             res += "$models domain:${m.value.declaringClass}_${m.key}_builtin_res $finalRet.\n"
                         }
                     }
@@ -228,7 +234,7 @@ MethodTable     : $methodTable
         }
 
 
-        var all = methodTable.keys
+        val all = methodTable.keys.toMutableSet()
         //records type hierarchy
         for(obj in hierarchy.entries){
             for(obj2 in obj.value){

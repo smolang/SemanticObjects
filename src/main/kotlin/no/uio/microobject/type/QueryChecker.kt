@@ -66,9 +66,8 @@ class QueryChecker(
                 val owlSup = OWLClassImpl(IRI.create(settings.progPrefix + tString))
                 val subs = reasoner.getSuperClasses(owlSub)
                 val res = subs.containsEntity(owlSup)
-                if(!res){
+                if(!res)
                     log("Could not check query $query: specified type is $type, but inferred supertypes are $subs", ctx)
-                }
                 return res
             } else {
                 log("Failed to extract OWL expression for query", ctx)

@@ -3,8 +3,6 @@ package no.uio.microobject.data
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.InterpreterBridge
-import no.uio.microobject.runtime.Memory
-import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.INTTYPE
 import no.uio.microobject.type.STRINGTYPE
 import org.apache.jena.datatypes.xsd.XSDDatatype
@@ -58,10 +56,10 @@ class RuleGenerator(val settings: Settings){
             if(domain){
                 val modelsTarget = myIpr.heap[obj]?.get("__models")
                 if(modelsTarget != null) {
-                    val targetVar = NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(modelsTarget!!.literal))
+                    val targetVar = NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(modelsTarget.literal))
                     val targetInNode = NodeFactory.createURI("${settings.domainPrefix}${name}_res")
                     val triple = Triple.create(targetVar, targetInNode, resNode)
-                    context!!.add(triple)
+                    context.add(triple)
                     println("adding $triple")
                 }
             }
@@ -71,10 +69,8 @@ class RuleGenerator(val settings: Settings){
 
 
     fun generateBuiltins(ctx: WhileParser.ProgramContext?, interpreterBridge: InterpreterBridge) : String{
-        return ""
-        /*
         var num = 0
-        var rules = listOf<String>()
+        val rules = mutableListOf<String>()
         for(cl in ctx!!.class_def()){
             for(nm in cl.method_def()) {
                 if(nm.builtinrule != null){
@@ -92,6 +88,5 @@ class RuleGenerator(val settings: Settings){
         val str = rules.joinToString("")
         if(str != "" && settings.verbose) println("rules: $str")
         return str
-        */
     }
 }

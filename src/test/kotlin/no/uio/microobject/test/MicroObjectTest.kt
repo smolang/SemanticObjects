@@ -18,7 +18,7 @@ import java.util.*
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
-    protected var settings = Settings(false,  "/tmp/mo","","","urn:")
+    protected var settings = Settings(false,  "/tmp/mo","","","urn:", useRule = false)
     protected fun loadBackground(path : String){
         val file = File(path)
         val backgr = file.readText()
@@ -69,7 +69,9 @@ open class MicroObjectTest : StringSpec() {
         val tC = TypeChecker(ast, Settings(false,  "/tmp/mo","","","urn:"), pair.second)
         tC.collect()
         val iB = InterpreterBridge(null)
-        val rules = RuleGenerator(settings).generateBuiltins(ast, iB)
+        var rules = ""
+        if(settings.useRule)
+          rules = RuleGenerator(settings).generateBuiltins(ast, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))

@@ -12,14 +12,9 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
-import org.apache.jena.datatypes.xsd.XSDDatatype
-import org.apache.jena.graph.Node
-import org.apache.jena.graph.NodeFactory
-import org.apache.jena.graph.Triple
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -112,21 +107,6 @@ class Interpreter(
             }
             makeStep()
         }
-    }
-
-    fun coreCopy() : Interpreter{
-        val newHeap = mutableMapOf<LiteralExpr, Memory>()
-        for(kv in heap.entries){
-            newHeap[kv.key] = kv.value.toMap().toMutableMap()
-        }
-        return Interpreter(
-            Stack<StackEntry>(),
-            newHeap,
-            mutableMapOf(),
-            staticInfo,
-            settings,
-            rules
-        )
     }
 
     private var debug = false
@@ -233,7 +213,7 @@ class Interpreter(
         return true
     }
 
-    internal fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    private fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")
@@ -449,12 +429,11 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, resLit, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
-                /*if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
-                        "next"
-                    )
-                ) {
+                if (!staticInfo.fieldTable.containsKey("List") ||
+                    !staticInfo.fieldTable["List"]!!.any {  it.name == "content" } ||
+                    !staticInfo.fieldTable["List"]!!.any {  it.name == "next" }) {
                     throw Exception("Could not find List class in this model")
-                }*/
+                }
                 if (stmt.query !is LiteralExpr || stmt.query.tag != STRINGTYPE) {
                     throw Exception("Please provide a string as the input to a derive statement")
                 }
@@ -466,13 +445,17 @@ class Interpreter(
                     for (r in res) {
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
+                        val found = r.toString().removePrefix("Node( <").split("#")[1].removeSuffix("> )")
 
-                        val found = r.toString().removePrefix("<urn:").removeSuffix(">")
-                        for (ob in heap.keys) {
-                            if (ob.literal == found) {
-                                newMemory["content"] = LiteralExpr(found, ob.tag)
-                            }
+                        val foundAny = heap.keys.firstOrNull { it.literal == found }
+                        if(foundAny != null) newMemory["content"] = LiteralExpr(found, foundAny.tag)
+                        else {
+                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
+                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
+                            else throw Exception("Concept returned unknown object/literal: $found")
                         }
+
                         newMemory["next"] = list
                         heap[name] = newMemory
                         list = name

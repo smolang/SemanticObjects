@@ -574,6 +574,12 @@ data class LiteralExpr(val literal : String, val tag : Type = ERRORTYPE) : Expre
         if(other !is LiteralExpr) return false
         return literal == other.literal
     }
+
+    override fun hashCode(): Int {
+        var result = literal.hashCode()
+        result = 31 * result + tag.hashCode()
+        return result
+    }
 }
 
 // Use this whenever we need a new unique name

@@ -376,7 +376,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()
     // TODO: move this to an antlr visitor
-    internal fun checkStatement(ctx : WhileParser.StatementContext,
+    private fun checkStatement(ctx : WhileParser.StatementContext,
                                finished : Boolean,
                                vars : MutableMap<String, Type>,
                                metType : Type, //return type
@@ -1078,7 +1078,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             val over = recoverDef[extends[clCtx.NAME().text]?.getPrimary()?.getNameString()] ?: return newAbs
             val above = getLeftoverAbstract(over)
             val impl = clCtx.method_def().filter { it.abs == null }.map { it.NAME().text }
-            return (above - impl) + newAbs
+            return (above - impl.toSet()) + newAbs
         } else {
             return newAbs
         }

@@ -35,7 +35,7 @@ class SMOLExecutionTest: MicroObjectTest() {
             executeUntilBreak(a)
             assertEquals(0, a.stack.size)
             a.dump()
-            val res = a.query("SELECT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
+            val res = a.query("SELECT DISTINCT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
             assertNotNull(res)
             var i = 0
             while(res.hasNext()){

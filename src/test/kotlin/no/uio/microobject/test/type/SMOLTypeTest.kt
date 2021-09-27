@@ -1,5 +1,6 @@
 package no.uio.microobject.test.type
 
+import no.uio.microobject.type.Severity
 import no.uio.microobject.type.TypeChecker
 import kotlin.test.assertFalse
 
@@ -9,7 +10,7 @@ class SMOLTypeTest : MicroObjectTypeTest() {
             "Query check success $i"{
                 val tC = checkMet("Test", "mSuccess$i", "type_query") as TypeChecker
                 assert(tC.report(false))
-                assert(tC.queryCheckers.all { it.error.isEmpty() })
+                assert(tC.queryCheckers.all { it.error.none { it.severity == Severity.ERROR } })
             }
 
         "Query check fail 1"{

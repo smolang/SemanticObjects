@@ -7,7 +7,6 @@ import no.uio.microobject.antlr.WhileParser.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
-import org.eclipse.rdf4j.model.util.Models
 
 /**
  * This class handles multiple tasks related to translating ANTLR structures to the internal representation
@@ -84,7 +83,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                     throw Exception("Abstract method with non-empty statement: ${nm.NAME().text}")
                 if(nm.abs == null) {
                     var stmt = visit(nm!!.statement()) as Statement
-                    val last = stmt.getLast();
+                    val last = stmt.getLast()
                     val metType = TypeChecker.translateType(nm.type(), cl.NAME().text, mutableMapOf())
                     if(metType == UNITTYPE && last !is ReturnStmt){//just to be sure
                         stmt = appendStmt(stmt, ReturnStmt(UNITEXPR))
@@ -127,7 +126,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     private fun paramListTranslate(ctx: ParamListContext?) : List<String> {
-        var res = listOf<String>()
+        val res = mutableListOf<String>()
         if(ctx!!.param() != null) {
             for (nm in ctx.param())
                 res += nm.NAME().text
@@ -136,7 +135,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitSuper_statement(ctx: Super_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList().toMutableList()
         val def = getClassDecl(ctx as RuleContext)
         val declares = if(ctx!!.declType == null) null else
             TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
@@ -170,7 +169,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList().toMutableList()
         val def = getClassDecl(ctx as RuleContext)
         val declares = if(ctx!!.declType == null) null else
             TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
@@ -199,7 +198,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 1 until ctx!!.expression().size) {
             if(ctx.expression(i) != ctx.owldescription)
                 ll += visit(ctx.expression(i)) as Expression
@@ -227,7 +226,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             target.setType(targetType)
         }
         val query = visit(ctx!!.query) as Expression
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode else InfluxDBMode((ctx.modeexpression() as Influx_modeContext).STRING().text)
@@ -244,7 +243,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             target.setType(targetType)
         }
         val query = visit(ctx!!.query) as Expression
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         return ConstructStmt(target, query, ll, ctx!!.start.line, target.getType())
@@ -272,7 +271,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val path = ctx!!.path.text.removeSurrounding("\"")
         val target = visit(ctx!!.target) as Location
 
-        var res = listOf<VarInit>()
+        val res = mutableListOf<VarInit>()
         if(ctx!!.varInitList() != null) {
             for (nm in ctx!!.varInitList()!!.varInit())
                 res += visit(nm) as VarInit

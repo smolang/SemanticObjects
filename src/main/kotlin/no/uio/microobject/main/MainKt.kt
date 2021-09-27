@@ -25,7 +25,8 @@ data class Settings(val verbose : Boolean,      //Verbosity
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
-                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#"
+                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#",
+                    val useRule : Boolean = false
                     ){
     fun replaceKnownPrefixes(string: String) : String{
         return string.replace("domain:", "$domainPrefix:")
@@ -34,10 +35,10 @@ data class Settings(val verbose : Boolean,      //Verbosity
             .replace("smol:", "$langPrefix:")
     }
     fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWRE: requires that the prefixes and in #
-        return string.replace("domain:", "$domainPrefix")
-            .replace("prog:", "$progPrefix")
-            .replace("run:", "$runPrefix")
-            .replace("smol:", "$langPrefix")
+        return string.replace("domain:", domainPrefix)
+            .replace("prog:", progPrefix)
+            .replace("run:", runPrefix)
+            .replace("smol:", langPrefix)
     }
     fun prefixes() : String =
         """@prefix smol: <${langPrefix}> .
@@ -47,7 +48,7 @@ data class Settings(val verbose : Boolean,      //Verbosity
 }
 
 class Main : CliktCommand() {
-    val mainMode by option().switch(
+    private val mainMode by option().switch(
         "--compile" to "compile", "-c" to "compile",
         "--execute" to "execute", "-e" to "execute",
         "--load" to "repl",       "-l" to "repl",
@@ -63,6 +64,7 @@ class Main : CliktCommand() {
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
     private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
+    private val useRule      by option("--userules",  "-ur",  help="Uses the Jena rule mechanism for rule methods.").flag()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -98,7 +100,7 @@ class Main : CliktCommand() {
             val visitor = Translate()
             val pair = visitor.generateStatic(tree)
 
-            val tC = TypeChecker(tree, Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix), pair.second)
+            val tC = TypeChecker(tree, Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix, useRule = useRule), pair.second)
             tC.check()
             tC.report()
 
@@ -108,7 +110,7 @@ class Main : CliktCommand() {
             return
         }
 
-        val repl = REPL( Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix))
+        val repl = REPL( Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix, useRule = useRule))
         if(input != null){
             repl.command("read", input.toString())
         }
