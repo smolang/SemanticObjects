@@ -121,7 +121,7 @@ class Interpreter(
         queryWithPrefixes += str
 
         var model = tripleManager.getCompleteModel()
-        if(settings.verbose) println("execute CSSA\n: $queryWithPrefixes")
+        if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
         val qexec = QueryExecutionFactory.create(query, model)
 

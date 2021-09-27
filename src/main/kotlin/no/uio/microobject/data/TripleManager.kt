@@ -98,18 +98,10 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
         model.add(staticTableGraphModel)
 
         if (interpreter != null) {
-            // Add triples from static table
-
             // Add triples from heap
             val heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(interpreter))
             model.add(heapGraphModel)
         }
-
-         //For debugging: Listing all OWL axioms if needed
-         if(settings.verbose) {
-             println("List of all owl-axioms in the complete model/ontology:")
-             for (axiom in ontology.axioms()) println(axiom)
-         }
 
 
 

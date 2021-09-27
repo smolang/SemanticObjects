@@ -86,9 +86,6 @@ class QueryChecker(
             val ontology = tripleManager.getStaticDataOntology()
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
-            ontology.classesInSignature().forEach { println(it.iri) }
-            ontology.dataPropertiesInSignature().forEach { println(it.iri) }
-            ontology.objectPropertiesInSignature().forEach { println(it.iri) }
             return parser.parseClassExpression(out)
         } catch (e: Exception) {
             e.printStackTrace()
