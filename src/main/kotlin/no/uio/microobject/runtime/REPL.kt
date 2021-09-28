@@ -70,7 +70,7 @@ class REPL(private val settings: Settings) {
 
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
-            for (cmd in commands.values) {
+            for (cmd in commands.values.distinct()) {
                 print("${cmd.name}\n\t- ${cmd.help}")
                 if (cmd.requiresParameter)
                     print(", parameter: ${cmd.parameterHelp}")
