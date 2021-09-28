@@ -6,14 +6,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.switch
 import com.github.ajalt.clikt.parameters.types.path
-import no.uio.microobject.antlr.WhileLexer
-import no.uio.microobject.antlr.WhileParser
-import no.uio.microobject.backend.JavaBackend
-import no.uio.microobject.data.Translate
 import no.uio.microobject.runtime.REPL
-import no.uio.microobject.type.TypeChecker
-import org.antlr.v4.runtime.CharStreams
-import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
@@ -49,7 +42,6 @@ data class Settings(val verbose : Boolean,      //Verbosity
 
 class Main : CliktCommand() {
     private val mainMode by option().switch(
-        "--compile" to "compile", "-c" to "compile",
         "--execute" to "execute", "-e" to "execute",
         "--load" to "repl",       "-l" to "repl",
     ).default("repl")
@@ -58,13 +50,10 @@ class Main : CliktCommand() {
     private val backrules    by option("--backrules", "-br", help="path to a file that contains derivation rules in Jena syntax.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
     private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
-    private val jOut         by option("--output",    "-o",  help="Java output.").path().default(Paths.get("/tmp/mo/java"))
-    private val jPackage     by option("--package",   "-p",  help="Java package.").default("no.uio.microobject")
-    private val jEnforce     by option("--semantic",  "-s",  help="Enforces a semantic translation, even in a non-semantic fragment.").flag()
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
     private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
-    private val useRule      by option("--userules",  "-ur",  help="Uses the Jena rule mechanism for rule methods.").flag()
+    private val useRule      by option("--userules",  "-ur", help="Uses the Jena rule mechanism for rule methods.").flag()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -89,25 +78,6 @@ class Main : CliktCommand() {
         if (input == null && mainMode != "repl"){
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
-        }
-
-        if(mainMode == "compile") {
-            val lexer = WhileLexer(CharStreams.fromFileName(input.toString()))
-            val tokens = CommonTokenStream(lexer)
-            val parser = WhileParser(tokens)
-            val tree = parser.program()
-
-            val visitor = Translate()
-            val pair = visitor.generateStatic(tree)
-
-            val tC = TypeChecker(tree, Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix, useRule = useRule), pair.second)
-            tC.check()
-            tC.report()
-
-            val backend = JavaBackend(tree, pair.first.active, pair.second, jPackage, jEnforce)
-            backend.writeOutput(jOut)
-            print(backend.getOutput())
-            return
         }
 
         val repl = REPL( Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix, useRule = useRule))
