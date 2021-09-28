@@ -1,16 +1,4 @@
-class <T> List(T content, List<T> next)
-    Int length()
-        if this.next = null then return 1;
-        else Int n := this.next.length(); return n + 1;
-        end
-    end
-    Boolean contains(T elem)
-        if this.content = elem then return True; end
-        if this.next = null then return False; end
-        Boolean b := this.next.contains(elem);
-        return b;
-    end
-end
+
 
 class Task(String name) end
 

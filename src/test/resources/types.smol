@@ -1,4 +1,4 @@
-class <T, S> C(Int i, Wrapper<Int> list)
+class C<T, S>(Int i, Wrapper<Int> list)
     Int getI() return this.i; end
     T id(T t) return t; end
     S idTwo(S s) return s; end
@@ -10,7 +10,7 @@ class <T, S> C(Int i, Wrapper<Int> list)
     end
 end
 
-class <U> Wrapper(U content)
+class Wrapper<U>(U content)
 
 end
 

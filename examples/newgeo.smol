@@ -1,16 +1,3 @@
-class <T> List(nonsemantic T content, nonsemantic List<T> next)
-    List<T> reverse()
-        if(this.next = null) then
-            return this;
-        else
-            List<T> ret := this.next.reverse();
-            this.next.next := this;
-            this.next := null;
-            return ret;
-        end
-    end
-end
-
 abstract class Action (nonsemantic Boolean advance)
     abstract Unit execute(Scenario scen)
 end
@@ -45,8 +32,8 @@ class EmptyAction extends Action()
     end
 end
 
-abstract class GeoLayer(Int scenId, domain Int thickness, GeoLayer above, GeoLayer below) //in m
-    rule domain Int depth()
+abstract class GeoLayer(Int scenId, domain Int thickness, nonsemantic GeoLayer above, nonsemantic GeoLayer below) //in m
+    domain Int depth()
         Int res := 0;
         if(this.above <> null) then
             res := this.above.depth();

@@ -7,6 +7,7 @@ enum class Severity { WARNING, ERROR }
 data class TypeError(val msg: String, val line: Int, val severity: Severity)
 
 open class TypeErrorLogger {
+    val stdOffset = this::class.java.classLoader.getResource("StdLib.smol").readText().lines().size+2
     //Final output: collected errors
     internal var error : List<TypeError> = listOf()
 
@@ -22,7 +23,8 @@ open class TypeErrorLogger {
 
     /* adds new error/warning */
     fun log(msg: String, node : ParserRuleContext?, severity: Severity = Severity.ERROR){
-        error = error + TypeError(msg, node?.getStart()?.line ?: 0, severity)
+
+        error = error + TypeError(msg, (node?.getStart()?.line ?: 0 ) - stdOffset, severity)
     }
 
 }

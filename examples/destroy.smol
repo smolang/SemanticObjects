@@ -1,4 +1,3 @@
-class <T> List(T content, List<T> next) end
 
 class A(Int i1) end
 

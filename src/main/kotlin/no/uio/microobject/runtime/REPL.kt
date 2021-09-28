@@ -115,7 +115,9 @@ class REPL(private val settings: Settings) {
     }
 
     private fun initInterpreter(path: String) {
-        val lexer = WhileLexer(CharStreams.fromFileName(path))
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program =  File(path).readText(Charsets.UTF_8)
+        val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         val tree = parser.program()

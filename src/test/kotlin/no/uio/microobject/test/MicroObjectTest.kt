@@ -25,7 +25,8 @@ open class MicroObjectTest : StringSpec() {
         settings = Settings(false,  "/tmp/mo",backgr,"","urn:")
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
-        val lexer = WhileLexer(CharStreams.fromString(program))
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()
@@ -33,14 +34,17 @@ open class MicroObjectTest : StringSpec() {
 
     private fun loadPath(path : String) : WhileParser.ProgramContext{
         val localPath = if(System.getProperty("os.name").contains("Windows")) path.removePrefix("/") else path
-        val lexer = WhileLexer(CharStreams.fromFileName(localPath))
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program =  File(localPath).readText(Charsets.UTF_8)
+        val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         return parser.program()
     }
 
     private fun loadClass(classString : String) : WhileParser.ProgramContext{
-        val program = "$classString\n main skip; end"
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program = stdLib + "$classString\n main skip; end"
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
@@ -48,7 +52,8 @@ open class MicroObjectTest : StringSpec() {
     }
 
     private fun loadStatement(stmtString : String) : WhileParser.ProgramContext{
-        val program = "main $stmtString end"
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program = stdLib + "main $stmtString end"
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)

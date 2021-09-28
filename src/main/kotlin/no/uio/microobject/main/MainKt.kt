@@ -34,7 +34,7 @@ data class Settings(val verbose : Boolean,      //Verbosity
             .replace("run:", "$runPrefix:")
             .replace("smol:", "$langPrefix:")
     }
-    fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWRE: requires that the prefixes and in #
+    fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWARE: requires that the prefixes and in #
         return string.replace("domain:", domainPrefix)
             .replace("prog:", progPrefix)
             .replace("run:", runPrefix)

@@ -98,7 +98,7 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
+class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
             (models_block)?
             method_def*
             END;

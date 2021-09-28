@@ -1,5 +1,3 @@
-class <T> List(T content, List<T> next) end
-
 class A (Int sealing) end
 
 class B extends A (A aB) end
