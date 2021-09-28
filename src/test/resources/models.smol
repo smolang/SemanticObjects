@@ -1,0 +1,13 @@
+class C() models "a domain:A."; end
+
+main
+  C c := new C() models "a domain:B.";
+  c := new C();
+  c := new C();
+  List<C> test1 := derive("<domain:models> some <domain:B>");
+  List<C> test2 := derive("<domain:models> some <domain:A>");
+  Int l1 := test1.length();
+  Int l2 := test2.length();
+  breakpoint;
+  breakpoint;
+end

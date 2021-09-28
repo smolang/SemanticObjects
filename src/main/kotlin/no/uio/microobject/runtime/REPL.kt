@@ -71,9 +71,9 @@ class REPL(private val settings: Settings) {
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
             for (cmd in commands.values.distinct()) {
-                print("${cmd.name}\n\t- ${cmd.help}")
+                print("${cmd.name}\t\t- ${cmd.help}")
                 if (cmd.requiresParameter)
-                    print(", parameter: ${cmd.parameterHelp}")
+                    print("; parameter: ${cmd.parameterHelp}")
                 println()
             }
         }else if (interpreter == null && str != "read" && str != "reada" && str != "exit"){
