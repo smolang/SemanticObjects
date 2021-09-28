@@ -26,7 +26,7 @@ PRINTLN : 'print';
 END : 'end';
 ACCESS : 'access';
 CONSTRUCT : 'construct';
-DERIVE : 'derive';
+MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
 TICK : 'tick';
@@ -120,7 +120,7 @@ statement :   SKIP_S SEMI                                                       
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA lang=modeexpression)? (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
-			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
+			| (declType = type)? target=expression ASS MEMBER OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                                        # if_statement

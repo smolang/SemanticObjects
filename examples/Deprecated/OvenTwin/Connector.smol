@@ -80,7 +80,7 @@ class Constructor()
         end
         //List<Installation> list :=
         //  access("SELECT ?obj WHERE {?obj prog:house ?x. ?x prog:outlet ?y. ?y prog:AC %1. ?obj prog:oven ?x2. ?x2 prog:heater ?y2. ?y2 prog:AC %2. }", b1, b2);
-        //List<Installation> list2 := derive("<domain:ACACInst>"); //OWL bugged
+        //List<Installation> list2 := member("<domain:ACACInst>"); //OWL bugged
         if(list <> null) then
             Boolean inside := list.contains(inst);
             if(inside) then
