@@ -174,7 +174,7 @@ main
     tree.add(pair6);
 
     Wrap<String> ww := new Wrap<String>(tree, 1);
-    //res := ww.lookup();
+    //res := ww.lookup(); //query SELECT ?x WHERE { ?x a domain:TwoNode }
     List<String> res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);
     breakpoint;

@@ -396,7 +396,7 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : 
     override fun getRDF(): String {
         var s = """
             prog:expr${this.hashCode()} rdf:type smol:ArithExpression.
-            prog:expr${this.hashCode()} smol:hasOp $Op.
+            prog:expr${this.hashCode()} smol:hasOp "$Op".
 
         """.trimIndent()
         for (i in params.indices){

@@ -89,7 +89,8 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                     if(!useDefaultModels) continue
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
                     res += target
-                } else if(staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
+ //               } else if(store.contains("dinoStatus") && staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
+                } else if(store.contains("dinoStatus") && staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     res += funVal(obj, store, target, "prog")
 
@@ -128,7 +129,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
 
 
         // dumps processes
-        /*
+
         res += "\n"
         var prevStackEntry: StackEntry? = null
         for (stackEntry in stack){
@@ -146,7 +147,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
             res += "run:pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
             res += stackEntry.active.getRDF()
         }
-        */
+
         // dumps simulation processes
         for(obj in simulation.keys){
             res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Simulation.\n"

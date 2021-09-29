@@ -15,6 +15,8 @@ import kotlinx.coroutines.runBlocking
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
+import org.apache.jena.datatypes.xsd.XSDDatatype
+import org.apache.jena.datatypes.xsd.impl.XSDBaseStringType
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -26,6 +28,7 @@ import org.apache.jena.reasoner.rulesys.Rule
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.shacl.ShaclValidator
 import org.apache.jena.shacl.Shapes
+import org.apache.jena.vocabulary.XSD
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -353,17 +356,17 @@ class Interpreter(
                         val newMemory: Memory = mutableMapOf()
 
                         var found = obres.toString().removePrefix(settings.runPrefix)
-                        if(found.startsWith("\\\"")) found = found.replace("\\\"","\"")
+                        val objNameCand = if(found.startsWith("\\\"")) found.replace("\\\"","\"") else found
                         for (ob in heap.keys) {
-                            if (ob.literal == found) {
-                                newMemory["content"] = LiteralExpr(found, ob.tag)
+                            if (ob.literal == objNameCand) {
+                                newMemory["content"] = LiteralExpr(objNameCand, ob.tag)
                                 break
                             }
                         }
                         if (!newMemory.containsKey("content")) {
-                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
-                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
-                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
+                            if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] = LiteralExpr("\""+found+"\"", STRINGTYPE)
+                            else if(objNameCand.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
                         newMemory["next"] = list
