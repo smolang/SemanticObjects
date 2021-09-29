@@ -90,7 +90,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
                     res += target
  //               } else if(store.contains("dinoStatus") && staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
-                } else if(store.contains("dinoStatus") && staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
+                } else if(staticInfo.fieldTable[obj.tag.name]!!.any { it.name == store && it.inferenceVisibility == Visibility.PUBLIC }){
                     val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     res += funVal(obj, store, target, "prog")
 
