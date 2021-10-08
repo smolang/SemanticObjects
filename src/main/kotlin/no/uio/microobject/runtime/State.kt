@@ -32,70 +32,6 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         """.trimIndent()
     }
 
-    fun dump() : String{
-        //Builds always known information and meta data
-        var res = settings.prefixes() + "\n"+HEADER + "\n" + VOCAB  + "\n" + MINIMAL
-
-
-        res += staticInfo.dumpClasses()
-
-        //dumps individuals
-        var i = 0
-        for(obj in heap.keys){
-            res += "run:${obj.literal} a prog:${(obj.tag as BaseType).name}.\n"
-            res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Object.\n"
-            //and their fields
-            for(store in heap[obj]!!.keys) {
-                if (store == "__models") {
-                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
-                    res += "run:${obj.literal} domain:models $target.\n"
-                } else if (store == "__describe") {
-                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal + "\n"
-                    res += target
-                } else {
-                    val target = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                    res += "run:${obj.literal} prog:${obj.tag}_$store "
-                    res += if (target.literal == "null")
-                        "smol:${target.literal}.\n"
-                    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-                        "${target.literal}.\n"
-                    else if (target.tag == INTTYPE)
-                        "\"${target.literal}\"^^xsd:integer.\n"
-                    else
-                        "run:${target.literal}.\n"
-                    i++
-                }
-            }
-        }
-
-        // dumps processes
-        /*
-        res += "\n"
-        var prevStackEntry: StackEntry? = null
-        for (stackEntry in stack){
-            if (prevStackEntry != null){
-                res += "run:pro${prevStackEntry.id} smol:nextOnStack run:pro${stackEntry.id}.\n"
-            }
-            prevStackEntry = stackEntry
-            res += "run:pro${stackEntry.id} rdf:type smol:Process.\n"
-            res += "run:pro${stackEntry.id} smol:runsOnObject run:${stackEntry.obj}.\n"
-            for ((key, value) in stackEntry.store){
-                if (key != "this" && key.first() != '_') {
-                    res += "run:pro${stackEntry.id} prog:${key} run:${value}.\n"
-                }
-            }
-            res += "run:pro${stackEntry.id} smol:active prog:stmt${stackEntry.active.hashCode()}.\n"
-            res += stackEntry.active.getRDF()
-        }
-        */
-        // dumps simulation processes
-        for(obj in simulation.keys){
-            res += "run:${obj.literal} rdf:type owl:NamedIndividual , smol:Simulation.\n"
-            val sim = simulation.getValue(obj)
-            res += sim.dump("run:${obj.literal}")
-        }
-        return res + "\n" + settings.background
-    }
 }
 
 
@@ -145,47 +81,49 @@ MethodTable     : $methodTable
         return null
     }
 
+    // TODO: remove this completely eventually
     fun dumpClasses() : String{
-        var res = ""
-        for(obj in fieldTable){
-            res += "prog:${obj.key} rdf:type smol:Class.\n"
-            res += "prog:${obj.key} rdf:type owl:Class.\n"
-            for(obj2 in obj.value){
-                val fieldName = obj.key+"_"+obj2.name
-                res += "prog:${obj.key} smol:hasField prog:$fieldName.\n"
-                res += "prog:$fieldName rdf:type smol:Field.\n"
-                if(obj2.type == INTTYPE || obj2.type == STRINGTYPE) {
-                    res += "prog:$fieldName rdf:type owl:DatatypeProperty.\n"
-                } else {
-                    res += "prog:$fieldName rdf:type owl:FunctionalProperty.\n"
-                    res += "prog:$fieldName rdf:type owl:ObjectProperty.\n"
-                }
-                res += "prog:$fieldName rdfs:domain prog:${obj.key}.\n"
-            }
-        }
+        return ""
+        // var res = ""
+        // for(obj in fieldTable){
+        //     res += "prog:${obj.key} rdf:type smol:Class.\n"
+        //     res += "prog:${obj.key} rdf:type owl:Class.\n"
+        //     for(obj2 in obj.value){
+        //         val fieldName = obj.key+"_"+obj2.name
+        //         res += "prog:${obj.key} smol:hasField prog:$fieldName.\n"
+        //         res += "prog:$fieldName rdf:type smol:Field.\n"
+        //         if(obj2.type == INTTYPE || obj2.type == STRINGTYPE) {
+        //             res += "prog:$fieldName rdf:type owl:DatatypeProperty.\n"
+        //         } else {
+        //             res += "prog:$fieldName rdf:type owl:FunctionalProperty.\n"
+        //             res += "prog:$fieldName rdf:type owl:ObjectProperty.\n"
+        //         }
+        //         res += "prog:$fieldName rdfs:domain prog:${obj.key}.\n"
+        //     }
+        // }
 
-        //records all methods
-        for(obj in methodTable){
-            for(obj2 in obj.value){
-                val metName = obj.key+"_"+obj2.key
-                res += "prog:${obj.key} smol:hasMethod prog:$metName.\n"
-                res += "prog:$metName rdf:type owl:NamedIndividual , smol:Method.\n"
-            }
-        }
+        // //records all methods
+        // for(obj in methodTable){
+        //     for(obj2 in obj.value){
+        //         val metName = obj.key+"_"+obj2.key
+        //         res += "prog:${obj.key} smol:hasMethod prog:$metName.\n"
+        //         res += "prog:$metName rdf:type owl:NamedIndividual , smol:Method.\n"
+        //     }
+        // }
 
 
-        var all = methodTable.keys
-        //records type hierarchy
-        for(obj in hierarchy.entries){
-            for(obj2 in obj.value){
-                res += "prog:$obj2 rdfs:subClassOf prog:${obj.key}.\n"
-                all -= obj2
-            }
-        }
-        for(obj in all)
-            res += "prog:$obj rdfs:subClassOf prog:Object.\n"
+        // var all = methodTable.keys
+        // //records type hierarchy
+        // for(obj in hierarchy.entries){
+        //     for(obj2 in obj.value){
+        //         res += "prog:$obj2 rdfs:subClassOf prog:${obj.key}.\n"
+        //         all -= obj2
+        //     }
+        // }
+        // for(obj in all)
+        //     res += "prog:$obj rdfs:subClassOf prog:Object.\n"
 
-        return res
+        // return res
     }
 }
 

@@ -227,3 +227,7 @@ smol:hasOperand           rdf:type owl:ObjectProperty ;
 domain:models rdf:type owl:ObjectProperty ;
               rdfs:subPropertyOf owl:topObjectProperty ;
               rdf:type owl:FunctionalProperty.
+
+
+smol:null rdf:type owl:NamedIndividual, smol:Object .
+prog:_Entry_ rdf:type owl:NamedIndividual, smol:Class .

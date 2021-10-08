@@ -1,0 +1,27 @@
+auto
+
+class <smol:Class>
+query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
+
+// query SELECT * WHERE {?a domain:models ?c }
+// query SELECT * WHERE {?a smol:hasField2 ?c }
+// query SELECT * WHERE {<https://github.com/Edkamb/SemanticObjects/Program#Department> ?b ?c }
+// query SELECT * WHERE {<https://github.com/Edkamb/SemanticObjects/Program#Employee_personId> ?b ?c}
+// query SELECT (count(*) as ?count) WHERE {?a domain:models ?c. ?c ?d ?e. }
+// query SELECT * WHERE {?a ?B <http://www.w3.org/2000/01/rdf-schema#Container>. }
+// query SELECT * WHERE {?a domain:models ?v. ?v ?x ?y}
+// query SELECT * WHERE {?a ?b ?c }
+// query SELECT (count(*) as ?count) WHERE {?a ?b ?c. ?c ?d ?e. }
+// query SELECT * WHERE {{?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?model ?modelP ?modelO.} UNION {?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?obj ?p ?o.} }
+// query SELECT * WHERE {?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?model ?modelP ?modelO.} 
+// query SELECT * WHERE {?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?obj ?p ?o.}
+
+// dump
+// consistency
+
+exit
+
+
+
+
+

@@ -19,6 +19,7 @@ import java.nio.file.Paths
 import kotlin.system.exitProcess
 
 data class Settings(val verbose : Boolean,      //Verbosity
+                    val materialize : Boolean,  //Materialize
                     val outpath : String,       //path of temporary outputs
                     val background : String,    //owl background knowledge
                     val backgroundrules : String,    //owl background knowledge
@@ -32,6 +33,12 @@ data class Settings(val verbose : Boolean,      //Verbosity
             .replace("prog:", "$progPrefix:")
             .replace("run:", "$runPrefix:")
             .replace("smol:", "$langPrefix:")
+    }
+    fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWARE: requires that the prefixes and in #
+        return string.replace("domain:", domainPrefix)
+            .replace("prog:", progPrefix)
+            .replace("run:", runPrefix)
+            .replace("smol:", langPrefix)
     }
     fun prefixes() : String =
         """@prefix smol: <${langPrefix}> .
@@ -47,16 +54,17 @@ class Main : CliktCommand() {
         "--load" to "repl",       "-l" to "repl",
     ).default("repl")
 
-    private val back         by option("--back",      "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
-    private val backrules    by option("--backrules", "-br", help="path to a file that contains derivation rules in Jena syntax.").path()
-    private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
-    private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
-    private val jOut         by option("--output",    "-o",  help="Java output.").path().default(Paths.get("/tmp/mo/java"))
-    private val jPackage     by option("--package",   "-p",  help="Java package.").default("no.uio.microobject")
-    private val jEnforce     by option("--semantic",  "-s",  help="Enforces a semantic translation, even in a non-semantic fragment.").flag()
-    private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
-    private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
-    private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
+    private val back         by option("--back",        "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
+    private val backrules    by option("--backrules",   "-br", help="path to a file that contains derivation rules in Jena syntax.").path()
+    private val domainPrefix by option("--domain",      "-d",  help="prefix for domain:.").default("https://github.com/edkamb/SemanticObjects/ontologies/default#")
+    private val input        by option("--input",       "-i",  help="path to a .smol file which is loaded on startup.").path()
+    private val jOut         by option("--output",      "-o",  help="Java output.").path().default(Paths.get("/tmp/mo/java"))
+    private val jPackage     by option("--package",     "-p",  help="Java package.").default("no.uio.microobject")
+    private val jEnforce     by option("--semantic",    "-s",  help="Enforces a semantic translation, even in a non-semantic fragment.").flag()
+    private val replay       by option("--replay",      "-r",  help="path to a file containing a series of shell commands.").path()
+    private val tmp          by option("--tmp",         "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
+    private val verbose      by option("--verbose",     "-v",  help="Verbose output.").flag()
+    private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -92,7 +100,7 @@ class Main : CliktCommand() {
             val visitor = Translate()
             val pair = visitor.generateStatic(tree)
 
-            val tC = TypeChecker(tree, Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix), pair.second)
+            val tC = TypeChecker(tree, Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix), pair.second)
             tC.check()
             tC.report()
 
@@ -102,7 +110,7 @@ class Main : CliktCommand() {
             return
         }
 
-        val repl = REPL( Settings(verbose, tmp.toString(), backgr, backgrrules, domainPrefix))
+        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix))
         if(input != null){
             repl.command("read", input.toString())
         }

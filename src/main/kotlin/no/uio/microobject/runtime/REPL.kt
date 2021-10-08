@@ -58,6 +58,7 @@ class REPL(private val settings: Settings) {
         initCommands()
     }
 
+    // TODO: this method will be removed when we have unified jena models and OWLAPI/Hermit
     private fun initOntology(){
         val dir = File("${settings.outpath}/output.ttl")
         dir.parentFile.mkdirs()
@@ -70,7 +71,7 @@ class REPL(private val settings: Settings) {
 
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
-            for (cmd in commands.values) {
+            for (cmd in commands.values.toSet().sortedBy { it.name }) {
                 print("${cmd.name}\n\t- ${cmd.help}")
                 if (cmd.requiresParameter)
                     print(", parameter: ${cmd.parameterHelp}")
@@ -92,17 +93,9 @@ class REPL(private val settings: Settings) {
         return false
     }
     fun dump() {
-        if (!validDump) {
-
-            val res = interpreter!!.dumpTtl()
-            if(settings.verbose) printRepl(res)
-
-            val output = File("${settings.outpath}/output.ttl")
-            output.parentFile.mkdirs()
-            if (!output.exists()) output.createNewFile()
-            output.writeText(res)
-            initOntology()
-        }
+        interpreter!!.dump()
+        // update ontology from this new dump
+        initOntology()
         validDump = true
     }
 
@@ -205,8 +198,7 @@ class REPL(private val settings: Settings) {
             },
             "executes a SPARQL query",
             parameterHelp = "SPARQL query",
-            requiresParameter = true,
-            requiresDump = true
+            requiresParameter = true
         )
         commands["query"] = query
         commands["q"] = query
