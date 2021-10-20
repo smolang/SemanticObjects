@@ -28,18 +28,14 @@ class Command(
     val command: (String) -> Boolean,
     val help: String,
     val requiresParameter: Boolean = false,
-    val parameterHelp: String = "",
-    val requiresDump: Boolean = false,
-    val invalidatesDump: Boolean = false
+    val parameterHelp: String = ""
 ){
     fun execute(param: String) : Boolean {
-        if(requiresDump) repl.dump()
         if(requiresParameter && param == ""){
             repl.printRepl("Command $name expects 1 parameter $parameterHelp.")
             return false
         }
         val res = command(param)
-        if(invalidatesDump) repl.validDump = false
         return res
     }
 }
@@ -47,27 +43,11 @@ class Command(
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val settings: Settings) {
     private var interpreter: Interpreter? = null
-    var validDump = false
-    private lateinit var m : OWLOntologyManager
-    private lateinit var ontology : OWLOntology
-    private lateinit var reasoner : OWLReasoner
     private val commands: MutableMap<String, Command> = mutableMapOf()
     private var rules = ""
     init {
-        initOntology()
         initCommands()
     }
-
-    // TODO: this method will be removed when we have unified jena models and OWLAPI/Hermit
-    private fun initOntology(){
-        val dir = File("${settings.outpath}/output.ttl")
-        dir.parentFile.mkdirs()
-        if (!dir.exists()) dir.createNewFile()
-        m = OWLManager.createOWLOntologyManager()
-        ontology = m.loadOntologyFromOntologyDocument(File("${settings.outpath}/output.ttl"))
-        reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
-    }
-
 
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
@@ -94,9 +74,6 @@ class REPL(private val settings: Settings) {
     }
     fun dump() {
         interpreter!!.dump()
-        // update ontology from this new dump
-        initOntology()
-        validDump = true
     }
 
     fun runAndTerminate(){
@@ -147,8 +124,7 @@ class REPL(private val settings: Settings) {
             { str -> initInterpreter(str); false },
             "reads a file",
             parameterHelp = "Path to a .smol file",
-            requiresParameter = true,
-            invalidatesDump = true
+            requiresParameter = true
         )
         commands["reada"] = Command(
             "reada",
@@ -156,8 +132,7 @@ class REPL(private val settings: Settings) {
             { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
             "reads a file and runs auto",
             parameterHelp = "Path to a .smol file",
-            requiresParameter = true,
-            invalidatesDump = true
+            requiresParameter = true
         )
         commands["info"] = Command(
             "info",
@@ -170,20 +145,18 @@ class REPL(private val settings: Settings) {
         commands["examine"] = examine
         commands["e"] = examine
         commands["dump"] =
-            Command("dump", this, { dump(); false }, "dumps into /tmp/mo/output.ttl", invalidatesDump = true)
+            Command("dump", this, { dump(); false }, "dumps into \${tmp_path}/output.ttl")
         commands["auto"] = Command(
             "auto",
             this,
             { while (interpreter!!.makeStep()); false },
-            "continues execution until the next breakpoint",
-            invalidatesDump = true
+            "continues execution until the next breakpoint"
         )
         val step = Command(
             "step",
             this,
             { interpreter!!.makeStep(); false },
-            "executes one step",
-            invalidatesDump = true
+            "executes one step"
         )
         commands["step"] = step
         commands["s"] = step
@@ -250,50 +223,40 @@ class REPL(private val settings: Settings) {
                 false
             },
             "plot ROLE PORT FROM TO runs gnuplot on port PORT of role ROLE from FROM to TO. FROM and TO are optional",
-            requiresDump = true,
             requiresParameter = true
         )
         commands["consistency"] = Command(
             "consistency",
             this,
             { _ ->
+                var ontology = interpreter!!.getCompleteOntology()
+                var reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
                 ontology.classesInSignature().forEach { println(it) }
                 printRepl("HermiT result ${reasoner.isConsistent}")
                 false
             },
-            "prints all classes and checks that the internal ontology is consistent",
-            requiresDump = true
+            "prints all classes and checks that the internal ontology is consistent"
         )
         commands["class"] = Command(
             "class",
             this,
             { str ->
-                val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-                var hermString = "Ontology:\n"
-                ontology.classesInSignature().filter { it.toString().startsWith("<") }
-                                                      .forEach { hermString += "Class: $it\n" }
-                ontology.objectPropertiesInSignature().filter { it.toString().startsWith("<") }
-                                                      .forEach { hermString += "ObjectProperty: $it\n" }
-                ontology.individualsInSignature().forEach { hermString += "Individual: $it\n" }
-
-
-                parser.prefixManager.setPrefix("smol:","<https://github.com/Edkamb/SemanticObjects#>")
-                parser.prefixManager.setPrefix("prog:","<urn:>")
-                parser.prefixManager.setPrefix("run:","<urn:>")
-                parser.setStringToParse(hermString)
-                parser.parseOntology(ontology)
-                var unprefixed = str.replace("smol:", "https://github.com/Edkamb/SemanticObjects#")
-                unprefixed = unprefixed.replace("prog:", "urn:")
-                unprefixed = unprefixed.replace("run:", "urn")
-                val expr = parser.parseClassExpression(unprefixed)
-                val res = reasoner.getInstances(expr)
-                printRepl("HermiT result $res")
+                var outString = "Instances of $str:\n"
+                for (node in interpreter!!.owlQuery(str)) {
+                    // N node can appearently have more than one entity. Print all entities in all nodes.
+                    var prefix = ""
+                    for (entity in node.getEntities()) {
+                        outString = outString + prefix + "${entity.toString()}"
+                        prefix = ", "
+                    }
+                    outString = outString + "\n"
+                }
+                printRepl(outString)
                 false
             },
             "returns all members of a class",
             parameterHelp = "class expression in Manchester Syntax, e.r., \"<smol:Class>\"",
-            requiresParameter = true,
-            requiresDump = true
+            requiresParameter = true
         )
         commands["eval"] = Command(
             "eval",

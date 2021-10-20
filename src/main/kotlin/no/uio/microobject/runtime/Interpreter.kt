@@ -4,6 +4,7 @@
 
 package no.uio.microobject.runtime
 
+import com.github.owlcs.ontapi.OntManagers
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
 import com.sksamuel.hoplite.ConfigLoader
@@ -41,8 +42,7 @@ import org.apache.jena.util.iterator.*
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
-import org.semanticweb.owlapi.model.OntologyConfigurator
-import org.semanticweb.owlapi.model.OWLNamedIndividual
+import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.reasoner.NodeSet
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
@@ -101,8 +101,6 @@ fun uriTriple(s : String, p : String, o : String) : Triple {
 fun addIfMatch(candidateTriple : Triple, searchTriple : Triple, matchList : MutableList<Triple> ) : Unit {
     if (searchTriple.matches(candidateTriple)) matchList.add(candidateTriple)
 }
-
-
 
 // Graph representing the static table
 class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
@@ -200,10 +198,6 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
 }
 
 
-
-
-
-
 // Graph representing the heap
 class HeapGraph(interpreter: Interpreter) : GraphBase() {
     var interpreter : Interpreter = interpreter
@@ -282,6 +276,8 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                         if (searchTriple.getPredicate().getURI() != predicateString) continue
                     }
 
+                    // TODO: For some reason ints are not displayed with the correct datatype when dumped or validated.
+                    // We need to go over this section once more to make sure that ints, strings etc. are managed correctly.
                     val target : LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     if (target.literal == "null") {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral("${smol}${target.literal}") )
@@ -302,20 +298,9 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                 }
             }
         }
-
         return TripleListIterator(matchingTriples)
     }
-
-
 }
-
-
-
-
-
-
-
-
 
 
 class Interpreter(
@@ -357,12 +342,27 @@ class Interpreter(
     )
 
 
-    // Returns the virtual model. I.e., the union of all existing smaller models
-    // Including: vocab.owl, background data, heap, static table
+    // This returns an OWL ontology containing all OWL axioms.
+    // The corresponding Jena model includes all RDF triples
+    // Triples/axioms are gathered from: vocab.owl, background data, heap, static table
     // TODO: add simulation data
-    fun getCompleteModel() : Model {
-        // var model : Model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM) // use this to turn off inference
-        var model : Model = ModelFactory.createOntologyModel()
+    fun getCompleteOntology() : OWLOntology {
+        // Using ONT-API to connect Jena with the OWLAPI
+        var manager : OWLOntologyManager = OntManagers.createManager();
+        var ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"));
+        // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
+        var model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel();
+
+        // Add triples manually to model/ontology. Can be used when debugging.
+        // var allTriplesStringPre : String = ""
+        // for ((key, value) in prefixMap) allTriplesStringPre += "@prefix $key: <$value> .\n"
+        // var triplesHardCoded = "run:obj6 a prog:Student ." +
+        // "prog:Student owl:disjointWith prog:Course ."
+        // allTriplesStringPre += triplesHardCoded
+        // val sPre : InputStream = ByteArrayInputStream(allTriplesStringPre.toByteArray())
+        // model.read(sPre, null, "TTL")
+
+        // Read vocab.owl and background data
         var allTriplesString : String = ""
         for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
         val vocabURL : java.net.URL = this::class.java.classLoader.getResource("vocab.owl")
@@ -371,12 +371,17 @@ class Interpreter(
         val s : InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
         model.read(s, null, "TTL")
 
-        // Construct graph based on the heap, and make a model based on this graph.
-        var heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(this))
-        model = ModelFactory.createUnion(model, heapGraphModel)
-        // Construct graph based on the static table, and make a model based on this graph.
+        // Add triples from static table
         var staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(this))
-        model = ModelFactory.createUnion(model, staticTableGraphModel)
+        model.add(staticTableGraphModel)
+
+        // Add triples from heap
+        var heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(this))
+        model.add(heapGraphModel)
+
+        // For debugging: Listing all OWL axioms if needed
+        // println("List of all owl-axioms in the complete model/ontology:");
+        // for (axiom in ontology.axioms()) println(axiom)
 
         // Adding prefixes
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)
@@ -404,7 +409,19 @@ class Interpreter(
             model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
         }
 
-        return model
+        return ontology
+    }
+
+    // Using ONT-API to return the model corresponding to the complete ontology
+    fun getCompleteModel() : Model {
+        var ontology : OWLOntology = getCompleteOntology()
+        return (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
+    }
+
+
+    // Return the graph corresponding to the complete model
+    fun getCompleteGraph() : Graph {
+        return getCompleteModel().getGraph()
     }
 
 
@@ -424,18 +441,19 @@ class Interpreter(
     }
 
 
-    private fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
-        val out = settings.replaceKnownPrefixes(str)
-       // str.replace("prog:","urn:").replace("run:","urn:").replace("smol:","https://github.com/Edkamb/SemanticObjects#:")
+    // Run OWL query and return all instances of the described class.
+    // str should be in Manchester syntax
+    fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
+        val out : String = settings.replaceKnownPrefixesNoColon(str.removeSurrounding("\""))
         val m = OWLManager.createOWLOntologyManager()
-        val ontology = m.loadOntologyFromOntologyDocument(File("${settings.outpath}/output.ttl"))
+        val ontology = this.getCompleteOntology()
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)
         return reasoner.getInstances(parser.parseClassExpression(out))
     }
 
-    // Dump all triples in the virtual model to output.ttl
+    // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
     internal fun dump() {
         var model = getCompleteModel()
         model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
@@ -490,7 +508,6 @@ class Interpreter(
         ) {
             throw Exception("Could not find List class in this model")
         }
-        dump()
         return str
     }
 
@@ -674,12 +691,11 @@ class Interpreter(
                 val file = File(fileName)
                 if(!file.exists()) throw Exception("file $fileName does not exist")
                 val newFile = File("${settings.outpath}/shape.ttl")
-                dump()
                 if(!newFile.exists()) newFile.createNewFile()
                 newFile.writeText(settings.prefixes() + "\n"+State.HEADER + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
                 newFile.appendText(file.readText())
                 val shapesGraph = RDFDataMgr.loadGraph("${settings.outpath}/shape.ttl")
-                val dataGraph = RDFDataMgr.loadGraph("${settings.outpath}/output.ttl")
+                val dataGraph = getCompleteGraph()
 
                 val shapes: Shapes = Shapes.parse(shapesGraph)
 
@@ -698,8 +714,6 @@ class Interpreter(
                     throw Exception("Please provide a string as the input to a derive statement")
                 }
 
-                //this is duplicated w.r.t. REPL until we figure out how to internally represent the KB
-                dump()
                 val res : NodeSet<OWLNamedIndividual> = owlQuery(stmt.query.literal)
                 var list = LiteralExpr("null")
                     for (r in res) {

@@ -117,7 +117,7 @@ class Main : CliktCommand() {
         if(replay != null){
             val str = replay.toString()
             File(str).forEachLine {
-                if(!it.startsWith("#")) {
+                if(!it.startsWith("#") && !(it == "")) {
                     println("MO-auto> $it")
                     val splits = it.split(" ", limit = 2)
                     val left = if(splits.size == 1) "" else splits[1]
