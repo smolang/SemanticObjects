@@ -1,0 +1,12 @@
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+@prefix prog: <https://github.com/Edkamb/SemanticObjects/Program#> .
+
+schema:CourseHasLecturerShape
+    a sh:NodeShape ;
+    sh:targetClass prog:Course ;
+    sh:property [
+        sh:path prog:Course_lecturer ;
+        sh:class prog:Employee ;
+    ].
+

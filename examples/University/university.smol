@@ -2,10 +2,52 @@
 // This example shows how to make class hierarchies, and how to use the models keyword on both classes and instances.
 
 
+
+// List implementation copied from another file.
+class <T> List(T content, List<T> next)
+    Int length()
+        if this.next = null then return 1;
+        else Int n := this.next.length(); return n + 1;
+        end
+    end
+    Int append(List<T> last)
+        if this.next = null then
+            this.next := last;
+        else
+            this.next.append(last);
+        end
+        return 0;
+    end
+
+    T get(Int i)
+        T res := this.content;
+        if i >= 1 then
+            res := this.next.get(i-1);
+        end
+        return res;
+    end
+
+    Boolean contains(T element)
+        if this.content = element then
+            return True;
+        else
+            if this.next = null then
+                return False;
+            else
+                Boolean res := this.next.contains(element);
+                return res;
+            end
+        end
+    end
+end
+
+
+
+
 class Department (private Int departmentId, private String departmentName)
 end
 
-class Course (private String courseId, String courseName, Department department, Employee lecturer)
+class Course (private String courseId, String courseName, Department department, Person lecturer)
     String getCourseId()
         return this.courseId;
     end
@@ -27,6 +69,9 @@ class Person (private Int personId, private String name, private Int birthYear)
     Int getBirthYear()
         return this.birthYear;
     end
+    String toString()
+        return this.name;
+    end
 end
 
 class Student extends Person (private Int studentId)
@@ -46,30 +91,74 @@ class Employee extends Person (private Int employeeId, private Department depart
     end
 end
 
+
 main
+    // The first Person
     Person alice := new Person(13025213498, "Alice", 1952);
     Int aliceId := alice.getPersonId();
     Int aliceName := alice.getName();
     Int aliceBirthYear := alice.getBirthYear();
-    print(aliceId);
+    print("Name, id and birthyear of Alice:");
     print(aliceName);
+    print(aliceId);
     print(aliceBirthYear);
 
+    // Departments
     Department mathDep := new Department(1, "Department of Mathematics");
     Department csDep := new Department(2, "Department of Computer Science");
 
+    // Employees
     Employee charlie := new Employee(29017413549, "Charlie", 1974, 1, mathDep);
     Employee dave := new Employee(2110195093381, "Dave", 1950, 2, csDep);
 
-    Course calculus1 := new Course("M1001", "Calculus 1", mathDep, charlie);
+    // Courses
+    Course calculus1 := new Course("M1001", "Calculus 1", mathDep, alice);
     Course calculus2 := new Course("M2001", "Calculus 2", mathDep, charlie);
     Course linearAlgebra := new Course("M2002", "Linear Algebra", mathDep, charlie);
     Course discreteMathematics := new Course("M1002", "Discrete Mathematics", mathDep, charlie);
     Course logic := new Course("M2020", "Logic", mathDep, charlie);
     Course introToProgramming := new Course("C1001", "Introduction to Programming", csDep, dave);
 
+    // Students
     Student bob := new Student(24098845521, "Bob", 1988, 1001)
     models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:tuitionPayed true; smol:friend run:obj15.";
-
     Student eve := new Student(11118694402, "Eve", 1986, 1002);
+    Student fred := new Student(09058894388, "Fred", 1988, 1003);
+
+    // Get and print all Persons (no reasoning)
+    List<Person> allPersons := access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
+    Int personLen := allPersons.length();
+    print(personLen);
+    Int i := 0;
+    print("Persons:");
+    while (i < personLen) do
+        Person person := allPersons.get(i);
+        String personName := person.toString();
+        print(personName);
+        i := i+1;
+    end
+
+    // Get and print all Students (no reasoning)
+    List<Student> allStudents := access("SELECT ?obj WHERE{ ?obj a prog:Student. }");
+    Int studentLen := allStudents.length();
+    print(studentLen);
+    i := 0;
+    print("Students:");
+    while (i < studentLen) do
+        Student student := allStudents.get(i);
+        String studentName := student.toString();
+        print(studentName);
+        i := i+1;
+    end
+
+    // Testing SHACL shapes
+    Boolean b := validate("examples/University/university.ttl");
+    print("Check if all lecturers are actually employees:");
+    print(b);
+
+
+    // TODO: Get and print (with Hermit reasoning) It complains about my list implementation.
+    // List<Person> m := derive("prog:Banana");
+
+
 end
