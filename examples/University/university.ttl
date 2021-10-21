@@ -2,11 +2,11 @@
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 @prefix prog: <https://github.com/Edkamb/SemanticObjects/Program#> .
 
-schema:CourseHasLecturerShape
+# Every lecturer must be an employee
+schema:CourseLecturerIsEmployeeShape
     a sh:NodeShape ;
     sh:targetClass prog:Course ;
     sh:property [
         sh:path prog:Course_lecturer ;
         sh:class prog:Employee ;
     ].
-
