@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
 import java.nio.file.Files
 import java.nio.file.Paths
+import no.uio.microobject.data.*
 
 
 /**
@@ -22,7 +23,7 @@ import java.nio.file.Paths
  *
  */
 
-class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings, private val staticTable: StaticTable) : TypeErrorLogger() {
+class TypeChecker(private val ctx: WhileParser.ProgramContext, private val settings: Settings, private val tripleManager: TripleManager) : TypeErrorLogger() {
 
     companion object{
         /**********************************************************************
@@ -357,7 +358,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         }
 
         //check queries
-        queryCheckers.forEach { it.type(staticTable) }
+        queryCheckers.forEach { it.type(tripleManager) }
     }
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()

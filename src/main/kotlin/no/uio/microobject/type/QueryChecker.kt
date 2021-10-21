@@ -4,7 +4,6 @@ package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.main.Settings
-import no.uio.microobject.runtime.State
 import no.uio.microobject.runtime.StaticTable
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.syntax.ElementGroup
@@ -17,6 +16,7 @@ import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
+import no.uio.microobject.data.*
 
 data class DLNode(val str : String, val isVar : Boolean)
 data class DLEdge(val from : DLNode, val label : String, val to : DLNode)
@@ -32,7 +32,7 @@ class QueryChecker(
     private val incidence : MutableMap<DLNode, MutableSet<DLEdge>> = mutableMapOf()
     private var formula = ""
 
-    fun type(staticTable: StaticTable) : Boolean{
+    fun type(tripleManager: TripleManager) : Boolean{
         val successBuild = buildTree()
         if(!successBuild) {
             log("Building the tree for the query failed", ctx, Severity.WARNING)
@@ -43,16 +43,14 @@ class QueryChecker(
             log("Building the tree for the query failed", ctx, Severity.WARNING)
             return false
         }
-        return check(staticTable)
+        return check(tripleManager)
     }
 
 
 
-    private fun check(staticTable: StaticTable) : Boolean{
+    private fun check(tripleManager: TripleManager) : Boolean{
         try {
-            val test = settings.prefixes() + "\n"+ State.HEADER + "\n" + State.VOCAB + "\n" + settings.background + "\n" + State.MINIMAL + "\n" + staticTable.dumpClasses()
-            val m = OWLManager.createOWLOntologyManager()
-            val ontology = m.loadOntologyFromOntologyDocument(test.byteInputStream())
+            val ontology = tripleManager.getStaticDataOntology()
 
             val reasoner = Reasoner(Configuration(), ontology)
 
@@ -61,7 +59,7 @@ class QueryChecker(
                 log("Failed to extract OWL expression for target type", ctx)
                 return false
             }
-            val owlSub = getQueryExpression(staticTable)
+            val owlSub = getQueryExpression(tripleManager)
             if(owlSub != null) {
                 val owlSup = OWLClassImpl(IRI.create(settings.progPrefix + tString))
                 val subs = reasoner.getSuperClasses(owlSub)
@@ -80,12 +78,11 @@ class QueryChecker(
         }
     }
 
-    private fun getQueryExpression(staticTable: StaticTable) : OWLClassExpression?{
-        val test = settings.prefixes() + "\n"+ State.HEADER + "\n" + State.VOCAB + "\n" + settings.background + "\n" + State.MINIMAL + "\n" + staticTable.dumpClasses()
+    private fun getQueryExpression(tripleManager : TripleManager) : OWLClassExpression?{
         try {
             val out = settings.replaceKnownPrefixes(formula)
             val m = OWLManager.createOWLOntologyManager()
-            val ontology = m.loadOntologyFromOntologyDocument(test.byteInputStream())
+            val ontology = tripleManager.getStaticDataOntology()
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
             return parser.parseClassExpression(out)

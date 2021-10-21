@@ -17,6 +17,7 @@ import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
+import no.uio.microobject.data.*
 
 data class Settings(val verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
@@ -28,6 +29,17 @@ data class Settings(val verbose : Boolean,      //Verbosity
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
                     val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#"
                     ){
+    fun prefixMap() : HashMap<String, String> {
+        return hashMapOf<String, String>(
+        "domain" to "${domainPrefix}",
+        "smol" to "${langPrefix}",
+        "prog" to "${progPrefix}",
+        "run" to "${runPrefix}",
+        "owl" to "http://www.w3.org/2002/07/owl#",
+        "rdf" to "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+        "rdfs" to "http://www.w3.org/2000/01/rdf-schema#",
+        "xsd" to "http://www.w3.org/2001/XMLSchema#")
+    }
     fun replaceKnownPrefixes(string: String) : String{
         return string.replace("domain:", "$domainPrefix:")
             .replace("prog:", "$progPrefix:")
@@ -40,11 +52,31 @@ data class Settings(val verbose : Boolean,      //Verbosity
             .replace("run:", runPrefix)
             .replace("smol:", langPrefix)
     }
+    // Right now all these prefixes are a mess: Better functions below?
+    // fun replaceKnownPrefixes(string: String) : String{
+    //     var stringCopy = string
+    //     prefixMap().forEach {k, v -> stringCopy = stringCopy.replace("$k:", "$v:") }
+    //     return stringCopy
+    // }
+    // fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWARE: requires that the prefixes and in #
+    //     var stringCopy = string
+    //     prefixMap().forEach {k, v -> stringCopy = stringCopy.replace("$k:", "$v") }
+    //     return stringCopy
+    // }
     fun prefixes() : String =
         """@prefix smol: <${langPrefix}> .
            @prefix prog: <${progPrefix}>.
            @prefix domain: <${domainPrefix}>.
            @prefix run: <${runPrefix}> .""".trimIndent()
+
+    fun getHeader() : String {
+        return """
+        @prefix owl: <http://www.w3.org/2002/07/owl#> .
+        @prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+        @prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+        @prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+        """.trimIndent()
+    }
 }
 
 class Main : CliktCommand() {
@@ -100,7 +132,10 @@ class Main : CliktCommand() {
             val visitor = Translate()
             val pair = visitor.generateStatic(tree)
 
-            val tC = TypeChecker(tree, Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix), pair.second)
+            val settings = Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix)
+            val tripleManager = TripleManager(settings, pair.second, null)
+
+            val tC = TypeChecker(tree, settings, tripleManager)
             tC.check()
             tC.report()
 

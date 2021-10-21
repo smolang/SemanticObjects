@@ -169,4 +169,8 @@ main
     // List<Person> m := derive("prog:Banana");
 
 
+    // Testing that type checking works by assigning an int to a string variable.
+    String str := 5;
+
+
 end

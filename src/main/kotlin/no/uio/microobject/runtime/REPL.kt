@@ -2,11 +2,14 @@
 
 package no.uio.microobject.runtime
 
+import java.io.File
+import java.util.*
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.Expression
 import no.uio.microobject.data.RuleGenerator
 import no.uio.microobject.data.Translate
+import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
@@ -15,12 +18,10 @@ import org.apache.jena.query.ResultSetFormatter
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OWLOntologyManager
-import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.reasoner.OWLReasoner
-import java.io.File
-import java.util.*
 
 class Command(
     val name: String,
@@ -93,7 +94,9 @@ class REPL(private val settings: Settings) {
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
-        val tC = TypeChecker(tree, settings, pair.second)
+        // making a triplemanager without any interpreter instance. This can be used to do type checking.
+        var tripleManager = TripleManager(settings, pair.second, null)
+        val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
         tC.report()
 
@@ -229,7 +232,7 @@ class REPL(private val settings: Settings) {
             "consistency",
             this,
             { _ ->
-                var ontology = interpreter!!.getCompleteOntology()
+                var ontology = interpreter!!.tripleManager.getCompleteOntology()
                 var reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
                 ontology.classesInSignature().forEach { println(it) }
                 printRepl("HermiT result ${reasoner.isConsistent}")
