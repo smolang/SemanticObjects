@@ -15,14 +15,15 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import java.util.*
+import no.uio.microobject.data.TripleManager
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
-    protected var settings = Settings(false,  "/tmp/mo","","","urn:")
+    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:")
     protected fun loadBackground(path : String){
         val file = File(path)
         val backgr = file.readText()
-        settings = Settings(false,  "/tmp/mo",backgr,"","urn:")
+        settings = Settings(false, false,  "/tmp/mo",backgr,"","urn:")
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
         val lexer = WhileLexer(CharStreams.fromString(program))
@@ -66,7 +67,10 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val tC = TypeChecker(ast, Settings(false,  "/tmp/mo","","","urn:"), pair.second)
+        val settings = Settings(false, false, "/tmp/mo","","","urn:")
+        val tripleManager = TripleManager(settings, pair.second, null)
+
+        val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
         val iB = InterpreterBridge(null)
         val rules = RuleGenerator(settings).generateBuiltins(ast, iB)
@@ -100,7 +104,10 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val tC = TypeChecker(ast, Settings(false,  "/tmp/mo","","","urn:"), pair.second)
+        val settings = Settings(false, false, "/tmp/mo","","","urn:")
+        val tripleManager = TripleManager(settings, pair.second, null)
+
+        val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
         return Pair(tC, ast)
     }

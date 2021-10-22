@@ -11,6 +11,7 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import kotlin.test.assertEquals
+import no.uio.microobject.data.TripleManager
 
 class BasicTest : StringSpec() {
     private fun load(path : String) : Int {
@@ -23,7 +24,11 @@ class BasicTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(tree)
 
-        val tC = TypeChecker(tree, Settings(false,  "/tmp/mo","","urn:", ""), pair.second)
+
+        val settings = Settings(false,false,  "/tmp/mo","","urn:", "")
+        val tripleManager = TripleManager(settings, pair.second, null)
+
+        val tC = TypeChecker(tree, settings, tripleManager)
 
         tC.check()
         tC.report()
