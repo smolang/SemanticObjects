@@ -1,11 +1,11 @@
-class <S,T> C () end
-class <U> D extends C<Int, U>() end
+class C<S,T> () end
+class D<U> extends C<Int, U>() end
 class E extends C() end
 class F extends C<Int>() end
 class G extends C<Int,Int>() end
-class <U> H() end
-class <Z> I(Q i) end
-class <Y> J() Int m() return Y.i; end end
+class H<U>() end
+class I<Z>(Q i) end
+class J<Y>() Int m() return Y.i; end end
 
 abstract class A()
     abstract Int m()

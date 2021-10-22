@@ -1,5 +1,3 @@
-class <T> List(T content, List<T> next) end
-
 class A (Int sealing) end
 
 class B extends A (A aB) end
@@ -27,6 +25,16 @@ class Test()
       return 1;
     end
 
+    Int mSuccess4()
+      List<Object> l := access("SELECT DISTINCT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing 1 ]]}");
+      return 1;
+    end
+
+    Int mSuccess5()
+      List<Object> l := access("SELECT DISTINCT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing %1 ]]}", 1);
+      return 1;
+    end
+
     Int mFail1()
       List<B> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
@@ -34,6 +42,10 @@ class Test()
 
    Int mFail2()
      List<E> ld := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+     return 1;
+   end
+   Int mFail3()
+     List<List<String>> ld := access("SELECT ?obj WHERE {?obj prog:List_head %1}", 42);
      return 1;
    end
 end

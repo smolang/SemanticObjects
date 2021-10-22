@@ -4,7 +4,7 @@ end
 class D extends C (Object o)
     Object m2(Int i) return i; end
 end
-class <U> Wrapper(U content) end
+class Wrapper<U>(U content) end
 
 class Test(C c, D d, Wrapper<C> cw, Wrapper<D> dw)
 

@@ -15,14 +15,35 @@ import org.antlr.v4.runtime.RuleContext
  */
 class Translate : WhileBaseVisitor<ProgramElement>() {
 
-    private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodEntry>>> = mutableMapOf()
+    private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
+
+
+    private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
+        if(ctx is Simple_models_blockContext)
+            return Pair(emptyList(), ctx.owldescription.text)
+        if(ctx is Complex_models_blockContext) {
+            val expr = visit(ctx.expression()) as Expression
+            val str = ctx.owldescription.text
+            val tail = translateModels(ctx.models_block())
+            return Pair(tail.first + Pair(expr,str), tail.second)
+        }
+        throw Exception("Unknown models clause: $ctx") //making the type checker happy
+    }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
+        var modelsTable : Map<String, List<ModelsEntry>> = emptyMap()
         for(cl in ctx!!.class_def()){
-            if(cl.owldescription != null) owldescr[cl!!.className.text] = cl.owldescription.text
+            val modelsList =
+            if(cl.models_block() != null){
+                val models = translateModels(cl.models_block())
+                owldescr[cl!!.className.text] = models.second
+                models.first
+            } else emptyList()
+            modelsTable = modelsTable + Pair(cl.className.text, modelsList)
+
             if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
@@ -38,13 +59,14 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 if(cl.fieldDeclList().fieldDecl() != null) {
                     for (nm in cl.fieldDeclList().fieldDecl()) {
                         val cVisibility = if(nm.visibility == null) Visibility.PUBLIC else if(nm.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else if(nm.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
                             cVisibility,
                             iVisibility,
-                            BaseType(cl!!.className.text)
+                            BaseType(cl!!.className.text),
+                            nm.domain != null
                         )
                     }
                 }
@@ -53,7 +75,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 listOf()
             }
 
-            val res = mutableMapOf<String, MethodEntry>()
+            val res = mutableMapOf<String, MethodInfo>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
                 if(nm.abs == null && nm.statement() == null)
                     throw Exception("Non-abstract method with empty statement: ${nm.NAME().text}")
@@ -61,17 +83,17 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                     throw Exception("Abstract method with non-empty statement: ${nm.NAME().text}")
                 if(nm.abs == null) {
                     var stmt = visit(nm!!.statement()) as Statement
-                    val last = stmt.getLast();
+                    val last = stmt.getLast()
                     val metType = TypeChecker.translateType(nm.type(), cl.NAME().text, mutableMapOf())
                     if(metType == UNITTYPE && last !is ReturnStmt){//just to be sure
                         stmt = appendStmt(stmt, ReturnStmt(UNITEXPR))
                     }
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = Pair(stmt, params)
+                    res[nm.NAME().text] = MethodInfo(stmt, params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
                 }
                 if(nm.abs != null) {
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = Pair(SkipStmt(ctx!!.start.line), params)
+                    res[nm.NAME().text] = MethodInfo(SkipStmt(ctx!!.start.line), params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
                 }
             }
             table[cl.className.text] = Pair(fields, res)
@@ -90,21 +112,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         }
 
         //refactor this first
-        var fieldTable : Map<String,FieldEntry> = emptyMap()
-        var methodTable : Map<String,Map<String,MethodEntry>> = emptyMap()
+        val fieldTable : MutableMap<String, FieldEntry> = mutableMapOf()
+        val methodTable : MutableMap<String, Map<String, MethodInfo>> = mutableMapOf()
         for(entry in table){
-            fieldTable = fieldTable + Pair(entry.key, entry.value.first)
-            methodTable += Pair(entry.key, entry.value.second)
+            fieldTable +=  Pair(entry.key, entry.value.first)
+            methodTable +=  Pair(entry.key, entry.value.second)
         }
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable)
                    )
     }
 
     private fun paramListTranslate(ctx: ParamListContext?) : List<String> {
-        var res = listOf<String>()
+        val res = mutableListOf<String>()
         if(ctx!!.param() != null) {
             for (nm in ctx.param())
                 res += nm.NAME().text
@@ -113,7 +135,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitSuper_statement(ctx: Super_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList().toMutableList()
         val def = getClassDecl(ctx as RuleContext)
         val declares = if(ctx!!.declType == null) null else
             TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
@@ -147,7 +169,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitCall_statement(ctx: Call_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList().toMutableList()
         val def = getClassDecl(ctx as RuleContext)
         val declares = if(ctx!!.declType == null) null else
             TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
@@ -176,7 +198,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 1 until ctx!!.expression().size) {
             if(ctx.expression(i) != ctx.owldescription)
                 ll += visit(ctx.expression(i)) as Expression
@@ -184,8 +206,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val def = getClassDecl(ctx)
         val targetType =
             TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
-        val modeling = if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
-            ?.let { LiteralExpr(it, STRINGTYPE) } else if(ctx.owldescription != null) visit(ctx.owldescription) as Expression else null
+        val modeling =
+            if(ctx.owldescription != null) visit(ctx.owldescription) as Expression else
+            if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
+            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),
                           ll,
@@ -204,7 +228,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             target.setType(targetType)
         }
         val query = visit(ctx!!.query) as Expression
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode else InfluxDBMode((ctx.modeexpression() as Influx_modeContext).STRING().text)
@@ -221,7 +245,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             target.setType(targetType)
         }
         val query = visit(ctx!!.query) as Expression
-        var ll = emptyList<Expression>()
+        val ll = emptyList<Expression>().toMutableList()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
         return ConstructStmt(target, query, ll, ctx!!.start.line, target.getType())
@@ -249,7 +273,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val path = ctx!!.path.text.removeSurrounding("\"")
         val target = visit(ctx!!.target) as Location
 
-        var res = listOf<VarInit>()
+        val res = mutableListOf<VarInit>()
         if(ctx!!.varInitList() != null) {
             for (nm in ctx!!.varInitList()!!.varInit())
                 res += visit(nm) as VarInit
@@ -401,6 +425,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitExternal_field_expression(ctx: External_field_expressionContext?): ProgramElement {
+        if(ctx!!.expression() is This_expressionContext)
+            return OwnVar(ctx.NAME().text)
         return OthersVar(visit(ctx!!.expression()) as Expression, ctx.NAME().text)
     }
     override fun visitFmu_field_expression(ctx: Fmu_field_expressionContext?): ProgramElement {

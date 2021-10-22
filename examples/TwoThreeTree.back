@@ -1,24 +1,24 @@
-:Root rdf:type owl:Class ;
+domain:Root rdf:type owl:Class ;
       owl:equivalentClass [ rdf:type owl:Restriction ;
-                                     owl:onProperty :parent ;
+                                     owl:onProperty prog:Node_parent ;
                                      owl:hasValue smol:null
                            ] .
 
-:TruePair rdf:type owl:Class ;
+domain:TruePair rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty a ;
+                owl:onProperty rdf:type;
                 owl:hasValue prog:Pair
            ].
 
-:TrueNode rdf:type owl:Class ;
+domain:TrueNode rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty a ;
+                owl:onProperty rdf:type;
                 owl:hasValue prog:Node
            ].
 
-:Leaf rdf:type owl:Class ;
+domain:Leaf rdf:type owl:Class ;
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
@@ -32,14 +32,14 @@
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_dataL;
-                                      owl:someValuesFrom :TruePair]
+                                      owl:someValuesFrom domain:TruePair]
                          )
                          ] .
 
 
 
 
-:TwoNode rdf:type owl:Class ;
+domain:TwoNode rdf:type owl:Class ;
       owl:equivalentClass [
       owl:intersectionOf(
                                      [rdf:type owl:Restriction ;
@@ -50,34 +50,34 @@
                                       owl:hasValue smol:null]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_dataL;
-                                      owl:someValuesFrom :TruePair]
+                                      owl:someValuesFrom domain:TruePair]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_childL;
-                                      owl:someValuesFrom :TrueNode]
+                                      owl:someValuesFrom domain:TrueNode]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_childM;
-                                      owl:someValuesFrom :TrueNode]
+                                      owl:someValuesFrom domain:TrueNode]
                          )
                          ] .
 
-:ThreeNode rdf:type owl:Class ;
+domain:ThreeNode rdf:type owl:Class ;
       owl:equivalentClass [
       owl:intersectionOf(
 
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_dataR;
-                                      owl:someValuesFrom :TruePair]
+                                      owl:someValuesFrom domain:TruePair]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_childR;
-                                      owl:someValuesFrom :TrueNode]
+                                      owl:someValuesFrom domain:TrueNode]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_dataL;
-                                      owl:someValuesFrom :TruePair]
+                                      owl:someValuesFrom domain:TruePair]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_childL;
-                                      owl:someValuesFrom :TrueNode]
+                                      owl:someValuesFrom domain:TrueNode]
                                      [rdf:type owl:Restriction ;
                                       owl:onProperty prog:Node_childM;
-                                      owl:someValuesFrom :TrueNode]
+                                      owl:someValuesFrom domain:TrueNode]
                          )
                          ] .

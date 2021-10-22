@@ -6,6 +6,7 @@ import no.uio.microobject.data.TRUEEXPR
 import no.uio.microobject.test.MicroObjectTest
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.ERRORTYPE
+import no.uio.microobject.type.INTTYPE
 import org.apache.jena.query.ResultSetFormatter
 import org.apache.jena.rdf.model.impl.LiteralImpl
 import kotlin.test.assertEquals
@@ -14,6 +15,14 @@ import kotlin.test.assertNotNull
 
 class SMOLExecutionTest: MicroObjectTest() {
     init {
+        "models override"{
+            loadBackground("src/test/resources/models.owl")
+            val (a,_) = initInterpreter("models", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertEquals(LiteralExpr("2", INTTYPE), a.evalTopMost(LocalVar("l2", INTTYPE)))
+            assertEquals(LiteralExpr("1", INTTYPE), a.evalTopMost(LocalVar("l1", INTTYPE)))
+        }
         "overload"{
             loadBackground("examples/overload.back")
             val (a, _) = initInterpreter("overload", StringLoad.RES)
@@ -44,7 +53,7 @@ class SMOLExecutionTest: MicroObjectTest() {
             executeUntilBreak(a)
             assertEquals(0, a.stack.size)
             a.dump()
-            val res = a.query("SELECT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
+            val res = a.query("SELECT DISTINCT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
             assertNotNull(res)
             var i = 0
             while(res.hasNext()){

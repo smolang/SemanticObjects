@@ -26,7 +26,7 @@ PRINTLN : 'print';
 END : 'end';
 ACCESS : 'access';
 CONSTRUCT : 'construct';
-DERIVE : 'derive';
+MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
 TICK : 'tick';
@@ -43,9 +43,9 @@ OVERRIDE : 'override';
 MAIN : 'main';
 PRIVATE : 'private';
 PROTECTED : 'protected';
-INFERPRIVATE : 'inferprivate';
-INFERPROTECTED : 'inferprotected';
+INFERPRIVATE : 'nonsemantic';
 MODELS : 'models';
+DOMAIN : 'domain';
 
 //Keywords: constants
 TRUE : 'True';
@@ -98,9 +98,15 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : (abs=ABSTRACT)? CLASS (LT namelist GT)? className = NAME (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN (owldescription=STRING)? method_def* END;
-method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
+class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
+            (models_block)?
+            method_def*
+            END;
+method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
+models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
+             | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
+             ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
@@ -114,7 +120,7 @@ statement :   SKIP_S SEMI                                                       
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
 			| (declType = type)? target=expression ASS ACCESS OPARAN query=expression (COMMA lang=modeexpression)? (COMMA expression (COMMA expression)*)? CPARAN SEMI               # sparql_statement
 			| (declType = type)? target=expression ASS CONSTRUCT OPARAN query=expression (COMMA expression (COMMA expression)*)? CPARAN SEMI            # construct_statement
-			| (declType = type)? target=expression ASS DERIVE OPARAN query=expression CPARAN SEMI                                                       # owl_statement
+			| (declType = type)? target=expression ASS MEMBER OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                                        # if_statement
@@ -162,10 +168,9 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=infermodifier)? (visibility=visibilitymodifier)? type NAME;
+fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
 
 visibilitymodifier : PRIVATE | PROTECTED;
-infermodifier : INFERPRIVATE | INFERPROTECTED;

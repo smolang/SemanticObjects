@@ -1,47 +1,11 @@
-//Standard Library
-class <T> List(T content, List<T> next)
-    Int length()
-        if this.next = null then return 1;
-        else Int n := this.next.length(); return n + 1;
-        end
-    end
-    Int append(List<T> last)
-        if this.next = null then
-            this.next := last;
-        else
-            this.next.append(last);
-        end
-        return 0;
-    end
 
-    T get(Int i)
-        T res := this.content;
-        if i >= 1 then
-            res := this.next.get(i-1);
-        end
-        return res;
-    end
-
-    Boolean contains(T element)
-        if this.content = element then
-            return True;
-        else
-            if this.next = null then
-                return False;
-            else
-                Boolean res := this.next.contains(element);
-                return res;
-            end
-        end
-    end
-end
 
 
 //Wrapper for simulators: each simulator can have multiple ports
-abstract class <T2> OutPort()
+abstract class OutPort<T2> ()
     abstract T2 get()
 end
-abstract class <T3> InPort()
+abstract class InPort<T3> ()
     abstract Boolean write(T3 t)
 end
 

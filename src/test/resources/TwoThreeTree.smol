@@ -1,6 +1,6 @@
-class <A, B> Pair(A key, B value) end
+class Pair<A, B>(A key, B value) end
 
-class <S> Node(Pair<Int, S> dataL,
+class Node<S>(Pair<Int, S> dataL,
                   Pair<Int, S> dataR,
                   Node<S> childL,
                   Node<S> childM,
@@ -136,7 +136,7 @@ class <S> Node(Pair<Int, S> dataL,
     end
 end
 
-class <P> Tree(Node<P> root)
+class Tree<P>(Node<P> root)
     Int add(Pair<Int, P> kv)
         Node<P> res := this.root.add(kv);
         if(res <> null) then this.root := res; end
@@ -148,18 +148,10 @@ class <P> Tree(Node<P> root)
     end
 end
 
-class <Z> Wrap(Tree<Z> ttt, Int key)
+class  Wrap<Z>(Tree<Z> ttt, Int key)
     rule Z lookup()
         Z v := this.ttt.retrieve(this.key);
         return v;
-    end
-end
-
-class <D> List(D content, List<D> next)
-    Int length()
-        if(this.next = null) then return 1;
-        else Int n := this.next.length(); return n + 1;
-        end
     end
 end
 
@@ -182,7 +174,7 @@ main
     tree.add(pair6);
 
     Wrap<String> ww := new Wrap<String>(tree, 1);
-    //res := ww.lookup();
+    //res := ww.lookup(); //query SELECT ?x WHERE { ?x a domain:TwoNode }
     List<String> res := access("SELECT ?obj WHERE {?sth prog:Wrap_lookup_builtin_res ?obj}");
     print(res);
     breakpoint;

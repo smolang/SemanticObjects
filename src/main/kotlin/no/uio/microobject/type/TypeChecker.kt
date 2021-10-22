@@ -84,12 +84,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
 
     /**********************************************************************
-    CSSA
+    ISSA
      ***********************************************************************/
-    private val queryCheckers = mutableListOf<QueryChecker>()
+    internal val queryCheckers = mutableListOf<QueryChecker>()
 
     override fun report(silent: Boolean): Boolean {
-        return super.report(silent) && queryCheckers.fold(true) { acc, nx -> acc && nx.report(silent) }
+        return queryCheckers.fold(super.report(silent)) { acc, nx -> acc && nx.report(silent) }
     }
 
 
@@ -118,7 +118,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val cVisibility =
                     if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                 val iVisibility =
-                    if (it.infer == null) Visibility.PUBLIC else if (it.infer.INFERPROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
+                    if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
                 Pair(
                     it.NAME().text,
                     FieldInfo(
@@ -126,7 +126,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         translateType(it.type(), name, generics),
                         cVisibility,
                         iVisibility,
-                        BaseType(name)
+                        BaseType(name),
+                        it.domain != null
                     )
                 )
             }
@@ -166,6 +167,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
         val name = clCtx.className.text
 
+
         //Check extends: class must exist and not *also* be generic
         if (clCtx.superType != null) {
             val superType = translateType(clCtx.superType, name, generics)
@@ -204,6 +206,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Inference visibility is not supported yet.", param, Severity.WARNING)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
+                if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE )
+                    log("Domain fields must be literal types, but $paramType found", param)
             }
         }
 
@@ -220,7 +224,19 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     clCtx
                 )
         }
+        //Only booleans in model block
+        if(clCtx.models_block() != null) checkModels(clCtx.models_block(), fields[name]!!, BaseType(name))
 
+    }
+
+    private fun checkModels(modelsBlock: WhileParser.Models_blockContext,
+                            fields : Map<String, FieldInfo>,
+                            thisType : Type) {
+        if(modelsBlock is WhileParser.Complex_models_blockContext){
+            val t = getType(modelsBlock.guard, fields, emptyMap(), thisType, false)
+            if(t != BOOLEANTYPE) log("Models guards must be booleans over the fields", modelsBlock)
+            checkModels(modelsBlock.models_block(), fields, thisType)
+        }
     }
 
     private fun checkOverride(mtCtx: WhileParser.Method_defContext, className: String){
@@ -357,13 +373,16 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             log("Method ${mtCtx.NAME().text} has non-Unit return type a path without a final return statement.", mtCtx)
         }
 
+        if(mtCtx.domainrule != null && retType != INTTYPE && retType != BOOLEANTYPE && retType != STRINGTYPE )
+            log("Domain metnhod must have literal retur types, but $retType found", mtCtx)
+
         //check queries
         queryCheckers.forEach { it.type(tripleManager) }
     }
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()
     // TODO: move this to an antlr visitor
-    internal fun checkStatement(ctx : WhileParser.StatementContext,
+    private fun checkStatement(ctx : WhileParser.StatementContext,
                                finished : Boolean,
                                vars : MutableMap<String, Type>,
                                metType : Type, //return type
@@ -411,6 +430,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val rhsType = getType(ctx.expression(1), inner, vars, thisType, inRule)
                 if(lhsType != ERRORTYPE && rhsType != ERRORTYPE && !lhsType.isAssignable(rhsType, extends))
                     log("Type $rhsType is not assignable to $lhsType", ctx)
+                if(ctx.expression(0) !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Super_statementContext -> {
                 val lhsType =
@@ -467,6 +488,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         }
                     }
                 }
+
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Call_statementContext -> {
                 val lhsType =
@@ -540,6 +564,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                       }
                   }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Create_statementContext -> {
                 val lhsType =
@@ -577,7 +603,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
                 val creationParameters = getParameterTypes(createClass)
                 if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
-                    for(i in 1 until creationParameters.size){
+                    for(i in 1 until creationParameters.size+1){
                         if(ctx.expression() == ctx.owldescription) continue
                         val targetType = creationParameters[i-1]
                         val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
@@ -600,6 +626,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Models clause must be a String: ${ctx.owldescription}", ctx)
                 }
 
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
@@ -626,6 +653,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         queryCheckers.add(qc)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Construct_statementContext -> {
                 var expType : Type? = null
@@ -651,6 +680,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         queryCheckers.add(qc)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Owl_statementContext -> {
                 log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
@@ -664,6 +695,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Validate_statementContext -> {
                 log("Type checking this form of (C)SSA is not supported yet ", ctx, Severity.WARNING)
@@ -680,6 +713,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         else vars[name] = translateType(ctx.type(), className, generics)
                     }
                 }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Return_statementContext -> {
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
@@ -691,6 +726,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
                 if(innerType != ERRORTYPE && !OBJECTTYPE.isAssignable(innerType, extends))
                     log("Type $innerType of destroy statement is not an object type.",ctx)
+
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Output_statementContext -> {
                 //For now, we print everything
@@ -747,8 +784,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }
 
                 }
+                if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Tick_statementContext -> {
+                if(inRule) log("Non-local access in rule method.", ctx)
                 val fmuType = getType(ctx.fmu, inner, vars, thisType, inRule)
                 val tickType = getType(ctx.time, inner, vars, thisType, inRule)
                 if(fmuType !is SimulatorType)
@@ -797,7 +836,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)).type
+                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)).type
             }
             is WhileParser.Nested_expressionContext -> {
                 return getType(eCtx.expression(), fields, vars, thisType, inRule)
@@ -964,7 +1003,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
-                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType)
+                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
             }
@@ -1045,7 +1084,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             val over = recoverDef[extends[clCtx.NAME().text]?.getPrimary()?.getNameString()] ?: return newAbs
             val above = getLeftoverAbstract(over)
             val impl = clCtx.method_def().filter { it.abs == null }.map { it.NAME().text }
-            return (above - impl) + newAbs
+            return (above - impl.toSet()) + newAbs
         } else {
             return newAbs
         }

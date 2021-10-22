@@ -1,22 +1,10 @@
-class <T> List(T content, List<T> next)
-    List<T> reverse()
-        if(this.next = null) then
-            return this;
-        else
-            List<T> ret := this.next.reverse();
-            this.next.next := this;
-            this.next := null;
-            return ret;
-        end
-    end
-end
-
-abstract class Action (Boolean advance)
+abstract class Action (nonsemantic Boolean advance)
     abstract Unit execute(Scenario scen)
 end
 
-class DepositAction extends Action (GeoLayer deposit)
+class DepositAction extends Action (nonsemantic GeoLayer deposit)
     override Unit execute(Scenario scen)
+        //print("deposit");
         this.deposit.scenId := scen.scenId;
         scen.deposit(this.deposit);
         if(this.advance) then
@@ -25,8 +13,9 @@ class DepositAction extends Action (GeoLayer deposit)
     end
 end
 
-class ErodeAction extends Action (Int depth)
+class ErodeAction extends Action (nonsemantic Int depth)
     override Unit execute(Scenario scen)
+        //print("erode");
         scen.erode(this.depth);
         if(this.advance) then
             scen.processes();
@@ -36,14 +25,15 @@ end
 
 class EmptyAction extends Action()
     override Unit execute(Scenario scen)
+       // print("empty");
         if(this.advance) then
             scen.processes();
         end
     end
 end
 
-abstract class GeoLayer(Int scenId, Int thickness, GeoLayer above, GeoLayer below) //in m
-    rule Int depth()
+abstract class GeoLayer(Int scenId, domain Int thickness, nonsemantic GeoLayer above, nonsemantic GeoLayer below) //in m
+    domain Int depth()
         Int res := 0;
         if(this.above <> null) then
             res := this.above.depth();
@@ -69,10 +59,13 @@ class UnknownLayer extends GeoLayer()
 end
 
 class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
-            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]."
+            models(this.dinoStatus = 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models(this.dinoStatus = 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale].";
     Unit cook()
         //if(this.dinoStatus < 3 & this.dinoStatus > 0) then
         print("cooking");
+        //print(this);
         this.dinoStatus := this.dinoStatus +1;
     end
     Unit burn()
@@ -103,7 +96,8 @@ class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = keroge
 end
 
 class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium, 3 = low
-           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone]."
+           models(this.hasHC) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone];  domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
     Unit compact()
         if(this.porosity < 3) then this.porosity := this.porosity +1; end
         print("compacting");
@@ -181,32 +175,37 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
     end
 
     Unit processes()
-       List<Sand> geos := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 3000) }", this.scenId);
+       print("pr");
+       List<Sand> geos := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 3000) }", this.scenId);
        while(geos <> null) do
             Sand next := geos.content;
             next.compact();
             geos := geos.next;
        end
+       //breakpoint;
        List<Shale> geos2 :=
-       access("SELECT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y domain:depth ?depth; domain:constitutedBy [ domain:contains [ a domain:Kerogen ] ]. FILTER(?depth >= 2000) }", this.scenId);
+//       access("SELECT DISTINCT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
+    //    access("SELECT DISTINCT ?obj WHERE{ ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
+        member("<domain:models> some <domain:CookingTrigger>");
        while(geos2 <> null) do
             Shale next2 := geos2.content;
             next2.cook();
             geos2 := geos2.next;
        end
-       geos2 := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. ?obj prog:Shale_scenId %1. FILTER(?depth > 4000) }", this.scenId);
+       geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. ?obj prog:Shale_scenId %1. FILTER(?depth > 4000) }", this.scenId);
        while(geos2 <> null) do
            next2 := geos2.content;
            next2.burn();
            geos2 := geos2.next;
        end
-       geos := access("SELECT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 4000) }", this.scenId);
+       geos := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 4000) }", this.scenId);
        while(geos <> null) do
            next := geos.content;
            next.hasHC := False; //burning in sand
            geos := geos.next;
        end
-       geos2 := access("SELECT ?obj WHERE { ?obj prog:Shale_dinoStatus 3. ?obj prog:Shale_scenId %1 }", this.scenId);
+      // geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3. ?obj prog:Shale_scenId %1 }", this.scenId);
+       geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3 }");
        while(geos2 <> null) do
            next2 := geos2.content;
            next2.migrate();
@@ -215,7 +214,6 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
     end
 
     Unit run(List<Action> actions)
-        print(actions);
         List<Action> current := actions;
         while(current <> null) do
             Action next := current.content;
@@ -249,7 +247,7 @@ main
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False); // models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
+    layer := new Sand(0, 1000, null, null, 1, False);
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 

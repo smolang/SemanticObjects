@@ -54,6 +54,8 @@ class REPL(private val settings: Settings) {
         if (str == "help") {
             for (cmd in commands.values.toSet().sortedBy { it.name }) {
                 print("${cmd.name}\n\t- ${cmd.help}")
+            for (cmd in commands.values.distinct()) {
+                print("${cmd.name}\t\t- ${cmd.help}")
                 if (cmd.requiresParameter)
                     print(", parameter: ${cmd.parameterHelp}")
                 println()
@@ -86,7 +88,9 @@ class REPL(private val settings: Settings) {
     }
 
     private fun initInterpreter(path: String) {
-        val lexer = WhileLexer(CharStreams.fromFileName(path))
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program =  File(path).readText(Charsets.UTF_8)
+        val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
         val tree = parser.program()
@@ -101,7 +105,7 @@ class REPL(private val settings: Settings) {
         tC.report()
 
         val iB = InterpreterBridge(null)
-        rules = RuleGenerator(settings).generateBuiltins(tree, iB)
+        if(settings.useRule) rules = RuleGenerator(settings).generateBuiltins(tree, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))

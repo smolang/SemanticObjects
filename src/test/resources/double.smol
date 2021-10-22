@@ -1,5 +1,5 @@
-class <T> List (List<T> next, T content, List<T> previous)
-   List<T> append(List<T> node)
+class  DList<T> (DList<T> next, T content, DList<T> previous)
+   DList<T> append(DList<T> node)
       if this.next = null then
          this.next := node;
          node.previous := this;
@@ -9,7 +9,7 @@ class <T> List (List<T> next, T content, List<T> previous)
       return this;
    end
 
-   List<T> insert_after(List<T> node)
+   DList<T> insert_after(DList<T> node)
         node.next := this.next;
         node.previous := this;
         if this.next <> null then
@@ -20,7 +20,7 @@ class <T> List (List<T> next, T content, List<T> previous)
    end
 
 
-   List<T> remove()
+   DList<T> remove()
         if this.next <> null then
             this.next.previous := this.previous;
         else skip; end
@@ -33,7 +33,7 @@ class <T> List (List<T> next, T content, List<T> previous)
    end
 
 
-   List<T> remove_unclean()
+   DList<T> remove_unclean()
         if this.next <> null then
             this.next.previous := this.previous;
         else skip; end
@@ -47,10 +47,10 @@ end
 
 
 main
-  List<Int> a := new List<Int>(null, 1, null);
-  List<Int> b := new List<Int>(null, 2, null);
-  List<Int> c := new List<Int>(null, 4, null);
-  List<Int> d := new List<Int>(null, 3, null);
+  DList<Int> a := new DList<Int>(null, 1, null);
+  DList<Int> b := new DList<Int>(null, 2, null);
+  DList<Int> c := new DList<Int>(null, 4, null);
+  DList<Int> d := new DList<Int>(null, 3, null);
   a.append(b);
   a.append(c);
   b.insert_after(d);

@@ -18,12 +18,15 @@ import kotlinx.coroutines.runBlocking
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
+import org.apache.jena.datatypes.xsd.XSDDatatype
+import org.apache.jena.datatypes.xsd.impl.XSDBaseStringType
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.shacl.ShaclValidator
 import org.apache.jena.shacl.Shapes
+import org.apache.jena.vocabulary.XSD
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -58,9 +61,6 @@ data class InfluxDBConnection(val url : String, val org : String, val token : St
 //There is probably something in the standard library for this pattern
 class InterpreterBridge(var interpreter: Interpreter?)
 
-
-
-
 class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     var heap: GlobalMemory,             // This is a map from objects to their heap memory
@@ -70,19 +70,40 @@ class Interpreter(
     val rules : String,                 // Additional rules for jena
 ) {
 
-    fun coreCopy() : Interpreter{
-        val newHeap = mutableMapOf<LiteralExpr, Memory>()
-        for(kv in heap.entries){
-            newHeap[kv.key] = kv.value.toMap().toMutableMap()
-        }
-        return Interpreter(
-            Stack<StackEntry>(),
-            newHeap,
-            mutableMapOf(),
-            staticInfo,
-            settings,
-            rules
+    //evaluates a call on cl.nm on thisVar
+    //Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
+    //First return value is the created object, the second the return value
+    fun evalCall(objName: String, className: String, metName: String): Pair<LiteralExpr, LiteralExpr> {
+        //Construct initial state
+        val classStmt =
+            staticInfo.methodTable[className]
+                ?: throw Exception("Error during builtin generation")
+        val met = classStmt[metName] ?: throw Exception("Error during builtin generation")
+        val mem: Memory = mutableMapOf()
+
+        val obj = LiteralExpr(
+            objName,
+            heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated
         )
+        mem["this"] = obj
+        val myId = Names.getStackId()
+        val se = StackEntry(met.stmt, mem, obj, myId)
+        stack.push(se)
+
+        //Run your own mini-REPL
+        //But 1. We ignore `breakpoint` and
+        //    2. we do not terminate the interpreter but stop at the return of the added stack frame so we get the return value
+        while (true) {
+            if (stack.peek().active is ReturnStmt && stack.peek().id == myId) {
+                //Evaluate final return expressions
+                val resStmt = stack.peek().active as ReturnStmt
+                val res = resStmt.value
+                val topmost = evalTopMost(res)
+                stack.pop() //clean up
+                return Pair(obj, topmost)
+            }
+            makeStep()
+        }
     }
 
     private var debug = false
@@ -121,7 +142,7 @@ class Interpreter(
     }
 
     // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
-    internal fun dump() {
+    internal fun dump(forceRule : Boolean = false) {
         var model = tripleManager.getCompleteModel()
         File("${settings.outpath}").mkdirs()
         File("${settings.outpath}/output.ttl").createNewFile()
@@ -131,6 +152,11 @@ class Interpreter(
     fun evalTopMost(expr: Expression) : LiteralExpr{
         if(stack.isEmpty()) return LiteralExpr("ERROR") // program terminated
         return eval(expr, stack.peek().store, heap, simMemory, stack.peek().obj)
+    }
+
+
+    fun evalClassLevel(expr: Expression, obj: LiteralExpr): Any {
+        return eval(expr, mutableMapOf(), heap, simMemory, obj)
     }
 
     /*
@@ -156,10 +182,14 @@ class Interpreter(
             stack.push(se)
         }
 
+        if(debug){
+            debug = false
+            return false
+        }
         return true
     }
 
-    internal fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    private fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")
@@ -193,12 +223,12 @@ class Interpreter(
                 val m = staticInfo.getSuperMethod(obj.tag.name, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = obj
-                for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                for (i in m.params.indices) {
+                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.first, newMemory, obj, Names.getStackId()))
+                    listOf(StackEntry(m.stmt, newMemory, obj, Names.getStackId()))
                 )
             }
             is AssignStmt -> {
@@ -206,9 +236,9 @@ class Interpreter(
                 when (stmt.target) {
                     is LocalVar -> stackMemory[stmt.target.name] = res
                     is OwnVar -> {
-                        if (!(staticInfo.fieldTable[(obj.tag as BaseType).name]
-                                ?: error("")).contains(stmt.target.name)
-                        ) throw Exception("This field is unknown: ${stmt.target.name}")
+                        val got = staticInfo.fieldTable[(obj.tag as BaseType).name] ?: throw Exception("Cannot find class ${obj.tag.name}")
+                        if (!got.map {it.name} .contains(stmt.target.name))
+                            throw Exception("This field is unknown: ${stmt.target.name}")
                         heapObj[stmt.target.name] = res
                     }
                     is OthersVar -> {
@@ -240,12 +270,12 @@ class Interpreter(
                     ?: throw Exception("This method is unknown: ${stmt.method}")
                 val newMemory: Memory = mutableMapOf()
                 newMemory["this"] = newObj
-                for (i in m.second.indices) {
-                    newMemory[m.second[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
+                for (i in m.params.indices) {
+                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
                 }
                 return Pair(
                     StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.first, newMemory, newObj, Names.getStackId()))
+                    listOf(StackEntry(m.stmt, newMemory, newObj, Names.getStackId()))
                 )
             }
             is CreateStmt -> {
@@ -298,17 +328,17 @@ class Interpreter(
                         val newMemory: Memory = mutableMapOf()
 
                         var found = obres.toString().removePrefix(settings.runPrefix)
-                        if(found.startsWith("\\\"")) found = found.replace("\\\"","\"")
+                        val objNameCand = if(found.startsWith("\\\"")) found.replace("\\\"","\"") else found
                         for (ob in heap.keys) {
-                            if (ob.literal == found) {
-                                newMemory["content"] = LiteralExpr(found, ob.tag)
+                            if (ob.literal == objNameCand) {
+                                newMemory["content"] = LiteralExpr(objNameCand, ob.tag)
                                 break
                             }
                         }
                         if (!newMemory.containsKey("content")) {
-                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
-                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
-                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
+                            if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] = LiteralExpr("\""+found+"\"", STRINGTYPE)
+                            else if(objNameCand.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
                         newMemory["next"] = list
@@ -376,10 +406,9 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, resLit, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is OwlStmt -> {
-                if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.contains("content") || !staticInfo.fieldTable["List"]!!.contains(
-                        "next"
-                    )
-                ) {
+                if (!staticInfo.fieldTable.containsKey("List") ||
+                    !staticInfo.fieldTable["List"]!!.any {  it.name == "content" } ||
+                    !staticInfo.fieldTable["List"]!!.any {  it.name == "next" }) {
                     throw Exception("Could not find List class in this model")
                 }
                 if (stmt.query !is LiteralExpr || stmt.query.tag != STRINGTYPE) {
@@ -391,13 +420,17 @@ class Interpreter(
                     for (r in res) {
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
+                        val found = r.toString().removePrefix("Node( <").split("#")[1].removeSuffix("> )")
 
-                        val found = r.toString().removePrefix("<urn:").removeSuffix(">")
-                        for (ob in heap.keys) {
-                            if (ob.literal == found) {
-                                newMemory["content"] = LiteralExpr(found, ob.tag)
-                            }
+                        val foundAny = heap.keys.firstOrNull { it.literal == found }
+                        if(foundAny != null) newMemory["content"] = LiteralExpr(found, foundAny.tag)
+                        else {
+                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
+                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
+                            else throw Exception("Concept returned unknown object/literal: $found")
                         }
+
                         newMemory["next"] = list
                         heap[name] = newMemory
                         list = name
@@ -408,14 +441,14 @@ class Interpreter(
                 val over = stack.pop()
                 if (over.active is StoreReturnStmt) {
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, id), listOf())
+                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, over.id), listOf())
                 }
                 if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
                     val active = over.active.first
                     val next = over.active.second
                     val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
                     return Pair(
-                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, id),
+                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, over.id),
                         listOf()
                     )
                 }
@@ -678,5 +711,7 @@ ${stack.joinToString(
         for(sim in simMemory.values)
             sim.terminate()
     }
+
+
 
 }

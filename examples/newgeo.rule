@@ -1,6 +1,1 @@
-[(?X domain:models ?Y), (?X prog:Shale_thickness ?Z) -> (?Y domain:thickness ?Z)]
-[(?X domain:models ?Y), (?X prog:Sand_thickness ?Z) -> (?Y domain:thickness ?Z)]
 [(?X domain:models ?Y), (?X prog:GeoLayer_depth_builtin_res ?Z) -> (?Y domain:depth ?Z)]
-[(?X prog:Sand_hasHC run:True), (?X domain:models ?Q), makeTemp(?l1), makeTemp(?l2) ->  (?Q domain:constitutedBy ?l1), (?l1 domain:contains ?l2), (?l2 rdf:type domain:Kerogen)]
-[(?X prog:Shale_dinoStatus 1), (?X domain:models ?Q), makeTemp(?l1), makeTemp(?l2) ->  (?Q domain:constitutedBy ?l1), (?l1 domain:contains ?l2), (?l2 rdf:type domain:Kerogen)]
-[(?X prog:Shale_dinoStatus 2), (?X domain:models ?Q), makeTemp(?l1), makeTemp(?l2) ->  (?Q domain:constitutedBy ?l1), (?l1 domain:contains ?l2), (?l2 rdf:type domain:Kerogen)]
