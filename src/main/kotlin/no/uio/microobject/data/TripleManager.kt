@@ -132,8 +132,8 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
 
     // Using ONT-API to return the model corresponding to the complete ontology
     fun getCompleteModel() : Model {
-        var ontology : OWLOntology = getCompleteOntology()
-        var model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
+        val ontology : OWLOntology = getCompleteOntology()
+        val model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
 
         // Turn on reasoning if background knowledge is given.
         if(settings.background != "") {
@@ -363,7 +363,7 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                     // We need to go over this section once more to make sure that ints, strings etc. are managed correctly.
                     val target : LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     if (target.literal == "null") {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral("${smol}${target.literal}") )
+                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createURI("${smol}null") )
                         addIfMatch(candidateTriple, searchTriple, matchingTriples)
                     }
                     else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) {
