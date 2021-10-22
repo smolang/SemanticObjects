@@ -123,6 +123,8 @@ class Interpreter(
     // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
     internal fun dump() {
         var model = tripleManager.getCompleteModel()
+        File("${settings.outpath}").mkdirs()
+        File("${settings.outpath}/output.ttl").createNewFile()
         model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
     }
 
@@ -358,7 +360,10 @@ class Interpreter(
                 val file = File(fileName)
                 if(!file.exists()) throw Exception("file $fileName does not exist")
                 val newFile = File("${settings.outpath}/shape.ttl")
-                if(!newFile.exists()) newFile.createNewFile()
+                if(!newFile.exists()) {
+                    File("${settings.outpath}").mkdirs()
+                    newFile.createNewFile()
+                }
                 newFile.writeText(settings.prefixes() + "\n"+ settings.getHeader() + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
                 newFile.appendText(file.readText())
                 val shapesGraph = RDFDataMgr.loadGraph("${settings.outpath}/shape.ttl")

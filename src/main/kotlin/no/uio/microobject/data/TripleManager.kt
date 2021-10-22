@@ -1,10 +1,6 @@
 package no.uio.microobject.data
 
 import com.github.owlcs.ontapi.OntManagers
-import java.io.BufferedReader
-import java.io.ByteArrayInputStream
-import java.io.FileWriter
-import java.io.InputStream
 import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
@@ -19,6 +15,8 @@ import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
 import org.apache.jena.reasoner.rulesys.Rule
 import org.apache.jena.util.iterator.*
 import org.semanticweb.owlapi.model.*
+import org.simpleframework.xml.stream.Verbosity
+import java.io.*
 
 
 // Class managing triples, models and ontologies based on all the data we consider
@@ -96,9 +94,11 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
             model.add(heapGraphModel)
         }
 
-        // For debugging: Listing all OWL axioms if needed
-        // println("List of all owl-axioms in the complete model/ontology:");
-        // for (axiom in ontology.axioms()) println(axiom)
+         //For debugging: Listing all OWL axioms if needed
+         if(settings.verbose) {
+             println("List of all owl-axioms in the complete model/ontology:");
+             for (axiom in ontology.axioms()) println(axiom)
+         }
 
 
 
@@ -122,6 +122,8 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
 
         // write model to file if the materialize flag is given
         if (settings.materialize) {
+            File("${settings.outpath}").mkdirs()
+            File("${settings.outpath}/output.ttl").createNewFile()
             model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
         }
 
