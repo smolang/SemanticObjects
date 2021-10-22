@@ -82,7 +82,7 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
         for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
         val vocabURL : java.net.URL = this::class.java.classLoader.getResource("vocab.owl")
         allTriplesString += vocabURL.readText(Charsets.UTF_8) + "\n"
-        if(settings.background != "") allTriplesString += settings.background
+        if(settings.background != "") allTriplesString += settings.background + "\n"
         val s : InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
         model.read(s, null, "TTL")
 
@@ -101,11 +101,6 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
         // for (axiom in ontology.axioms()) println(axiom)
 
 
-        // Turn on reasoning if background knowledge is given.
-        if(settings.background != "") {
-            if(settings.verbose) println("Using background knowledge...")
-            model = ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
-        }
 
         if (interpreter != null) {
             var rules = interpreter.rules
@@ -122,7 +117,6 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
             }
         }
 
-
         // Adding prefixes
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)
 
@@ -137,7 +131,14 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
     // Using ONT-API to return the model corresponding to the complete ontology
     fun getCompleteModel() : Model {
         var ontology : OWLOntology = getCompleteOntology()
-        return (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
+        var model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
+
+        // Turn on reasoning if background knowledge is given.
+        if(settings.background != "") {
+            if(settings.verbose) println("Using background knowledge...")
+            return ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
+        }
+        return model
     }
 
 

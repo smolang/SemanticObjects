@@ -24,13 +24,26 @@ class SMOLExecutionTest: MicroObjectTest() {
             assertEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("post", BaseType("List"))))
         }
         "persons"{
+            // Checking if simple domain/range reasoning works.
             loadBackground("examples/persons.back")
             val (a, _) = initInterpreter("persons", StringLoad.RES)
-            executeUntilBreak(a)
             val res = a.query("SELECT ?man WHERE { ?man a domain:Man. }")
-            // val res = a.query("SELECT * WHERE { ?a ?b ?c . }")
-            println("\n" + ResultSetFormatter.asText(res))
-            
+            var resCounter = 0
+            while ( res!!.hasNext() ) {
+                res.next()
+                resCounter = resCounter + 1
+            }
+            assertEquals(1, resCounter)
+            val res2 = a.query("SELECT ?woman WHERE { ?woman a domain:Woman. }")
+            resCounter = 0
+            while ( res2!!.hasNext() ) {
+                res2.next()
+                resCounter = resCounter + 1
+            }
+            assertEquals(1, resCounter)
+            // println("\n" + ResultSetFormatter.asText(res2))
+            // assertEquals(1, res2!!.getRowNumber())
+
         }
         "double"{
             val (a, _) = initInterpreter("double", StringLoad.RES)

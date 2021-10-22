@@ -13,15 +13,14 @@ class Person (private Int personId, private String name, private Int birthYear)
     end
 end
 
+class Marriage(Person p1, Person p2)
+end
+
+
 main
     // The first Person
-    Person alice := new Person(13025213498, "Alice", 1952);
-    Int aliceId := alice.getPersonId();
-    Int aliceName := alice.getName();
-    Int aliceBirthYear := alice.getBirthYear();
-    print("Name, id and birthyear of Alice:");
-    print(aliceName);
-    print(aliceId);
-    print(aliceBirthYear);
+    Person annie := new Person(13025213498, "Annie", 1952);
+    Person bernie := new Person(13025213598, "Bernie", 1952);
+    Marriage m1 := new Marriage(annie, bernie);
 
 end
