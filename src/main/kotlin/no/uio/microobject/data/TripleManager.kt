@@ -194,7 +194,7 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
     override protected fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
         val prefixMap : HashMap<String, String> = interpreter.prefixMap
         val fieldTable : Map<String,FieldEntry> = interpreter.staticInfo.fieldTable
-        val methodTable : Map<String,Map<String,MethodEntry>> = interpreter.staticInfo.methodTable
+        val methodTable : Map<String,Map<String,MethodInfo>> = interpreter.staticInfo.methodTable
         val hierarchy : MutableMap<String, MutableSet<String>> = interpreter.staticInfo.hierarchy
 
         // Prefixes

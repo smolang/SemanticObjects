@@ -3,11 +3,15 @@ package no.uio.microobject.main
 import com.github.ajalt.clikt.core.CliktCommand
 import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.path
+import no.uio.microobject.antlr.*
 import no.uio.microobject.runtime.REPL
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 import no.uio.microobject.data.*
+import no.uio.microobject.type.TypeChecker
+import org.antlr.runtime.CommonTokenStream
+import org.antlr.v4.runtime.CharStreams
 
 data class Settings(val verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
@@ -98,28 +102,6 @@ class Main : CliktCommand() {
         if (input == null && mainMode != "repl"){
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
-        }
-
-        if(mainMode == "compile") {
-            val lexer = WhileLexer(CharStreams.fromFileName(input.toString()))
-            val tokens = CommonTokenStream(lexer)
-            val parser = WhileParser(tokens)
-            val tree = parser.program()
-
-            val visitor = Translate()
-            val pair = visitor.generateStatic(tree)
-
-            val settings = Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix, useRule = useRule)
-            val tripleManager = TripleManager(settings, pair.second, null)
-
-            val tC = TypeChecker(tree, settings, tripleManager)
-            tC.check()
-            tC.report()
-
-            val backend = JavaBackend(tree, pair.first.active, pair.second, jPackage, jEnforce)
-            backend.writeOutput(jOut)
-            print(backend.getOutput())
-            return
         }
 
         val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix))

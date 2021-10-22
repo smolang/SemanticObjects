@@ -46,13 +46,10 @@ class REPL(private val settings: Settings) {
     private var interpreter: Interpreter? = null
     private val commands: MutableMap<String, Command> = mutableMapOf()
     private var rules = ""
-    init {
-        initCommands()
-    }
 
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
-            for (cmd in commands.values.toSet().sortedBy { it.name }) {
+            for (cmd in commands.values.toSet().sortedBy { it.name })
                 print("${cmd.name}\n\t- ${cmd.help}")
             for (cmd in commands.values.distinct()) {
                 print("${cmd.name}\t\t- ${cmd.help}")
