@@ -1,0 +1,27 @@
+class Person (private Int personId, private String name, private Int birthYear)
+    Int getPersonId()
+        return this.personId;
+    end
+    String getName()
+        return this.name;
+    end
+    Int getBirthYear()
+        return this.birthYear;
+    end
+    String toString()
+        return this.name;
+    end
+end
+
+main
+    // The first Person
+    Person alice := new Person(13025213498, "Alice", 1952);
+    Int aliceId := alice.getPersonId();
+    Int aliceName := alice.getName();
+    Int aliceBirthYear := alice.getBirthYear();
+    print("Name, id and birthyear of Alice:");
+    print(aliceName);
+    print(aliceId);
+    print(aliceBirthYear);
+
+end

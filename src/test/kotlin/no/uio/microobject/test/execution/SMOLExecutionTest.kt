@@ -23,6 +23,15 @@ class SMOLExecutionTest: MicroObjectTest() {
             assertNotEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("pre", BaseType("List"))))
             assertEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("post", BaseType("List"))))
         }
+        "persons"{
+            loadBackground("examples/persons.back")
+            val (a, _) = initInterpreter("persons", StringLoad.RES)
+            executeUntilBreak(a)
+            val res = a.query("SELECT ?man WHERE { ?man a domain:Man. }")
+            // val res = a.query("SELECT * WHERE { ?a ?b ?c . }")
+            println("\n" + ResultSetFormatter.asText(res))
+            
+        }
         "double"{
             val (a, _) = initInterpreter("double", StringLoad.RES)
             executeUntilBreak(a)

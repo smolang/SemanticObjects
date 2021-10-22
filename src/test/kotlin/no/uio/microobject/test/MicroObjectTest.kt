@@ -67,7 +67,7 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val settings = Settings(false, false, "/tmp/mo","","","urn:")
+        // val settings = Settings(false, false, "/tmp/mo","","","urn:")
         val tripleManager = TripleManager(settings, pair.second, null)
 
         val tC = TypeChecker(ast, settings, tripleManager)

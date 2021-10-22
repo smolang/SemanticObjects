@@ -1,0 +1,13 @@
+
+
+domain:Man a owl:Class .
+domain:Woman a owl:Class .
+
+domain:hasWife rdfs:domain domain:Man ;
+          rdfs:range  domain:Woman .
+
+domain:bob domain:hasWife domain:alice .
+
+
+
+
