@@ -1,17 +1,16 @@
 package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
+import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.FieldInfo
 import no.uio.microobject.runtime.SimulatorObject
-import no.uio.microobject.runtime.StaticTable
 import no.uio.microobject.runtime.Visibility
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
 import java.nio.file.Files
 import java.nio.file.Paths
-import no.uio.microobject.data.*
 
 
 /**

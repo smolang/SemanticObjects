@@ -1,17 +1,15 @@
 package no.uio.microobject.main
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.*
+import com.github.ajalt.clikt.parameters.options.default
+import com.github.ajalt.clikt.parameters.options.flag
+import com.github.ajalt.clikt.parameters.options.option
+import com.github.ajalt.clikt.parameters.options.switch
 import com.github.ajalt.clikt.parameters.types.path
-import no.uio.microobject.antlr.*
 import no.uio.microobject.runtime.REPL
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
-import no.uio.microobject.data.*
-import no.uio.microobject.type.TypeChecker
-import org.antlr.runtime.CommonTokenStream
-import org.antlr.v4.runtime.CharStreams
 
 data class Settings(val verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
@@ -21,15 +19,14 @@ data class Settings(val verbose : Boolean,      //Verbosity
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
-                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#",
-                    val useRule : Boolean = false
+                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#"
                     ){
     fun prefixMap() : HashMap<String, String> {
-        return hashMapOf<String, String>(
-        "domain" to "${domainPrefix}",
-        "smol" to "${langPrefix}",
-        "prog" to "${progPrefix}",
-        "run" to "${runPrefix}",
+        return hashMapOf(
+        "domain" to domainPrefix,
+        "smol" to langPrefix,
+        "prog" to progPrefix,
+        "run" to runPrefix,
         "owl" to "http://www.w3.org/2002/07/owl#",
         "rdf" to "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
         "rdfs" to "http://www.w3.org/2000/01/rdf-schema#",
@@ -76,7 +73,6 @@ class Main : CliktCommand() {
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
     private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
-    private val useRule      by option("--userules",  "-ur", help="Uses the Jena rule mechanism for rule methods.").flag()
     private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
 
     override fun run() {
@@ -111,7 +107,7 @@ class Main : CliktCommand() {
         if(replay != null){
             val str = replay.toString()
             File(str).forEachLine {
-                if(!it.startsWith("#") && !(it == "")) {
+                if(!it.startsWith("#") && it != "") {
                     println("MO-auto> $it")
                     val splits = it.split(" ", limit = 2)
                     val left = if(splits.size == 1) "" else splits[1]

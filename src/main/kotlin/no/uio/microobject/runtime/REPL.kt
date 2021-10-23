@@ -7,7 +7,6 @@ import java.util.*
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.Expression
-import no.uio.microobject.data.RuleGenerator
 import no.uio.microobject.data.Translate
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
@@ -16,11 +15,6 @@ import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
 import org.apache.jena.query.ResultSetFormatter
 import org.semanticweb.HermiT.Reasoner
-import org.semanticweb.owlapi.apibinding.OWLManager
-import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
-import org.semanticweb.owlapi.model.OntologyConfigurator
-import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.reasoner.OWLReasoner
 
 class Command(
@@ -31,13 +25,12 @@ class Command(
     val requiresParameter: Boolean = false,
     val parameterHelp: String = ""
 ){
-    fun execute(param: String) : Boolean {
-        if(requiresParameter && param == ""){
+    fun execute(param: String): Boolean {
+        if (requiresParameter && param == "") {
             repl.printRepl("Command $name expects 1 parameter $parameterHelp.")
             return false
         }
-        val res = command(param)
-        return res
+        return command(param)
     }
 }
 
@@ -105,7 +98,6 @@ class REPL(private val settings: Settings) {
         tC.report()
 
         val iB = InterpreterBridge(null)
-        if(settings.useRule) rules = RuleGenerator(settings).generateBuiltins(tree, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -252,11 +244,11 @@ class REPL(private val settings: Settings) {
                 for (node in interpreter!!.owlQuery(str)) {
                     // N node can appearently have more than one entity. Print all entities in all nodes.
                     var prefix = ""
-                    for (entity in node.getEntities()) {
-                        outString = outString + prefix + "${entity.toString()}"
+                    for (entity in node.entities) {
+                        outString = outString + prefix + "$entity"
                         prefix = ", "
                     }
-                    outString = outString + "\n"
+                    outString += "\n"
                 }
                 printRepl(outString)
                 false

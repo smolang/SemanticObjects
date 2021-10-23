@@ -167,12 +167,12 @@ class TripleListIterator(tripleList : List<Triple>) : NiceIterator<Triple>() {
     val tripleList : List<Triple> = tripleList
     var listIndex : Int = 0  // index of next element
 
-    public override fun hasNext(): Boolean {
+    override fun hasNext(): Boolean {
         if (listIndex < tripleList.size) return true
         return false
     }
 
-    public override fun next(): Triple {
+    override fun next(): Triple {
         this.listIndex = this.listIndex + 1
         return tripleList[(listIndex-1)]
     }
@@ -293,15 +293,14 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
     override fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
         val settings : Settings = interpreter.settings
         val heap : GlobalMemory = interpreter.heap
-        val prefixMap : HashMap<String, String> = interpreter.prefixMap
 
         // Prefixes
-        val rdf = prefixMap["rdf"]
-        val owl = prefixMap["owl"]
-        val prog = prefixMap["prog"]
-        val smol = prefixMap["smol"]
-        val run = prefixMap["run"]
-        val domain = prefixMap["domain"]
+        val rdf = interpreter.settings.prefixMap()["rdf"]
+        val owl = interpreter.settings.prefixMap()["owl"]
+        val prog = interpreter.settings.prefixMap()["prog"]
+        val smol = interpreter.settings.prefixMap()["smol"]
+        val run = interpreter.settings.prefixMap()["run"]
+        val domain = interpreter.settings.prefixMap()["domain"]
 
         // Guard clause checking that the subject of the searchTriple starts with "run:" or "domain:". Otherwise, return no triples.
         // This guard should be removed or changed if we change the triples we want to be generated from the heap.
@@ -330,7 +329,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                 for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries) {
                     var retVal : Pair<LiteralExpr, LiteralExpr>? = null
                     if (m.value.isRule) {
-                        retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                        retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                         val finalRet = getTTLLiteral(retVal.second)
 
                         val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
@@ -341,7 +340,6 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                                 NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("prog:${m.value.declaringClass}_${m.key}_builtin_res")),
                                 resNode
                             )
-                        println("adding $resTriple")
                         addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
 
                     }
@@ -352,7 +350,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                                 LiteralExpr("ERROR")
                             ).literal.removeSurrounding("\"")
 
-                        if(retVal == null) retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                        if(retVal == null) retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                         val finalRet = getTTLLiteral(retVal.second)
                         val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
                         else NodeFactory.createURI(finalRet)
@@ -362,7 +360,6 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                                 NodeFactory.createURI("domain:${m.value.declaringClass}_${m.key}_builtin_res"),
                                 resNode
                             )
-                        println("adding $resTriple")
                         addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
                     }
                 }
@@ -389,7 +386,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
 
                     // Parse and load the description into a jena model.
                     var extendedDescription : String = ""
-                    for ((key, value) in prefixMap) extendedDescription += "@prefix $key: <$value> .\n"
+                    for ((key, value) in interpreter.settings.prefixMap()) extendedDescription += "@prefix $key: <$value> .\n"
                     extendedDescription += description
                     val m : Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
                     // Consider each triple and add it if it matches the search triple.
@@ -429,14 +426,6 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
         }
         return TripleListIterator(matchingTriples)
     }
-}
-
-fun funVal(obj:LiteralExpr, store:String, target:LiteralExpr, prefix:String, overrideStr : String? = null) : String {
-    var res = ""
-    res = if(overrideStr == null) "run:${obj.literal} $prefix:${obj.tag}_$store "
-    else "$overrideStr $prefix:${obj.tag}_$store "
-    res += getTTLLiteral(target) + ".\n"
-    return res
 }
 
 fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")

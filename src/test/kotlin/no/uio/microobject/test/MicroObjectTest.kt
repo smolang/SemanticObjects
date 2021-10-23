@@ -3,7 +3,6 @@ package no.uio.microobject.test
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import io.kotlintest.specs.StringSpec
-import no.uio.microobject.data.RuleGenerator
 import no.uio.microobject.data.Translate
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.GlobalMemory
@@ -19,7 +18,7 @@ import no.uio.microobject.data.TripleManager
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
-    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:", useRule = false)
+    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:")
     protected fun loadBackground(path : String){
         val file = File(path)
         val backgr = file.readText()
@@ -79,8 +78,6 @@ open class MicroObjectTest : StringSpec() {
         tC.collect()
         val iB = InterpreterBridge(null)
         var rules = ""
-        if(settings.useRule)
-          rules = RuleGenerator(settings).generateBuiltins(ast, iB)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))

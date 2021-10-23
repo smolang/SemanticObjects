@@ -3,8 +3,8 @@
 package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
+import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
-import no.uio.microobject.runtime.StaticTable
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.sparql.syntax.ElementGroup
 import org.apache.jena.sparql.syntax.ElementPathBlock
@@ -16,9 +16,6 @@ import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
-import no.uio.microobject.data.*
-import org.apache.jena.rdf.model.ModelFactory
-import org.apache.jena.reasoner.ReasonerRegistry
 
 data class DLNode(val str : String, val isVar : Boolean)
 data class DLEdge(val from : DLNode, val label : String, val to : DLNode)

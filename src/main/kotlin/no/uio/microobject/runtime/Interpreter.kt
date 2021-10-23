@@ -7,9 +7,6 @@ package no.uio.microobject.runtime
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
 import com.sksamuel.hoplite.ConfigLoader
-import java.io.File
-import java.io.FileWriter
-import java.util.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
@@ -19,19 +16,21 @@ import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
-import org.apache.jena.datatypes.xsd.impl.XSDBaseStringType
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
 import org.apache.jena.riot.RDFDataMgr
 import org.apache.jena.shacl.ShaclValidator
 import org.apache.jena.shacl.Shapes
-import org.apache.jena.vocabulary.XSD
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
-import org.semanticweb.owlapi.model.*
+import org.semanticweb.owlapi.model.OWLNamedIndividual
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import org.semanticweb.owlapi.reasoner.NodeSet
+import java.io.File
+import java.io.FileWriter
+import java.util.*
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
     private var influxDBClient : InfluxDBClientKotlin? = null
@@ -45,10 +44,6 @@ data class InfluxDBConnection(val url : String, val org : String, val token : St
         runBlocking {
             launch(Dispatchers.Unconfined) {
                 next = results.consumeAsFlow().toList().map { it.value as Double }
-                /*for(n in next){
-                    // println(n.field + " " + n.measurement + " " + n.time + " " + n.measurement + " " + n.value )
-                     println(n)
-                }*/
             }
         }
         disconnect()
@@ -69,6 +64,10 @@ class Interpreter(
     val settings : Settings,                    // Settings from the user
     val rules : String,                 // Additional rules for jena
 ) {
+    private var debug = false
+
+    // TripleManager used to provide virtual triples etc.
+    val tripleManager : TripleManager = TripleManager(settings, staticInfo, this)
 
     //evaluates a call on cl.nm on thisVar
     //Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
@@ -106,18 +105,13 @@ class Interpreter(
         }
     }
 
-    private var debug = false
-
-    // TripleManager used to provide virtual triples etc.
-    val tripleManager : TripleManager = TripleManager(settings, staticInfo, this)
-    val prefixMap = settings.prefixMap()
 
 
     // Run SPARQL query (str)
     fun query(str: String): ResultSet? {
         // Adding prefixes to the query
         var queryWithPrefixes = ""
-        for ((key, value) in prefixMap) queryWithPrefixes += "PREFIX $key: <$value>\n"
+        for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
         queryWithPrefixes += str
 
         var model = tripleManager.getCompleteModel()
@@ -142,9 +136,9 @@ class Interpreter(
     }
 
     // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
-    internal fun dump(forceRule : Boolean = false) {
+    internal fun dump() {
         var model = tripleManager.getCompleteModel()
-        File("${settings.outpath}").mkdirs()
+        File(settings.outpath).mkdirs()
         File("${settings.outpath}/output.ttl").createNewFile()
         model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
     }
@@ -152,11 +146,6 @@ class Interpreter(
     fun evalTopMost(expr: Expression) : LiteralExpr{
         if(stack.isEmpty()) return LiteralExpr("ERROR") // program terminated
         return eval(expr, stack.peek().store, heap, simMemory, stack.peek().obj)
-    }
-
-
-    fun evalClassLevel(expr: Expression, obj: LiteralExpr): Any {
-        return eval(expr, mutableMapOf(), heap, simMemory, obj)
     }
 
     /*
@@ -391,7 +380,7 @@ class Interpreter(
                 if(!file.exists()) throw Exception("file $fileName does not exist")
                 val newFile = File("${settings.outpath}/shape.ttl")
                 if(!newFile.exists()) {
-                    File("${settings.outpath}").mkdirs()
+                    File(settings.outpath).mkdirs()
                     newFile.createNewFile()
                 }
                 newFile.writeText(settings.prefixes() + "\n"+ settings.getHeader() + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
@@ -711,7 +700,4 @@ ${stack.joinToString(
         for(sim in simMemory.values)
             sim.terminate()
     }
-
-
-
 }
