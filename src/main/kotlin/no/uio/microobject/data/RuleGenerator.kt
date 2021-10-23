@@ -47,8 +47,11 @@ class RuleGenerator(val settings: Settings){
             val ret = topmost.literal
 
             //Build final triple and add it to the context
-            val resNode = if (topmost.tag == INTTYPE) NodeFactory.createLiteral(ret.removeSurrounding("\""), XSDDatatype.XSDint) else
-                if(topmost.tag == STRINGTYPE) NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)  else NodeFactory.createURI("smol:$ret")
+            val resNode = when (topmost.tag) {
+                INTTYPE -> NodeFactory.createLiteral(ret.removeSurrounding("\""), XSDDatatype.XSDint)
+                STRINGTYPE -> NodeFactory.createLiteral(ret, XSDDatatype.XSDstring)
+                else -> NodeFactory.createURI("smol:$ret")
+            }
             val connectInNode = NodeFactory.createURI("${settings.progPrefix}${name}_res")
             val triple = Triple.create(thisVar, connectInNode, resNode)
             context!!.add(triple)

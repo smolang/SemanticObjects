@@ -1,21 +1,29 @@
 package no.uio.microobject.data
 
 import com.github.owlcs.ontapi.OntManagers
-import no.uio.microobject.data.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
-import no.uio.microobject.type.*
+import no.uio.microobject.type.BaseType
+import no.uio.microobject.type.ERRORTYPE
+import no.uio.microobject.type.INTTYPE
+import no.uio.microobject.type.STRINGTYPE
 import org.apache.commons.io.IOUtils
 import org.apache.jena.datatypes.xsd.XSDDatatype
-import org.apache.jena.graph.*
+import org.apache.jena.graph.Graph
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.graph.Node_URI
+import org.apache.jena.graph.Triple
 import org.apache.jena.graph.impl.GraphBase
-import org.apache.jena.rdf.model.*
+import org.apache.jena.rdf.model.Model
+import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
 import org.apache.jena.reasoner.rulesys.Rule
-import org.apache.jena.util.iterator.*
-import org.semanticweb.owlapi.model.*
-import org.simpleframework.xml.stream.Verbosity
+import org.apache.jena.util.iterator.ExtendedIterator
+import org.apache.jena.util.iterator.NiceIterator
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyManager
 import java.io.*
 
 
@@ -27,10 +35,10 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
     // Get the ontology representing only the static data. This is used e.g. for type checking.
     fun getStaticDataOntology() : OWLOntology {
         // Using ONT-API to connect Jena with the OWLAPI
-        val manager : OWLOntologyManager = OntManagers.createManager();
-        val ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"));
+        val manager : OWLOntologyManager = OntManagers.createManager()
+        val ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"))
         // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
-        val model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel();
+        val model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
 
         // Read vocab.owl and background data
         var allTriplesString  = ""
@@ -63,10 +71,10 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
     // TODO: add simulation data
     fun getCompleteOntology() : OWLOntology {
         // Using ONT-API to connect Jena with the OWLAPI
-        var manager : OWLOntologyManager = OntManagers.createManager();
-        var ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"));
+        val manager : OWLOntologyManager = OntManagers.createManager()
+        val ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"))
         // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
-        var model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel();
+        var model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
 
         // Add triples manually to model/ontology. Can be used when debugging.
         // var allTriplesStringPre : String = ""
@@ -86,27 +94,27 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
         val s : InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
         model.read(s, null, "TTL")
 
-        var staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(staticTable, settings))
+        val staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(staticTable, settings))
         model.add(staticTableGraphModel)
 
         if (interpreter != null) {
             // Add triples from static table
 
             // Add triples from heap
-            var heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(interpreter))
+            val heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(interpreter))
             model.add(heapGraphModel)
         }
 
          //For debugging: Listing all OWL axioms if needed
          if(settings.verbose) {
-             println("List of all owl-axioms in the complete model/ontology:");
+             println("List of all owl-axioms in the complete model/ontology:")
              for (axiom in ontology.axioms()) println(axiom)
          }
 
 
 
         if (interpreter != null) {
-            var rules = interpreter.rules
+            val rules = interpreter.rules
             // Add rules to the model if available.
             if(rules != "" || settings.backgroundrules != "") {
                 if(settings.verbose) println("Loading generated builtin rules $rules and domain rules ${settings.backgroundrules}")
@@ -125,7 +133,7 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
 
         // write model to file if the materialize flag is given
         if (settings.materialize) {
-            File("${settings.outpath}").mkdirs()
+            File(settings.outpath).mkdirs()
             File("${settings.outpath}/output.ttl").createNewFile()
             model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
         }
@@ -149,7 +157,7 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
 
     // Return the graph corresponding to the complete model
     fun getCompleteGraph() : Graph {
-        return getCompleteModel().getGraph()
+        return getCompleteModel().graph
     }
 
 }
@@ -167,12 +175,12 @@ class TripleListIterator(tripleList : List<Triple>) : NiceIterator<Triple>() {
     val tripleList : List<Triple> = tripleList
     var listIndex : Int = 0  // index of next element
 
-    override public fun hasNext(): Boolean {
+    public override fun hasNext(): Boolean {
         if (listIndex < tripleList.size) return true
         return false
     }
 
-    override public fun next(): Triple {
+    public override fun next(): Triple {
         this.listIndex = this.listIndex + 1
         return tripleList[(listIndex-1)]
     }
@@ -201,34 +209,34 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
         val hierarchy : MutableMap<String, MutableSet<String>> = staticInfo.hierarchy
 
         // Prefixes
-        val rdf = prefixMap.get("rdf")
-        val rdfs = prefixMap.get("rdfs")
-        val owl = prefixMap.get("owl")
-        val prog = prefixMap.get("prog")
-        val smol = prefixMap.get("smol")
+        val rdf = prefixMap["rdf"]
+        val rdfs = prefixMap["rdfs"]
+        val owl = prefixMap["owl"]
+        val prog = prefixMap["prog"]
+        val smol = prefixMap["smol"]
 
         // Guard clause checking that the subject of the searchTriple starts with prog. Otherwise, return no triples.
         // This assumes that all triples generated by this method uses prog as the prefix for the subject.
-        if (searchTriple.getSubject() is Node_URI){
-            if (searchTriple.getSubject().getNameSpace() != prog) return TripleListIterator(mutableListOf<Triple>())
+        if (searchTriple.subject is Node_URI){
+            if (searchTriple.subject.nameSpace != prog) return TripleListIterator(mutableListOf())
         }
 
         // Guard clause: checking if the predicate of the search triple is one of the given URIs
-        if (searchTriple.getPredicate() is Node_URI){
-            var possiblePredicates = mutableListOf("${rdf}type", "${smol}hasField", "${rdfs}domain", "${smol}hasMethod", "${rdfs}subClassOf")
-            val anyEqual = possiblePredicates.any { it == searchTriple.getPredicate().getURI() }
-            if (!anyEqual) return TripleListIterator(mutableListOf<Triple>())
+        if (searchTriple.predicate is Node_URI){
+            val possiblePredicates = mutableListOf("${rdf}type", "${smol}hasField", "${rdfs}domain", "${smol}hasMethod", "${rdfs}subClassOf")
+            val anyEqual = possiblePredicates.any { it == searchTriple.predicate.uri }
+            if (!anyEqual) return TripleListIterator(mutableListOf())
         }
 
         // Guard clause: set of possible object prefixes it limited
         if (searchTriple.getObject() is Node_URI){
-            var possibleObjectPrefixes = mutableListOf(smol, owl, prog)
-            val anyEqual = possibleObjectPrefixes.any { it == searchTriple.getObject().getNameSpace() }
-            if (!anyEqual) return TripleListIterator(mutableListOf<Triple>())
+            val possibleObjectPrefixes = mutableListOf(smol, owl, prog)
+            val anyEqual = possibleObjectPrefixes.any { it == searchTriple.getObject().nameSpace }
+            if (!anyEqual) return TripleListIterator(mutableListOf())
         }
 
 
-        var matchingTriples : MutableList<Triple> = mutableListOf<Triple>()
+        val matchingTriples : MutableList<Triple> = mutableListOf()
 
         // Generate triples for classes and fields
         for(classObj in fieldTable){
@@ -241,8 +249,8 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                 val fieldName : String = classObj.key+"_"+fieldEntry.name
 
                 // Guard clause: Skip this fieldName when the subject of the search triple is different from both "${prog}${className}" and "${prog}$fieldName"
-                if (searchTriple.getSubject() is Node_URI){
-                    if (searchTriple.getSubject().getURI() != "${prog}${className}" && searchTriple.getSubject().getURI() != "${prog}$fieldName") continue
+                if (searchTriple.subject is Node_URI){
+                    if (searchTriple.subject.uri != "${prog}${className}" && searchTriple.subject.uri != "${prog}$fieldName") continue
                 }
 
                 addIfMatch(uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"), searchTriple, matchingTriples, pseudo)
@@ -296,28 +304,28 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
         val prefixMap : HashMap<String, String> = interpreter.prefixMap
 
         // Prefixes
-        val rdf = prefixMap.get("rdf")
-        val owl = prefixMap.get("owl")
-        val prog = prefixMap.get("prog")
-        val smol = prefixMap.get("smol")
-        val run = prefixMap.get("run")
-        val domain = prefixMap.get("domain")
+        val rdf = prefixMap["rdf"]
+        val owl = prefixMap["owl"]
+        val prog = prefixMap["prog"]
+        val smol = prefixMap["smol"]
+        val run = prefixMap["run"]
+        val domain = prefixMap["domain"]
 
         // Guard clause checking that the subject of the searchTriple starts with "run:" or "domain:". Otherwise, return no triples.
         // This guard should be removed or changed if we change the triples we want to be generated from the heap.
-        if (searchTriple.getSubject() is Node_URI){
-            if (searchTriple.getSubject().getNameSpace() != run && searchTriple.getSubject().getNameSpace() != domain ) return TripleListIterator(mutableListOf<Triple>())
+        if (searchTriple.subject is Node_URI){
+            if (searchTriple.subject.nameSpace != run && searchTriple.subject.nameSpace != domain ) return TripleListIterator(mutableListOf())
         }
 
-        var matchingTriples : MutableList<Triple> = mutableListOf<Triple>()
+        val matchingTriples : MutableList<Triple> = mutableListOf()
 
         for(obj in heap.keys){
             val subjectString : String = "${run}${obj.literal}"
 
             // Guard clause. If this obj does not match to the subject of the search triple, then continue to the next obj
-            if (searchTriple.getSubject() is Node_URI){
-                if (searchTriple.getSubject().getNameSpace() == run) {
-                    if (searchTriple.getSubject().getURI() != subjectString) continue
+            if (searchTriple.subject is Node_URI){
+                if (searchTriple.subject.nameSpace == run) {
+                    if (searchTriple.subject.uri != subjectString) continue
                 }
             }
 
@@ -341,15 +349,15 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                     // Guard on the subject of the description.
                     // If the first string in the description (which equals the URI of the model) does not match the searchTriple subject, then continue to the next store
                     val modelURI : String = settings.replaceKnownPrefixesNoColon(description.split(" ")[0])
-                    if (searchTriple.getSubject() is Node_URI){
-                        if (searchTriple.getSubject().getURI() != modelURI) continue
+                    if (searchTriple.subject is Node_URI){
+                        if (searchTriple.subject.uri != modelURI) continue
                     }
 
                     // Parse and load the description into a jena model.
                     var extendedDescription : String = ""
                     for ((key, value) in prefixMap) extendedDescription += "@prefix $key: <$value> .\n"
                     extendedDescription += description
-                    val m : Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL");
+                    val m : Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
                     // Consider each triple and add it if it matches the search triple.
                     for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
                 }
@@ -358,8 +366,8 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                     val predicateString : String = "${prog}${obj.tag}_${store}"
 
                     // Guard on the predicate. If the current predicate does not match the predicate of the search triple, then continue to the next store
-                    if (searchTriple.getPredicate() is Node_URI){
-                        if (searchTriple.getPredicate().getURI() != predicateString) continue
+                    if (searchTriple.predicate is Node_URI){
+                        if (searchTriple.predicate.uri != predicateString) continue
                     }
 
                     // TODO: For some reason ints are not displayed with the correct datatype when dumped or validated.
@@ -374,7 +382,8 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                         addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else if (target.tag == INTTYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral("${target.literal}", XSDDatatype.XSDinteger) )
+                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
+                            target.literal, XSDDatatype.XSDinteger) )
                         addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else {
