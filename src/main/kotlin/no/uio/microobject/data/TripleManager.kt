@@ -20,31 +20,33 @@ import java.io.*
 
 
 // Class managing triples, models and ontologies based on all the data we consider
-class TripleManager(settings : Settings, staticTable : StaticTable, interpreter : Interpreter?) {
-    val settings : Settings = settings
-    val staticTable : StaticTable = staticTable
-    val interpreter : Interpreter? = interpreter
+class TripleManager(val settings : Settings, val staticTable : StaticTable, val interpreter : Interpreter?) {
     val prefixMap = settings.prefixMap()
 
 
     // Get the ontology representing only the static data. This is used e.g. for type checking.
     fun getStaticDataOntology() : OWLOntology {
         // Using ONT-API to connect Jena with the OWLAPI
-        var manager : OWLOntologyManager = OntManagers.createManager();
-        var ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"));
+        val manager : OWLOntologyManager = OntManagers.createManager();
+        val ontology : OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"));
         // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
-        var model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel();
+        val model : Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel();
 
         // Read vocab.owl and background data
-        var allTriplesString : String = ""
+        var allTriplesString  = ""
         for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
         val vocabURL : java.net.URL = this::class.java.classLoader.getResource("vocab.owl")
         allTriplesString += vocabURL.readText(Charsets.UTF_8) + "\n"
+        if(settings.background != "") allTriplesString += settings.background + "\n"
         val s : InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
         model.read(s, null, "TTL")
 
         // Adding prefixes
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)
+
+        // Add triples from static table
+        val staticTableGraphModel: Model = ModelFactory.createModelForGraph(StaticTableGraph(staticTable, settings))
+        model.add(staticTableGraphModel)
 
         // write model to file if the materialize flag is given
         if (settings.materialize) {
@@ -84,10 +86,11 @@ class TripleManager(settings : Settings, staticTable : StaticTable, interpreter 
         val s : InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
         model.read(s, null, "TTL")
 
+        var staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(staticTable, settings))
+        model.add(staticTableGraphModel)
+
         if (interpreter != null) {
             // Add triples from static table
-            var staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(interpreter))
-            model.add(staticTableGraphModel)
 
             // Add triples from heap
             var heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(interpreter))
@@ -181,21 +184,21 @@ fun uriTriple(s : String, p : String, o : String) : Triple {
 }
 
 // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
-fun addIfMatch(candidateTriple : Triple, searchTriple : Triple, matchList : MutableList<Triple> ) : Unit {
-    if (searchTriple.matches(candidateTriple)) matchList.add(candidateTriple)
+fun addIfMatch(candidateTriple : Triple, searchTriple : Triple, matchList : MutableList<Triple>, pseudo: Boolean)  {
+    if (searchTriple.matches(candidateTriple) && !pseudo) matchList.add(candidateTriple)
 }
 
 // Graph representing the static table
-class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
-    var interpreter : Interpreter = interpreter
+// If pseudo is set, we always return all triples. This is needed for type checkng, where graphBaseFind is not called
+class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val pseudo : Boolean = false) : GraphBase() {
 
     // Returns an iterator of all triples in the static table that matches searchTriple
     // graphBaseFind only constructs the triples that match searchTriple.
-    override protected fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
-        val prefixMap : HashMap<String, String> = interpreter.prefixMap
-        val fieldTable : Map<String,FieldEntry> = interpreter.staticInfo.fieldTable
-        val methodTable : Map<String,Map<String,MethodInfo>> = interpreter.staticInfo.methodTable
-        val hierarchy : MutableMap<String, MutableSet<String>> = interpreter.staticInfo.hierarchy
+    override fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
+        val prefixMap : HashMap<String, String> = settings.prefixMap()
+        val fieldTable : Map<String,FieldEntry> = staticInfo.fieldTable
+        val methodTable : Map<String,Map<String,MethodInfo>> = staticInfo.methodTable
+        val hierarchy : MutableMap<String, MutableSet<String>> = staticInfo.hierarchy
 
         // Prefixes
         val rdf = prefixMap.get("rdf")
@@ -231,8 +234,8 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
         for(classObj in fieldTable){
             val className : String = classObj.key
 
-            addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${smol}Class"), searchTriple, matchingTriples)
-            addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${owl}Class" ), searchTriple, matchingTriples)
+            addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${smol}Class"), searchTriple, matchingTriples, pseudo)
+            addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${owl}Class" ), searchTriple, matchingTriples, pseudo)
 
             for(fieldEntry in classObj.value){
                 val fieldName : String = classObj.key+"_"+fieldEntry.name
@@ -242,15 +245,15 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
                     if (searchTriple.getSubject().getURI() != "${prog}${className}" && searchTriple.getSubject().getURI() != "${prog}$fieldName") continue
                 }
 
-                addIfMatch(uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"), searchTriple, matchingTriples)
-                addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"), searchTriple, matchingTriples)
-                addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples)
+                addIfMatch(uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"), searchTriple, matchingTriples, pseudo)
+                addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"), searchTriple, matchingTriples, pseudo)
+                addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 
                 if(fieldEntry.type == INTTYPE || fieldEntry.type == STRINGTYPE) {
-                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                 } else {
-                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples)
-                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
                 }
             }
         }
@@ -259,9 +262,9 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
         for(classObj in methodTable){
             for(method in classObj.value){
                 val methodName : String = classObj.key+"_"+method.key
-                addIfMatch(uriTriple("${prog}${classObj.key}", "${smol}hasMethod", "${prog}${methodName}"), searchTriple, matchingTriples)
-                addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples)
-                addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${smol}Method"), searchTriple, matchingTriples)
+                addIfMatch(uriTriple("${prog}${classObj.key}", "${smol}hasMethod", "${prog}${methodName}"), searchTriple, matchingTriples, pseudo)
+                addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples, pseudo)
+                addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${smol}Method"), searchTriple, matchingTriples, pseudo)
             }
         }
 
@@ -269,12 +272,12 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
         var allClasses : Set<String> = methodTable.keys
         for(classObj in hierarchy.entries){
             for(subClass in classObj.value){
-                addIfMatch(uriTriple("${prog}${subClass}", "${rdfs}subClassOf", "${prog}${classObj.key}"), searchTriple, matchingTriples)
+                addIfMatch(uriTriple("${prog}${subClass}", "${rdfs}subClassOf", "${prog}${classObj.key}"), searchTriple, matchingTriples, pseudo)
                 allClasses -= subClass
             }
         }
         // allClasses now only contains classes without any ancestors. They should be subclass of Object
-        for(classObj in allClasses) addIfMatch(uriTriple("${prog}${classObj}", "${rdfs}subClassOf", "${prog}Object"), searchTriple, matchingTriples)
+        for(classObj in allClasses) addIfMatch(uriTriple("${prog}${classObj}", "${rdfs}subClassOf", "${prog}Object"), searchTriple, matchingTriples, pseudo)
 
         return TripleListIterator(matchingTriples)
     }
@@ -282,12 +285,12 @@ class StaticTableGraph(interpreter: Interpreter) : GraphBase() {
 
 
 // Graph representing the heap
-class HeapGraph(interpreter: Interpreter) : GraphBase() {
+class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphBase() {
     var interpreter : Interpreter = interpreter
 
     // Returns an iterator of all triples in the heap that matches searchTriple
     // graphBaseFind only constructs the triples that match searchTriple.
-    override protected fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
+    override fun graphBaseFind(searchTriple : Triple): ExtendedIterator<Triple> {
         val settings : Settings = interpreter.settings
         val heap : GlobalMemory = interpreter.heap
         val prefixMap : HashMap<String, String> = interpreter.prefixMap
@@ -318,9 +321,9 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                 }
             }
 
-            addIfMatch(uriTriple(subjectString, "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples)
-            addIfMatch(uriTriple(subjectString, "${rdf}type", "${smol}Object"), searchTriple, matchingTriples)
-            addIfMatch(uriTriple(subjectString, "${rdf}type", "${prog}${(obj.tag as BaseType).name}"), searchTriple, matchingTriples)
+            addIfMatch(uriTriple(subjectString, "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples, pseudo)
+            addIfMatch(uriTriple(subjectString, "${rdf}type", "${smol}Object"), searchTriple, matchingTriples, pseudo)
+            addIfMatch(uriTriple(subjectString, "${rdf}type", "${prog}${(obj.tag as BaseType).name}"), searchTriple, matchingTriples, pseudo)
 
             // Generating triples for all fields values
             for(store in heap[obj]!!.keys) {
@@ -329,7 +332,7 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                     // Connect object to a model
                     val modelString = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
                     val modelURI = settings.replaceKnownPrefixesNoColon(modelString)
-                    addIfMatch(uriTriple(subjectString, "${domain}models", modelURI), searchTriple, matchingTriples)
+                    addIfMatch(uriTriple(subjectString, "${domain}models", modelURI), searchTriple, matchingTriples, pseudo)
                 }
                 else if (store == "__describe") {
                     // Connect model to the description
@@ -348,7 +351,7 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                     extendedDescription += description
                     val m : Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL");
                     // Consider each triple and add it if it matches the search triple.
-                    for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples)
+                    for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
                 }
                 else {
                     // Generate triples for each of the fields of the object.
@@ -364,19 +367,19 @@ class HeapGraph(interpreter: Interpreter) : GraphBase() {
                     val target : LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     if (target.literal == "null") {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createURI("${smol}null") )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples)
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples)
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else if (target.tag == INTTYPE) {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral("${target.literal}", XSDDatatype.XSDinteger) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples)
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else {
                         val candidateTriple : Triple = uriTriple(subjectString, predicateString, "${run}${target.literal}")
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples)
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                 }
             }

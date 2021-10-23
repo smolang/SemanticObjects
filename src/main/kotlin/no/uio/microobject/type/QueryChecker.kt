@@ -17,6 +17,8 @@ import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
 import no.uio.microobject.data.*
+import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.reasoner.ReasonerRegistry
 
 data class DLNode(val str : String, val isVar : Boolean)
 data class DLEdge(val from : DLNode, val label : String, val to : DLNode)
@@ -84,6 +86,9 @@ class QueryChecker(
             val ontology = tripleManager.getStaticDataOntology()
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
+            ontology.classesInSignature().forEach { println(it.iri) }
+            ontology.dataPropertiesInSignature().forEach { println(it.iri) }
+            ontology.objectPropertiesInSignature().forEach { println(it.iri) }
             return parser.parseClassExpression(out)
         } catch (e: Exception) {
             e.printStackTrace()
