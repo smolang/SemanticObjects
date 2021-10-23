@@ -325,6 +325,48 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
             addIfMatch(uriTriple(subjectString, "${rdf}type", "${smol}Object"), searchTriple, matchingTriples, pseudo)
             addIfMatch(uriTriple(subjectString, "${rdf}type", "${prog}${(obj.tag as BaseType).name}"), searchTriple, matchingTriples, pseudo)
 
+            /** this code adds the rule triple directly to the KB */
+            if(interpreter.staticInfo.methodTable[obj.tag.name] != null)
+                for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries) {
+                    var retVal : Pair<LiteralExpr, LiteralExpr>? = null
+                    if (m.value.isRule) {
+                        retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                        val finalRet = getTTLLiteral(retVal.second)
+
+                        val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
+                                      else NodeFactory.createURI(finalRet)
+                        val resTriple =
+                            Triple(
+                                NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
+                                NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("prog:${m.value.declaringClass}_${m.key}_builtin_res")),
+                                resNode
+                            )
+                        println("adding $resTriple")
+                        addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
+
+                    }
+                    if (m.value.isDomain && heap[obj]!!.containsKey("__models")) {
+                        val models =
+                            heap[obj]!!.getOrDefault(
+                                "__models",
+                                LiteralExpr("ERROR")
+                            ).literal.removeSurrounding("\"")
+
+                        if(retVal == null) retVal = interpreter!!.evalCall(obj.literal, obj.tag.name, m.key)
+                        val finalRet = getTTLLiteral(retVal.second)
+                        val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
+                        else NodeFactory.createURI(finalRet)
+                        val resTriple =
+                            Triple(
+                                NodeFactory.createURI(models),
+                                NodeFactory.createURI("domain:${m.value.declaringClass}_${m.key}_builtin_res"),
+                                resNode
+                            )
+                        println("adding $resTriple")
+                        addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
+                    }
+                }
+
             // Generating triples for all fields values
             for(store in heap[obj]!!.keys) {
 
@@ -389,19 +431,19 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
     }
 }
 
+fun funVal(obj:LiteralExpr, store:String, target:LiteralExpr, prefix:String, overrideStr : String? = null) : String {
+    var res = ""
+    res = if(overrideStr == null) "run:${obj.literal} $prefix:${obj.tag}_$store "
+    else "$overrideStr $prefix:${obj.tag}_$store "
+    res += getTTLLiteral(target) + ".\n"
+    return res
+}
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
+    "smol:${target.literal}"
+else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
+    target.literal
+else if (target.tag == INTTYPE)
+    "\"${target.literal}\"^^xsd:integer"
+else
+    "run:${target.literal}"

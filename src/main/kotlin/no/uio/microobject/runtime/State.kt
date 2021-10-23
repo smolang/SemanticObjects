@@ -42,7 +42,7 @@ class State(initStack  : Stack<StackEntry>, initHeap: GlobalMemory, simMemory: S
         return res
     }
 
-    private fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
+    fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
         "smol:${target.literal}"
     else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
         target.literal
