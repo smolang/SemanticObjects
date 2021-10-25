@@ -1,19 +1,17 @@
 package no.uio.microobject.data
 
 import com.github.owlcs.ontapi.OntManagers
+import java.io.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
-import no.uio.microobject.type.BaseType
-import no.uio.microobject.type.ERRORTYPE
-import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.type.STRINGTYPE
+import no.uio.microobject.type.*
 import org.apache.commons.io.IOUtils
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Graph
-import org.apache.jena.graph.NodeFactory
-import org.apache.jena.graph.Node_URI
-import org.apache.jena.graph.Triple
 import org.apache.jena.graph.impl.GraphBase
+import org.apache.jena.graph.Node_URI
+import org.apache.jena.graph.NodeFactory
+import org.apache.jena.graph.Triple
 import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdf.model.ModelFactory
 import org.apache.jena.reasoner.ReasonerRegistry
@@ -24,7 +22,6 @@ import org.apache.jena.util.iterator.NiceIterator
 import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OWLOntologyManager
-import java.io.*
 
 
 // Class managing triples, models and ontologies based on all the data we consider
@@ -249,7 +246,8 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                 addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"), searchTriple, matchingTriples, pseudo)
                 addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 
-                if(fieldEntry.type == INTTYPE || fieldEntry.type == STRINGTYPE) {
+                // TODO: Add range axioms?
+                if(fieldEntry.type == INTTYPE || fieldEntry.type == STRINGTYPE || fieldEntry.type == DOUBLETYPE || fieldEntry.type == BOOLEANTYPE) {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                 } else {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
@@ -401,20 +399,30 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                         if (searchTriple.predicate.uri != predicateString) continue
                     }
 
-                    // TODO: For some reason ints are not displayed with the correct datatype when dumped or validated.
-                    // We need to go over this section once more to make sure that ints, strings etc. are managed correctly.
+                    // Determining the correct type of the target.
                     val target : LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
                     if (target.literal == "null") {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createURI("${smol}null") )
                         addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring) )
+                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
+                            target.literal.removeSurrounding("\""), XSDDatatype.XSDstring) )
                         addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else if (target.tag == INTTYPE) {
                         val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
                             target.literal, XSDDatatype.XSDinteger) )
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
+                    }
+                    else if (target.tag == BOOLEANTYPE) {
+                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
+                            target.literal.toLowerCase(), XSDDatatype.XSDboolean) )
+                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
+                    }
+                    else if (target.tag == DOUBLETYPE) {
+                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
+                            target.literal, XSDDatatype.XSDdouble) )
                         addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                     }
                     else {
