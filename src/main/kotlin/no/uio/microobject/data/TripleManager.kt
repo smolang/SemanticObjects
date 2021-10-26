@@ -9,6 +9,7 @@ import org.apache.commons.io.IOUtils
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.impl.GraphBase
+import org.apache.jena.graph.Node
 import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
@@ -247,6 +248,7 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                 addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 
                 // TODO: Add range axioms?
+                // TODO: should ERROR also be here?
                 if(fieldEntry.type == INTTYPE || fieldEntry.type == STRINGTYPE || fieldEntry.type == DOUBLETYPE || fieldEntry.type == BOOLEANTYPE) {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                 } else {
@@ -328,10 +330,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                     var retVal : Pair<LiteralExpr, LiteralExpr>? = null
                     if (m.value.isRule) {
                         retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
-                        val finalRet = getTTLLiteral(retVal.second)
-
-                        val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
-                                      else NodeFactory.createURI(finalRet)
+                        val resNode = getLiteralNode(retVal.second, settings)
                         val resTriple =
                             Triple(
                                 NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
@@ -349,9 +348,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                             ).literal.removeSurrounding("\"")
 
                         if(retVal == null) retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
-                        val finalRet = getTTLLiteral(retVal.second)
-                        val resNode = if(retVal.second.tag == INTTYPE || retVal.second.tag == STRINGTYPE) NodeFactory.createLiteral(finalRet)
-                        else NodeFactory.createURI(finalRet)
+                        val resNode = getLiteralNode(retVal.second, settings)
                         val resTriple =
                             Triple(
                                 NodeFactory.createURI(models),
@@ -399,36 +396,9 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                         if (searchTriple.predicate.uri != predicateString) continue
                     }
 
-                    // Determining the correct type of the target.
                     val target : LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                    if (target.literal == "null") {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createURI("${smol}null") )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
-                    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
-                            target.literal.removeSurrounding("\""), XSDDatatype.XSDstring) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
-                    else if (target.tag == INTTYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
-                            target.literal, XSDDatatype.XSDinteger) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
-                    else if (target.tag == BOOLEANTYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
-                            target.literal.toLowerCase(), XSDDatatype.XSDboolean) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
-                    else if (target.tag == DOUBLETYPE) {
-                        val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), NodeFactory.createLiteral(
-                            target.literal, XSDDatatype.XSDdouble) )
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
-                    else {
-                        val candidateTriple : Triple = uriTriple(subjectString, predicateString, "${run}${target.literal}")
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                    }
+                    val candidateTriple : Triple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), getLiteralNode(target, settings))
+                    addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
                 }
             }
         }
@@ -436,11 +406,16 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
     }
 }
 
-fun getTTLLiteral(target:LiteralExpr) = if (target.literal == "null")
-    "smol:${target.literal}"
-else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE)
-    target.literal
-else if (target.tag == INTTYPE)
-    "\"${target.literal}\"^^xsd:integer"
-else
-    "run:${target.literal}"
+
+// Given a LiteralExpr, return the correct type of node
+fun getLiteralNode(target : LiteralExpr, settings : Settings) : Node {
+    val smol = settings.prefixMap()["smol"]
+    val run = settings.prefixMap()["run"]
+    if (target.literal == "null") return NodeFactory.createURI("${smol}null")
+    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) return NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring)
+    else if (target.tag == INTTYPE) return NodeFactory.createLiteral(target.literal, XSDDatatype.XSDinteger)
+    else if (target.tag == BOOLEANTYPE) return NodeFactory.createLiteral(target.literal.toLowerCase(), XSDDatatype.XSDboolean)
+    else if (target.tag == DOUBLETYPE) return NodeFactory.createLiteral(target.literal, XSDDatatype.XSDdouble)
+    else return NodeFactory.createURI("${run}${target.literal}")
+
+}

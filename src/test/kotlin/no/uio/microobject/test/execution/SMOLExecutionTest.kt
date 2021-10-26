@@ -59,7 +59,8 @@ class SMOLExecutionTest: MicroObjectTest() {
             while(res.hasNext()){
                 val r = res.next()
                 i++
-                assertEquals("\"10\"^^xsd:integer", (r["obj"] as LiteralImpl).string)
+                assertEquals("10", (r["obj"] as LiteralImpl).string)
+                assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["obj"] as LiteralImpl).getDatatypeURI() )
             }
             assertEquals(1, i)
         }
