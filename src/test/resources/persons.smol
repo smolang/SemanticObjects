@@ -1,4 +1,4 @@
-class Person (private Int personId, private String name, private Int birthYear)
+class Person (private Int personId, private String name, private Int birthYear, private Double height, private Boolean ownsCar)
     Int getPersonId()
         return this.personId;
     end
@@ -19,8 +19,8 @@ end
 
 main
     // The first Person
-    Person annie := new Person(13025213498, "Annie", 1952);
-    Person bernie := new Person(13025213598, "Bernie", 1952);
+    Person annie := new Person(13025213498, "Annie", 1952, 1.75, True);
+    Person bernie := new Person(13025213598, "Bernie", 1952, 1.83, False);
     Marriage m1 := new Marriage(annie, bernie);
 
 end
