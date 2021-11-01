@@ -26,12 +26,12 @@ class Test()
     end
 
     Int mSuccess4()
-      List<Object> l := access("SELECT DISTINCT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing 1 ]]}");
+      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing 1 ]]}");
       return 1;
     end
 
     Int mSuccess5()
-      List<Object> l := access("SELECT DISTINCT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing %1 ]]}", 1);
+      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing %1 ]]}", 1);
       return 1;
     end
 

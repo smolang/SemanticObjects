@@ -4,6 +4,7 @@ import no.uio.microobject.antlr.WhileBaseListener
 import no.uio.microobject.antlr.WhileParser
 import org.antlr.v4.runtime.tree.ParseTreeWalker
 
+/* Will be used later, do not delete */
 class FragmentDetector(val prog : WhileParser.ProgramContext) : WhileBaseListener() {
     var fmu = false
     var semantic = false

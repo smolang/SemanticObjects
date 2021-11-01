@@ -58,6 +58,10 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
 
         // write model to file if the materialize flag is given
         if (settings.materialize) {
+            if(!File("${settings.outpath}/output.ttl").exists()) {
+                File(settings.outpath).mkdirs()
+                File("${settings.outpath}/output.ttl").createNewFile()
+            }
             model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
         }
 
@@ -236,6 +240,7 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
 
             addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${smol}Class"), searchTriple, matchingTriples, pseudo)
             addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${owl}Class" ), searchTriple, matchingTriples, pseudo)
+            addIfMatch(uriTriple("${prog}${className}", "${rdfs}subClassOf", "${prog}Object" ), searchTriple, matchingTriples, pseudo)
 
             for(fieldEntry in classObj.value){
                 val fieldName : String = classObj.key+"_"+fieldEntry.name
@@ -249,11 +254,16 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                 addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"), searchTriple, matchingTriples, pseudo)
                 addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 
-                if(fieldEntry.type == INTTYPE || fieldEntry.type == STRINGTYPE) {
+                if(fieldEntry.type == INTTYPE ) {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDinteger.uri), searchTriple, matchingTriples, pseudo)
+                } else if(fieldEntry.type == STRINGTYPE) {
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
                 } else {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", "${prog}${fieldEntry.type}"), searchTriple, matchingTriples, pseudo)
                 }
             }
         }
@@ -269,7 +279,7 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
         }
 
         // Generate triples for the class hierarchy
-        var allClasses : Set<String> = methodTable.keys
+        val allClasses : MutableSet<String> = methodTable.keys.toMutableSet()
         for(classObj in hierarchy.entries){
             for(subClass in classObj.value){
                 addIfMatch(uriTriple("${prog}${subClass}", "${rdfs}subClassOf", "${prog}${classObj.key}"), searchTriple, matchingTriples, pseudo)

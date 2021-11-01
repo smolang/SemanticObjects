@@ -3,7 +3,7 @@ main
     Cont[; Int filling] de := simulate("examples/SimulationDemo/Tank.fmu");
     Int i := de.filling;
     print(i);
-    tick(de, 1);
+    de.tick(1);
     i := de.filling;
     print(i);
     tick(de, 1);
