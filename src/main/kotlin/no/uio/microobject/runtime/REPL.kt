@@ -92,7 +92,7 @@ class REPL(private val settings: Settings) {
         val pair = visitor.generateStatic(tree)
 
         // making a triplemanager without any interpreter instance. This can be used to do type checking.
-        var tripleManager = TripleManager(settings, pair.second, null)
+        val tripleManager = TripleManager(settings, pair.second, null)
         val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
         tC.report()
@@ -228,8 +228,8 @@ class REPL(private val settings: Settings) {
             "consistency",
             this,
             { _ ->
-                var ontology = interpreter!!.tripleManager.getCompleteOntology()
-                var reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
+                val ontology = interpreter!!.tripleManager.getCompleteOntology()
+                val reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
                 ontology.classesInSignature().forEach { println(it) }
                 printRepl("HermiT result ${reasoner.isConsistent}")
                 false

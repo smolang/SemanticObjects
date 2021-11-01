@@ -319,7 +319,7 @@ class Interpreter(
                         val name = Names.getObjName("List")
                         val newMemory: Memory = mutableMapOf()
 
-                        var found = obres.toString().removePrefix(settings.runPrefix)
+                        val found = obres.toString().removePrefix(settings.runPrefix)
                         val objNameCand = if(found.startsWith("\\\"")) found.replace("\\\"","\"") else found
                         for (ob in heap.keys) {
                             if (ob.literal == objNameCand) {
