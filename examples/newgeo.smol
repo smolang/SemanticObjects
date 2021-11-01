@@ -182,11 +182,11 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
             next.compact();
             geos := geos.next;
        end
-       //breakpoint;
+       breakpoint;
        List<Shale> geos2 :=
 //       access("SELECT DISTINCT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
-    //    access("SELECT DISTINCT ?obj WHERE{ ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
-        member("<domain:models> some <domain:CookingTrigger>");
+        access("SELECT DISTINCT ?obj WHERE{ ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
+    //    member("<domain:models> some <domain:CookingTrigger>");
        while(geos2 <> null) do
             Shale next2 := geos2.content;
             next2.cook();

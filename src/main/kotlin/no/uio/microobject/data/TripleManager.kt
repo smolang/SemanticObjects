@@ -165,19 +165,12 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
 
 // A custom type of (nice)iterator which takes a list as input and iterates over them.
 // It iterates through all elements in the list from start to end.
-class TripleListIterator(tripleList : List<Triple>) : NiceIterator<Triple>() {
-    val tripleList : List<Triple> = tripleList
+class TripleListIterator(val tripleList : List<Triple>) : NiceIterator<Triple>() {
     var listIndex : Int = 0  // index of next element
 
-    override fun hasNext(): Boolean {
-        if (listIndex < tripleList.size) return true
-        return false
-    }
+    override fun hasNext(): Boolean = listIndex < tripleList.size
 
-    override fun next(): Triple {
-        this.listIndex = this.listIndex + 1
-        return tripleList[(listIndex-1)]
-    }
+    override fun next(): Triple = tripleList[(listIndex++)]
 }
 
 // Helper method to crate triple with URIs in all three positions
@@ -359,8 +352,8 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                         val resNode = getLiteralNode(retVal.second, settings)
                         val resTriple =
                             Triple(
-                                NodeFactory.createURI(models),
-                                NodeFactory.createURI("domain:${m.value.declaringClass}_${m.key}_builtin_res"),
+                                NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(models)),
+                                NodeFactory.createURI("$domain${m.value.declaringClass}_${m.key}_builtin_res"),
                                 resNode
                             )
                         addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
@@ -378,7 +371,7 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                 }
                 else if (store == "__describe") {
                     // Connect model to the description
-                    val description : String = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal
+                    var description : String = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal
 
                     // Guard on the subject of the description.
                     // If the first string in the description (which equals the URI of the model) does not match the searchTriple subject, then continue to the next store
@@ -389,6 +382,21 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
 
                     // Parse and load the description into a jena model.
                     var extendedDescription : String = ""
+                    //Here we must now check which models clause we take
+                    val staticInfo = interpreter.staticInfo
+                    if(staticInfo.modelsTable[obj.tag.name] != null && staticInfo.modelsTable[obj.tag.name]!!.isNotEmpty()){
+                        for(mEntry in staticInfo.modelsTable[obj.tag.name]!!){
+                            val ret = interpreter.evalClassLevel(mEntry.first, obj)
+                            if(ret == TRUEEXPR){
+                                val target = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
+                                val descr = mEntry.second.removeSurrounding("\"")
+                                description = "$target $descr\n"
+                                break
+                            }
+                        }
+                    }
+
+
                     for ((key, value) in interpreter.settings.prefixMap()) extendedDescription += "@prefix $key: <$value> .\n"
                     extendedDescription += description
                     val m : Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")

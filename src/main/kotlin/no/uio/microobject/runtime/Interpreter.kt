@@ -105,7 +105,9 @@ class Interpreter(
         }
     }
 
-
+    fun evalClassLevel(expr: Expression, obj: LiteralExpr): Any {
+        return eval(expr, mutableMapOf(), heap, simMemory, obj)
+    }
 
     // Run SPARQL query (str)
     fun query(str: String): ResultSet? {
