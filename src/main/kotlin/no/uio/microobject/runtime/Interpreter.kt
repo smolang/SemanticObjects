@@ -116,7 +116,7 @@ class Interpreter(
         for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
         queryWithPrefixes += str
 
-        var model = tripleManager.getCompleteModel()
+        val model = tripleManager.getCompleteModel()
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
         val qexec = QueryExecutionFactory.create(query, model)
@@ -134,12 +134,13 @@ class Interpreter(
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)
-        return reasoner.getInstances(parser.parseClassExpression(out))
+        val expr = parser.parseClassExpression(out)
+        return reasoner.getInstances(expr)
     }
 
     // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
     internal fun dump() {
-        var model = tripleManager.getCompleteModel()
+        val model = tripleManager.getCompleteModel()
         File(settings.outpath).mkdirs()
         File("${settings.outpath}/output.ttl").createNewFile()
         model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")

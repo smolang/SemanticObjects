@@ -89,11 +89,12 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                         stmt = appendStmt(stmt, ReturnStmt(UNITEXPR))
                     }
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = MethodInfo(stmt, params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
+                    res[nm.NAME().text] = MethodInfo(stmt, params, nm.builtinrule != null, nm.domainrule != null, cl.className.text, metType)
                 }
                 if(nm.abs != null) {
+                    val metType = TypeChecker.translateType(nm.type(), cl.NAME().text, mutableMapOf())
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
-                    res[nm.NAME().text] = MethodInfo(SkipStmt(ctx!!.start.line), params, nm.builtinrule != null, nm.domainrule != null, cl.className.text)
+                    res[nm.NAME().text] = MethodInfo(SkipStmt(ctx!!.start.line), params, nm.builtinrule != null, nm.domainrule != null, cl.className.text, metType)
                 }
             }
             table[cl.className.text] = Pair(fields, res)
