@@ -39,7 +39,19 @@ class SMOLExecutionTest: MicroObjectTest() {
             val res = a.query("SELECT ?man WHERE { ?man a domain:Man. }")
             // val res = a.query("SELECT * WHERE { ?a ?b ?c . }")
             assert(res!!.hasNext())
-            println("\n" + ResultSetFormatter.asText(res))
+            val res2 = a.query("SELECT * WHERE { ?person a prog:Person. ?person prog:Person_name ?name. ?person prog:Person_birthYear ?birthYear. ?person prog:Person_height ?height. ?person prog:Person_ownsCar ?ownsCar. FILTER (?name='Bernie') }")
+            assertNotNull(res2)
+            // Checking that types are correct
+            val r = res2.next()
+            assertEquals("Bernie", (r["name"] as LiteralImpl).string)
+            assertEquals("http://www.w3.org/2001/XMLSchema#string", (r["name"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("1952", (r["birthYear"] as LiteralImpl).string)
+            assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["birthYear"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("1.83", (r["height"] as LiteralImpl).string)
+            assertEquals("http://www.w3.org/2001/XMLSchema#double", (r["height"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("false", (r["ownsCar"] as LiteralImpl).string)
+            assertEquals("http://www.w3.org/2001/XMLSchema#boolean", (r["ownsCar"] as LiteralImpl).getDatatypeURI() )
+            // println("\n" + ResultSetFormatter.asText(res2))
         }
         "double"{
             val (a, _) = initInterpreter("double", StringLoad.RES)
@@ -52,14 +64,14 @@ class SMOLExecutionTest: MicroObjectTest() {
             val (a, _) = initInterpreter("scene", StringLoad.RES)
             executeUntilBreak(a)
             assertEquals(0, a.stack.size)
-            a.dump()
             val res = a.query("SELECT DISTINCT ?obj ?name WHERE { ?sth prog:Rectangle_area_builtin_res ?obj. ?sth prog:Rectangle_name ?name }")
             assertNotNull(res)
             var i = 0
             while(res.hasNext()){
                 val r = res.next()
+                assertEquals("10", (r["obj"] as LiteralImpl).string)
+                assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["obj"] as LiteralImpl).getDatatypeURI() )
                 i++
-                assertEquals("\"10\"^^xsd:integer", (r["obj"] as LiteralImpl).string)
             }
             assertEquals(1, i)
         }
