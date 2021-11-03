@@ -1,7 +1,7 @@
 auto
 
 # various queries
-query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
+# query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
 # query SELECT * WHERE {?a ?b ?c. }
 # query SELECT * WHERE {{?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?model ?modelP ?modelO.} UNION {?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?obj ?p ?o.} }
 # query SELECT * WHERE {?obj <https://github.com/Edkamb/SemanticObjects/Program#Student_name> ?name. ?obj domain:models ?model. ?model ?modelP ?modelO.} 
@@ -9,7 +9,7 @@ query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
 # query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
 # query SELECT * WHERE {?a ?b ?c. }
 # query SELECT * WHERE {?a a owl:Class. }
-# query SELECT * WHERE {?a a prog:Person. }
+# query SELECT * WHERE {<http://github.com/edkamb/SemanticObjects/ontologies/default#model0> a prog:Person. }
 
 
 # Dump state to output.ttl
@@ -24,5 +24,9 @@ query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
 # class <prog:Person> and <prog:Student>
 # class <prog:Course_lecturer> SOME <prog:Person>
 
+query SELECT * WHERE {?p prog:Person_name ?name. ?p a prog:Person. ?p ?b ?c. }
+# query SELECT * WHERE {?A ?B ?C.}
+
+# query SELECT * WHERE {?obj prog:Student_name ?name. ?obj domain:models ?model. ?obj ?p ?o.}
 
 exit

@@ -57,9 +57,42 @@ class Course (private String courseId, String courseName, Department department,
     Department getDepartment()
         return this.department;
     end
+    // Testing rule keyword
+    rule Person ruleGetLecturer()
+        return this.lecturer;
+    end
 end
 
 class Person (private Int personId, private String name, private Int birthYear, private Double height)
+    models "rdf:type smol:mPerson."
+
+    // Testing rule and domain keywords
+    rule Int ruleAge()
+        Int res := 2021-this.birthYear;
+        return res;
+    end
+    rule String ruleLastName()
+        return "Harrison";
+    end
+    rule Boolean ruleIsAlice()
+        if (this.name == "Alice")
+            return True;
+        else
+            return False;
+        end
+    end
+    rule Double ruleHeightMinusOne()
+        return this.height-1.0;
+    end
+    domain Int domainAge()
+        Int res := 2021-this.birthYear;
+        return res;
+    end
+    domain Double domainHeightMinusOne()
+        return this.height-1.0;
+    end
+
+
     Int getPersonId()
         return this.personId;
     end
@@ -102,17 +135,24 @@ end
 
 
 main
+    // Short example using while loop
+    Int counter := 2;
+    while (counter <= 4) do
+        Person a := new Person(13025213498, "Irina", 1952, 1.78);
+        counter := counter + 1;
+    end
+
     // The first Person
     Person alice := new Person(13025213498, "Alice", 1952, 1.78);
     Int aliceId := alice.getPersonId();
     Int aliceName := alice.getName();
     Int aliceBirthYear := alice.getBirthYear();
     Double aliceHeight := alice.getHeight();
-    print("Name, id and birthyear of Alice:");
-    print(aliceName);
-    print(aliceId);
-    print(aliceBirthYear);
-    print(aliceHeight);
+    // print("Name, id and birthyear of Alice:");
+    // print(aliceName);
+    // print(aliceId);
+    // print(aliceBirthYear);
+    // print(aliceHeight);
 
     // Departments
     Department mathDep := new Department(1, "Department of Mathematics");
@@ -138,35 +178,35 @@ main
     Student fred := new Student(09058894388, "Fred", 1988, 1.75, 1003, True);
 
     // Get and print all Persons (no reasoning)
-    List<Person> allPersons := access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
-    Int personLen := allPersons.length();
-    print(personLen);
-    Int i := 0;
-    print("Persons:");
-    while (i < personLen) do
-        Person person := allPersons.get(i);
-        String personName := person.toString();
-        print(personName);
-        i := i+1;
-    end
+    // List<Person> allPersons := access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
+    // Int personLen := allPersons.length();
+    // print(personLen);
+    // Int i := 0;
+    // print("Persons:");
+    // while (i < personLen) do
+    //     Person person := allPersons.get(i);
+    //     String personName := person.toString();
+    //     print(personName);
+    //     i := i+1;
+    // end
 
     // Get and print all Students (no reasoning)
-    List<Student> allStudents := access("SELECT ?obj WHERE{ ?obj a prog:Student. }");
-    Int studentLen := allStudents.length();
-    print(studentLen);
-    i := 0;
-    print("Students:");
-    while (i < studentLen) do
-        Student student := allStudents.get(i);
-        String studentName := student.toString();
-        print(studentName);
-        i := i+1;
-    end
+    // List<Student> allStudents := access("SELECT ?obj WHERE{ ?obj a prog:Student. }");
+    // Int studentLen := allStudents.length();
+    // print(studentLen);
+    // i := 0;
+    // print("Students:");
+    // while (i < studentLen) do
+    //     Student student := allStudents.get(i);
+    //     String studentName := student.toString();
+    //     print(studentName);
+    //     i := i+1;
+    // end
 
     // Testing SHACL shapes (with reasoning)
-    Boolean b := validate("examples/University/university.ttl");
-    print("Check if all lecturers are actually employees:");
-    print(b);
+    // Boolean b := validate("examples/University/university.ttl");
+    // print("Check if all lecturers are actually employees:");
+    // print(b);
 
 
     // TODO: Get and print (with Hermit reasoning) It complains about my list implementation.
