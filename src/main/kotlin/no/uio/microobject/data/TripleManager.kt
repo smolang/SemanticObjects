@@ -149,6 +149,25 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
     }
 
 
+    // This uses the old way to get the complete model, without the ontology and ONT-API
+    // TODO: when using add every searchtriple sent to graphbasefind is translated to ANY ANY ANY, but this is not the case with createUnion. 
+    // We need to figure out why, and make sure that ANY ANY ANY is not happening, since it is inefficient.
+    fun getCompleteModelWithoutOntology() : Model {
+        var model : Model = ModelFactory.createOntologyModel()
+        // var model : Model = ModelFactory.createOntologyModel(OntModelSpec.OWL_MEM)
+
+        // Add triples from heap
+        val heapGraphModel : Model = ModelFactory.createModelForGraph(HeapGraph(interpreter!!))
+        // model = ModelFactory.createUnion(model, heapGraphModel)
+        model.add(heapGraphModel)
+
+        val staticTableGraphModel : Model = ModelFactory.createModelForGraph(StaticTableGraph(staticTable, settings))
+        // model = ModelFactory.createUnion(model, staticTableGraphModel)
+        model.add(staticTableGraphModel)
+
+        return model
+    }
+
     // Return the graph corresponding to the complete model
     fun getCompleteGraph() : Graph {
         return getCompleteModel().graph
@@ -226,7 +245,7 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
 
         val matchingTriples : MutableList<Triple> = mutableListOf()
 
-        // Generate triples for classes and fields
+        // Generate triples for fields (and classes)
         for(classObj in fieldTable){
             val className : String = classObj.key
 
@@ -252,6 +271,12 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                 } else if(fieldEntry.type == STRINGTYPE) {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
+                } else if(fieldEntry.type == BOOLEANTYPE) {
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
+                } else if(fieldEntry.type == DOUBLETYPE) {
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
                 } else {
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
                     addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
@@ -264,10 +289,17 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
         for(classObj in methodTable){
             for(method in classObj.value){
                 val methodName : String = classObj.key+"_"+method.key
+
+                // Suggestion: should this also be called for rules and domains? Is rules/domains considered to be methods?
+                // example of generated triples from rules:
+                // (prog:Course smol:hasMethod prog:Course_ruleGetLecturer)
+                // (prog:Course_ruleGetLecturer a smol:Method)
+                // (prog:Course_ruleGetLecturer a owl:NamedIndividual)
                 addIfMatch(uriTriple("${prog}${classObj.key}", "${smol}hasMethod", "${prog}${methodName}"), searchTriple, matchingTriples, pseudo)
                 addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples, pseudo)
                 addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${smol}Method"), searchTriple, matchingTriples, pseudo)
 
+                // Suggestion: The code below is very extensive and should be compressed/refactored.
                 //rule
                 if(method.value.isRule ) {
                     if(method.value.retType == INTTYPE ) {
@@ -276,6 +308,12 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                     } else if(method.value.retType == STRINGTYPE) {
                         addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                         addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
+                    } else if(method.value.retType == BOOLEANTYPE) {
+                        addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                        addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
+                    } else if(method.value.retType == DOUBLETYPE) {
+                        addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                        addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
                     } else {
                         addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
                         addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
@@ -289,6 +327,12 @@ class StaticTableGraph(val staticInfo: StaticTable, val settings: Settings, val 
                     } else if(method.value.retType == STRINGTYPE) {
                         addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
                         addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
+                    } else if(method.value.retType == BOOLEANTYPE) {
+                        addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                        addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
+                    } else if(method.value.retType == DOUBLETYPE) {
+                        addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
+                        addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
                     } else {
                         addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
                         addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
@@ -359,12 +403,19 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                 for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries) {
                     var retVal : Pair<LiteralExpr, LiteralExpr>? = null
                     if (m.value.isRule) {
+
+                        // Guard on the predicate. If the predicate is not what we search for, then we can skip evalCall below.
+                        val predicateString = settings.replaceKnownPrefixesNoColon("prog:${m.value.declaringClass}_${m.key}_builtin_res")
+                        if (searchTriple.predicate is Node_URI){
+                            if (searchTriple.predicate.uri != predicateString) continue
+                        }
+
                         retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                         val resNode = getLiteralNode(retVal.second, settings)
                         val resTriple =
                             Triple(
-                                NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
-                                NodeFactory.createURI( settings.replaceKnownPrefixesNoColon("prog:${m.value.declaringClass}_${m.key}_builtin_res")),
+                                NodeFactory.createURI(settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
+                                NodeFactory.createURI(predicateString),
                                 resNode
                             )
                         addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
@@ -377,12 +428,18 @@ class HeapGraph(interpreter: Interpreter, val pseudo : Boolean = false) : GraphB
                                 LiteralExpr("ERROR")
                             ).literal.removeSurrounding("\"")
 
+                        // Guard on the predicate. If the predicate is not what we search for, then we can skip evalCall below.
+                        val predicateString = "$domain${m.value.declaringClass}_${m.key}_builtin_res"
+                        if (searchTriple.predicate is Node_URI){
+                            if (searchTriple.predicate.uri != predicateString) continue
+                        }
+
                         if(retVal == null) retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                         val resNode = getLiteralNode(retVal.second, settings)
                         val resTriple =
                             Triple(
                                 NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(models)),
-                                NodeFactory.createURI("$domain${m.value.declaringClass}_${m.key}_builtin_res"),
+                                NodeFactory.createURI(predicateString),
                                 resNode
                             )
                         addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
