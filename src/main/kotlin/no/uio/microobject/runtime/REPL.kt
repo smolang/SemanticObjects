@@ -77,7 +77,7 @@ class REPL(private val settings: Settings) {
     }
 
     fun printRepl(str: String) {
-        println("MO> $str \n")
+        println("MO-out> $str \n")
     }
 
     private fun initInterpreter(path: String) {
