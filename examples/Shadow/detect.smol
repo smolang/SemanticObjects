@@ -1,0 +1,49 @@
+class Shadow(Double value, Double assumedSlope)
+
+    Cont[; Double value] findNewShadow(Double lastVal, Double sysVal)
+        print("Anomaly detected, searching for new shadow.");
+        Double step := 0.0;
+        Cont[; Double value] shadow := null;
+        while step <= 5 do
+            Double assumedSlope := this.assumedSlope + step * 0.2;
+            shadow := simulate("examples/Shadow/Sim.fmu", iValue := lastVal, slope := assumedSlope);
+            shadow.tick(1.0);
+            Double result := shadow.value;
+            Double diff := sysVal - result;
+            if(diff <= 0.1) then
+                print("New shadow found.");
+                return shadow;
+            end
+            step := step + 1.0;
+        end
+        print("No new shadow found.");
+        return null;
+    end
+
+    Int run()
+        Cont[; Double value] system := simulate("examples/Shadow/Realsys.fmu", iValue := this.value, slope := this.assumedSlope);
+        Cont[; Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := this.value, slope := this.assumedSlope);
+
+        Int i := 0;
+        Double lastDiff := 0.0;
+        Double lastVal := 2.0;
+        while i <= 200 do
+            lastVal := system.value;
+            system.tick(1.0);
+            shadow.tick(1.0);
+            Double sysVal := system.value;
+            Double shaVal := shadow.value;
+            Double diff := system.value - shadow.value;
+            if(diff >= 0.1) then
+                shadow := this.findNewShadow(lastVal, sysVal);
+            end
+            i := i + 1;
+        end
+        return i;
+    end
+end
+
+main
+    Shadow shadow := new Shadow(2.0, 1.0);
+    shadow.run();
+end

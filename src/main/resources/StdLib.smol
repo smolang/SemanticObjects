@@ -46,4 +46,13 @@ class List<LISTT>(LISTT content, List<LISTT> next)
             return ret;
         end
     end
+
+    LISTT last()
+        if(this.next = null) then
+            return this.content;
+        else
+            LISTT last := this.next.last();
+            return last;
+        end
+    end
 end

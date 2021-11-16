@@ -1017,6 +1017,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun typeForNumericalFunction(t1 : Type, t2 : Type, symbol:String, ctx: ParserRuleContext) : Type {
         if(t1 == INTTYPE && t2 == INTTYPE) return INTTYPE
         if(t1 == DOUBLETYPE && t2 == DOUBLETYPE) return DOUBLETYPE
+        if(t1 == INTTYPE && t2 == DOUBLETYPE) return DOUBLETYPE
+        if(t1 == DOUBLETYPE && t2 == INTTYPE) return DOUBLETYPE
         if(t1 == ERRORTYPE && (t2 == INTTYPE || t2 == DOUBLETYPE)) return t2
         if(t2 == ERRORTYPE && (t1 == INTTYPE || t1 == DOUBLETYPE)) return t2
         log("Malformed operator $symbol with subtypes $t1 and $t2", ctx)

@@ -1,0 +1,16 @@
+main
+
+    Cont[; Double value] system := simulate("examples/Shadow/Realsys.fmu", iValue := 2, slope := 1);
+    Cont[; Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := 2, slope := 1);
+
+    Int i := 0;
+    while i <= 200 do
+        system.tick(1.0);
+        shadow.tick(1.0);
+        Double sysVal := system.value;
+        Double shaVal := shadow.value;
+        Double diff := system.value - shadow.value;
+        print(diff);
+        i := i + 1;
+    end
+end
