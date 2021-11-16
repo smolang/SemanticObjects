@@ -21,9 +21,10 @@ data class FieldInfo(val name: String, val type: Type, val computationVisibility
 data class MethodInfo(val stmt: Statement, val params: List<String>, val isRule : Boolean, val isDomain: Boolean, val declaringClass: String, val retType : Type)
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields
-    val methodTable: Map<String, Map<String, MethodInfo>>, // This maps class names to a map that maps method names to their definition
+    val methodTable: Map<String, Map<String, MethodInfo>>,  // This maps class names to a map that maps method names to their definition
     val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(),
-    val modelsTable: Map<String, List<ModelsEntry>>                // This maps class names to models blocks
+    val modelsTable: Map<String, List<ModelsEntry>>,        // This maps class names to models blocks
+    val anchorTable: Map<String, String>                    // This maps class names to their anchor variable
 ) { // DOWNWARDS class hierarchy
     override fun toString(): String =
 """

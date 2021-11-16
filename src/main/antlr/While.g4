@@ -7,6 +7,7 @@ package no.uio.microobject.antlr;
 }
 //Strings
 STRING : '"' ('\\"'|.)*? '"' ;
+VARSTRING : '?'LET+;
 
 //Whitespace and comments
 WS           : [ \t\r\n\u000C]+ -> channel(HIDDEN);
@@ -46,6 +47,7 @@ PROTECTED : 'protected';
 INFERPRIVATE : 'nonsemantic';
 MODELS : 'models';
 DOMAIN : 'domain';
+ANCHOR : 'anchor';
 
 //Keywords: constants
 TRUE : 'True';
@@ -98,7 +100,7 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END;
 
 //classes
-class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
+class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? (ANCHOR anchorVar=VARSTRING)? OPARAN fieldDeclList? CPARAN
             (models_block)?
             method_def*
             END;
