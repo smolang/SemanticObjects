@@ -1,0 +1,8 @@
+class C anchor ?v (
+  Int i
+)
+end retrieve "?o domain:i ?i"
+
+main
+    skip;
+end
