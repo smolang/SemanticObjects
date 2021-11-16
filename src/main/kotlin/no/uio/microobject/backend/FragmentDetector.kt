@@ -8,9 +8,14 @@ import org.antlr.v4.runtime.tree.ParseTreeWalker
 class FragmentDetector(val prog : WhileParser.ProgramContext) : WhileBaseListener() {
     var fmu = false
     var semantic = false
+    var lazy = false
 
     init {
         ParseTreeWalker.DEFAULT.walk(this, prog)
+    }
+
+    override fun enterRetrieve_statement(ctx: WhileParser.Retrieve_statementContext?) {
+        lazy = true
     }
 
     override fun enterSimulate_statement(ctx: WhileParser.Simulate_statementContext?) {

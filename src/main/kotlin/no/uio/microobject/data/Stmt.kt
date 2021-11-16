@@ -321,6 +321,11 @@ data class ValidateStmt(val target : Location, val query: Expression, val pos : 
         """.trimIndent() + target.getRDF() + query.getRDF()
     }
 }
+// For lazy MOL
+data class RetrieveStmt(val target : Location, val className: String, val pos : Int = -1, val declares: Type?) : Statement {
+    override fun toString(): String = "$target := load $className()"
+    override fun getRDF(): String = ""
+}
 
 // For simulation interface
 data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1, val declares: Type?) : Statement {
@@ -332,7 +337,7 @@ data class SimulationStmt(val target : Location, val path: String, val params : 
 }
 
 data class TickStmt(val fmu: Expression, val tick : Expression, val pos : Int = -1) : Statement {
-    override fun toString(): String = "tick($fmu, $tick)"
+    override fun toString(): String = "$fmu.tick($tick)"
     override fun getRDF(): String {
         //TODO: extend ontology
         return ""

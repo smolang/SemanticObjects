@@ -229,6 +229,16 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                           modeling )
     }
 
+    override fun visitRetrieve_statement(ctx: Retrieve_statementContext?): ProgramElement {
+        val def = getClassDecl(ctx as RuleContext)
+        val targetType =
+            TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return RetrieveStmt(visit(ctx.target) as Location,
+            targetType.getPrimary().getNameString(),
+            ctx!!.start.line,
+            targetType)
+    }
+
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         if(ctx.declType != null) {

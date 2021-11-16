@@ -340,6 +340,9 @@ class Interpreter(
                 }
                 return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
+            is RetrieveStmt -> {
+                throw Exception("Implement me :)")
+            }
             is ConstructStmt -> {
                 val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
                 val results = query(str.removePrefix("\"").removeSuffix("\""))
@@ -565,28 +568,28 @@ class Interpreter(
                     if (expr.params.size != 2) throw Exception("Operator.GEQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, simMemory, obj)
                     val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toInt() >= second.literal.toInt()) return TRUEEXPR
+                    if (first.literal.toDouble() >= second.literal.toDouble()) return TRUEEXPR
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.LEQ) {
                     if (expr.params.size != 2) throw Exception("Operator.LEQ requires two parameters")
                     val first = eval(expr.params[0], stack, heap, simMemory, obj)
                     val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toInt() <= second.literal.toInt()) return TRUEEXPR
+                    if (first.literal.toDouble() <= second.literal.toDouble()) return TRUEEXPR
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.GT) {
                     if (expr.params.size != 2) throw Exception("Operator.GT requires two parameters")
                     val first = eval(expr.params[0], stack, heap, simMemory, obj)
                     val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toInt() > second.literal.toInt()) return TRUEEXPR
+                    if (first.literal.toDouble() > second.literal.toDouble()) return TRUEEXPR
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.LT) {
                     if (expr.params.size != 2) throw Exception("Operator.LT requires two parameters")
                     val first = eval(expr.params[0], stack, heap, simMemory, obj)
                     val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toInt() < second.literal.toInt()) return TRUEEXPR
+                    if (first.literal.toDouble() < second.literal.toDouble()) return TRUEEXPR
                     else return FALSEEXPR
                 }
                 if (expr.Op == Operator.AND) {

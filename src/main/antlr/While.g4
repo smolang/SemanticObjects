@@ -1,6 +1,7 @@
 grammar While;
 /**
 TODO: casts, unit, constraints on generics, drop special treatment of atomic types, FMU state copies
+TODO LMOL: equations in LOAD statements
 **/
 @header {
 package no.uio.microobject.antlr;
@@ -34,6 +35,7 @@ TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
 DESTROY : 'destroy';
+LOAD : 'load';
 ABSTRACT : 'abstract'; //'abstract' collides with Java
 
 //Keywords: classes and methods
@@ -127,8 +129,9 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS MEMBER OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
-			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                                        # if_statement
+			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                            # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
+            | (declType = type)? target=expression ASS LOAD newType = type OPARAN CPARAN SEMI                                                           # retrieve_statement
             | statement statement                                                                                                                       # sequence_statement
             ;
 

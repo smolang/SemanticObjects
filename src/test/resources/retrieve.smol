@@ -1,8 +1,13 @@
 class C anchor ?v (
-  Int i
+  Int i,
+  retrievable("?v domain:d ?d") D d
 )
-end retrieve "?o domain:i ?i"
+end retrieve "?v domain:i ?i"
+class D anchor ?o (
+   Int j
+)
+end retrieve "?o domain:j ?j"
 
 main
-    skip;
+    List<C> list := load C();
 end
