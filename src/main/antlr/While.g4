@@ -48,6 +48,8 @@ INFERPRIVATE : 'nonsemantic';
 MODELS : 'models';
 DOMAIN : 'domain';
 ANCHOR : 'anchor';
+RETRIEVE : 'retrieve';
+RETRIEVABLE : 'retrievable';
 
 //Keywords: constants
 TRUE : 'True';
@@ -103,7 +105,7 @@ program : (class_def)* MAIN statement END;
 class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? (ANCHOR anchorVar=VARSTRING)? OPARAN fieldDeclList? CPARAN
             (models_block)?
             method_def*
-            END;
+            END (RETRIEVE retrieveQuery = STRING)?;
 method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
@@ -170,7 +172,7 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
+fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? (RETRIEVABLE OPARAN query=STRING CPARAN)?type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;

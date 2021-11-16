@@ -36,6 +36,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         var modelsTable : Map<String, List<ModelsEntry>> = emptyMap()
         var anchorTable : Map<String, String> = emptyMap()
+        var retrieveTable : Map<String, String> = emptyMap()
+
         for(cl in ctx!!.class_def()){
             val modelsList =
             if(cl.models_block() != null){
@@ -46,6 +48,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             modelsTable = modelsTable + Pair(cl.className.text, modelsList)
             if(cl.anchorVar != null){
                 anchorTable = anchorTable + Pair(cl.className.text, cl.anchorVar.text)
+            }
+            if(cl.retrieveQuery != null){
+                retrieveTable = retrieveTable + Pair(cl.className.text, cl.retrieveQuery.text)
             }
             if(cl.superType != null){
                 val superType =
@@ -63,12 +68,14 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                     for (nm in cl.fieldDeclList().fieldDecl()) {
                         val cVisibility = if(nm.visibility == null) Visibility.PUBLIC else if(nm.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                         val iVisibility = if(nm.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
+                        val retr = if(nm.query == null) "" else nm.query.text
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
                             cVisibility,
                             iVisibility,
                             BaseType(cl!!.className.text),
+                            retr,
                             nm.domain != null
                         )
                     }
@@ -125,7 +132,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, anchorTable)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, anchorTable, retrieveTable)
                    )
     }
 

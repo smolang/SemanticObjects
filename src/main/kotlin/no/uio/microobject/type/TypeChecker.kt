@@ -118,6 +118,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
                 val iVisibility =
                     if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
+                val retr =
+                    if(it.query == null) "" else it.query.text
                 Pair(
                     it.NAME().text,
                     FieldInfo(
@@ -126,6 +128,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         cVisibility,
                         iVisibility,
                         BaseType(name),
+                        retr,
                         it.domain != null
                     )
                 )
@@ -835,7 +838,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)).type
+                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false)).type
             }
             is WhileParser.Nested_expressionContext -> {
                 return getType(eCtx.expression(), fields, vars, thisType, inRule)
@@ -1002,7 +1005,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
-                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)
+                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
             }
