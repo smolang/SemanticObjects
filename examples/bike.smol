@@ -1,0 +1,56 @@
+class Bike anchor ?o (
+    Int id,
+    Int last,
+    retrievable("?o prog:BikeInit_front ?front.") Wheel front,
+    retrievable("?o prog:BikeInit_back ?back.") Wheel back
+) end retrieve "?o prog:BikeInit_id ?id. ?o prog:BikeInit_last ?last."
+
+class Wheel anchor ?o (
+    Int id,
+    Int last,
+    retrievable("?o prog:WheelInit_manuf ?manuf.") Manuf manuf
+) end retrieve "?o prog:WheelInit_id ?id. ?o prog:WheelInit_last ?last."
+
+class Manuf anchor ?o (
+    String name
+) end retrieve "?o prog:ManufInit_name ?name."
+
+class BikeInit (Int id, Int last, WheelInit front, WheelInit back) end
+class WheelInit (Int id, Int last, ManufInit manuf) end
+class ManufInit (String name) end
+
+
+main
+    // Set up data
+    ManufInit m := new ManufInit("Wheel Inc.");
+    WheelInit w1 := new WheelInit(1, 1, m);
+    WheelInit w2 := new WheelInit(2, 2, m);
+    WheelInit w3 := new WheelInit(3, 3, m);
+    WheelInit w4 := new WheelInit(4, 4, m);
+    WheelInit w5 := new WheelInit(5, 5, m);
+    WheelInit w6 := new WheelInit(6, 6, m);
+    BikeInit bi1 := new BikeInit(3, 3, w3, w3);
+    BikeInit bi2 := new BikeInit(5, 5, w2, w1);
+    BikeInit bi3 := new BikeInit(6, 6, w6, w1);
+    BikeInit bi4 := new BikeInit(7, 7, w5, w6);
+
+    List<Bike> bikes := load Bike();
+
+    Int i := 0;
+    Int size := bikes.length();
+    while( i < size) do
+        Bike next := bikes.get(i);
+        print("New Bike:");
+        print("Bike id:");
+        print(next.id);
+        print("Front wheel id:");
+        print(next.front.id);
+        print("Back wheel id:");
+        print(next.back.id);
+        print("Back wheel manufacturer:");
+        print(next.back.manuf.name);
+        i := i + 1;
+    end
+    print(size);
+
+end

@@ -31,6 +31,8 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.File
 import java.io.FileWriter
 import java.util.*
+import kotlin.collections.HashMap
+
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
     private var influxDBClient : InfluxDBClientKotlin? = null
@@ -341,7 +343,95 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is RetrieveStmt -> {
-                throw Exception("Implement me :)")
+                // Code below has two steps:
+                // 1. Expand query of the main class by follow retrievable links to other classes.
+                // 2. Construct objects based on the result of this query and place them in the heap.
+
+                // Helper classes used to store information about how instances are to be constructed later
+                data class FieldPlan(var type : String, var variableName: String,  var isRetrievable: Boolean )
+                data class ClassPlan(var className: String, var anchorVariable: String, var fields : HashMap<String, FieldPlan> )
+
+                val variableRegex: Regex = "\\?([a-zA-Z1-9_]*)".toRegex()  // Pattern used to syntactically detect variables in queries
+                val classPlans = ArrayDeque<ClassPlan>()  // Array where plans are stored
+
+                // Replaces (syntactically) all variables in a query with another variable according to the rule specified by the replace function
+                fun replaceVars(str : String, replaceFun: (input: String) -> String ) : String {
+                    return str.replace(variableRegex) { replaceFun(it.value) }
+                }
+
+                // Recursive function that returns the query corresponding to a given class.
+                // It uses the retrieve query of the given query and retrievables to the other classes it depends on.
+                fun getExpandedRetrieveQuery(className: String, varSuffix : String) : String {
+                    var retrieveQuery = staticInfo.retrieveTable[className] ?: throw Exception("Cannot find retrieve query for class: $className")
+                    retrieveQuery = retrieveQuery.removePrefix("\"").removeSuffix("\"")
+                    val fields = staticInfo.fieldTable[className] ?: throw Exception("Cannot find fields of class: $className")
+                    val anchor = staticInfo.anchorTable[className] ?: throw Exception("Cannot find anchor corresponding to class: $className")
+                    val newAnchorVar = anchor + varSuffix
+
+                    var fieldVarSuffixCounter = 0  // Used to give unique IDs to variables
+                    var returnQuery = replaceVars(retrieveQuery, { it + varSuffix })
+                    val fieldPlans: HashMap<String, FieldPlan> = hashMapOf()
+                    // loop over all fields. If any is retrievable, then we need to get the query for this class recursively
+                    for (f in fields) {
+                        val fieldType : String = f.type.toString()
+                        var childIsRetrievable = false // will be set to true if f is retrievable
+                        var fieldNewVar = f.name + varSuffix // will be changed if f is retrievable
+
+                        if (f.retrieve != "") {
+                            val fieldVarSuffix = varSuffix + "_" + fieldVarSuffixCounter.toString() // suffix to use for the child/field class
+                            fieldVarSuffixCounter++
+
+                            childIsRetrievable = true
+                            // Replace the variable name with the anchor of the field class (incl. the corresponding suffix)
+                            val fieldClassOriginalAnchorVar = staticInfo.anchorTable[fieldType] ?: throw Exception("Cannot find anchor corresponding to class: $fieldType")
+                            fieldNewVar = fieldClassOriginalAnchorVar + fieldVarSuffix.removePrefix("?")
+
+                            // recursively add to query
+                            returnQuery += " " + replaceVars(
+                                f.retrieve.removePrefix("\"").removeSuffix("\""),
+                                {if (it == "?" + f.name) fieldClassOriginalAnchorVar + fieldVarSuffix else it + varSuffix}
+                            )
+                            returnQuery += getExpandedRetrieveQuery(fieldType, fieldVarSuffix)
+                        }
+                        fieldPlans[f.name] = FieldPlan(fieldType, fieldNewVar, childIsRetrievable)
+                    }
+                    classPlans.addLast(ClassPlan(className, newAnchorVar, fieldPlans))
+                    return returnQuery
+                }
+
+                val mainQuery = "SELECT * WHERE {${getExpandedRetrieveQuery(stmt.className, "__0")}}"
+                val results = query(mainQuery)
+
+                val objectsCreated : HashMap<String,String> = HashMap() // collection of objects we want to reuse, key is the variable in query, value is name of object.
+                var list = LiteralExpr("null")
+                if (results != null) {
+                    for (r in results) {
+                        // Warning: if we have non-functional fields and main objects span over multiple rows, then we need to be more clever when looping over all results.
+                        val newListName = Names.getObjName("List")
+                        val newListMemory: Memory = mutableMapOf()
+                        for ((classPlanIndex, classPlan) in classPlans.withIndex()) {
+                            val currentClass = classPlan.className
+                            val newObjName = Names.getObjName(currentClass)
+                            val newObjMemory: Memory = mutableMapOf()
+                            val fields = staticInfo.fieldTable[currentClass] ?: throw Exception("Cannot find fields of class: $currentClass")
+                            for (f in fields) {
+                                val fieldPlan : FieldPlan = classPlan.fields[f.name] ?: throw Exception("ClassPlan is incomplete. Missing field: $f.name")
+                                if (fieldPlan.isRetrievable) { newObjMemory[f.name] = LiteralExpr(objectsCreated[fieldPlan.variableName]!!, f.type) }
+                                else { newObjMemory[f.name] = LiteralExpr(r.getLiteral(fieldPlan.variableName).value.toString().removePrefix(settings.runPrefix), f.type) }
+                            }
+                            objectsCreated[classPlan.anchorVariable] = newObjName.toString()
+                            heap[newObjName] = newObjMemory
+                            // add main instance to list.
+                            if (classPlanIndex == classPlans.size - 1) {
+                                newListMemory["content"] = newObjName
+                                newListMemory["next"] = list
+                                heap[newListName] = newListMemory
+                                list = newListName
+                            }
+                        }
+                    }
+                }
+                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is ConstructStmt -> {
                 val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
