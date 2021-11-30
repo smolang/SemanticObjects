@@ -1,0 +1,42 @@
+# Abox which works with the examples in bike.smol
+
+# A bike with two wheels
+prog:b1 a prog:Bike.
+prog:w1 a prog:Wheel.
+prog:w2 a prog:Wheel.
+
+prog:b1 prog:frontWheel prog:w1.
+prog:b1 prog:backWheel prog:w2.
+prog:b1 prog:bikeId 1.
+prog:b1 prog:bikeLast 5.
+
+prog:w1 prog:wheelId 2.
+prog:w1 prog:wheelLast 5.
+prog:w2 prog:wheelId 3.
+prog:w2 prog:wheelLast 6.
+
+
+# Another bike with two wheels
+prog:b2 a prog:Bike.
+prog:w3 a prog:Wheel.
+prog:w4 a prog:Wheel.
+
+prog:b2 prog:frontWheel prog:w3.
+prog:b2 prog:backWheel prog:w4.
+prog:b2 prog:bikeId 11.
+prog:b2 prog:bikeLast 15.
+
+prog:w3 prog:wheelId 12.
+prog:w3 prog:wheelLast 15.
+prog:w4 prog:wheelId 13.
+prog:w4 prog:wheelLast 16.
+
+
+# House
+prog:h1 a prog:House.
+prog:h1 prog:houseId 55.
+prog:h1 prog:frontBike prog:b1.
+prog:h1 prog:backBike prog:b2.
+
+
+

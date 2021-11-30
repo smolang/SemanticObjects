@@ -1,56 +1,152 @@
-class Bike anchor ?o (
+// Example 1: Simple case with two dependencies to same class.
+class Bike1 anchor ?o (
     Int id,
     Int last,
-    retrievable("?o prog:BikeInit_front ?front.") Wheel front,
-    retrievable("?o prog:BikeInit_back ?back.") Wheel back
-) end retrieve "?o prog:BikeInit_id ?id. ?o prog:BikeInit_last ?last."
+    link("?o prog:frontWheel ?frontWheel.") Wheel1 frontWheel,
+    link("?o prog:backWheel ?backWheel.") Wheel1 backWheel
+) end retrieve "?o a prog:Bike. ?o prog:bikeId ?id. ?o prog:bikeLast ?last."
 
-class Wheel anchor ?o (
+class Wheel1 anchor ?o (
+    Int id,
+    Int last
+) end retrieve "?o a prog:Wheel. ?o prog:wheelId ?id. ?o prog:wheelLast ?last."
+
+
+
+
+
+// Example 2: Bike with two wheels and a back link from wheel to its bike.
+class Bike2 anchor ?o (
     Int id,
     Int last,
-    retrievable("?o prog:WheelInit_manuf ?manuf.") Manuf manuf
-) end retrieve "?o prog:WheelInit_id ?id. ?o prog:WheelInit_last ?last."
+    back link("?o prog:frontWheel ?frontWheel.") Wheel2 frontWheel,
+    back link("?o prog:backWheel ?backWheel.") Wheel2 backWheel
+) end retrieve "?o a prog:Bike. ?o prog:bikeId ?id. ?o prog:bikeLast ?last."
 
-class Manuf anchor ?o (
-    String name
-) end retrieve "?o prog:ManufInit_name ?name."
-
-class BikeInit (Int id, Int last, WheelInit front, WheelInit back) end
-class WheelInit (Int id, Int last, ManufInit manuf) end
-class ManufInit (String name) end
+class Wheel2 anchor ?o (
+    Int id,
+    Int last,
+    back link("") Bike2 bike
+) end retrieve "?o a prog:Wheel. ?o prog:wheelId ?id. ?o prog:wheelLast ?last."
 
 
-main
-    // Set up data
-    ManufInit m := new ManufInit("Wheel Inc.");
-    WheelInit w1 := new WheelInit(1, 1, m);
-    WheelInit w2 := new WheelInit(2, 2, m);
-    WheelInit w3 := new WheelInit(3, 3, m);
-    WheelInit w4 := new WheelInit(4, 4, m);
-    WheelInit w5 := new WheelInit(5, 5, m);
-    WheelInit w6 := new WheelInit(6, 6, m);
-    BikeInit bi1 := new BikeInit(3, 3, w3, w3);
-    BikeInit bi2 := new BikeInit(5, 5, w2, w1);
-    BikeInit bi3 := new BikeInit(6, 6, w6, w1);
-    BikeInit bi4 := new BikeInit(7, 7, w5, w6);
 
-    List<Bike> bikes := load Bike();
 
-    Int i := 0;
-    Int size := bikes.length();
-    while( i < size) do
-        Bike next := bikes.get(i);
-        print("New Bike:");
-        print("Bike id:");
-        print(next.id);
-        print("Front wheel id:");
-        print(next.front.id);
-        print("Back wheel id:");
-        print(next.back.id);
-        print("Back wheel manufacturer:");
-        print(next.back.manuf.name);
-        i := i + 1;
-    end
-    print(size);
 
-end
+// Example 3.0: Adding a house with two bikes.
+class House3 anchor ?o (
+    Int id,
+    link("?o prog:frontBike ?frontBike.") Bike3 frontBike,
+    link("?o prog:backBike ?backBike.") Bike3 backBike
+) end retrieve "?o a prog:House. ?o prog:houseId ?id."
+
+class Bike3 anchor ?o (
+    Int id,
+    Int last,
+    link("?o prog:frontWheel ?frontWheel.") Wheel3 frontWheel,
+    link("?o prog:backWheel ?backWheel.") Wheel3 backWheel
+) end retrieve "?o a prog:Bike. ?o prog:bikeId ?id. ?o prog:bikeLast ?last."
+
+class Wheel3 anchor ?o (
+    Int id,
+    Int last,
+    back link("?bike prog:backWheel|prog:frontWheel ?o.") Bike3 bike
+) end retrieve "?o a prog:Wheel. ?o prog:wheelId ?id. ?o prog:wheelLast ?last."
+
+// Example 3.1: If a shop has a wheel, then loading it will fail, since wheels link back to bikes only.
+class Shop3 anchor ?o (
+    link("?o prog:store ?wheel.") Wheel3 wheel
+) end retrieve "?o a prog:Shop."
+
+
+
+
+// Example 4: Links between bike and wheel, but no backlink, so it will throw an exception
+class Bike4 anchor ?o (
+    Int id,
+    Int last,
+    link("?o prog:frontWheel ?frontWheel.") Wheel4 frontWheel,
+    link("?o prog:backWheel ?backWheel.") Wheel4 backWheel
+) end retrieve "?o a prog:Bike. ?o prog:bikeId ?id. ?o prog:bikeLast ?last."
+
+class Wheel4 anchor ?o (
+    Int id,
+    Int last,
+    link("?bike prog:frontWheel ?o.") Bike4 bike
+) end retrieve "?o prog:wheelId ?id. ?o prog:wheelLast ?last."
+
+
+
+
+
+
+// Example 1
+// main
+//     List<Bike1> bikes1 := load Bike1();  // should return 3 object plans and one bike. 3*1 objects in total
+//
+//     Int i := 0;
+//     Int size := bikes1.length();
+//     print("All bikes");
+//     while( i < size) do
+//         Bike1 b := bikes1.get(i);
+//         print("Bike id:");
+//         print(b.id);
+//         print("Front wheel - id:");
+//         print(b.frontWheel.id);
+//         print("Back wheel - id:");
+//         print(b.backWheel.id);
+//         i := i + 1;
+//     end
+//     print("Number of bikes in total:");
+//     print(size);
+//
+// end
+
+
+// Example 2
+ // main
+ //     List<Bike2> bikes2 := load Bike2();
+
+ //     Int i := 0;
+ //     Int size := bikes2.length();
+ //     print("All bikes");
+ //     while( i < size) do
+ //         Bike1 b := bikes2.get(i);
+ //         print("Bike id:");
+ //         print(b.id);
+ //         print("Front wheel - id:");
+ //         print(b.frontWheel.id);
+ //         print("Back wheel - id:");
+ //         print(b.backWheel.id);
+ //         i := i + 1;
+ //     end
+ //     print("Number of bikes in total:");
+ //     print(size);
+ // end
+
+
+
+// Example 3.1 (3.2 and 4 in comments)
+ main
+     List<House3> houses3 := load House3();
+     // List<Wheel3> wheels4 := load Wheel3(); // This will not work, since bike has two wheels. Infinite loop exception
+     // List<Shop3> shops5 := load Shop3(); // No ancestor exception
+     // List<Bike4> bikes6 := load Bike4(); // Infinite loop Exception
+
+     Int i := 0;
+     Int size := houses3.length();
+     print("All houses:");
+     while( i < size) do
+         House3 b := houses3.get(i);
+         print("House id:");
+         print(b.id);
+         print("Front bike - id:");
+         print(b.frontBike.id);
+         print("Back bike - front wheel - id:");
+         print(b.backBike.frontWheel.id);
+         i := i + 1;
+     end
+     print("Number of houses in total:");
+     print(size);
+
+ end

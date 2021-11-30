@@ -25,8 +25,7 @@ import org.apache.jena.shacl.Shapes
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
-import org.semanticweb.owlapi.model.OWLNamedIndividual
-import org.semanticweb.owlapi.model.OntologyConfigurator
+import org.semanticweb.owlapi.model.*
 import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.File
 import java.io.FileWriter
@@ -61,7 +60,7 @@ class InterpreterBridge(var interpreter: Interpreter?)
 class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     var heap: GlobalMemory,             // This is a map from objects to their heap memory
-    var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
+    private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
     val settings : Settings,                    // Settings from the user
     val rules : String,                 // Additional rules for jena
@@ -343,30 +342,34 @@ class Interpreter(
                 return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
             }
             is RetrieveStmt -> {
-                // Code below has two steps:
-                // 1. Expand query of the main class by follow retrievable links to other classes.
+                // The code below has two steps:
+                // 1. Expand query of the main class by follow links to other classes.
                 // 2. Construct objects based on the result of this query and place them in the heap.
 
-                // Helper classes used to store information about how instances are to be constructed later
+                // Data classes used to store information about how objects should be constructed based on query results
                 data class FieldPlan(var type : String, var variableName: String,  var isRetrievable: Boolean )
-                data class ClassPlan(var className: String, var anchorVariable: String, var fields : HashMap<String, FieldPlan> )
+                data class ObjectPlan(var className: String, var anchorVariable: String, var isTopClass : Boolean, var fields : HashMap<String, FieldPlan> )
+                val objectPlans = mutableSetOf<ObjectPlan>()
 
                 val variableRegex: Regex = "\\?([a-zA-Z1-9_]*)".toRegex()  // Pattern used to syntactically detect variables in queries
-                val classPlans = ArrayDeque<ClassPlan>()  // Array where plans are stored
 
                 // Replaces (syntactically) all variables in a query with another variable according to the rule specified by the replace function
                 fun replaceVars(str : String, replaceFun: (input: String) -> String ) : String {
                     return str.replace(variableRegex) { replaceFun(it.value) }
                 }
 
-                // Recursive function that returns the query corresponding to a given class.
-                // It uses the retrieve query of the given query and retrievables to the other classes it depends on.
-                fun getExpandedRetrieveQuery(className: String, varSuffix : String) : String {
+                val variableTypes: HashMap<String, String> = hashMapOf()  // store variables of the constructed query and their corresponding types
+
+                // Recursive function that returns the expanded query corresponding to a given class.
+                // It uses the retrieve query of the given class and links to the other classes it depends on.
+                fun getExpandedRetrieveQuery(className: String, varSuffix : String, ancestorVariables : String, isTopClass : Boolean) : String {
                     var retrieveQuery = staticInfo.retrieveTable[className] ?: throw Exception("Cannot find retrieve query for class: $className")
                     retrieveQuery = retrieveQuery.removePrefix("\"").removeSuffix("\"")
                     val fields = staticInfo.fieldTable[className] ?: throw Exception("Cannot find fields of class: $className")
                     val anchor = staticInfo.anchorTable[className] ?: throw Exception("Cannot find anchor corresponding to class: $className")
-                    val newAnchorVar = anchor + varSuffix
+
+                    val newAnchorVar = anchor + varSuffix  // The achor gets a suffix to prevent variable name collisions.
+                    variableTypes[newAnchorVar] = className
 
                     var fieldVarSuffixCounter = 0  // Used to give unique IDs to variables
                     var returnQuery = replaceVars(retrieveQuery, { it + varSuffix })
@@ -374,56 +377,81 @@ class Interpreter(
                     // loop over all fields. If any is retrievable, then we need to get the query for this class recursively
                     for (f in fields) {
                         val fieldType : String = f.type.toString()
-                        var childIsRetrievable = false // will be set to true if f is retrievable
-                        var fieldNewVar = f.name + varSuffix // will be changed if f is retrievable
-
+                        var fieldIsLink = false // This will be set to true if f is retrievable
+                        var fieldVarNewName = f.name + varSuffix // This will be changed if f is retrievable
                         if (f.retrieve != "") {
-                            val fieldVarSuffix = varSuffix + "_" + fieldVarSuffixCounter.toString() // suffix to use for the child/field class
-                            fieldVarSuffixCounter++
+                            fieldIsLink = true
+                            var fieldIsBackLink = f.isBackLink
 
-                            childIsRetrievable = true
-                            // Replace the variable name with the anchor of the field class (incl. the corresponding suffix)
-                            val fieldClassOriginalAnchorVar = staticInfo.anchorTable[fieldType] ?: throw Exception("Cannot find anchor corresponding to class: $fieldType")
-                            fieldNewVar = fieldClassOriginalAnchorVar + fieldVarSuffix.removePrefix("?")
+                            // Check if have earlier visited the class corresponding to the field.
+                            var foundAncestorWithCorrectType = false
+                            for (ancestorVar in ancestorVariables.split(" ").reversed()) {
+                                if (variableTypes[ancestorVar] == fieldType) {
+                                    foundAncestorWithCorrectType = true
+                                    fieldVarNewName = ancestorVar
+                                    break
+                                }
+                            }
 
-                            // recursively add to query
-                            returnQuery += " " + replaceVars(
-                                f.retrieve.removePrefix("\"").removeSuffix("\""),
-                                {if (it == "?" + f.name) fieldClassOriginalAnchorVar + fieldVarSuffix else it + varSuffix}
-                            )
-                            returnQuery += getExpandedRetrieveQuery(fieldType, fieldVarSuffix)
+                            if (!foundAncestorWithCorrectType && fieldIsBackLink && !isTopClass) { throw Exception("Backlink in class: $className refers back to class: $fieldType, but this class has not been visited yet.") }
+                            if (foundAncestorWithCorrectType && !fieldIsBackLink) { throw Exception("Without backlinks in class: $className, field: ${f.name} the expansion goes on forever.") }
+
+                            if (isTopClass || !fieldIsBackLink) {
+                                val fieldVarSuffix = varSuffix + "_" + fieldVarSuffixCounter.toString() // The suffix to use for the link class
+                                fieldVarSuffixCounter++
+
+                                // Replace the variable name with the anchor of the field class (incl. the corresponding suffix)
+                                val fieldClassOriginalAnchorVar = staticInfo.anchorTable[fieldType] ?: throw Exception("Cannot find anchor corresponding to class: $fieldType")
+                                fieldVarNewName = fieldClassOriginalAnchorVar + fieldVarSuffix
+
+                                // recursively add to query
+                                returnQuery += " " + replaceVars( f.retrieve.removePrefix("\"").removeSuffix("\""), {if (it == "?" + f.name) fieldVarNewName else it + varSuffix} )
+                                returnQuery += " " + getExpandedRetrieveQuery(fieldType, fieldVarSuffix, (ancestorVariables + " " + newAnchorVar).trim(), false)
+                            }
                         }
-                        fieldPlans[f.name] = FieldPlan(fieldType, fieldNewVar, childIsRetrievable)
+                        fieldPlans[f.name] = FieldPlan(fieldType, fieldVarNewName, fieldIsLink)
                     }
-                    classPlans.addLast(ClassPlan(className, newAnchorVar, fieldPlans))
+                    objectPlans.add(ObjectPlan(className, newAnchorVar, isTopClass, fieldPlans))
                     return returnQuery
                 }
 
-                val mainQuery = "SELECT * WHERE {${getExpandedRetrieveQuery(stmt.className, "__0")}}"
+
+                val mainQuery = "SELECT * WHERE {${getExpandedRetrieveQuery(stmt.className, "__0", "", true)}}"
                 val results = query(mainQuery)
 
-                val objectsCreated : HashMap<String,String> = HashMap() // collection of objects we want to reuse, key is the variable in query, value is name of object.
                 var list = LiteralExpr("null")
                 if (results != null) {
                     for (r in results) {
                         // Warning: if we have non-functional fields and main objects span over multiple rows, then we need to be more clever when looping over all results.
                         val newListName = Names.getObjName("List")
                         val newListMemory: Memory = mutableMapOf()
-                        for ((classPlanIndex, classPlan) in classPlans.withIndex()) {
+                        val objectName : HashMap<String,LiteralExpr> = HashMap()
+                        val objectMemory : HashMap<String,Memory> = HashMap()
+                        // First we create a name and memory object for each objectPlan
+                        for (classPlan in objectPlans) {
                             val currentClass = classPlan.className
                             val newObjName = Names.getObjName(currentClass)
                             val newObjMemory: Memory = mutableMapOf()
+                            objectName[classPlan.anchorVariable] = newObjName
+                            objectMemory[classPlan.anchorVariable] = newObjMemory
+                        }
+
+                        // Then we attach data to the objects.
+                        for (classPlan in objectPlans) {
+                            val currentClass = classPlan.className
+                            val objName: LiteralExpr = objectName[classPlan.anchorVariable]!!
+                            val objMemory = objectMemory[classPlan.anchorVariable]!!
                             val fields = staticInfo.fieldTable[currentClass] ?: throw Exception("Cannot find fields of class: $currentClass")
                             for (f in fields) {
-                                val fieldPlan : FieldPlan = classPlan.fields[f.name] ?: throw Exception("ClassPlan is incomplete. Missing field: $f.name")
-                                if (fieldPlan.isRetrievable) { newObjMemory[f.name] = LiteralExpr(objectsCreated[fieldPlan.variableName]!!, f.type) }
-                                else { newObjMemory[f.name] = LiteralExpr(r.getLiteral(fieldPlan.variableName).value.toString().removePrefix(settings.runPrefix), f.type) }
+                                val fieldPlan: FieldPlan = classPlan.fields[f.name] ?: throw Exception("ClassPlan is incomplete. Missing field: $f.name")
+                                if (fieldPlan.isRetrievable) { objMemory[f.name] = objectName[fieldPlan.variableName]!! }
+                                else { objMemory[f.name] = LiteralExpr( r.getLiteral(fieldPlan.variableName).value.toString() .removePrefix(settings.runPrefix), f.type ) }
                             }
-                            objectsCreated[classPlan.anchorVariable] = newObjName.toString()
-                            heap[newObjName] = newObjMemory
+                            heap[objName] = objMemory
+
                             // add main instance to list.
-                            if (classPlanIndex == classPlans.size - 1) {
-                                newListMemory["content"] = newObjName
+                            if (classPlan.isTopClass) {
+                                newListMemory["content"] = objName
                                 newListMemory["next"] = list
                                 heap[newListName] = newListMemory
                                 list = newListName
