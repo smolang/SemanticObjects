@@ -1,6 +1,6 @@
 class C anchor ?v (
   Int i,
-  retrievable("?v domain:d ?d") D d
+  link("?v domain:d ?d") D d
 )
 end retrieve "?v domain:i ?i"
 class D anchor ?o (

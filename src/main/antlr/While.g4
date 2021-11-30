@@ -51,7 +51,8 @@ MODELS : 'models';
 DOMAIN : 'domain';
 ANCHOR : 'anchor';
 RETRIEVE : 'retrieve';
-RETRIEVABLE : 'retrievable';
+RETRIEVABLE : 'link';
+BACKWARDS : 'back';
 
 //Keywords: constants
 TRUE : 'True';
@@ -175,7 +176,7 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? (RETRIEVABLE OPARAN query=STRING CPARAN)?type NAME;
+fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? ((backwards=BACKWARDS)? RETRIEVABLE OPARAN query=STRING CPARAN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;

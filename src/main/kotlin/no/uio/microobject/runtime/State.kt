@@ -23,7 +23,8 @@ data class FieldInfo(val name: String,
                      val inferenceVisibility: Visibility,
                      val declaredIn : Type,
                      val retrieve : String,
-                     val isDomain : Boolean)
+                     val isDomain : Boolean,
+                     val isBackLink : Boolean)
 data class MethodInfo(val stmt: Statement, val params: List<String>, val isRule : Boolean, val isDomain: Boolean, val declaringClass: String, val retType : Type)
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields

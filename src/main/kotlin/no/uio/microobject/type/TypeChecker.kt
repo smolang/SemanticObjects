@@ -129,7 +129,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         iVisibility,
                         BaseType(name),
                         retr,
-                        it.domain != null
+                        it.domain != null,
+                        it.backwards != null
                     )
                 )
             }
@@ -838,7 +839,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false)).type
+                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false, false)).type
             }
             is WhileParser.Nested_expressionContext -> {
                 return getType(eCtx.expression(), fields, vars, thisType, inRule)
@@ -1005,7 +1006,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
-                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false)
+                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, "",false, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
             }

@@ -76,7 +76,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                             iVisibility,
                             BaseType(cl!!.className.text),
                             retr,
-                            nm.domain != null
+                            nm.domain != null,
+                            nm.backwards != null
                         )
                     }
                 }
