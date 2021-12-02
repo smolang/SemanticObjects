@@ -230,12 +230,22 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                           modeling )
     }
 
+    //TODO: this looks suspicious, why is this not using `declType` for targetType
     override fun visitRetrieve_statement(ctx: Retrieve_statementContext?): ProgramElement {
         val def = getClassDecl(ctx as RuleContext)
         val targetType =
             TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
         return RetrieveStmt(visit(ctx.target) as Location,
             targetType.getPrimary().getNameString(),
+            ctx!!.start.line,
+            targetType)
+    }
+    override fun visitResolve_statement(ctx: Resolve_statementContext?): ProgramElement {
+        val def = getClassDecl(ctx as RuleContext)
+        val targetType =
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return ResolveStmt(visit(ctx.target) as Location,
+            visit(ctx.future) as Expression,
             ctx!!.start.line,
             targetType)
     }

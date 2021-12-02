@@ -7,7 +7,11 @@ class D anchor ?o (
    Int j
 )
 end retrieve "?o domain:j ?j"
-
+class E anchor ?z (
+    link("?z domain:nx ?nx") QFut<C> nx
+)
+end retrieve "?z a domain:Z"
 main
-    List<C> list := load C();
+    List<E> list := load C();
+    List<C> list2 := load list.content.nx;
 end

@@ -53,6 +53,7 @@ ANCHOR : 'anchor';
 RETRIEVE : 'retrieve';
 RETRIEVABLE : 'link';
 BACKWARDS : 'back';
+QUERYFUTURE : 'QFut';
 
 //Keywords: constants
 TRUE : 'True';
@@ -133,6 +134,7 @@ statement :   SKIP_S SEMI                                                       
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                            # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
             | (declType = type)? target=expression ASS LOAD newType = type OPARAN CPARAN SEMI                                                           # retrieve_statement
+            | (declType = type)? target=expression ASS LOAD future = expression SEMI                                                                    # resolve_statement
             | statement statement                                                                                                                       # sequence_statement
             ;
 
@@ -172,6 +174,7 @@ expression :      THIS                           # this_expression
 type : NAME                                                    #simple_type
      | NAME LT typelist GT                                     #nested_type
      | FMU OBRACK in=paramList? SEMI out=paramList? CBRACK     #fmu_type
+     | QUERYFUTURE LT inner=type GT                            #query_future_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;

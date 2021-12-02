@@ -326,6 +326,10 @@ data class RetrieveStmt(val target : Location, val className: String, val pos : 
     override fun toString(): String = "$target := load $className()"
     override fun getRDF(): String = ""
 }
+data class ResolveStmt(val target : Location, val expr: Expression, val pos : Int = -1, val declares: Type?) : Statement {
+    override fun toString(): String = "$target := load $expr()"
+    override fun getRDF(): String = ""
+}
 
 // For simulation interface
 data class SimulationStmt(val target : Location, val path: String, val params : List<VarInit>, val pos : Int = -1, val declares: Type?) : Statement {

@@ -44,18 +44,24 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //translates a type AST text to a type, even accessed within class createClass (needed to determine generics)
         fun translateType(ctx : WhileParser.TypeContext, className : String, generics : MutableMap<String, List<String>>) : Type {
-            return when(ctx){
+            return when(ctx) {
                 is WhileParser.Simple_typeContext -> stringToType(ctx.text, className, generics)
                 is WhileParser.Nested_typeContext -> {
                     val lead = stringToType(ctx.NAME().text, className, generics)
                     ComposedType(lead, ctx.typelist().type().map { translateType(it, className, generics) })
                 }
                 is WhileParser.Fmu_typeContext -> {
-                    val ins = if(ctx.`in` != null) ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    val ins = if (ctx.`in` != null) ctx.`in`.param()
+                        .map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
                     else emptyList()
-                    val outs = if(ctx.out != null) ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    val outs = if (ctx.out != null) ctx.out.param()
+                        .map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
                     else emptyList()
-                    SimulatorType(ins,outs)
+                    SimulatorType(ins, outs)
+                }
+                is WhileParser.Query_future_typeContext -> {
+                    val inner = translateType(ctx.inner, className, generics)
+                    FutureType(inner)
                 }
                 else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
             }
@@ -1058,11 +1064,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     }
 
     /* check whether @type contains an unknown (structural) subtype  */
+    //TODO: is not consistent with Type.containsUnknown
     private fun containsUnknown(type: Type, types: Set<String>): Boolean =
         when(type){
         is GenericType -> false // If we can translate it into a generic type, we already checked
         is SimulatorType -> false
         is BaseType -> !types.contains(type.name)
+        is FutureType -> containsUnknown(type.inner, types)
         else -> {
             val composType = type as ComposedType
             composType.params.fold(

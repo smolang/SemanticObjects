@@ -57,6 +57,12 @@ data class BaseType(val name : String) : SimpleType(){
         super.isAssignable(rhs, extends) || (rhs is BaseType && rhs.isBelow(this, extends))
 }
 
+data class FutureType(val inner : Type) : Type() {
+    override fun isFullyConcrete(): Boolean = inner.isFullyConcrete()
+    override fun getPrimary(): SimpleType = inner.getPrimary()
+    override fun containsUnknown(types: Set<String>): Boolean = inner.containsUnknown(types)
+}
+
 data class ComposedType(val name : Type, val params : List<Type>) : Type() {
     override fun getPrimary() : SimpleType {
         if(name is ComposedType) return name.getPrimary()

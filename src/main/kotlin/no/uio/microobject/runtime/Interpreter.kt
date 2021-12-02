@@ -61,6 +61,7 @@ class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     var heap: GlobalMemory,             // This is a map from objects to their heap memory
     private var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
+    var qfutMemory : FutureMemory,              // This is a map from literal expressions to the corresponding future
     val staticInfo: StaticTable,                // Class table etc.
     val settings : Settings,                    // Settings from the user
     val rules : String,                 // Additional rules for jena
@@ -549,6 +550,15 @@ class Interpreter(
                         list = name
                     }
                 return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
+            }
+            is ResolveStmt -> {
+                val futExpr = eval(stmt.expr, stackMemory, heap, simMemory, obj)
+                if(!qfutMemory.containsKey(futExpr)){
+                    throw Exception("Unknown future: $futExpr")
+                }
+                val future = qfutMemory[futExpr]
+                println(future)
+                throw Exception("Not implemented yet :)")
             }
             is ReturnStmt -> {
                 val over = stack.pop()
