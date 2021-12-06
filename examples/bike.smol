@@ -78,11 +78,24 @@ class Wheel4 anchor ?o (
 
 
 
+// Example 5: Same as Ex1, just with futures
+class Bike5 anchor ?o (
+    Int id,
+    Int last,
+    link("?o prog:frontWheel ?frontWheel.") Wheel5 frontWheel,
+    link("?o prog:backWheel ?backWheel.") QFut<Wheel5> backWheel
+) end retrieve "?o a prog:Bike. ?o prog:bikeId ?id. ?o prog:bikeLast ?last."
+
+class Wheel5 anchor ?o (
+    Int id,
+    Int last
+) end retrieve "?o a prog:Wheel. ?o prog:wheelId ?id. ?o prog:wheelLast ?last."
+
 
 
 // Example 1
 // main
-//     List<Bike1> bikes1 := load Bike1();  // should return 3 object plans and one bike. 3*1 objects in total
+//     List<Bike1> bikes1 := load Bike1();
 //
 //     Int i := 0;
 //     Int size := bikes1.length();
@@ -127,26 +140,60 @@ class Wheel4 anchor ?o (
 
 
 // Example 3.1 (3.2 and 4 in comments)
+//  main
+//      List<House3> houses3 := load House3();
+//      // List<Wheel3> wheels4 := load Wheel3(); // This will not work, since bike has two wheels. Infinite loop exception
+//      // List<Shop3> shops5 := load Shop3(); // No ancestor exception
+//      // List<Bike4> bikes6 := load Bike4(); // Infinite loop Exception
+//
+//      Int i := 0;
+//      Int size := houses3.length();
+//      print("All houses:");
+//      while( i < size) do
+//          House3 b := houses3.get(i);
+//          print("House id:");
+//          print(b.id);
+//          print("Front bike - id:");
+//          print(b.frontBike.id);
+//          print("Back bike - front wheel - id:");
+//          print(b.backBike.frontWheel.id);
+//          i := i + 1;
+//      end
+//      print("Number of houses in total:");
+//      print(size);
+//
+//  end
+
+
+
+ // Example 5, using futures
  main
-     List<House3> houses3 := load House3();
-     // List<Wheel3> wheels4 := load Wheel3(); // This will not work, since bike has two wheels. Infinite loop exception
-     // List<Shop3> shops5 := load Shop3(); // No ancestor exception
-     // List<Bike4> bikes6 := load Bike4(); // Infinite loop Exception
+     List<Bike5> bikes5 := load Bike5();
 
      Int i := 0;
-     Int size := houses3.length();
-     print("All houses:");
+     Int size := bikes5.length();
      while( i < size) do
-         House3 b := houses3.get(i);
-         print("House id:");
+         Bike5 b := bikes5.get(i);
+         print("Bike id:");
          print(b.id);
-         print("Front bike - id:");
-         print(b.frontBike.id);
-         print("Back bike - front wheel - id:");
-         print(b.backBike.frontWheel.id);
+         print("Frontwheel - id:");
+         print(b.frontWheel.id);
+         print("Backwheels:");
+         List<Wheel5> backwheels := load b.backWheel;
+         Int j := 0;
+         Int sizeBW := backwheels.length();
+         print("All backWheels:");
+         while( j < sizeBW) do
+            Wheel5 w := backwheels.get(j);
+            print("Back wheel id:");
+            print(w.id);
+            j := j + 1;
+         end
+
+
          i := i + 1;
      end
-     print("Number of houses in total:");
+     print("Number of objects in bike list:");
      print(size);
 
  end

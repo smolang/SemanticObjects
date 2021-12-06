@@ -1,6 +1,6 @@
 package no.uio.microobject.runtime
 
-import no.uio.microobject.data.LiteralExpr
+import no.uio.microobject.type.Type
 
-class QueryFuture(val query : String, val anchors : MutableMap<String, LiteralExpr>) {
+class QueryFuture(val type: Type, val filter: Filter) {
 }
