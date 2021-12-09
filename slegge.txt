@@ -39,7 +39,7 @@ WHERE
 ORDER BY ?w ?c1
 
 
->Query 1.3 Changed: hasTopDepth -> hasBottomDepth
+>Query 1.3 Confirmed bug, changed: hasTopDepth -> hasBottomDepth and 61 -> 62
 SELECT  ?wellbore ?top_md ?bottom_md ?unit ?column
 WHERE
   { ?w       a                     :Wellbore ;
