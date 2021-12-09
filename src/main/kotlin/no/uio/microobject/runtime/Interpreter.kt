@@ -718,7 +718,7 @@ class Interpreter(
 
         val objectPlans = mutableSetOf<ObjectPlan>()
         val variableTypes: HashMap<String, Type> = hashMapOf()  // keep track of variables and their type.
-        val varRegex: Regex = "\\?([a-zA-Z1-9_]*)".toRegex()  // Pattern to syntactically detect query variables.
+        val varRegex: Regex = "\\?([a-zA-Z0-9_]*)".toRegex()  // Pattern to syntactically detect query variables.
 
         // Function to replace variables in query.
         fun replaceVars(str: String, replaceFun: (input: String) -> String): String {
@@ -824,6 +824,10 @@ class Interpreter(
 
                 // Populate the objects with data.
                 for (objectPlan in objectPlans) {
+                    val objMemory = objectMemory[objectPlan.anchorVariable]!!
+                    val objectURI = r.getResource(objectPlan.anchorVariable)
+                    objMemory["uri"] = LiteralExpr( objectURI.toString(), STRINGTYPE)
+
                     if (objectPlan.classAsType !is FutureType) {
                         val currentClass = objectPlan.classAsType
                         val objName: LiteralExpr = objectName[objectPlan.anchorVariable]!!
