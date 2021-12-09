@@ -15,6 +15,38 @@ class List<LISTT>(LISTT content, List<LISTT> next)
         return 0;
     end
 
+    Boolean containsSameUri(LISTT element)
+        if this.content.uri = element.uri then // add your condition on .uri here
+            return True;
+        else
+            if this.next = null then
+                return False;
+            else
+                Boolean res := this.next.containsSameUri(element);
+                return res;
+            end
+        end
+    end
+
+
+    List<LISTT> noDuplicates()
+        if(this.next = null) then
+            List<LISTT> ln := new List<LISTT>(this.content, null);
+            return ln;
+        else
+            LISTT current := this.content;
+            Boolean isDuplicate := this.next.containsSameUri(current);
+            if(isDuplicate) then
+                List<LISTT> l := this.next.noDuplicates();
+                return l;
+            else
+                List<LISTT> lnext := this.next.noDuplicates();
+                List<LISTT> ll := new List<LISTT>(this.content, lnext);
+                return ll;
+            end
+        end
+    end
+
     LISTT get(Int i)
         LISTT res := this.content;
         if i >= 1 then
