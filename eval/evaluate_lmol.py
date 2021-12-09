@@ -1,4 +1,5 @@
-# run with pyton3. Requires pexpect
+# run with python3. 
+# Requires pexpect
 import os
 import datetime
 import time
@@ -7,10 +8,10 @@ import sys
 import math
 
 
-# Use pexpect to make a REPL object which we can run commands on.
+# Use pexpect to make a REPL object to run commands on.
 def startRepl(background=None):
     startCommand = "java -jar build/libs/MicroObjects-0.2-all.jar -l"
-    if background is not None:
+    if background:
         startCommand += " -b " + background
 
     repl = pexpect.spawn(startCommand)
@@ -20,7 +21,7 @@ def startRepl(background=None):
 
 
 
-# Run and time one single repl commmand as string
+# Run and time one single repl commmand
 # Return a dict with information about the run: did it time out, what did it return, how long time did it use, etc.
 def runOneReplCommand(repl, command):
     print("\n------  running new command: " + command +  "  ------")
@@ -41,11 +42,7 @@ def runOneReplCommand(repl, command):
         exception = True
 
 
-    # print("REPL: ", repl)
-    print("BEFORE:", repl.before.decode('ascii')) # This gives the correct output.
-    # print("AFTER :", repl.after.decode('ascii'))
-    # print("BUFFER:", repl.buffer.decode('ascii'))
-    # print("READ:", repl.read())
+    print("Output:", repl.before.decode('ascii')) # This prints output
     print("Time to run command: " + "{:.2f}".format(elapsed))
     result = {"command": command, "response": repl.buffer.decode('ascii'), "runningTime": elapsed, "timeout": timeout, "exception": exception}
     return result
@@ -54,23 +51,41 @@ def runOneReplCommand(repl, command):
 
 
 
-# Evaluation for the ESWC2022 paper about LMOL. We compare eager vs lazy for different lengths of chains of classes depending on the next class.
+# LMOL evaluation. We compare eager vs lazy for different lengths of chains of classes depending on the next class.
 def lazyChain(benchmarkId):
     resultFile = open("eval/result-" + benchmarkId + ".tsv", 'w').close()  # Erase old data from result file.
-    dataDepth = 200 # How deep we go with instances in the ttl file. This should be fixed for all runs and be independent of chainlength
+
     # lazyMethod = "loadFirst"  # In the lazy case: do we continue with only the first in the loaded list or all of them.
     lazyMethod = "loadAll"
     # linkCount = "multiple"  # how are data linked in ttl file? columns or multiple links between all?
     linkCount = "single"
-    for chainLength in range(10,201,10): # The chainlengths to use
-        for retrieveLength in ["first", "middle", "last"]: # The retrievelength we use. How far is the object to retrieve.
-            if retrieveLength == "first":
-                retrieveLengthInt = 1
-            if retrieveLength == "middle":
-                retrieveLengthInt = math.ceil(chainLength/2)
-            if retrieveLength == "last":
-                retrieveLengthInt = chainLength
-            for dataWidth in [2]: # d
+    chainLengths = range(10)
+    linkCount = "single"
+    dataDepth = 200 # How deep we go with instances in the ttl file. This should be fixed for all runs and be independent of chainlength
+
+    # Setups when different scenarios are run
+    if len(sys.argv) > 1:
+        name = sys.argv[1]
+        if name == "scenario1":
+            print("Running scenario 1.")
+            linkCount = "single"
+            chainLengths = range(10,201,10)
+
+        if name == "scenario2":
+            print("Running scenario 2.")
+            linkCount = "single"
+            linkCount = "multiple"
+            chainLengths = range(2,20)
+
+    for dataWidth in [2]: # d
+        for chainLength in chainLengths: # The chainlengths to use
+            for retrieveLength in ["first", "middle", "last"]: # The retrievelength we use. How far is the object to retrieve.
+                if retrieveLength == "first":
+                    retrieveLengthInt = 1
+                if retrieveLength == "middle":
+                    retrieveLengthInt = math.ceil(chainLength/2)
+                if retrieveLength == "last":
+                    retrieveLengthInt = chainLength
                 for method in ["lazy", "eager"]: # run both lazy and eager
                     print("\n\n\n===================================================================================")
                     print("===================================================================================")
@@ -98,7 +113,7 @@ def lazyChain(benchmarkId):
                         tempSmolFile.write(f"""\n    List<C1> C1List := load C1();\n    C1 firstC1 := C1List.get(0);\n    C{retrieveLengthInt} retrieveObj := firstC1""")
                         for i in range(retrieveLengthInt-1):
                             tempSmolFile.write(f".c{i+2}")
-                        tempSmolFile.write(f""";\n    print("Retrieved object id");\n    print(retrieveObj.id);\n""")
+                        tempSmolFile.write(f""";\n    print("ID(s) of retrieved object(s):");\n    print(retrieveObj.id);\n""")
 
                     # lazy
                     else:
@@ -128,6 +143,7 @@ def lazyChain(benchmarkId):
 
     Int indexC{retrieveLengthInt} := 0;
     Int lenC{retrieveLengthInt} := C{retrieveLengthInt}List.length();
+    print("ID(s) of retrieved object(s):");
     while (indexC{retrieveLengthInt} < lenC{retrieveLengthInt}) do
         C{retrieveLengthInt} objC{retrieveLengthInt} := C{retrieveLengthInt}List.get(indexC{retrieveLengthInt});
         print(objC{retrieveLengthInt}.id);
@@ -164,89 +180,22 @@ def lazyChain(benchmarkId):
 
 
 
-                    # input()
                     # Run commands
                     repl = startRepl(background="eval/tmp.ttl")
                     sessionCommands = [
                         {"command": "read eval/tmp.smol", "recordTime": True},
                         {"command": "auto", "recordTime": True},
-
                     ]
                     sessionResults = runSession(repl, sessionCommands)
                     print("----------------------------------------------------------")
                     print("session results")
-                    for i in inputParameters:
-                        print(i[0], ": ",i[1])
                     print(sessionResults)
-                    for i in sessionResults["sessionResults"]:
-                        print(i["timeout"], i["exception"])
-
                     print("----------------------------------------------------------")
-                    # input()
-
 
                     appendResultsToFile(benchmarkId, inputParameters, sessionResults)
 
 
 
-
-# Measure performance when the number of smol instances changes
-def scalabilitySmolInstances(benchmarkId):
-    resultFile = open("eval/result-" + benchmarkId + ".tsv", 'w').close()  # Erase old data from result file.
-    for i in range(0, 500000, 10000):
-        # instanceCount = 10**i
-        instanceCount = i
-        inputParameters = [("instanceCount", instanceCount)]
-        # instanceCount = i
-        # print("Running with new parameters: ", inputParameters)
-
-        # Write temporary .smol file
-        open("eval/tmp.smol", 'w').close()
-        tempSmolFile = open("eval/tmp.smol", "a")
-        tempSmolFile.write(f"""
-class C0 ()
-end
-
-main
-    Int counter := 0;
-    while( counter <= {str(instanceCount)} ) do
-        C0 newc0 := new C0();
-        counter := counter + 1;
-    end
-end
-""")
-        tempSmolFile.close()
-
-
-
-
-
-        # Start REPL session and run multiple commands
-        repl = startRepl()
-        sessionCommands = [
-            {"command": "read eval/tmp.smol", "recordTime": True},
-            {"command": "auto", "recordTime": True},
-            {"command": 'query SELECT (count(*) as ?count) WHERE {?a ?b ?c.}', "recordTime": True},
-            # {"command": 'examine', "recordTime": True},
-            # {"command": 'info', "recordTime": True},
-            # {"command": 'help', "recordTime": True},
-            {"command": 'class <prog:C0>', "recordTime": True},
-
-            # {"command": 'query SELECT (count(*) as ?count) WHERE {?a ?b <None>.}', "recordTime": True},
-            # {"command": 'query SELECT (count(*) as ?count) WHERE {?a a ?c.}', "recordTime": True},
-            # {"command": 'query SELECT (count(*) as ?count) WHERE {?a a prog:C0.}', "recordTime": True},
-
-        ]
-        sessionResults = runSession(repl, sessionCommands)
-        print("----------------------------------------------------------")
-        print("session results")
-        print(sessionResults)
-        for i in sessionResults["sessionResults"]:
-            print(i["timeout"], i["exception"])
-        print("----------------------------------------------------------")
-        # input()
-
-        appendResultsToFile(benchmarkId, inputParameters, sessionResults)
 
 
 # benchmark id is just a string which gives name to the file
@@ -264,13 +213,10 @@ def appendResultsToFile(benchmarkId, inputParameters, sessionResults):
             s+= singleCommandRes["command"] + "\t"
         resultFile.write(s.strip("\t") + "\n")
 
-
     s = ""
     for p in inputParameters:
-        # print(p)
         s += str(p[1]) + "\t"
     for singleCommandRes in sessionResults["sessionResults"]:
-        print("single command result: ", singleCommandRes)
         if singleCommandRes.get("recordTime", False):
             if singleCommandRes["timeout"] and singleCommandRes["exception"]:
                 s +=  "TIMEOUT/EXCEPTION" + "\t"
@@ -286,7 +232,7 @@ def appendResultsToFile(benchmarkId, inputParameters, sessionResults):
 
 
 
-# Run multiple commands
+# Run a session with multiple commands
 def runSession(repl, sessionCommands):
     sessionResults = []
     timeout = False
@@ -300,27 +246,7 @@ def runSession(repl, sessionCommands):
             timeout = True
         if (commandRes["exception"]):
             exception = True
-
     return {"timeout": timeout, "exception": exception, "sessionResults": sessionResults}
-
-
-
-# def runAndTimeCommand(runName, smolPath, imoPath):
-#     # build command
-#     command = "java -jar build/libs/MicroObjects-0.2-all.jar -e -i " + smolPath + " -r " + imoPath + " -t evaluate-tempfiles"
-#     print("-------------" + runName + "-----------")
-
-#     # run and time command
-#     start = time.time()
-#     os.system(command)
-#     end = time.time()
-#     elapsed = end-start
-#     print("Time running program: ", str(datetime.timedelta(seconds=elapsed)))
-#     f = open("eval/times.tsv", "a")
-#     f.write(runName + "\t" + str(elapsed) + "\n")
-#     f.close()
-
-
 
 
 def main():
@@ -330,12 +256,10 @@ def main():
 
     # Decide which evaluation functions to run. Each of them is standalone and should produce its own result file.
     listOfBenchmarks = [
-        # ("scalabilitySmolInstances", scalabilitySmolInstances)
         ("lazyChain", lazyChain)
     ]
     for benchmark in listOfBenchmarks:
         benchmark[1](benchmark[0])
-
 
 if __name__ == "__main__":
     main()

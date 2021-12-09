@@ -26,7 +26,12 @@ Inside the REPL, enter `help` for an overview over the available commands.
 A number of examples are available under examples/.
 
 ### Performance
-describe perfomance evaluation here
+To run the performance evaluation execute the Python 3 script `eval/evaluation.py`. This requires the Python package `pexpect`. Run
+```
+python3 eval/evaluate_lmol.py scenario1
+python3 eval/evaluate_lmol.py scenario2
+```
+After running either scenario the results will be written to `eval/result-lazyChain.tsv`.
 
 ### Modelling
 The classes for the Slegge queries are in `slegge.smol`. For comparison, the queries themselves are in `slegge.txt`. 
