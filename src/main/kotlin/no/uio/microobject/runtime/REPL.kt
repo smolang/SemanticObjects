@@ -95,7 +95,7 @@ class REPL(private val settings: Settings) {
         val tripleManager = TripleManager(settings, pair.second, null)
         val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
-        tC.report()
+        //tC.report()
 
         val iB = InterpreterBridge(null)
 

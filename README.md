@@ -29,7 +29,7 @@ A number of examples are available under examples/.
 describe perfomance evaluation here
 
 ### Modelling
-describe Slegge examples here
-
+The classes for the Slegge queries are in `slegge.smol`. For comparison, the queries themselves are in `slegge.txt`. 
+Taken from `http://purl.org/slegge`.
 
 

@@ -1,0 +1,169 @@
+>Query 1.1
+SELECT  ?wellbore ?unit ?column ?lat ?long
+WHERE
+  { ?w     a                     :Wellbore ;
+           :hasWellboreInterval  ?int ;
+           :name                 ?wellbore .
+    ?int   a                     :StratigraphicZone ;
+           :hasUnit              ?u .
+    ?u     :ofStratigraphicColumn  ?col ;
+           :name                 ?unit .
+    ?col   :name                 ?column .
+    ?well  :hasWellbore          ?w ;
+           :locatedIn            ?pos .
+    ?pos   :latitude             ?lat ;
+           :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+  }
+
+
+>Query 1.2
+SELECT  ?w ?c1
+WHERE
+  { ?w        a                     :Wellbore ;
+              :hasWellboreInterval  ?int .
+    ?int      a                     :StratigraphicZone ;
+              :hasUnit              ?c1 .
+    ?c1       :ofStratigraphicColumn  ?col .
+    ?col      a                     :ChronoStratigraphicColumn .
+    ?int      :overlapsWellboreInterval  ?litho_int .
+    ?litho_int  :hasUnit            ?lu .
+    ?lu       :ofStratigraphicColumn  ?l_col .
+    ?l_col    a                     :LithoStratigraphicColumn .
+    ?well     :hasWellbore          ?w ;
+              :locatedIn            ?pos .
+    ?pos      :latitude             ?lat ;
+              :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+  }
+ORDER BY ?w ?c1
+
+
+>Query 1.3 Changed: hasTopDepth -> hasBottomDepth
+SELECT  ?wellbore ?top_md ?bottom_md ?unit ?column
+WHERE
+  { ?w       a                     :Wellbore ;
+             :hasWellboreInterval  ?int ;
+             :name                 ?wellbore .
+    ?int     a                     :StratigraphicZone ;
+             :hasTopDepth  ?top ;
+             :hasTopDepth  ?bottom ;
+             :hasUnit              ?u .
+    ?top     :valueInStandardUnit  ?top_md .
+    ?bottom  :valueInStandardUnit  ?bottom_md .
+    ?u       :ofStratigraphicColumn  ?col ;
+             :name                 ?unit .
+    ?col     :name                 ?column .
+    ?well    :hasWellbore          ?w ;
+             :locatedIn            ?pos .
+    ?pos     :latitude             ?lat ;
+             :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 61 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+  }
+
+
+>Query 1.4
+SELECT  *
+WHERE
+  { ?w        a                     :Wellbore ;
+              :hasWellboreInterval  ?int .
+    ?int      a                     :StratigraphicZone ;
+              :hasUnit              ?c1 .
+    ?c1       :ofStratigraphicColumn  ?col .
+    ?col      a                     :ChronoStratigraphicColumn .
+    ?int      :overlapsWellboreInterval  ?litho_int .
+    ?litho_int  :hasUnit            ?lu .
+    ?lu       :ofStratigraphicColumn  ?l_col .
+    ?l_col    a                     :LithoStratigraphicColumn .
+    ?well     :hasWellbore          ?w ;
+              :locatedIn            ?pos .
+    ?pos      :latitude             ?lat ;
+              :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+    ?f  a                     :FluidZone .
+    ?w  :hasWellboreInterval  ?f ;
+        :name                 ?wellbore .
+    ?f  :overlapsWellboreInterval  ?int ;
+        :fluidZoneContent     ?content
+  }
+
+
+>Query 1.5
+SELECT  ?w
+WHERE
+  { ?w     a                     :Wellbore .
+    ?well  :hasWellbore          ?w ;
+           :locatedIn            ?pos .
+    ?pos   :latitude             ?lat ;
+           :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+  }
+
+
+>Query 1.6
+SELECT  *
+WHERE
+  { ?w     a                     :Wellbore ;
+           :hasWellboreInterval  ?int .
+    ?int   a                     :StratigraphicZone ;
+           :hasUnit              ?c1 .
+    ?c1    :ofStratigraphicColumn  ?col .
+    ?col   a                     :ChronoStratigraphicColumn .
+    ?well  :hasWellbore          ?w ;
+           :locatedIn            ?pos .
+    ?pos   :latitude             ?lat ;
+           :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+    ?f  a                     :FluidZone .
+    ?w  :hasWellboreInterval  ?f ;
+        :name                 ?wellbore .
+    ?f  :overlapsWellboreInterval  ?int ;
+        :fluidZoneContent     ?content
+  }
+
+
+>Query 1.7
+SELECT  *
+WHERE
+  { ?fld      a                     :Field .
+    ?well     :inField              ?fld ;
+              :hasWellbore          ?w .
+    ?w        a                     :Wellbore ;
+              :hasWellboreInterval  ?int .
+    ?int      a                     :StratigraphicZone ;
+              :hasUnit              ?c1 .
+    ?w        :hasWellboreInterval  ?litho_zone .
+    ?litho_zone  :hasUnit           ?litho_unit ;
+              :overlapsWellboreInterval  ?int .
+    ?w        :hasWellboreInterval  ?f ;
+              :name                 ?wellbore .
+    ?f        :overlapsWellboreInterval  ?int ;
+              :fluidZoneContent     ?content .
+    ?w        :hasWellboreInterval  ?other_hc .
+    ?other_hc  :fluidZoneContent    ?other_content
+  }
+
+
+>Query 1.8 Changed: ?content -> ?other_content
+SELECT  *
+WHERE
+  { ?w        a                     :Wellbore ;
+              :hasWellboreInterval  ?int .
+    ?int      a                     :StratigraphicZone ;
+              :hasUnit              ?c1 .
+    ?w        :hasWellboreInterval  ?litho_zone .
+    ?litho_zone  :hasUnit           ?litho_unit ;
+              :overlapsWellboreInterval  ?int .
+    ?w        :hasWellboreInterval  ?f ;
+              :name                 ?wellbore .
+    ?f        :overlapsWellboreInterval  ?int ;
+              :fluidZoneContent     ?content .
+    ?w        :hasWellboreInterval  ?other_hc .
+    ?other_hc  :fluidZoneContent    ?other_content .
+    ?well     :hasWellbore          ?w ;
+              :locatedIn            ?pos .
+    ?pos      :latitude             ?lat ;
+              :longitude            ?long
+    FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )
+  }
+

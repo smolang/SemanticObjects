@@ -1,0 +1,126 @@
+
+/* Wellbores */
+
+// All queries include this triple
+class WB anchor ?w () end retrieve "?w a :Wellbore."
+
+// Q134678 wants the name. There may be wellbores without a name, so we should be strict on this. Alternatively can we add this in the retrieve of the relevant queries, but having this class is more object oriented.
+class WBWithName extends WB anchor ?w (
+    String wbName
+) end retrieve "?w :name wbName."
+
+/* Queries */
+
+class WBQ1 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w.") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") SZ13 int
+) end retrieve ""
+
+
+class WBQ2 extends WB anchor ?w (
+    link("?well :hasWellbore ?w.") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") LithoSZ int
+) end retrieve ""
+
+
+class WBQ3 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w.") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") DepthSZ int
+) end retrieve ""
+
+
+class WBQ4 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w.") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") LithoSZ int,
+    link("?w :hasWellboreInterval ?f.") FZ f
+) end retrieve "?f :overlapsWellboreInterval ?int."
+
+
+class WBQ5 extends WB anchor ?w (
+    link("?well :hasWellbore ?w ") PositionWell well
+) end retrieve ""
+
+class WBQ6 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w ") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") SZ246 int,
+    link("?w :hasWellboreInterval ?f.") FZ46 f
+) end retrieve "?f :overlapsWellboreInterval ?int."
+
+
+class WBQ7 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w ") FieldWell well,
+    link("?w :hasWellboreInterval ?int.") SZ78 int,
+    link("?w :hasWellboreInterval ?f.") FZ f,
+    link("?w :hasWellboreInterval ?other_f.") FZ other_f
+) end retrieve " ?f :overlapsWellboreInterval ?int. ?w :hasWellboreInterval ?litho_zone. ?litho_zone :hasUnit ?litho_unit. ?litho_zone :overlapsWellboreInterval ?int."
+
+
+class WBQ8 extends WBWithName anchor ?w (
+    link("?well :hasWellbore ?w ") PositionWell well,
+    link("?w :hasWellboreInterval ?int.") SZ78 int,
+    link("?w :hasWellboreInterval ?f.") FZ f,
+    link("?w :hasWellboreInterval ?other_f.") FZ other_f
+) end retrieve "?f :overlapsWellboreInterval ?int. ?w :hasWellboreInterval ?litho_zone. ?litho_zone :hasUnit ?litho_unit. ?litho_zone :overlapsWellboreInterval ?int."
+
+
+
+
+/* Wells */
+
+//Used by all queries except for Q7
+class PositionWell anchor ?well (
+) end retrieve " ?well locatedIn ?pos. ?pos :latitude ?lat. ?pos :longitude ?long. FILTER ( ( ( ( ?lat > 60 ) && ( ?lat < 62 ) ) && ( ?long > 2 ) ) && ( ?long < 3 ) )"
+
+// Used only by Q7
+class FieldWell anchor ?well (
+) end retrieve "?well :inField ?fld. ?fld a :Field."
+
+
+/* SZs */
+
+
+// Basic stratigraphic zone. Used by all except for Q5
+class SZ anchor ?int () end retrieve "?int a :StratigraphicZone."
+
+// Used by Q1 and Q3
+class SZ13 extends SZ anchor ?int (
+    String unitName,
+    String columnName
+) end retrieve " ?int :hasUnit ?u. ?u :ofStratigraphicColumn ?col. ?u :name ?unitName. ?col :name ?columnName."
+
+
+
+// Used in only Q3
+class DepthSZ extends SZ13 anchor ?int (
+    Double top_md,
+    Double bottom_md
+) end retrieve "?int :hasTopDepth ?top. ?int :hasTopBottom ?bottom. ?top :valueInStandardUnit ?top_md. ?bottom :valueInStandardUnit ?bottom_md."
+
+
+
+//Used by 2, 4 and 6
+class SZ246 extends SZ anchor ?int (
+) end retrieve "?int :hasUnit ?u. ?u :ofStratigraphicColumn ?col. ?col a :ChronoStratigraphicColumn."
+
+// Used in 2 and 4
+class LithoSZ extends SZ246 anchor ?int (
+) end retrieve " ?int :overlapsWellboreInterval ?litho_int. ?litho_int :hasUnit ?lu. ?lu :ofStratigraphicColumn ?l_col. ?l_col a :LithoStratigraphicColumn."
+
+// Used by 7 and 8
+class SZ78 extends SZ anchor ?int ()
+end retrieve "?int :hasUnit ?u."
+
+
+/* FluidZone */
+
+//7 and 8 are only interested in the fluid content
+class FZ anchor ?f (
+) end retrieve "?f :fluidZoneContent ?content."
+
+//4 and 6 also require a type
+class FZ46 extends FZ anchor ?f (
+) end retrieve "?f a :FluidZone."
+
+main
+skip;
+end
