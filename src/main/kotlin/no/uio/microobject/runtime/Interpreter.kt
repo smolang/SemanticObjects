@@ -67,7 +67,6 @@ class Interpreter(
     var qfutMemory : FutureMemory,              // This is a map from literal expressions to the corresponding future
     val staticInfo: StaticTable,                // Class table etc.
     val settings : Settings,                    // Settings from the user
-    val rules : String,                 // Additional rules for jena
 ) {
     private var debug = false
 

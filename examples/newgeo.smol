@@ -232,8 +232,8 @@ main
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
-    //layer := new Shale(0, 1000, null, null, 0);
+    //layer := new Sand(0, 1000, null, null, 1, False);
+    layer := new Shale(0, 1000, null, null, 0);
     action := new DepositAction(True, layer);
     actions := new List<Action>(action, actions);
 

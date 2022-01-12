@@ -108,12 +108,11 @@ class TripleManager(val settings : Settings, val staticTable : StaticTable, val 
 
 
         if (interpreter != null) {
-            val rules = interpreter.rules
             // Add rules to the model if available.
-            if(rules != "" || settings.backgroundrules != "") {
-                if(settings.verbose) println("Loading generated builtin rules $rules and domain rules ${settings.backgroundrules}")
+            if(settings.backgroundrules != "") {
+                if(settings.verbose) println("Loading domain rules ${settings.backgroundrules}")
                 val prefixes  = settings.prefixes()
-                val reader = (prefixes+"\n"+rules+"\n"+settings.backgroundrules).byteInputStream().bufferedReader()
+                val reader = (prefixes+"\n"+settings.backgroundrules).byteInputStream().bufferedReader()
                 val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
                 val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rParsed))
                 val infModel = ModelFactory.createInfModel(reasoner, model)
