@@ -820,7 +820,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         read: Boolean = true,
     ) : Type {
         when(eCtx){
-            is WhileParser.Const_expressionContext -> return INTTYPE
+            is WhileParser.Integer_expressionContext -> return INTTYPE
             is WhileParser.Double_expressionContext -> return DOUBLETYPE
             is WhileParser.String_expressionContext -> return STRINGTYPE
             is WhileParser.False_expressionContext -> return BOOLEANTYPE

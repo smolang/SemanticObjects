@@ -88,9 +88,12 @@ INFLUXMODE : 'INFLUXDB';
 fragment DIG : [0-9];
 fragment LET : [a-zA-Z_];
 fragment LOD : LET | DIG;
+fragment EXPONENT : ('e' | 'E' | 'e+' | 'E+' | 'e-' | 'E-') DIG+;
 NAME : LET LOD*;
-CONSTANT :  DIG+;
-FLOAT : DIG* DOT DIG*;
+// Note that this makes the grammar whitespace-sensitive -- in order to allow
+// "x-1" and not only "x - 1", add a negation unary operator '-'.
+INTEGER :  '0' | '-'? [1-9] DIG*;
+FLOAT : INTEGER? '.' DIG+ EXPONENT? ;
 
 namelist : NAME (COMMA NAME)*;
 
@@ -135,7 +138,7 @@ modeexpression : SPARQLMODE                         #sparql_mode
 expression :      THIS                           # this_expression
                 | THIS DOT NAME                  # field_expression
                 | NAME                           # var_expression
-                | CONSTANT                       # const_expression
+                | INTEGER                        # integer_expression
                 | TRUE                           # true_expression
                 | FALSE                          # false_expression
                 | STRING                         # string_expression

@@ -18,7 +18,7 @@ class List<LISTT>(LISTT content, List<LISTT> next)
     LISTT get(Int i)
         LISTT res := this.content;
         if i >= 1 then
-            res := this.next.get(i-1);
+            res := this.next.get(i - 1);
         end
         return res;
     end

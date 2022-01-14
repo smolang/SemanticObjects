@@ -385,8 +385,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return ArithExpr(Operator.NOT, listOf(visit(ctx!!.expression()) as Expression))
     }
 
-    override fun visitConst_expression(ctx: Const_expressionContext?): ProgramElement {
-        val inner = ctx!!.CONSTANT()!!.text
+    override fun visitInteger_expression(ctx: Integer_expressionContext?): ProgramElement {
+        val inner = ctx!!.INTEGER()!!.text
         return if(inner.toIntOrNull() != null) LiteralExpr(inner, INTTYPE) else LiteralExpr(inner, ERRORTYPE)
     }
     override fun visitTrue_expression(ctx: True_expressionContext?): ProgramElement {

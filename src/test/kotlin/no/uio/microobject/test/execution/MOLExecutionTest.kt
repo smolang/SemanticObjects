@@ -17,7 +17,7 @@ class MOLExecutionTest : MicroObjectTest() {
     init {
         "Add"{
             val v = LocalVar("v", INTTYPE)
-            val (a,_) = initInterpreter(" Int v := 1 + 2; v := v + 2; breakpoint;",StringLoad.STMT)
+            val (a,_) = initInterpreter(" Int v := 1 + 2; v := v + 2; v := v + -1; breakpoint;",StringLoad.STMT)
             a.makeStep();
             assertEquals(1, a.stack.size)
             assert(a.stack.peek().store.containsKey("v"))
@@ -28,27 +28,44 @@ class MOLExecutionTest : MicroObjectTest() {
             assert(a.stack.peek().store.containsKey("v"))
             assertEquals(LiteralExpr("5", INTTYPE), a.stack.peek().store["v"])
             assertEquals(LiteralExpr("5", INTTYPE), a.evalTopMost(v))
+            a.makeStep();
+            assertEquals(1, a.stack.size)
+            assert(a.stack.peek().store.containsKey("v"))
+            assertEquals(LiteralExpr("4", INTTYPE), a.stack.peek().store["v"])
+            assertEquals(LiteralExpr("4", INTTYPE), a.evalTopMost(v))
         }
         "Minus"{
-            val (a,_) = initInterpreter(" Int v := 2 - 1; breakpoint;",StringLoad.STMT)
+            val (a,_) = initInterpreter(" Int v := 2 - 1; v := v - -1; breakpoint;",StringLoad.STMT)
             a.makeStep();
             assertEquals(1, a.stack.size)
             assert(a.stack.peek().store.containsKey("v"))
             assertEquals(LiteralExpr("1", INTTYPE), a.stack.peek().store["v"])
+            a.makeStep();
+            assertEquals(1, a.stack.size)
+            assert(a.stack.peek().store.containsKey("v"))
+            assertEquals(LiteralExpr("2", INTTYPE), a.stack.peek().store["v"])
         }
         "Mult"{
-            val (a,_) = initInterpreter(" Double v := 1.0 * 2.0; breakpoint;",StringLoad.STMT)
+            val (a,_) = initInterpreter(" Double v := 1.0 * 2.0; v := v * -1.0e0; breakpoint;",StringLoad.STMT)
             a.makeStep();
             assertEquals(1, a.stack.size)
             assert(a.stack.peek().store.containsKey("v"))
             assertEquals(LiteralExpr("2.0", DOUBLETYPE), a.stack.peek().store["v"])
+            a.makeStep();
+            assertEquals(1, a.stack.size)
+            assert(a.stack.peek().store.containsKey("v"))
+            assertEquals(LiteralExpr("-2.0", DOUBLETYPE), a.stack.peek().store["v"])
         }
         "Div"{
-            val (a,_) = initInterpreter(" Double v := 2.0 / 1.0; breakpoint;",StringLoad.STMT)
+            val (a,_) = initInterpreter(" Double v := 2.0 / 1.0; v := v / -1.0e0; breakpoint;",StringLoad.STMT)
             a.makeStep();
             assertEquals(1, a.stack.size)
             assert(a.stack.peek().store.containsKey("v"))
             assertEquals(LiteralExpr("2.0", DOUBLETYPE), a.stack.peek().store["v"])
+            a.makeStep();
+            assertEquals(1, a.stack.size)
+            assert(a.stack.peek().store.containsKey("v"))
+            assertEquals(LiteralExpr("-2.0", DOUBLETYPE), a.stack.peek().store["v"])
         }
         "Bool"{
             val (a,_) = initInterpreter(" Boolean v := (2 > 0 & 2 >= 0) | ( 2 < 0 & !(2 <= 0)); breakpoint;",StringLoad.STMT)
