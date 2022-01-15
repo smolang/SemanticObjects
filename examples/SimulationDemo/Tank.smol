@@ -1,6 +1,6 @@
 main
     //beware: path is relative to interpreter instance, not this file
-    Cont[; Int filling] de := simulate("examples/SimulationDemo/Tank.fmu");
+    Cont[Out Int filling] de := simulate("examples/SimulationDemo/Tank.fmu");
     Int i := de.filling;
     print(i);
     de.tick(1);
