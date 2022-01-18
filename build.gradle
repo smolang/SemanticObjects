@@ -35,6 +35,7 @@ dependencies {
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.1'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.1'
     implementation("com.github.owlcs:ontapi:2.1.0")
+    implementation 'org.jline:jline:3.21.0'
 }
 
 generateGrammarSource {

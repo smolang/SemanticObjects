@@ -6,6 +6,7 @@ import com.github.ajalt.clikt.parameters.options.flag
 import com.github.ajalt.clikt.parameters.options.option
 import com.github.ajalt.clikt.parameters.options.switch
 import com.github.ajalt.clikt.parameters.types.path
+import org.jline.reader.LineReaderBuilder;
 import no.uio.microobject.runtime.REPL
 import java.io.File
 import java.nio.file.Paths
@@ -117,9 +118,9 @@ class Main : CliktCommand() {
         }
         if(mainMode == "repl"){
             println("Interactive shell started.")
+            val reader = LineReaderBuilder.builder().build()
             do {
-                print("MO>")
-                val next = readLine() ?: break
+                val next = reader.readLine("MO> ") ?: break
                 val splits = next.split(" ", limit = 2)
                 val left = if(splits.size == 1) "" else splits[1]
             } while (!repl.command(splits.first(), left))
