@@ -53,6 +53,7 @@ class REPL(private val settings: Settings) {
                     print(", parameter: ${cmd.parameterHelp}")
                 println()
             }
+            println("exit\t\t- exit the interactive shell")
         }else if (interpreter == null && str != "read" && str != "reada" && str != "exit"){
             printRepl("No file loaded. Please \"read\" a file to continue.")
         } else if (commands.containsKey(str)) {
