@@ -86,8 +86,8 @@ INFLUXMODE : 'INFLUXDB';
 // Note that the IN, OUT constants are also used in
 // TypeChecker.kt:translateType in the FMU branch; adapt strings there if
 // changing the syntax here
-IN : 'In';
-OUT : 'Out';
+IN : 'in';
+OUT : 'out';
 
 //Names etc.
 fragment DIG : [0-9];

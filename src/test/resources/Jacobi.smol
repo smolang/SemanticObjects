@@ -54,22 +54,22 @@ class CoSim(List<Connection> list, List<Cont[]> sims, Double stepSize)
 end
 
 //example
-class PreyOutPort extends OutPort<Double>(Cont[In Double y, Out Double x] prey)
+class PreyOutPort extends OutPort<Double>(Cont[in Double y, out Double x] prey)
     override Double get() return this.prey.x; end
 end
-class PredatorOutPort extends OutPort<Double>(Cont[In Double x, Out Double y] predator)
+class PredatorOutPort extends OutPort<Double>(Cont[in Double x, out Double y] predator)
     override Double get() return this.predator.y; end
 end
-class PreyInPort extends InPort<Double>(Cont[In Double y, Out Double x] prey)
+class PreyInPort extends InPort<Double>(Cont[in Double y, out Double x] prey)
     override Boolean write(Double t) this.prey.y := t; return True; end
 end
-class PredatorInPort extends InPort<Double>(Cont[In Double x, Out Double y] predator)
+class PredatorInPort extends InPort<Double>(Cont[in Double x, out Double y] predator)
     override Boolean write(Double t) print(t); this.predator.x := t; return True; end
 end
 
 main
-    Cont[In Double y, Out Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
-    Cont[In Double x, Out Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
+    Cont[in Double y, out Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
+    Cont[in Double x, out Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
     PreyOutPort preyOut := new PreyOutPort(prey);
     PredatorOutPort predOut := new PredatorOutPort(predator);
     PreyInPort preyIn := new PreyInPort(prey);

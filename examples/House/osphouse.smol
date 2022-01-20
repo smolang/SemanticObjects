@@ -6,7 +6,7 @@ abstract class Wall extends Dynamic()
     abstract Double getH()
 end
 class Outside (Double temp) end
-class Room extends Dynamic(Cont[In Double h_InnerWall, In Double h_OuterWall, In Double h_powerHeater, Out Double T_room] dynamics,
+class Room extends Dynamic(Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] dynamics,
                            Wall inner,
                            Wall outer,
                            Controller ctrl,
@@ -28,8 +28,8 @@ class Room extends Dynamic(Cont[In Double h_InnerWall, In Double h_OuterWall, In
         return 0;
     end
 end
-class Controller extends Dynamic(Cont[In Double T_room1, In Double T_room2, In Double T_clock, Out Double h_room1, Out Double h_room2] dynamics,
-                                 Cont[Out Double Clock] clock,
+class Controller extends Dynamic(Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] dynamics,
+                                 Cont[out Double Clock] clock,
                                  Room r1,
                                  Room r2)
     override Int propagate()
@@ -44,7 +44,7 @@ class Controller extends Dynamic(Cont[In Double T_room1, In Double T_room2, In D
         return 0;
     end
 end
-class InnerWall extends Wall(Cont[In Double T_room1, In Double T_room2, Out Double h_wall] dynamics, Room left, Room right)
+class InnerWall extends Wall(Cont[in Double T_room1, in Double T_room2, out Double h_wall] dynamics, Room left, Room right)
     override Int propagate()
             this.dynamics.T_room1   := this.left.dynamics.T_room;
             this.dynamics.T_room2   := this.right.dynamics.T_room;
@@ -58,7 +58,7 @@ class InnerWall extends Wall(Cont[In Double T_room1, In Double T_room2, Out Doub
         return this.dynamics.h_wall;
     end
 end
-class OuterWall1 extends Wall(Cont[In Double T_room1, In Double T_outside, Out Double h_wall] dynamics, Room inner, Outside outside)
+class OuterWall1 extends Wall(Cont[in Double T_room1, in Double T_outside, out Double h_wall] dynamics, Room inner, Outside outside)
     override Int propagate()
             this.dynamics.T_room1   := this.inner.dynamics.T_room;
             this.dynamics.T_outside := this.outside.temp;
@@ -72,7 +72,7 @@ class OuterWall1 extends Wall(Cont[In Double T_room1, In Double T_outside, Out D
         return 0;
     end
 end
-class OuterWall2 extends Wall(Cont[In Double T_room2, In Double T_outside, Out Double h_wall] dynamics, Room inner, Outside outside)
+class OuterWall2 extends Wall(Cont[in Double T_room2, in Double T_outside, out Double h_wall] dynamics, Room inner, Outside outside)
     override Int propagate()
             this.dynamics.T_room2   := this.inner.dynamics.T_room;
             this.dynamics.T_outside := this.outside.temp;
@@ -88,15 +88,15 @@ class OuterWall2 extends Wall(Cont[In Double T_room2, In Double T_outside, Out D
 end
 
 main
-    Cont[In Double T_room1, In Double T_room2, Out Double h_wall] i := simulate("examples\House\fmus\InnerWall.fmu");
-    Cont[In Double T_room1, In Double T_outside, Out Double h_wall] o1 := simulate("examples\House\fmus\OuterWall1.fmu");
-    Cont[In Double T_room2, In Double T_outside, Out Double h_wall] o2 := simulate("examples\House\fmus\OuterWall2.fmu");
-    Cont[In Double h_InnerWall, In Double h_OuterWall, In Double h_powerHeater, Out Double T_room] r1 := simulate("examples\House\fmus\Room1.fmu");
+    Cont[in Double T_room1, in Double T_room2, out Double h_wall] i := simulate("examples\House\fmus\InnerWall.fmu");
+    Cont[in Double T_room1, in Double T_outside, out Double h_wall] o1 := simulate("examples\House\fmus\OuterWall1.fmu");
+    Cont[in Double T_room2, in Double T_outside, out Double h_wall] o2 := simulate("examples\House\fmus\OuterWall2.fmu");
+    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r1 := simulate("examples\House\fmus\Room1.fmu");
     r1.role := "room1";
-    Cont[In Double h_InnerWall, In Double h_OuterWall, In Double h_powerHeater, Out Double T_room] r2 := simulate("examples\House\fmus\Room2.fmu");
+    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r2 := simulate("examples\House\fmus\Room2.fmu");
     r2.role := "room2";
-    Cont[In Double T_room1, In Double T_room2, In Double T_clock, Out Double h_room1, Out Double h_room2] ctrl := simulate("examples\House\fmus\TempController.fmu");
-    Cont[Out Double Clock] cl := simulate("examples\House\fmus\Clock.fmu", Reset := 100);
+    Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] ctrl := simulate("examples\House\fmus\TempController.fmu");
+    Cont[out Double Clock] cl := simulate("examples\House\fmus\Clock.fmu", Reset := 100);
 
 
     Outside outside1 := new Outside(5.3);

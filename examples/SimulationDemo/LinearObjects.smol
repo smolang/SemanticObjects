@@ -1,6 +1,6 @@
 
 
-class WrappedSimulator(Cont[In Int inPort, Out Int outPort, Out Int leak] content) end
+class WrappedSimulator(Cont[in Int inPort, out Int outPort, out Int leak] content) end
 
 class Connection(WrappedSimulator from, WrappedSimulator to)
     Int propagate()
@@ -44,8 +44,8 @@ class CoSim(List<Connection> list, List<WrappedSimulator> sims)
 end
 
 main
-    Cont[In Int inPort, Out Int outPort, Out Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
-    Cont[In Int inPort, Out Int outPort, Out Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
+    Cont[in Int inPort, out Int outPort, out Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
+    Cont[in Int inPort, out Int outPort, out Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
     WrappedSimulator s1 := new WrappedSimulator(de1);
     WrappedSimulator s2 := new WrappedSimulator(de2);
     Connection c := new Connection(s1, s2);
