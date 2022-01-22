@@ -1,7 +1,7 @@
 main
 
-    Cont[; Double value] system := simulate("examples/Shadow/Realsys.fmu", iValue := 2, slope := 1);
-    Cont[; Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := 2, slope := 1);
+    Cont[out Double value] system := simulate("examples/Shadow/Realsys.fmu", iValue := 2, slope := 1);
+    Cont[out Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := 2, slope := 1);
 
     Int i := 0;
     while i <= 200 do

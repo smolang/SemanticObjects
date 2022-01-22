@@ -1,19 +1,19 @@
 class SuccessClass()
     Int start()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
-        Cont[Double ra, Double rb; ] fmu2 := simulate("src/test/resources/adder.fmu");
-        Cont[Double rb; Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
-        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
-        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb ] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double rb, out Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
+        Cont[] fmu4 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
         return 1;
     end
 
     Int assign()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
-        Cont[Double ra, Double rb; ] fmu2 := simulate("src/test/resources/adder.fmu");
-        Cont[Double rb; Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
-        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
-        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double rb, out Double rc] fmu3 := simulate("src/test/resources/adder.fmu");
+        Cont[] fmu4 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu5 := simulate("src/test/resources/adder.fmu", ra := 0.0);
         fmu2 := fmu1;
         fmu3 := fmu1;
         fmu4 := fmu1;
@@ -24,38 +24,38 @@ class SuccessClass()
     end
 
     Int portTest()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double dd := fmu1.port("rc");
         fmu1.port("ra") := 2.0;
         return 1;
     end
 
     Int fieldfail1()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double g := fmu1.ra;
     end
     Int fieldfail2()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         fmu1.rc := 1.0;
     end
     Int fieldfail3()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         fmu1.rc := 1;
     end
     Int fieldfail4()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         fmu1.rd := 1;
     end
     Int fieldfail5()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double dd := fmu1.rd;
     end
     Int fieldfail6()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
         Double dd := fmu1.port("rd");
     end
     Int extra(String str, Double param)
-        Cont[;] fmu4 := simulate("src/test/resources/adder.fmu");
+        Cont[] fmu4 := simulate("src/test/resources/adder.fmu");
         fmu4.role := str;
         fmu4.pseudoOffset := param;
         String read := fmu4.role;
@@ -66,31 +66,31 @@ end
 
 class FailClass()
     Int fail1()
-        Cont[Int ra, Int rb; Int rc] fmu1 := simulate("src/test/resources/adder.fmu"); //wrong type
+        Cont[in Int ra, in Int rb, out Int rc] fmu1 := simulate("src/test/resources/adder.fmu"); //wrong type
         return 1;
     end
     Int fail2()
-        Cont[Double rc; Double ra, Double rb] fmu5 := simulate("src/test/resources/adder.fmu"); //wrong order
+        Cont[in Double rc, out Double ra, out Double rb] fmu5 := simulate("src/test/resources/adder.fmu"); //wrong order
         return 1;
     end
     Int fail3()
-        Cont[Double ra, Double rb; Double rc] fmu5 := simulate("src/test/resources/adder.fmu", rc := 0.0); //inits output
+        Cont[in Double ra, in Double rb, out Double rc] fmu5 := simulate("src/test/resources/adder.fmu", rc := 0.0); //inits output
         return 1;
     end
     Int fail4()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
-        Cont[Int ia, Int ib; Int ic] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Int ia, in Int ib, out Int ic] fmu2 := simulate("src/test/resources/adder.fmu");
         fmu2 := fmu1;
         return 1;
     end
     Int fail5()
-        Cont[Double ra, Double rb; Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
-        Cont[;] fmu2 := simulate("src/test/resources/adder.fmu");
+        Cont[in Double ra, in Double rb, out Double rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[] fmu2 := simulate("src/test/resources/adder.fmu");
         fmu1 := fmu2;
         return 1;
     end
     Int fail6()
-        Cont[Int rb; Int rc] fmu1 := simulate("src/test/resources/adder.fmu");
+        Cont[in Int rb, out Int rc] fmu1 := simulate("src/test/resources/adder.fmu");
         return 1;
     end
 end

@@ -83,6 +83,11 @@ FMU : 'Cont';
 PORT : 'port';
 SPARQLMODE : 'SPARQL';
 INFLUXMODE : 'INFLUXDB';
+// Note that the IN, OUT constants are also used in
+// TypeChecker.kt:translateType in the FMU branch; adapt strings there if
+// changing the syntax here
+IN : 'in';
+OUT : 'out';
 
 //Names etc.
 fragment DIG : [0-9];
@@ -166,11 +171,13 @@ expression :      THIS                           # this_expression
 
 type : NAME                                                    #simple_type
      | NAME LT typelist GT                                     #nested_type
-     | FMU OBRACK in=paramList? SEMI out=paramList? CBRACK     #fmu_type
+     | FMU OBRACK fmuParamList? CBRACK                         #fmu_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
+fmuparam : direction=(IN | OUT) param;
+fmuParamList : fmuparam (COMMA fmuparam)*;
 fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;

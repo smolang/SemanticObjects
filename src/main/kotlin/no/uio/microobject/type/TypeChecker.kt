@@ -51,9 +51,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     ComposedType(lead, ctx.typelist().type().map { translateType(it, className, generics) })
                 }
                 is WhileParser.Fmu_typeContext -> {
-                    val ins = if(ctx.`in` != null) ctx.`in`.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    // Here we compare against literal strings "in", "out"; if
+                    // the grammar is changed, adapt the two `filter`
+                    // expressions below accordingly.
+                    val ins = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "in" }.map { Pair(it.param().NAME().text, translateType(it.param().type(), className, generics)) }
                     else emptyList()
-                    val outs = if(ctx.out != null) ctx.out.param().map { Pair(it.NAME().text, translateType(it.type(), className, generics)) }
+                    val outs = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "out" }.map { Pair(it.param().NAME().text, translateType(it.param().type(), className, generics)) }
                     else emptyList()
                     SimulatorType(ins,outs)
                 }

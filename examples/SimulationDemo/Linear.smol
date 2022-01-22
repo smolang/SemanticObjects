@@ -1,6 +1,6 @@
 main
-    Cont[; Int outPort, Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
-    Cont[Int inPort; Int outPort, Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
+    Cont[out Int outPort, out Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
+    Cont[in Int inPort, out Int outPort, out Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
     Int i := 0;
     while(i <= 50) do
         Int leak := de1.leak;
