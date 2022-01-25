@@ -51,20 +51,30 @@
      "super" "destroy" "abstract"
      "class" "extends" "rule" "override" "main"
      "private" "protected" "inferprivate" "inferprotected"
+     "port"
+     "in" "out"
       )
    'words)
   "List of SMOL keywords.")
 
 (defconst smol-constants
   (regexp-opt
-   '("True" "False" "null" "this" "Cont")
+   '("True" "False" "null" "this" "unit")
    'words)
   "List of SMOL constants.")
+
+(defconst smol-types
+  ;; See end of `Types.kt'
+  (regexp-opt
+   '("Int" "Boolean" "String" "Double" "Object" "Null" "Unit" "Cont")
+   'words)
+  "List of SMOL type names.")
 
 (defvar smol-font-lock-defaults
   (list
    (cons smol-keywords font-lock-keyword-face)
-   (cons smol-constants font-lock-constant-face))
+   (cons smol-constants font-lock-constant-face)
+   (cons smol-types font-lock-type-face))
   "Font lock information for SMOL.")
 
 (define-derived-mode smol-mode prog-mode "SMOL"
