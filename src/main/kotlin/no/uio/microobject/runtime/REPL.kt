@@ -45,15 +45,12 @@ class REPL(private val settings: Settings) {
 
     fun command(str: String, param: String): Boolean {
         if (str == "help") {
-            for (cmd in commands.values.toSet().sortedBy { it.name })
-                print("${cmd.name}\n\t- ${cmd.help}")
             for (cmd in commands.values.distinct()) {
-                print("${cmd.name}\t\t- ${cmd.help}")
-                if (cmd.requiresParameter)
-                    print(", parameter: ${cmd.parameterHelp}")
-                println()
+                println(String.format("%-11s - %s", cmd.name, cmd.help))
+                if (cmd.requiresParameter) {
+                    println(String.format("%14s- parameter: %s", "", cmd.parameterHelp))
+                }
             }
-            println("exit\t\t- exit the interactive shell")
         }else if (interpreter == null && str != "read" && str != "reada" && str != "exit"){
             printRepl("No file loaded. Please \"read\" a file to continue.")
         } else if (commands.containsKey(str)) {
