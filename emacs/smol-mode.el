@@ -1,4 +1,40 @@
 ;;; smol-mode.el --- Major mode for the Smol language -*- lexical-binding: t; -*-
+;; Copyright (C) 2021-2022  Rudolf Schlatte
+
+;; Author: Rudi Schlatte <rudi@constantly.at>
+;; URL: https://github.com/Edkamb/SemanticObjects/tree/master/emacs
+;; Version: 1.0
+;; Package-Requires: ((emacs "27.1"))
+;; Keywords: languages
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, version 3.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Commentary:
+
+;; A major mode for editing files for the SMOL language.
+;;
+
+;;; Customization
+(defgroup smol nil
+  "Major mode for editing files in the SMOL language."
+  :group 'languages)
+
+(defcustom smol-jar-file "build/libs/MicroObjects-0.2-all.jar"
+  "The jar file containing the SMOL interpreter."
+  :type '(file :must-match t)
+  :group 'smol
+  :risky t)
+
 
 (defvar smol-mode-syntax-table (copy-syntax-table)
   "Syntax table for `smol-mode'.")
@@ -38,7 +74,42 @@
               comment-start "//"
               comment-end ""
               comment-start-skip "//+\\s-*")
-  (setq font-lock-defaults (list 'smol-font-lock-defaults)))
+  (setq font-lock-defaults (list 'smol-font-lock-defaults))
+  (define-key smol-mode-map (kbd "C-c C-c")
+    'run-smol))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.smol\\'" . smol-mode))
+
+;; The REPL
+
+(defvar smol--inferior-smol-buffer nil
+  "The buffer running the SMOL REPL.")
+
+(define-derived-mode inferior-smol-mode
+  comint-mode "inferior-smol"
+  "Major mode for running the SMOL REPL.")
+
+;;;###autoload
+(defun run-smol ()
+  "Start an inferior SMOL REPL.
+If a smol repl is already running, switch to its buffer."
+  (interactive)
+  (if (comint-check-proc smol--inferior-smol-buffer)
+      (pop-to-buffer smol--inferior-smol-buffer)
+    (when (buffer-live-p smol--inferior-smol-buffer)
+      (kill-buffer smol--inferior-smol-buffer))
+    (setq smol--inferior-smol-buffer
+          (make-comint "SMOL" "java" nil "-jar" smol-jar-file))
+    (pop-to-buffer smol--inferior-smol-buffer)
+    (inferior-smol-mode)
+    (ansi-color-for-comint-mode-on)
+    ;; (set (make-local-variable 'compilation-error-regexp-alist)
+    ;;      smol-compilation-regexp-alist)
+    ;; (compilation-shell-minor-mode 1)
+    (set-process-query-on-exit-flag
+     (get-buffer-process smol--inferior-smol-buffer)
+     nil)))
+
+(provide 'smol-mode)
+;;; smol-mode.el ends here
