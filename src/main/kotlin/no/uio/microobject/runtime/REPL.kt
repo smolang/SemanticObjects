@@ -274,6 +274,7 @@ class REPL(private val settings: Settings) {
             parameterHelp = "a .smol expression",
             requiresParameter = true,
         )
+        commands["heapsize"] = Command("heapsize", this, { printRepl( (interpreter!!.heap.count()).toString()  ); false }, "prints number of objects in heap.")
     }
 
     fun terminate() {
