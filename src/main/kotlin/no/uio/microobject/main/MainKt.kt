@@ -121,8 +121,8 @@ class Main : CliktCommand() {
             val reader = LineReaderBuilder.builder().build()
             do {
                 val next = reader.readLine("MO> ") ?: break
-                val splits = next.split(" ", limit = 2)
-                val left = if(splits.size == 1) "" else splits[1]
+                val splits = next.trim().split(" ", limit = 2)
+                val left = if(splits.size == 1) "" else splits[1].trim()
             } while (!repl.command(splits.first(), left))
         }else if(replay == null){
             repl.runAndTerminate() //command("auto", "");
