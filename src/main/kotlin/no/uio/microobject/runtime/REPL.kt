@@ -178,6 +178,73 @@ class REPL(private val settings: Settings) {
         commands["step"] = step
         commands["s"] = step
 
+        commands["guards"] = Command(
+            "guards",
+            this,
+            { str ->
+                val p1 = listOf("heap", "staticTable")
+                val p2 = listOf("true", "false")
+                val p: List<String> = str.replace("\\s+".toRegex(), " ").trim().split(" ")
+                if (p.size != 2) { printRepl("\n" + "This command requires exactly two parameters.") }
+                else {
+                    if  (!p1.contains(p[0])) { printRepl("\nFirst parameter must one of: $p1") }
+                    if  (!p2.contains(p[1])) { printRepl("\nSecond parameter must one of: $p2") }
+                    if (p1.contains(p[0]) && p2.contains(p[1])) {
+                        interpreter!!.tripleManager.guards[p[0]] = (p[1] == "true")
+                        printRepl("Guard clauses in ${p[0]} set to: ${p[1]}")
+                    }
+                }
+                false
+            },
+            "Enables/disables guard clauses when searching for triples in the heap or the static table",
+            parameterHelp = "[heap|staticTable] [true|false]",
+            requiresParameter = true
+        )
+
+        commands["source"] = Command(
+            "source",
+            this,
+            { str ->
+                val p1 = listOf("heap", "staticTable", "vocabularyFile", "externalOntology")
+                val p2 = listOf("true", "false")
+                val p: List<String> = str.replace("\\s+".toRegex(), " ").trim().split(" ")
+                if (p.size != 2) { printRepl("\n" + "This command requires exactly two parameters.") }
+                else {
+                    if  (!p1.contains(p[0])) { printRepl("\nFirst parameter must one of: $p1") }
+                    if  (!p2.contains(p[1])) { printRepl("\nSecond parameter must one of: $p2") }
+                    if (p1.contains(p[0]) && p2.contains(p[1])) {
+                        interpreter!!.tripleManager.sources[p[0]] = (p[1] == "true")
+                        printRepl("Use source ${p[0]} set to ${p[1]}")
+                    }
+                }
+                false
+            },
+            "Set which sources to include (true) or exclude (false) when querying",
+            parameterHelp = "[heap|staticTable|vocabularyFile|externalOntology] [true|false]",
+            requiresParameter = true
+        )
+
+        commands["reasoner"] = Command(
+            "reasoner",
+            this,
+            { str ->
+                val allowedParameters = listOf("off", "rdfs", "owl")
+                val p: List<String> = str.replace("\\s+".toRegex(), " ").trim().split(" ")
+                if (p.size != 1) { printRepl("\n" + "This command requires exactly one parameter.") }
+                else {
+                    if  (!allowedParameters.contains(p[0])) { printRepl("\nParameter must one of: $allowedParameters") }
+                    else {
+                        interpreter!!.tripleManager.reasoner = p[0]
+                        printRepl("Reasoner changed to: ${p[0]}")
+                    }
+                }
+                false
+            },
+            "Specify which reasoner to use, or turn it off",
+            parameterHelp = "[off|rdfs|owl]",
+            requiresParameter = true
+        )
+
         val query =  Command(
             "query",
             this,

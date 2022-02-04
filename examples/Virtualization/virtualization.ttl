@@ -1,0 +1,16 @@
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix run: <https://github.com/Edkamb/SemanticObjects/Run#>.
+
+run:test rdf:type owl:Class .
+
+prog:Student rdfs:subClassOf prog:Person .
+
+domain:triggeredBy rdf:type owl:ObjectProperty ;
+                   rdfs:subPropertyOf owl:topObjectProperty ;
+                   rdfs:domain domain:Process ;
+                   rdfs:range domain:Stratigraphic_Layer .
+
+
+
+

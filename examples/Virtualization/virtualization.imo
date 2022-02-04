@@ -1,0 +1,25 @@
+auto
+
+reasoner rdfs
+reasoner owl
+reasoner off
+
+guards heap true
+guards staticTable true
+
+source staticTable false
+source heap false
+source externalOntology false
+source vocabularyFile true
+
+# return three triples from heap
+# query SELECT * WHERE {run:obj1 ?b ?c.}
+
+# return something from static table
+
+# query SELECT * WHERE {?a rdf:type ?c.}
+# query SELECT (count(*) as ?count) WHERE {?a rdf:type ?c.}
+# query SELECT (count(*) as ?count) WHERE {?a ?b ?c.}
+# query SELECT * WHERE {?a ?b ?c.}
+
+exit

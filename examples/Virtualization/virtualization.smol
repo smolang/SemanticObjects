@@ -1,0 +1,8 @@
+class Person(Int id, String name) end
+
+class Student extends Person(Int studentId) end
+
+main
+    Person p1 := new Person(12, "Alice");
+    Student s1 := new Student(13, "Bob", 1001);
+end
