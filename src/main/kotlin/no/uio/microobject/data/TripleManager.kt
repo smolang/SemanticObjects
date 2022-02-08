@@ -43,14 +43,10 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     val sources: HashMap<String,Boolean> =  hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "externalOntology" to (settings.background != ""))  // Which sources are used when getCompleteModel is called
     var reasoner: String = "owl"  // Must be either off, rdfs or owl
 
-    
-    private fun getReasoner(): Reasoner? {
-        when (reasoner) {
-            "off" -> { return null }
-            "owl" -> { return ReasonerRegistry.getOWLReasoner() }
-            "rdfs" -> { return ReasonerRegistry.getRDFSReasoner() }
-        }
-        return null
+    // Main access point
+    fun getModel(): Model {
+        return getCompleteModelMultiGraph()
+//        return getCompleteModel()
     }
 
     // Should eventually be removed
@@ -158,7 +154,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     }
 
     // Using ONT-API to return the model corresponding to the complete ontology
-    fun getCompleteModel(): Model {
+    private fun getCompleteModel(): Model {
         val ontology: OWLOntology = getCompleteOntology()
         val model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
 
@@ -195,8 +191,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
 
     // Model merging the graphs of the included sources.
-    fun getCompleteModelMultiGraph(): Model {
-        var includedGraphs = mutableListOf<Graph>()
+    private fun getCompleteModelMultiGraph(): Model {
+        val includedGraphs = mutableListOf<Graph>()
         if (sources.getOrDefault("staticTable", false)) { includedGraphs.add(StaticTableGraph()) }
         if (sources.getOrDefault("heap", false)) { includedGraphs.add(HeapGraph(interpreter!!)) }
         if (sources.getOrDefault("vocabularyFile", false)) { includedGraphs.add(getVocabularyModel().graph) }
@@ -208,10 +204,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return ModelFactory.createInfModel(reasoner, unionModel)
     }
 
-    // Return the graph corresponding to the complete model
-    // TODO: replace this with an updated model.
-    fun getCompleteGraph(): Graph {
-        return getCompleteModel().graph
+    private fun getReasoner(): Reasoner? {
+        when (reasoner) {
+            "off" -> { return null }
+            "owl" -> { return ReasonerRegistry.getOWLReasoner() }
+            "rdfs" -> { return ReasonerRegistry.getRDFSReasoner() }
+        }
+        return null
     }
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.

@@ -116,9 +116,7 @@ class Interpreter(
         for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
         queryWithPrefixes += str
 
-//        val model = tripleManager.getCompleteModel()  // Old complete model using add/union and ontapi for the ontology. Not possible to configure
-        val model = tripleManager.getCompleteModelMultiGraph()  // Configurable model where we merge on graph level. NB! Generic rule engine based on rules from the external ontology is not used.
-
+        val model = tripleManager.getModel()
 
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
@@ -143,7 +141,7 @@ class Interpreter(
 
     // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
     internal fun dump() {
-        val model = tripleManager.getCompleteModel()
+        val model = tripleManager.getModel()
         File(settings.outpath).mkdirs()
         File("${settings.outpath}/output.ttl").createNewFile()
         model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
@@ -392,7 +390,7 @@ class Interpreter(
                 newFile.writeText(settings.prefixes() + "\n"+ settings.getHeader() + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
                 newFile.appendText(file.readText())
                 val shapesGraph = RDFDataMgr.loadGraph("${settings.outpath}/shape.ttl")
-                val dataGraph = tripleManager.getCompleteModelMultiGraph().graph
+                val dataGraph = tripleManager.getModel().graph
 
                 val shapes: Shapes = Shapes.parse(shapesGraph)
 
