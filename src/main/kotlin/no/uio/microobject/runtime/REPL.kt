@@ -25,7 +25,8 @@ class Command(
     val command: (String) -> Boolean, // returns `true` if REPL should exit
     val help: String,
     val requiresParameter: Boolean = false,
-    val parameterHelp: String = ""
+    val parameterHelp: String = "",
+    val requiresFile: Boolean = true
 ){
     fun execute(param: String): Boolean {
         if (requiresParameter && param == "") {
@@ -57,20 +58,25 @@ class REPL(private val settings: Settings) {
                 }
             }
             result = false
-        }else if (interpreter == null && str != "read" && str != "reada" && str != "exit" && str != "verbose"){
-            printRepl("No file loaded. Please \"read\" a file to continue.")
-            result = false
-        } else if (commands.containsKey(str)) {
-            result = try{
-                commands[str]!!.execute(param)
-            } catch (e: Exception) {
-                printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
-                e.printStackTrace()
-                false
-            }
         } else {
-            printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")
-            result = false
+            val command = commands[str]
+            if (command == null) {
+                printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")
+                result = false
+            } else {
+                if (interpreter == null && command.requiresFile){
+                    printRepl("No file loaded. Please \"read\" a file to continue.")
+                    result = false
+                } else {
+                    result = try {
+                        command.execute(param)
+                    } catch (e: Exception) {
+                        printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
+                        e.printStackTrace()
+                        false
+                    }
+                }
+            }
         }
         if (settings.verbose && result == false) {
             val elapsed_time = Duration.between(start, LocalTime.now())
@@ -126,12 +132,13 @@ class REPL(private val settings: Settings) {
     }
 
     private fun initCommands() {
-        commands["exit"] = Command("exit", this, { true }, "exits the shell")
+        commands["exit"] = Command("exit", this, { true }, "exits the shell", requiresFile=false)
         commands["read"] = Command(
             "read",
             this,
             { str -> initInterpreter(str); false },
             "reads a file",
+            requiresFile=false,
             parameterHelp = "Path to a .smol file",
             requiresParameter = true
         )
@@ -141,7 +148,8 @@ class REPL(private val settings: Settings) {
             { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
             "reads a file and runs auto",
             parameterHelp = "Path to a .smol file",
-            requiresParameter = true
+            requiresParameter = true,
+            requiresFile=false
         )
         commands["info"] = Command(
             "info",
@@ -299,6 +307,7 @@ class REPL(private val settings: Settings) {
             "Sets verbose output to on or off",
             parameterHelp = "`true` or `on` to switch on verbose output, `false` or `off` to switch it off",
             requiresParameter = true,
+            requiresFile=false
         )
     }
 
