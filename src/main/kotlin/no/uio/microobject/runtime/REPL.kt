@@ -4,6 +4,8 @@ package no.uio.microobject.runtime
 
 import java.io.File
 import java.util.*
+import java.time.LocalTime
+import java.time.Duration
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.Expression
@@ -20,7 +22,7 @@ import org.semanticweb.owlapi.reasoner.OWLReasoner
 class Command(
     val name: String,
     private val repl: REPL,
-    val command: (String) -> Boolean,
+    val command: (String) -> Boolean, // returns `true` if REPL should exit
     val help: String,
     val requiresParameter: Boolean = false,
     val parameterHelp: String = ""
@@ -44,6 +46,9 @@ class REPL(private val settings: Settings) {
     }
 
     fun command(str: String, param: String): Boolean {
+        // returns `true` if REPL should exit
+        val start = LocalTime.now()
+        var result: Boolean
         if (str == "help") {
             for (cmd in commands.values.distinct()) {
                 println(String.format("%-11s - %s", cmd.name, cmd.help))
@@ -51,10 +56,12 @@ class REPL(private val settings: Settings) {
                     println(String.format("%14s- parameter: %s", "", cmd.parameterHelp))
                 }
             }
-        }else if (interpreter == null && str != "read" && str != "reada" && str != "exit"){
+            result = false
+        }else if (interpreter == null && str != "read" && str != "reada" && str != "exit" && str != "verbose"){
             printRepl("No file loaded. Please \"read\" a file to continue.")
+            result = false
         } else if (commands.containsKey(str)) {
-            return try{
+            result = try{
                 commands[str]!!.execute(param)
             } catch (e: Exception) {
                 printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
@@ -63,8 +70,13 @@ class REPL(private val settings: Settings) {
             }
         } else {
             printRepl("Unknown command $str. Enter \"help\" to get a list of available commands.")
+            result = false
         }
-        return false
+        if (settings.verbose && result == false) {
+            val elapsed_time = Duration.between(start, LocalTime.now())
+            printRepl("Evaluation took ${elapsed_time.getSeconds()}.${elapsed_time.getNano()} seconds")
+        }
+        return result
     }
     fun dump() {
         interpreter!!.dump()
@@ -271,6 +283,21 @@ class REPL(private val settings: Settings) {
             },
             "evaluates a .smol expression in the current frame",
             parameterHelp = "a .smol expression",
+            requiresParameter = true,
+        )
+        commands["verbose"] = Command(
+            "verbose",
+            this,
+            { str ->
+                if (str == "on" || str == "true") {
+                    settings.verbose = true
+                } else if (str == "off" || str == "false") {
+                    settings.verbose = false
+                }
+                false
+            },
+            "Sets verbose output to on or off",
+            parameterHelp = "`true` or `on` to switch on verbose output, `false` or `off` to switch it off",
             requiresParameter = true,
         )
     }

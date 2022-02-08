@@ -12,7 +12,7 @@ import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
 
-data class Settings(val verbose : Boolean,      //Verbosity
+data class Settings(var verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
                     val outpath : String,       //path of temporary outputs
                     val background : String,    //owl background knowledge
