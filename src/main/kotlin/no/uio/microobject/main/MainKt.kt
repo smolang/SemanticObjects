@@ -69,7 +69,7 @@ class Main : CliktCommand() {
 
     private val back         by option("--back",      "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
     private val backrules    by option("--backrules", "-br", help="path to a file that contains derivation rules in Jena syntax.").path()
-    private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("http://github.com/edkamb/SemanticObjects/ontologies/default#")
+    private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
     private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
     private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))

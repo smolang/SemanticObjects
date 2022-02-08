@@ -9,7 +9,7 @@ auto
 # query SELECT (count(*) as ?count) WHERE {?a ?b ?c. }
 # query SELECT * WHERE {?a ?b ?c. }
 # query SELECT * WHERE {?a a owl:Class. }
-# query SELECT * WHERE {<http://github.com/edkamb/SemanticObjects/ontologies/default#model0> a prog:Person. }
+# query SELECT * WHERE {<https://github.com/Edkamb/SemanticObjects/ontologies/default#model0> a prog:Person. }
 
 
 # Dump state to output.ttl

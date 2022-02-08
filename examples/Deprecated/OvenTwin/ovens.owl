@@ -1,4 +1,4 @@
-@prefix domain: <http://github.com/edkamb/SemanticObjects/ontologies/oven#> .
+@prefix domain: <https://github.com/Edkamb/SemanticObjects/ontologies/oven#> .
 
 domain:ACACInst rdf:type owl:Class ;
         owl:equivalentClass [owl:intersectionOf (
