@@ -55,13 +55,13 @@ THIS: 'this';
 UNIT: 'unit';
 
 //Keywords: operators
-EQ : '=';
-NEQ : '<>';
+EQ : '==';
+NEQ : '!=';
 LT : '<';
 GT : '>';
 LEQ : '<=';
 GEQ : '>=';
-ASS : ':=';
+ASS : '=';
 PLUS : '+';
 MULT : '*';
 MINUS : '-';

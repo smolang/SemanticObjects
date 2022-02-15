@@ -16,7 +16,7 @@ end
 
 class ImplConnection extends Connection (OutPort<Double> from, InPort<Double> to)
     override Int propagate()
-        Double val := this.from.get();
+        Double val = this.from.get();
         this.to.write(val);
         return 0;
     end
@@ -25,30 +25,30 @@ end
 //Jacobi master algorithm: propagate through all connections, advance time for all FMUs at once
 class CoSim(List<Connection> list, List<Cont[]> sims, Double stepSize)
     Int round()
-        Int i := 0;
-        if this.list = null then return i; end
-        Int length := this.list.length();
+        Int i = 0;
+        if this.list == null then return i; end
+        Int length = this.list.length();
         while i < length do
-            Connection c := this.list.get(i);
+            Connection c = this.list.get(i);
             c.propagate();
-            i := i+1;
+            i = i+1;
         end
-        i := 0;
-        if this.sims = null then return i; end
-        length := this.sims.length();
+        i = 0;
+        if this.sims == null then return i; end
+        length = this.sims.length();
         while i < length do
-            Cont[] de := this.sims.get(i);
+            Cont[] de = this.sims.get(i);
             de.tick(this.stepSize);
-            i := i + 1;
+            i = i + 1;
         end
         return i;
     end
 
     Int execute(Int steps)
-        Int i := 1;
+        Int i = 1;
         while( i <= steps ) do
             this.round();
-            i := i+1;
+            i = i+1;
         end
         return i;
     end
@@ -62,32 +62,32 @@ class PredatorOutPort extends OutPort<Double>(Cont[in Double x, out Double y] y)
     override Double get() return this.y.y; end
 end
 class PreyInPort extends InPort<Double>(Cont[in Double y, out Double x] y)
-    override Boolean write(Double t) this.y.y := t; return True; end
+    override Boolean write(Double t) this.y.y = t; return True; end
 end
 class PredatorInPort extends InPort<Double>(Cont[in Double x, out Double y] x)
-    override Boolean write(Double t) print(t); this.x.x := t; return True; end
+    override Boolean write(Double t) print(t); this.x.x = t; return True; end
 end
 
 main
-    Cont[in Double y, out Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
-    Cont[in Double x, out Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
-    PreyOutPort preyOut := new PreyOutPort(prey);
-    PredatorOutPort predOut := new PredatorOutPort(predator);
-    PreyInPort preyIn := new PreyInPort(prey);
-    PredatorInPort predIn := new PredatorInPort(predator);
-    Connection c1 := new ImplConnection(preyOut, predIn);
-    Connection c2 := new ImplConnection(predOut, preyIn);
-    List<Cont[]> fmus := new List<Cont[]>(prey, null);
-    fmus := new List<Cont[]>(predator, fmus);
-    List<Connection> cons := new List<Connection>(c1, null);
-    cons := new List<Connection>(c2, cons);
-    CoSim sim := new CoSim(cons, fmus, 0.01);
+    Cont[in Double y, out Double x] prey = simulate("examples/SimulationDemo/Prey.fmu", y = 10);
+    Cont[in Double x, out Double y] predator = simulate("examples/SimulationDemo/Predator.fmu", x = 10);
+    PreyOutPort preyOut = new PreyOutPort(prey);
+    PredatorOutPort predOut = new PredatorOutPort(predator);
+    PreyInPort preyIn = new PreyInPort(prey);
+    PredatorInPort predIn = new PredatorInPort(predator);
+    Connection c1 = new ImplConnection(preyOut, predIn);
+    Connection c2 = new ImplConnection(predOut, preyIn);
+    List<Cont[]> fmus = new List<Cont[]>(prey, null);
+    fmus = new List<Cont[]>(predator, fmus);
+    List<Connection> cons = new List<Connection>(c1, null);
+    cons = new List<Connection>(c2, cons);
+    CoSim sim = new CoSim(cons, fmus, 0.01);
     sim.execute(20000);
 
-    List<InPort<Double>> ll := access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:ImplConnection_to ?obj}");
-    while ll <> null do
-        InPort<Double> inp := ll.content;
-        ll := ll.next;
+    List<InPort<Double>> ll = access("SELECT ?obj WHERE {?con a prog:ImplConnection. ?con prog:ImplConnection_to ?obj}");
+    while ll != null do
+        InPort<Double> inp = ll.content;
+        ll = ll.next;
         print(inp);
     end
 end

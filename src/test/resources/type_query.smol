@@ -11,41 +11,41 @@ class E extends C () end
 class Test()
 
     Int mSuccess1()
-      List<C> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      List<C> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 
     Int mSuccess2()
-      List<A> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      List<A> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 
     Int mSuccess3()
-      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      List<Object> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 
     Int mSuccess4()
-      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing 1 ]]}");
+      List<Object> l = access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing 1 ]]}");
       return 1;
     end
 
     Int mSuccess5()
-      List<Object> l := access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing %1 ]]}", 1);
+      List<Object> l = access("SELECT ?obj WHERE {?obj prog:C_aCB [ prog:B_aB [ prog:A_sealing %1 ]]}", 1);
       return 1;
     end
 
     Int mFail1()
-      List<B> l := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+      List<B> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
       return 1;
     end
 
    Int mFail2()
-     List<E> ld := access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
+     List<E> ld = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing 1 }");
      return 1;
    end
    Int mFail3()
-     List<List<String>> ld := access("SELECT ?obj WHERE {?obj prog:List_head %1}", 42);
+     List<List<String>> ld = access("SELECT ?obj WHERE {?obj prog:List_head %1}", 42);
      return 1;
    end
 end
@@ -53,7 +53,7 @@ end
 class F(Int i)
      rule Int getI() return this.i; end
      Int nonRule() return this.i; end
-     rule Int errorGet() Int v := this.nonRule(); return v; end
+     rule Int errorGet() Int v = this.nonRule(); return v; end
 end
 
 main

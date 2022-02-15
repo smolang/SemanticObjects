@@ -4,16 +4,16 @@ class WrappedSimulator(Cont[in Int inPort, out Int outPort, out Int leak] conten
 
 class Connection(WrappedSimulator from, WrappedSimulator to)
     Int propagate()
-        Int leak := this.from.content.leak;
+        Int leak = this.from.content.leak;
         if leak >= 10 then
             print("big leak");
-            this.from.content.inPort := 0;
-            this.to.content.inPort := 2;
+            this.from.content.inPort = 0;
+            this.to.content.inPort = 2;
         else
             if leak >= 1 then
                 print("small leak");
-                this.from.content.inPort := 1;
-                this.to.content.inPort := 1;
+                this.from.content.inPort = 1;
+                this.to.content.inPort = 1;
             end
         end
         return leak;
@@ -22,47 +22,47 @@ end
 
 class CoSim(List<Connection> list, List<WrappedSimulator> sims)
     Int round(Int t)
-        Int i := 0;
-        if this.list = null then return i; end
-        Int length := this.list.length();
+        Int i = 0;
+        if this.list == null then return i; end
+        Int length = this.list.length();
         while i < length do
-            Connection c := this.list.get(i);
+            Connection c = this.list.get(i);
             c.propagate();
-            i := i+1;
+            i = i+1;
         end
-        i := 0;
-        if this.sims = null then return i; end
-        length := this.sims.length();
+        i = 0;
+        if this.sims == null then return i; end
+        length = this.sims.length();
         while i < length do
-            WrappedSimulator s := this.sims.get(i);
-            Cont[] de := s.content;
+            WrappedSimulator s = this.sims.get(i);
+            Cont[] de = s.content;
             de.tick(t);
-            i := i + 1;
+            i = i + 1;
         end
         return i;
     end
 end
 
 main
-    Cont[in Int inPort, out Int outPort, out Int leak] de1 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 2);
-    Cont[in Int inPort, out Int outPort, out Int leak] de2 := simulate("examples/SimulationDemo/Linear.fmu", inPort := 0);
-    WrappedSimulator s1 := new WrappedSimulator(de1);
-    WrappedSimulator s2 := new WrappedSimulator(de2);
-    Connection c := new Connection(s1, s2);
-    List<Connection> l := new List<Connection>(c, null);
-    List<WrappedSimulator> sl := new List<WrappedSimulator>(s1, null);
-    List<WrappedSimulator> sl2 := new List<WrappedSimulator>(s2, null);
+    Cont[in Int inPort, out Int outPort, out Int leak] de1 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 2);
+    Cont[in Int inPort, out Int outPort, out Int leak] de2 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 0);
+    WrappedSimulator s1 = new WrappedSimulator(de1);
+    WrappedSimulator s2 = new WrappedSimulator(de2);
+    Connection c = new Connection(s1, s2);
+    List<Connection> l = new List<Connection>(c, null);
+    List<WrappedSimulator> sl = new List<WrappedSimulator>(s1, null);
+    List<WrappedSimulator> sl2 = new List<WrappedSimulator>(s2, null);
     sl.append(sl2);
-    CoSim sim := new CoSim(l, sl);
-    Int i := 0;
+    CoSim sim = new CoSim(l, sl);
+    Int i = 0;
     while(i <= 50) do
         sim.round(1);
-        Int df1 := de1.outPort;
-        Int df2 := de2.outPort;
+        Int df1 = de1.outPort;
+        Int df2 = de2.outPort;
         print("---");
         print(df1);
         print(df2);
-        i := i + 1;
+        i = i + 1;
     end
 end
 

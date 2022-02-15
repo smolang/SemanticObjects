@@ -9,25 +9,25 @@ class B(A a, Int i2) end
 class C(Int j1, Int j2) end
 
 main
-    A a1 := new A(1);
-    A a2 := new A(2);
-    A a3 := new A(1);
-    A a4 := new A(2);
-    B b0 := new B(null, 3);
-    B b1 := new B(a1, 4);
-    B b2 := new B(a2, 5);
-    B b3 := new B(a3, 6);
-    B b4 := new B(a4, 7);
+    A a1 = new A(1);
+    A a2 = new A(2);
+    A a3 = new A(1);
+    A a4 = new A(2);
+    B b0 = new B(null, 3);
+    B b1 = new B(a1, 4);
+    B b2 = new B(a2, 5);
+    B b3 = new B(a3, 6);
+    B b4 = new B(a4, 7);
 
-    List<C> v := construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
-    Int i := 0;
-    Int size := v.length();
+    List<C> v = construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
+    Int i = 0;
+    Int size = v.length();
     while( i < size) do
-        C next := v.get(i);
+        C next = v.get(i);
         print(next.j1);
         print(next.j2);
         print("___");
-        i := i + 1;
+        i = i + 1;
     end
     print(size);
 end

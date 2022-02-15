@@ -6,13 +6,13 @@
 // List implementation copied from another file.
 class <T> List(T content, List<T> next)
     Int length()
-        if this.next = null then return 1;
-        else Int n := this.next.length(); return n + 1;
+        if this.next == null then return 1;
+        else Int n = this.next.length(); return n + 1;
         end
     end
     Int append(List<T> last)
-        if this.next = null then
-            this.next := last;
+        if this.next == null then
+            this.next = last;
         else
             this.next.append(last);
         end
@@ -20,21 +20,21 @@ class <T> List(T content, List<T> next)
     end
 
     T get(Int i)
-        T res := this.content;
+        T res = this.content;
         if i >= 1 then
-            res := this.next.get(i-1);
+            res = this.next.get(i-1);
         end
         return res;
     end
 
     Boolean contains(T element)
-        if this.content = element then
+        if this.content == element then
             return True;
         else
-            if this.next = null then
+            if this.next == null then
                 return False;
             else
-                Boolean res := this.next.contains(element);
+                Boolean res = this.next.contains(element);
                 return res;
             end
         end
@@ -68,7 +68,7 @@ class Person (private Int personId, private String name, private Int birthYear, 
 
     // Testing rule and domain keywords
     rule Int ruleAge()
-        Int res := 2021-this.birthYear;
+        Int res = 2021-this.birthYear;
         return res;
     end
     rule String ruleLastName()
@@ -85,7 +85,7 @@ class Person (private Int personId, private String name, private Int birthYear, 
         return this.height-1.0;
     end
     domain Int domainAge()
-        Int res := 2021-this.birthYear;
+        Int res = 2021-this.birthYear;
         return res;
     end
     domain Double domainHeightMinusOne()
@@ -136,18 +136,18 @@ end
 
 main
     // Short example using while loop
-    Int counter := 2;
+    Int counter = 2;
     while (counter <= 4) do
-        Person a := new Person(13025213498, "Irina", 1952, 1.78);
-        counter := counter + 1;
+        Person a = new Person(13025213498, "Irina", 1952, 1.78);
+        counter = counter + 1;
     end
 
     // The first Person
-    Person alice := new Person(13025213498, "Alice", 1952, 1.78);
-    Int aliceId := alice.getPersonId();
-    Int aliceName := alice.getName();
-    Int aliceBirthYear := alice.getBirthYear();
-    Double aliceHeight := alice.getHeight();
+    Person alice = new Person(13025213498, "Alice", 1952, 1.78);
+    Int aliceId = alice.getPersonId();
+    Int aliceName = alice.getName();
+    Int aliceBirthYear = alice.getBirthYear();
+    Double aliceHeight = alice.getHeight();
     // print("Name, id and birthyear of Alice:");
     // print(aliceName);
     // print(aliceId);
@@ -155,66 +155,66 @@ main
     // print(aliceHeight);
 
     // Departments
-    Department mathDep := new Department(1, "Department of Mathematics");
-    Department csDep := new Department(2, "Department of Computer Science");
+    Department mathDep = new Department(1, "Department of Mathematics");
+    Department csDep = new Department(2, "Department of Computer Science");
 
     // Employees
-    Employee charlie := new Employee(29017413549, "Charlie", 1974, 1.91, 1, mathDep);
-    Employee dave := new Employee(2110195093381, "Dave", 1950, 1.76, 2, csDep);
-    AssociateProfessor ella := new AssociateProfessor(04036204431, "Ella", 1962, 1.86, 3, mathDep);
-    Professor greg := new Professor(05075043523, "Dave", 1950, 1.84, 2, csDep);
+    Employee charlie = new Employee(29017413549, "Charlie", 1974, 1.91, 1, mathDep);
+    Employee dave = new Employee(2110195093381, "Dave", 1950, 1.76, 2, csDep);
+    AssociateProfessor ella = new AssociateProfessor(04036204431, "Ella", 1962, 1.86, 3, mathDep);
+    Professor greg = new Professor(05075043523, "Dave", 1950, 1.84, 2, csDep);
 
     // Courses
-    Course calculus1 := new Course("M1001", "Calculus 1", mathDep, greg);
-    Course calculus2 := new Course("M2001", "Calculus 2", mathDep, charlie);
-    Course linearAlgebra := new Course("M2002", "Linear Algebra", mathDep, charlie);
-    Course discreteMathematics := new Course("M1002", "Discrete Mathematics", mathDep, charlie);
-    Course logic := new Course("M2020", "Logic", mathDep, charlie);
-    Course introToProgramming := new Course("C1001", "Introduction to Programming", csDep, dave);
+    Course calculus1 = new Course("M1001", "Calculus 1", mathDep, greg);
+    Course calculus2 = new Course("M2001", "Calculus 2", mathDep, charlie);
+    Course linearAlgebra = new Course("M2002", "Linear Algebra", mathDep, charlie);
+    Course discreteMathematics = new Course("M1002", "Discrete Mathematics", mathDep, charlie);
+    Course logic = new Course("M2020", "Logic", mathDep, charlie);
+    Course introToProgramming = new Course("C1001", "Introduction to Programming", csDep, dave);
 
     // Students
-    Student bob := new Student(24098845521, "Bob", 1988, 1.77, 1001, True) models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
-    Student eve := new Student(11118694402, "Eve", 1986, 1.66, 1002, False);
-    Student fred := new Student(09058894388, "Fred", 1988, 1.75, 1003, True);
+    Student bob = new Student(24098845521, "Bob", 1988, 1.77, 1001, True) models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
+    Student eve = new Student(11118694402, "Eve", 1986, 1.66, 1002, False);
+    Student fred = new Student(09058894388, "Fred", 1988, 1.75, 1003, True);
 
     // Get and print all Persons (no reasoning)
-    // List<Person> allPersons := access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
-    // Int personLen := allPersons.length();
+    // List<Person> allPersons = access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
+    // Int personLen = allPersons.length();
     // print(personLen);
-    // Int i := 0;
+    // Int i = 0;
     // print("Persons:");
     // while (i < personLen) do
-    //     Person person := allPersons.get(i);
-    //     String personName := person.toString();
+    //     Person person = allPersons.get(i);
+    //     String personName = person.toString();
     //     print(personName);
-    //     i := i+1;
+    //     i = i+1;
     // end
 
     // Get and print all Students (no reasoning)
-    // List<Student> allStudents := access("SELECT ?obj WHERE{ ?obj a prog:Student. }");
-    // Int studentLen := allStudents.length();
+    // List<Student> allStudents = access("SELECT ?obj WHERE{ ?obj a prog:Student. }");
+    // Int studentLen = allStudents.length();
     // print(studentLen);
-    // i := 0;
+    // i = 0;
     // print("Students:");
     // while (i < studentLen) do
-    //     Student student := allStudents.get(i);
-    //     String studentName := student.toString();
+    //     Student student = allStudents.get(i);
+    //     String studentName = student.toString();
     //     print(studentName);
-    //     i := i+1;
+    //     i = i+1;
     // end
 
     // Testing SHACL shapes (with reasoning)
-    // Boolean b := validate("examples/University/university.ttl");
+    // Boolean b = validate("examples/University/university.ttl");
     // print("Check if all lecturers are actually employees:");
     // print(b);
 
 
     // TODO: Get and print (with Hermit reasoning) It complains about my list implementation.
-    // List<Person> m := derive("prog:Banana");
+    // List<Person> m = derive("prog:Banana");
 
 
     // Testing that type checking works by assigning an int to a string variable.
-    String str := 5;
+    String str = 5;
 
 
 end

@@ -6,12 +6,12 @@ end
 
 class Rectangle(Scene scene, Int w, Int h, String name)
     rule Int area()
-        Int s := this.scene.getScale();
+        Int s = this.scene.getScale();
         return s*this.w*this.h;
     end
 end
 
 main
-    Scene sc := new Scene(2);
-    Rectangle r := new Rectangle(sc, 5, 1, "rect1");
+    Scene sc = new Scene(2);
+    Rectangle r = new Rectangle(sc, 5, 1, "rect1");
 end

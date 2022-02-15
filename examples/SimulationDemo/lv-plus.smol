@@ -1,28 +1,28 @@
 main
     //beware: path is relative to interpreter instance, not this file
     //fmus are not uploaded, download them from the MasterSim examples: https://sourceforge.net/projects/mastersim/
-    Cont[in Double y, out Double x] prey := simulate("examples/SimulationDemo/Prey.fmu", y := 10);
-    prey.role := "prey";
-    Cont[in Double x, out Double y] predator := simulate("examples/SimulationDemo/Predator.fmu", x := 10);
-    Int i := 0;
+    Cont[in Double y, out Double x] prey = simulate("examples/SimulationDemo/Prey.fmu", y = 10);
+    prey.role = "prey";
+    Cont[in Double x, out Double y] predator = simulate("examples/SimulationDemo/Predator.fmu", x = 10);
+    Int i = 0;
     while (i <= 1000) do
         prey.tick(0.1);
         predator.tick(0.1);
-        prey.y := predator.y;
-        predator.x := prey.x;
-        i := i+1;
+        prey.y = predator.y;
+        predator.x = prey.x;
+        i = i+1;
     end
-    Double adv := prey.time;
-    prey := simulate("examples/SimulationDemo/Prey.fmu", y := predator.y, x := prey.x);
-    prey.role := "prey";
-    prey.pseudoOffset := adv;
-    i := 0;
+    Double adv = prey.time;
+    prey = simulate("examples/SimulationDemo/Prey.fmu", y = predator.y, x = prey.x);
+    prey.role = "prey";
+    prey.pseudoOffset = adv;
+    i = 0;
     while (i <= 1000) do
-        prey.y := predator.y;
-        predator.x := prey.x;
+        prey.y = predator.y;
+        predator.x = prey.x;
         prey.tick(0.1);
         predator.tick(0.1);
-        i := i+1;
+        i = i+1;
     end
     print("Finished");
 end
