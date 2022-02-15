@@ -6,7 +6,7 @@ class Connector(Boolean inAC, Boolean outAC) end
 class Installation(House house, Oven oven, Connector connector) 
     Boolean output()
         print(this.house.outlet.AC);
-        if(this.connector <> null) then
+        if(this.connector != null) then
             print(this.connector.inAC);
             print(this.connector.outAC);
         end
@@ -14,9 +14,9 @@ class Installation(House house, Oven oven, Connector connector)
         return False;
     end
     Int price() //simulate
-        Int res := 10;
-        if(this.connector.inAC) then res := res + 5; end
-        if(this.connector.outAC) then res := res + 5; end
+        Int res = 10;
+        if(this.connector.inAC) then res = res + 5; end
+        if(this.connector.outAC) then res = res + 5; end
         return res;
     end
 end
@@ -24,20 +24,20 @@ end
 
 class Constructor()
     House getHouse(Int id)
-        Boolean ac := False;
-        if( id >= 10 ) then ac := True; end
+        Boolean ac = False;
+        if( id >= 10 ) then ac = True; end
 
-        Outlet outlet_v := new Outlet(ac);
-        House house_v := new House(outlet_v);
+        Outlet outlet_v = new Outlet(ac);
+        House house_v = new House(outlet_v);
 
         return house_v;
     end
     Oven getOven(Int id)
-        Boolean ac := False;
-        if( id >= 10 ) then ac := True; end
+        Boolean ac = False;
+        if( id >= 10 ) then ac = True; end
 
-        Heater heater_v := new Heater(ac);
-        Oven oven_v := new Oven(heater_v);
+        Heater heater_v = new Heater(ac);
+        Oven oven_v = new Oven(heater_v);
 
         return oven_v;
     end
@@ -46,21 +46,21 @@ class Constructor()
 
 
         //Database access: Retrieve input
-        House house_v := this.getHouse(houseId);
-        Oven oven_v := this.getOven(ovenId);
+        House house_v = this.getHouse(houseId);
+        Oven oven_v = this.getOven(ovenId);
 
         //Schematics: Connect to partial input
-        Installation inst := new Installation(house_v, oven_v, null);
+        Installation inst = new Installation(house_v, oven_v, null);
 
 
         //Reasoning: Perform semantics to fill in gaps
-        Boolean fill := this.canFillIn(inst, True, True);
+        Boolean fill = this.canFillIn(inst, True, True);
         if(fill) then return inst; end
-        fill := this.canFillIn(inst, True, False);
+        fill = this.canFillIn(inst, True, False);
         if(fill) then return inst; end
-        fill := this.canFillIn(inst, False, True);
+        fill = this.canFillIn(inst, False, True);
         if(fill) then return inst; end
-        fill := this.canFillIn(inst, False, False);
+        fill = this.canFillIn(inst, False, False);
         if(fill) then  return inst; end
 
         //Error
@@ -68,23 +68,23 @@ class Constructor()
     end
 
     Boolean canFillIn(Installation inst, Boolean b1, Boolean b2)
-        List<Installation> list := null;
+        List<Installation> list = null;
         if(b1) then
-            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:ACACInst.}");
-            else list := access("SELECT ?obj WHERE {?obj a domain:ACDCInst.}");
+            if(b2) then list = access("SELECT ?obj WHERE {?obj a domain:ACACInst.}");
+            else list = access("SELECT ?obj WHERE {?obj a domain:ACDCInst.}");
             end
         else
-            if(b2) then list := access("SELECT ?obj WHERE {?obj a domain:DCACInst.}");
-            else list := access("SELECT ?obj WHERE {?obj a domain:DCDCInst.}");
+            if(b2) then list = access("SELECT ?obj WHERE {?obj a domain:DCACInst.}");
+            else list = access("SELECT ?obj WHERE {?obj a domain:DCDCInst.}");
             end
         end
-        //List<Installation> list :=
+        //List<Installation> list =
         //  access("SELECT ?obj WHERE {?obj prog:house ?x. ?x prog:outlet ?y. ?y prog:AC %1. ?obj prog:oven ?x2. ?x2 prog:heater ?y2. ?y2 prog:AC %2. }", b1, b2);
-        //List<Installation> list2 := member("<domain:ACACInst>"); //OWL bugged
-        if(list <> null) then
-            Boolean inside := list.contains(inst);
+        //List<Installation> list2 = member("<domain:ACACInst>"); //OWL bugged
+        if(list != null) then
+            Boolean inside = list.contains(inst);
             if(inside) then
-                inst.connector := new Connector(b1, b2);
+                inst.connector = new Connector(b1, b2);
                 return True;
             end
         end
@@ -93,11 +93,11 @@ class Constructor()
 end
 
 main
-    Constructor c := new Constructor();
-    Installation inst := c.fill(12, 11);
-    Int cost := inst.price();
+    Constructor c = new Constructor();
+    Installation inst = c.fill(12, 11);
+    Int cost = inst.price();
     print(cost);
-    Installation inst2 := c.fill(12, 1);
-    Int cost2 := inst2.price();
+    Installation inst2 = c.fill(12, 1);
+    Int cost2 = inst2.price();
     print(cost2);
 end

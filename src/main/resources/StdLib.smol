@@ -1,14 +1,14 @@
 class List<LISTT>(LISTT content, List<LISTT> next)
 
     Int length()
-        if this.next = null then return 1;
-        else Int n := this.next.length(); return n + 1;
+        if this.next == null then return 1;
+        else Int n = this.next.length(); return n + 1;
         end
     end
 
     Int append(List<LISTT> last)
-        if this.next = null then
-            this.next := last;
+        if this.next == null then
+            this.next = last;
         else
             this.next.append(last);
         end
@@ -16,42 +16,42 @@ class List<LISTT>(LISTT content, List<LISTT> next)
     end
 
     LISTT get(Int i)
-        LISTT res := this.content;
+        LISTT res = this.content;
         if i >= 1 then
-            res := this.next.get(i - 1);
+            res = this.next.get(i - 1);
         end
         return res;
     end
 
     Boolean contains(LISTT element)
-        if this.content = element then
+        if this.content == element then
             return True;
         else
-            if this.next = null then
+            if this.next == null then
                 return False;
             else
-                Boolean res := this.next.contains(element);
+                Boolean res = this.next.contains(element);
                 return res;
             end
         end
     end
 
     List<LISTT> reverse()
-        if(this.next = null) then
+        if(this.next == null) then
             return this;
         else
-            List<LISTT> ret := this.next.reverse();
-            this.next.next := this;
-            this.next := null;
+            List<LISTT> ret = this.next.reverse();
+            this.next.next = this;
+            this.next = null;
             return ret;
         end
     end
 
     LISTT last()
-        if(this.next = null) then
+        if(this.next == null) then
             return this.content;
         else
-            LISTT last := this.next.last();
+            LISTT last = this.next.last();
             return last;
         end
     end

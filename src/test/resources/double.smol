@@ -1,8 +1,8 @@
 class  DList<T> (DList<T> next, T content, DList<T> previous)
    DList<T> append(DList<T> node)
-      if this.next = null then
-         this.next := node;
-         node.previous := this;
+      if this.next == null then
+         this.next = node;
+         node.previous = this;
       else
         this.next.append(node);
       end
@@ -10,54 +10,54 @@ class  DList<T> (DList<T> next, T content, DList<T> previous)
    end
 
    DList<T> insert_after(DList<T> node)
-        node.next := this.next;
-        node.previous := this;
-        if this.next <> null then
-            this.next.previous := node;
-            this.next := node;
+        node.next = this.next;
+        node.previous = this;
+        if this.next != null then
+            this.next.previous = node;
+            this.next = node;
         else skip; end
         return this;
    end
 
 
    DList<T> remove()
-        if this.next <> null then
-            this.next.previous := this.previous;
+        if this.next != null then
+            this.next.previous = this.previous;
         else skip; end
-        if this.previous <> null then
-            this.previous.next := this.next;
+        if this.previous != null then
+            this.previous.next = this.next;
         else skip; end
-        this.next := null;
-        this.previous := null;
+        this.next = null;
+        this.previous = null;
         return this;
    end
 
 
    DList<T> remove_unclean()
-        if this.next <> null then
-            this.next.previous := this.previous;
+        if this.next != null then
+            this.next.previous = this.previous;
         else skip; end
-        if this.previous <> null then
-            this.previous.next := this.next;
+        if this.previous != null then
+            this.previous.next = this.next;
         else skip; end
-        this.next := null;
+        this.next = null;
         return this;
    end
 end
 
 
 main
-  DList<Int> a := new DList<Int>(null, 1, null);
-  DList<Int> b := new DList<Int>(null, 2, null);
-  DList<Int> c := new DList<Int>(null, 4, null);
-  DList<Int> d := new DList<Int>(null, 3, null);
+  DList<Int> a = new DList<Int>(null, 1, null);
+  DList<Int> b = new DList<Int>(null, 2, null);
+  DList<Int> c = new DList<Int>(null, 4, null);
+  DList<Int> d = new DList<Int>(null, 3, null);
   a.append(b);
   a.append(c);
   b.insert_after(d);
   c.remove();
   breakpoint;
   print(a.next.next.content);
-  Boolean val := validate("examples/double.ttl");
+  Boolean val = validate("examples/double.ttl");
   breakpoint;
   print(val);
 end

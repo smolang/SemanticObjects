@@ -6,14 +6,14 @@ end
 
 class D extends C ()
     override Int m()
-        Int s := super();
-        C v := new D();
+        Int s = super();
+        C v = new D();
         return 2 + s ;
     end
 end
 
 main
-    C v := new D();
-    Int w := v.m();
+    C v = new D();
+    Int w = v.m();
     print(w);
 end

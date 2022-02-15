@@ -1,31 +1,31 @@
 //requires length > 0 && content == null
 class Buffer(Int length, List<Double> content)
     Unit init()
-        Int i := 0;
-        this.content := null;
+        Int i = 0;
+        this.content = null;
         while i < this.length  do
-            this.content := new List<Double>(0.0, this.content);
-            i := i + 1;
+            this.content = new List<Double>(0.0, this.content);
+            i = i + 1;
         end
     end
     Unit add(Double d)
-        List<Double> next := new List<Double>(d, null);
+        List<Double> next = new List<Double>(d, null);
         this.content.append(next);
-        this.content := this.content.next;
+        this.content = this.content.next;
     end
 
     //requires other.length == this.length && other != null
     Double distance(Buffer other)
-        Int i := 0;
-        Double sum := 0.0;
-        List<Double> mine := this.content;
-        List<Double> theirs := other.content;
+        Int i = 0;
+        Double sum = 0.0;
+        List<Double> mine = this.content;
+        List<Double> theirs = other.content;
         while i < this.length  do
-            Double local := mine.content - theirs.content;
-            sum := sum + local*local;
-            mine := mine.next;
-            theirs := theirs.next;
-            i := i + 1;
+            Double local = mine.content - theirs.content;
+            sum = sum + local*local;
+            mine = mine.next;
+            theirs = theirs.next;
+            i = i + 1;
         end
         return sum/i;
     end
@@ -36,16 +36,16 @@ class ExplorationShadow(Double value, Double assumedSlope, Buffer buffer)
 
     //requires record != null
     Double runAndCompare(Int l, Buffer record)
-        this.buffer := new Buffer(l, null);
+        this.buffer = new Buffer(l, null);
         this.buffer.init();
-        Cont[out Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := this.value, slope := this.assumedSlope);
-        Int i := 0;
+        Cont[out Double value] shadow = simulate("examples/Shadow/Sim.fmu", iValue = this.value, slope = this.assumedSlope);
+        Int i = 0;
         while i < l do
             this.buffer.add(shadow.value);
             shadow.tick(1.0);
-            i := i + 1;
+            i = i + 1;
         end
-        Double error := record.distance(this.buffer);
+        Double error = record.distance(this.buffer);
         return error;
     end
 end
@@ -54,55 +54,55 @@ end
 class MonitorShadow(Cont[out Double value] system, Double value, Double assumedSlope, Buffer bufferSystem, Buffer bufferShadow, Int limit, Int recordLength)
     Unit run()
         print("Start");
-        Int step := 0;
-        Cont[out Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := this.value, slope := this.assumedSlope);
-        this.bufferSystem := new Buffer(this.recordLength, null);
+        Int step = 0;
+        Cont[out Double value] shadow = simulate("examples/Shadow/Sim.fmu", iValue = this.value, slope = this.assumedSlope);
+        this.bufferSystem = new Buffer(this.recordLength, null);
         this.bufferSystem.init();
         this.bufferSystem.add(this.system.value);
-        this.bufferShadow := new Buffer(this.recordLength, null);
+        this.bufferShadow = new Buffer(this.recordLength, null);
         this.bufferShadow.init();
         this.bufferShadow.add(shadow.value);
 
-        Int sinceReset := 0;
+        Int sinceReset = 0;
         while step < this.limit do
             this.system.tick(1.0);
             shadow.tick(1.0);
             this.bufferSystem.add(this.system.value);
             this.bufferShadow.add(shadow.value);
-            Double error := this.bufferSystem.distance(this.bufferShadow);
+            Double error = this.bufferSystem.distance(this.bufferShadow);
             if error > 10.0 & sinceReset >= this.recordLength*2 then
                 print("error");
                 print(error);
                 print("at");
                 print(step);
-                this.bufferShadow := new Buffer(this.recordLength, null);
+                this.bufferShadow = new Buffer(this.recordLength, null);
                 this.bufferShadow.init();
-                shadow := this.findNewShadow();
-                sinceReset := 0;
+                shadow = this.findNewShadow();
+                sinceReset = 0;
             end
-            sinceReset := sinceReset + 1;
-            step := step + 1;
+            sinceReset = sinceReset + 1;
+            step = step + 1;
         end
         print("End");
     end
 
     Cont[out Double value] findNewShadow()
         print("Anomaly detected, searching for new shadow.");
-        Double step := 0.0;
-        ExplorationShadow explore := null;
+        Double step = 0.0;
+        ExplorationShadow explore = null;
         while step <= 5 do
-            Double mySlope := this.assumedSlope + step * 0.2;
-            explore := new ExplorationShadow(this.bufferSystem.content.content, mySlope, null);
-            Double diff := explore.runAndCompare(this.recordLength, this.bufferSystem);
+            Double mySlope = this.assumedSlope + step * 0.2;
+            explore = new ExplorationShadow(this.bufferSystem.content.content, mySlope, null);
+            Double diff = explore.runAndCompare(this.recordLength, this.bufferSystem);
             if diff <= 0.01 then
                 print("New shadow found.");
                 print(diff);
                 print(mySlope);
-                Double toStart := this.bufferSystem.content.last();
-                Cont[out Double value] shadow := simulate("examples/Shadow/Sim.fmu", iValue := toStart, slope := mySlope);
+                Double toStart = this.bufferSystem.content.last();
+                Cont[out Double value] shadow = simulate("examples/Shadow/Sim.fmu", iValue = toStart, slope = mySlope);
                 return shadow;
             end
-            step := step + 1.0;
+            step = step + 1.0;
         end
         print("No new shadow found.");
         return null;
@@ -110,7 +110,7 @@ class MonitorShadow(Cont[out Double value] system, Double value, Double assumedS
 end
 
 main
-    Cont[out Double value] system := simulate("examples/Shadow/Realsys.fmu", iValue := 2.0, slope := 1.0);
-    MonitorShadow monitor := new MonitorShadow(system, 2.0, 1.0, null, null, 200, 3);
+    Cont[out Double value] system = simulate("examples/Shadow/Realsys.fmu", iValue = 2.0, slope = 1.0);
+    MonitorShadow monitor = new MonitorShadow(system, 2.0, 1.0, null, null, 200, 3);
     monitor.run();
 end

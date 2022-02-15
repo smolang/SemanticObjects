@@ -1,72 +1,72 @@
 
 class A (protected Int f1, private Int f2, Int f3)
     Int m1(A a, B b, C c)
-        Int v1 := this.f1 + this.f2 + this.f3;
-        Int v2 := b.f4; //fail
-        Int v3 := b.f5; //fail
-        Int v4 := b.f6;
-        Int v5 := b.f1;
-        Int v6 := b.f2;
-        Int v7 := b.f3;
-        Int w5 := a.f1;
-        Int w6 := a.f2;
-        Int w7 := a.f3;
-        Int v8 := c.f7; //fail
-        Int v9 := c.f8; //fail
-        Int v0 := c.f9;
+        Int v1 = this.f1 + this.f2 + this.f3;
+        Int v2 = b.f4; //fail
+        Int v3 = b.f5; //fail
+        Int v4 = b.f6;
+        Int v5 = b.f1;
+        Int v6 = b.f2;
+        Int v7 = b.f3;
+        Int w5 = a.f1;
+        Int w6 = a.f2;
+        Int w7 = a.f3;
+        Int v8 = c.f7; //fail
+        Int v9 = c.f8; //fail
+        Int v0 = c.f9;
         return 0;
     end
 end
 
 class B extends A (protected Int f4, private Int f5, Int f6)
     Int m2(A a, B b, C c)
-        Int v1 := this.f4 + this.f5 + this.f6;
-        Int v2 := b.f4;
-        Int v3 := b.f5;
-        Int v4 := b.f6;
-        Int v5 := b.f1;
-        Int v6 := b.f2; //fail
-        Int v7 := b.f3;
-        Int w5 := a.f1;
-        Int w6 := a.f2; //fail
-        Int w7 := a.f3;
-        Int v8 := c.f7; //fail
-        Int v9 := c.f8; //fail
-        Int v0 := c.f9;
+        Int v1 = this.f4 + this.f5 + this.f6;
+        Int v2 = b.f4;
+        Int v3 = b.f5;
+        Int v4 = b.f6;
+        Int v5 = b.f1;
+        Int v6 = b.f2; //fail
+        Int v7 = b.f3;
+        Int w5 = a.f1;
+        Int w6 = a.f2; //fail
+        Int w7 = a.f3;
+        Int v8 = c.f7; //fail
+        Int v9 = c.f8; //fail
+        Int v0 = c.f9;
         return 0;
     end
 end
 
 class C extends A(protected Int f7, private Int f8, Int f9)
     Int m3(A a, B b, C c)
-        Int v1 := this.f7 + this.f8 + this.f9;
-        Int v2 := b.f4; //fail
-        Int v3 := b.f5; //fail
-        Int v4 := b.f6;
-        Int v5 := b.f1;
-        Int v6 := b.f2; //fail
-        Int v7 := b.f3;
-        Int w5 := a.f1;
-        Int w6 := a.f2; //fail
-        Int w7 := a.f3;
-        Int v8 := c.f7;
-        Int v9 := c.f8;
-        Int v0 := c.f9;
+        Int v1 = this.f7 + this.f8 + this.f9;
+        Int v2 = b.f4; //fail
+        Int v3 = b.f5; //fail
+        Int v4 = b.f6;
+        Int v5 = b.f1;
+        Int v6 = b.f2; //fail
+        Int v7 = b.f3;
+        Int w5 = a.f1;
+        Int w6 = a.f2; //fail
+        Int w7 = a.f3;
+        Int v8 = c.f7;
+        Int v9 = c.f8;
+        Int v0 = c.f9;
         return 0;
     end
 end
 
 class D extends A()
     Int m4(A a, B b, C c)
-        a.f1 := 1;
-        a.f2 := 1; //fail
-        a.f3 := 1;
-        b.f4 := 1; //fail
-        b.f5 := 1; //fail
-        b.f6 := 1;
-        c.f7 := 1; //fail
-        c.f8 := 1; //fail
-        c.f9 := 1;
+        a.f1 = 1;
+        a.f2 = 1; //fail
+        a.f3 = 1;
+        b.f4 = 1; //fail
+        b.f5 = 1; //fail
+        b.f6 = 1;
+        c.f7 = 1; //fail
+        c.f8 = 1; //fail
+        c.f9 = 1;
         return 0;
     end
 end

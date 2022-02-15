@@ -5,7 +5,7 @@ end
 class DepositAction extends Action (nonsemantic GeoLayer deposit)
     override Unit execute(Scenario scen)
         //print("deposit");
-        this.deposit.scenId := scen.scenId;
+        this.deposit.scenId = scen.scenId;
         scen.deposit(this.deposit);
         if(this.advance) then
             scen.processes();
@@ -34,10 +34,10 @@ end
 
 abstract class GeoLayer(Int scenId, domain Int thickness, nonsemantic GeoLayer above, nonsemantic GeoLayer below) //in m
     domain Int depth()
-        Int res := 0;
-        if(this.above <> null) then
-            res := this.above.depth();
-            res := res + this.above.thickness;
+        Int res = 0;
+        if(this.above != null) then
+            res = this.above.depth();
+            res = res + this.above.thickness;
         end
         return res;
     end
@@ -59,38 +59,38 @@ class UnknownLayer extends GeoLayer()
 end
 
 class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
-            models(this.dinoStatus = 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
-            models(this.dinoStatus = 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models(this.dinoStatus == 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            models(this.dinoStatus == 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
             models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale].";
     Unit cook()
         //if(this.dinoStatus < 3 & this.dinoStatus > 0) then
         print("cooking");
         //print(this);
-        this.dinoStatus := this.dinoStatus +1;
+        this.dinoStatus = this.dinoStatus +1;
     end
     Unit burn()
-        this.dinoStatus := 0;
+        this.dinoStatus = 0;
         print("burning");
     end
     override Boolean canPropagate()
         return False;
     end
     override Boolean migrate()
-        if(this.above <> null) then
-            Boolean unsealed := this.above.canPropagate();
+        if(this.above != null) then
+            Boolean unsealed = this.above.canPropagate();
             if(unsealed) then
                 this.above.migrate();
-                this.dinoStatus := 0;
+                this.dinoStatus = 0;
                 return False;
             end
         else
-            this.dinoStatus := 0;
+            this.dinoStatus = 0;
             return False;
         end
         return True;
     end
     override GeoLayer clone(Int id)
-        GeoLayer newLayer := new Shale(id, this.thickness ,this.above ,this.below, this.dinoStatus);
+        GeoLayer newLayer = new Shale(id, this.thickness ,this.above ,this.below, this.dinoStatus);
         return newLayer;
     end
 end
@@ -99,31 +99,31 @@ class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium,
            models(this.hasHC) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone];  domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
     Unit compact()
-        if(this.porosity < 3) then this.porosity := this.porosity +1; end
+        if(this.porosity < 3) then this.porosity = this.porosity +1; end
         print("compacting");
     end
     override Boolean canPropagate()
         return this.porosity < 3;
     end
     override Boolean migrate()
-        this.hasHC := True;
-        if(this.above <> null) then
-            Boolean unsealed := this.above.canPropagate();
+        this.hasHC = True;
+        if(this.above != null) then
+            Boolean unsealed = this.above.canPropagate();
             if(unsealed) then
                 this.above.migrate();
-                this.hasHC := False;
+                this.hasHC = False;
                 return False;
             end
         else
             print("escape");
-            this.hasHC := False;
+            this.hasHC = False;
             return False;
         end
         if(this.hasHC) then print("deposit"); end
         return True;
     end
     override GeoLayer clone(Int id)
-        GeoLayer newLayer := new Sand(id, this.thickness ,this.above ,this.below, this.porosity, this.hasHC);
+        GeoLayer newLayer = new Sand(id, this.thickness ,this.above ,this.below, this.porosity, this.hasHC);
         return newLayer;
     end
 end
@@ -142,31 +142,31 @@ end
 
 class Scenario(Int scenId, Bedrock basis, GeoLayer top)
     Scenario clone(Int id)
-        Bedrock newBasis := new Bedrock(id, this.basis.thickness, null, null);
-        Scenario newScen := new Scenario(id, newBasis, newBasis);
-        GeoLayer next := this.basis;
-        while(next.above <> null) do
-            next := next.above;
-            GeoLayer newNext := next.clone(id);
+        Bedrock newBasis = new Bedrock(id, this.basis.thickness, null, null);
+        Scenario newScen = new Scenario(id, newBasis, newBasis);
+        GeoLayer next = this.basis;
+        while(next.above != null) do
+            next = next.above;
+            GeoLayer newNext = next.clone(id);
             newScen.deposit(newNext);
         end
         return newScen;
     end
     Unit deposit(GeoLayer newLayer)
-        newLayer.below := this.top;
-        this.top.above := newLayer;
-        this.top := newLayer;
+        newLayer.below = this.top;
+        this.top.above = newLayer;
+        this.top = newLayer;
     end
     Unit erode(Int meters) //beware, no null check this.top.below
         if(this.top.thickness <= meters) then
-            GeoLayer old := this.top;
-            Int up := meters - old.thickness;
-            this.top := this.top.below;
-            this.top.above := null;
+            GeoLayer old = this.top;
+            Int up = meters - old.thickness;
+            this.top = this.top.below;
+            this.top.above = null;
             destroy(old);
             this.erode(up);
         else
-            this.top.thickness := this.top.thickness - meters;
+            this.top.thickness = this.top.thickness - meters;
         end
     end
 
@@ -176,87 +176,87 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
 
     Unit processes()
        print("pr");
-       List<Sand> geos := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 3000) }", this.scenId);
-       while(geos <> null) do
-            Sand next := geos.content;
+       List<Sand> geos = access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 3000) }", this.scenId);
+       while(geos != null) do
+            Sand next = geos.content;
             next.compact();
-            geos := geos.next;
+            geos = geos.next;
        end
 //       breakpoint;
-       List<Shale> geos2 :=
+       List<Shale> geos2 =
 //       access("SELECT DISTINCT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
 //        access("SELECT DISTINCT ?obj WHERE{ ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000) }");
         member("<domain:models> some <domain:CookingTrigger>");
-       while(geos2 <> null) do
-            Shale next2 := geos2.content;
+       while(geos2 != null) do
+            Shale next2 = geos2.content;
             next2.cook();
-            geos2 := geos2.next;
+            geos2 = geos2.next;
        end
-       geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. ?obj prog:Shale_scenId %1. FILTER(?depth > 4000) }", this.scenId);
-       while(geos2 <> null) do
-           next2 := geos2.content;
+       geos2 = access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Shale. ?obj prog:Shale_scenId %1. FILTER(?depth > 4000) }", this.scenId);
+       while(geos2 != null) do
+           next2 = geos2.content;
            next2.burn();
-           geos2 := geos2.next;
+           geos2 = geos2.next;
        end
-       geos := access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 4000) }", this.scenId);
-       while(geos <> null) do
-           next := geos.content;
-           next.hasHC := False; //burning in sand
-           geos := geos.next;
+       geos = access("SELECT DISTINCT ?obj WHERE { ?obj prog:GeoLayer_depth_builtin_res ?depth. ?obj a prog:Sand. ?obj prog:Sand_scenId %1. FILTER(?depth >= 4000) }", this.scenId);
+       while(geos != null) do
+           next = geos.content;
+           next.hasHC = False; //burning in sand
+           geos = geos.next;
        end
-      // geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3. ?obj prog:Shale_scenId %1 }", this.scenId);
-       geos2 := access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3 }");
-       while(geos2 <> null) do
-           next2 := geos2.content;
+      // geos2 = access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3. ?obj prog:Shale_scenId %1 }", this.scenId);
+       geos2 = access("SELECT DISTINCT ?obj WHERE { ?obj prog:Shale_dinoStatus 3 }");
+       while(geos2 != null) do
+           next2 = geos2.content;
            next2.migrate();
-           geos2 := geos2.next;
+           geos2 = geos2.next;
        end
     end
 
     Unit run(List<Action> actions)
-        List<Action> current := actions;
-        while(current <> null) do
-            Action next := current.content;
+        List<Action> current = actions;
+        while(current != null) do
+            Action next = current.content;
             next.execute(this);
-            current := current.next;
+            current = current.next;
         end
     end
 end
 
 main
-    GeoLayer layer := new Shale(0, 1000, null, null, 1);
-    Action action := new DepositAction(True, layer);
-    List<Action> actions := new List<Action>(action, null);
+    GeoLayer layer = new Shale(0, 1000, null, null, 1);
+    Action action = new DepositAction(True, layer);
+    List<Action> actions = new List<Action>(action, null);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
-    action := new DepositAction(True, layer);
-    actions := new List<Action>(action, actions);
+    layer = new Sand(0, 1000, null, null, 1, False);
+    action = new DepositAction(True, layer);
+    actions = new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
-    //layer := new Shale(0, 1000, null, null, 0);
-    action := new DepositAction(True, layer);
-    actions := new List<Action>(action, actions);
+    layer = new Sand(0, 1000, null, null, 1, False);
+    //layer = new Shale(0, 1000, null, null, 0);
+    action = new DepositAction(True, layer);
+    actions = new List<Action>(action, actions);
 
-    action := new EmptyAction(True);
-    actions := new List<Action>(action, actions);
+    action = new EmptyAction(True);
+    actions = new List<Action>(action, actions);
 
-    action := new ErodeAction(True, 1500);
-    actions := new List<Action>(action, actions);
+    action = new ErodeAction(True, 1500);
+    actions = new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
-    action := new DepositAction(True, layer);
-    actions := new List<Action>(action, actions);
+    layer = new Sand(0, 1000, null, null, 1, False);
+    action = new DepositAction(True, layer);
+    actions = new List<Action>(action, actions);
 
-    layer := new Sand(0, 1000, null, null, 1, False);
-    action := new DepositAction(True, layer);
-    actions := new List<Action>(action, actions);
+    layer = new Sand(0, 1000, null, null, 1, False);
+    action = new DepositAction(True, layer);
+    actions = new List<Action>(action, actions);
 
-    action := new EmptyAction(True);
-    actions := new List<Action>(action, actions);
+    action = new EmptyAction(True);
+    actions = new List<Action>(action, actions);
 
-    Bedrock bed := new Bedrock(1, 1000, null, null);
-    Scenario scen := new Scenario(1, bed, bed);
+    Bedrock bed = new Bedrock(1, 1000, null, null);
+    Scenario scen = new Scenario(1, bed, bed);
 
-    actions := actions.reverse();
+    actions = actions.reverse();
     scen.run(actions);
 end

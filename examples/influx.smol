@@ -1,6 +1,6 @@
 
 main
-    List<Double> list := access(
+    List<Double> list = access(
       "from(bucket: \"petwin\")
       |>  range(start: -1h, stop: -1m)
       |> filter(fn: (r) => r[\"_measurement\"] == \"chili\")
