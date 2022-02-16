@@ -2,6 +2,8 @@ package no.uio.microobject.data
 
 import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.Ontology
+import com.github.owlcs.ontapi.OntologyManager
+import com.github.owlcs.ontapi.config.OntLoaderConfiguration
 import java.io.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
@@ -15,197 +17,139 @@ import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
 import org.apache.jena.graph.compose.MultiUnion
-import org.apache.jena.ontology.OntModel
-import org.apache.jena.rdf.model.InfModel
-import org.apache.jena.rdf.model.Model
-import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdf.model.*
 import org.apache.jena.reasoner.Reasoner
 import org.apache.jena.reasoner.ReasonerRegistry
-import org.apache.jena.reasoner.rulesys.GenericRuleReasoner
-import org.apache.jena.reasoner.rulesys.Rule
 import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
-import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLOntology
-import org.semanticweb.owlapi.model.OWLOntologyManager
 import java.net.URL
 
 
+// Settings controlling the TripleManager.
+data class TripleSettings(
+    val sources: HashMap<String,Boolean>, // Which sources to include
+    val guards: HashMap<String,Boolean>, // If true, then guard clauses are used.
+    var virtualization: HashMap<String,Boolean>, // If true, virtualization is used. Otherwise, naive method is used.
+    var jenaReasoner: String, // Must be either off, rdfs or owl
+)
+
 // Class managing triples from all the different sources, how to reason over them, and how to query them using SPARQL or DL queries.
-// Change sources map to control which sources to include when querying
-// Change guards map to control when to use guard clauses
-// Change reasoner to control which reasoner to use
-// Call getCompleteModel/getCompleteModelMultiGraph to get the Jena model to query on
 class TripleManager(private val settings: Settings, val staticTable: StaticTable, private val interpreter: Interpreter?) {
     private val prefixMap = settings.prefixMap()
 
-    val guards: HashMap<String,Boolean> = hashMapOf("heap" to true, "staticTable" to true) // If true then guard clauses are used.
-    val sources: HashMap<String,Boolean> =  hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "externalOntology" to (settings.background != ""))  // Which sources are used when getCompleteModel is called
-    var reasoner: String = "owl"  // Must be either off, rdfs or owl
-
-    // Main access point
-    fun getModel(): Model {
-        return getCompleteModelMultiGraph()
-//        return getCompleteModel()
-    }
-
-    // Should eventually be removed
-    // Get the ontology representing only the static data. This is used e.g. for type checking.
-    fun getStaticDataOntology(): OWLOntology {
-        // Using ONT-API to connect Jena with the OWLAPI
-        val manager: OWLOntologyManager = OntManagers.createManager()
-        val ontology: OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"))
-        // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
-        val model: Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
-
-        // Read vocab.owl and background data
-        var allTriplesString  = ""
-        for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
-        val vocabURL: java.net.URL = this::class.java.classLoader.getResource("vocab.owl")
-        allTriplesString += vocabURL.readText(Charsets.UTF_8) + "\n"
-        if(settings.background != "") allTriplesString += settings.background + "\n"
-        val s: InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
-        model.read(s, null, "TTL")
-
-        // Adding prefixes
-        for ((key, value) in prefixMap) model.setNsPrefix(key, value)
-
-        // Add triples from static table
-        val staticTableGraphModel: Model = ModelFactory.createModelForGraph(StaticTableGraph())
-        model.add(staticTableGraphModel)
-
-        // write model to file if the materialize flag is given
-        if (settings.materialize) {
-            if(!File("${settings.outpath}/output.ttl").exists()) {
-                File(settings.outpath).mkdirs()
-                File("${settings.outpath}/output.ttl").createNewFile()
-            }
-            model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
-        }
-
-        return ontology
-    }
+    // Default settings. These can be changed with REPL commands.
+    var currentTripleSettings = TripleSettings(
+        sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "externalOntology" to (settings.background != "")),
+        guards = hashMapOf("heap" to true, "staticTable" to true),
+        virtualization = hashMapOf("heap" to true, "staticTable" to true),
+        jenaReasoner = "owl"
+    )
 
 
-    // Should eventually be removed
-    // This returns an OWL ontology containing all OWL axioms.
-    // The corresponding Jena model includes all RDF triples
-    // Triples/axioms are gathered from: vocab.owl, background data, heap, static table
-    // TODO: add simulation data
-    fun getCompleteOntology(): OWLOntology {
-        // Using ONT-API to connect Jena with the OWLAPI
-        val manager: OWLOntologyManager = OntManagers.createManager()
-        val ontology: OWLOntology = manager.createOntology(IRI.create("${settings.langPrefix}ontology"))
-        // This model corresponds to the ontology, so adding to the model also adds to ontology, if they are legal OWL axioms.
-        var model: Model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
+    // Main method used to deliver the Jena model to run SPARQL queries on.
+    // When special settings are given, it will override the general settings
+    fun getModel(specialSettings: TripleSettings = currentTripleSettings): Model {
+        val model =  getModelUnionWithReasoning(specialSettings)
 
-        // Add triples manually to model/ontology. Can be used when debugging.
-        // var allTriplesStringPre: String = ""
-        // for ((key, value) in prefixMap) allTriplesStringPre += "@prefix $key: <$value> .\n"
-        // var triplesHardCoded = "run:obj6 a prog:Student ." +
-        // "prog:Student owl:disjointWith prog:Course ."
-        // allTriplesStringPre += triplesHardCoded
-        // val sPre: InputStream = ByteArrayInputStream(allTriplesStringPre.toByteArray())
-        // model.read(sPre, null, "TTL")
-
-        // Read vocab.owl and background data
-        var allTriplesString: String = ""
-        for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
-        val vocabURL: java.net.URL = this::class.java.classLoader.getResource("vocab.owl")
-        allTriplesString += vocabURL.readText(Charsets.UTF_8) + "\n"
-        if(settings.background != "") allTriplesString += settings.background + "\n"
-        val s: InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
-        model.read(s, null, "TTL")
-
-        val staticTableGraphModel: Model = ModelFactory.createModelForGraph(StaticTableGraph())
-        model.add(staticTableGraphModel)
-
-        if (interpreter != null) {
-            // Add triples from heap
-            val heapGraphModel: Model = ModelFactory.createModelForGraph(HeapGraph(interpreter))
-            model.add(heapGraphModel)
-        }
-
-        if (interpreter != null) {
-            val rules = interpreter.rules
-            // Add rules to the model if available.
-            if(rules != "" || settings.backgroundrules != "") {
-                if(settings.verbose) println("Loading generated builtin rules $rules and domain rules ${settings.backgroundrules}")
-                val prefixes  = settings.prefixes()
-                val reader = (prefixes+"\n"+rules+"\n"+settings.backgroundrules).byteInputStream().bufferedReader()
-                val rParsed = Rule.rulesParserFromReader(BufferedReader(reader))
-                val reasoner: org.apache.jena.reasoner.Reasoner = GenericRuleReasoner(Rule.parseRules(rParsed))
-                val infModel = ModelFactory.createInfModel(reasoner, model)
-                //infModel.prepare()
-                model = infModel
-            }
-        }
-
-        // Adding prefixes
-        for ((key, value) in prefixMap) model.setNsPrefix(key, value)
-
-        // write model to file if the materialize flag is given
+        // If the materialize flag is given, then write to file
         if (settings.materialize) {
             File(settings.outpath).mkdirs()
             File("${settings.outpath}/output.ttl").createNewFile()
             model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
         }
+        return model
+    }
+
+    // Main method used to deliver an OWLAPI ontology to run OWL queries on
+    fun getOntology(tripleSettings: TripleSettings = currentTripleSettings): OWLOntology {
+        return getOntologyFromModel(tripleSettings)
+    }
+
+
+    // A variant of getOntology which excludes the heap. This is used e.g. for type checking
+    fun getStaticDataOntology(): OWLOntology {
+        val specialTripleSettings = TripleSettings(currentTripleSettings.sources, currentTripleSettings.guards, currentTripleSettings.virtualization, currentTripleSettings.jenaReasoner)
+        specialTripleSettings.sources["heap"] = false
+        return getOntology(specialTripleSettings)
+    }
+
+    // Return an OWL ontology corresponding to the requested sources.
+    private fun getOntologyFromModel(tripleSettings: TripleSettings): OWLOntology {
+        val model = getModelUnion(tripleSettings)
+        val manager: OntologyManager = OntManagers.createManager();
+
+        // Settings related to how model is loaded into an ontology.
+        val conf: OntLoaderConfiguration = manager.ontologyLoaderConfiguration
+        conf.isPerformTransformation = true
+
+        val ontology: Ontology = manager.addOntology(model.graph, conf);
         return ontology
     }
 
-    // Using ONT-API to return the model corresponding to the complete ontology
-    private fun getCompleteModel(): Model {
-        val ontology: OWLOntology = getCompleteOntology()
-        val model = (ontology as com.github.owlcs.ontapi.Ontology).asGraphModel()
 
-        // Turn on reasoning if background knowledge is given.
+    // Get the Jena model including all requested sources and the requested reasoner
+    private fun getModelUnionWithReasoning(tripleSettings: TripleSettings): Model {
+        val modelUnion = getModelUnion(tripleSettings)
+        val reasoner = getJenaReasoner(tripleSettings) ?: return modelUnion  // Get correct reasoner based on settings
+        return ModelFactory.createInfModel(reasoner, modelUnion)
+    }
+
+
+    // Model merging the graphs of the requested sources.
+    // Also decides whether to use virtualization or naive approach
+    private fun getModelUnion(tripleSettings: TripleSettings): Model {
+        val includedGraphs = mutableListOf<Graph>()
+        includedGraphs.add(ModelFactory.createDefaultModel().graph) // New default graph. New statements are inserted here.
+        if (tripleSettings.sources.getOrDefault("staticTable", false)) {
+            if (tripleSettings.virtualization.getOrDefault("staticTable", false)) { includedGraphs.add(StaticTableGraph(tripleSettings)) }
+            else { includedGraphs.add(getStaticTableModelNaive(tripleSettings).graph) }
+        }
+        if (tripleSettings.sources.getOrDefault("heap", false)) {
+            if (tripleSettings.virtualization.getOrDefault("heap", false)) { includedGraphs.add(HeapGraph(tripleSettings, interpreter!!)) }
+            else { includedGraphs.add(getHeapModelNaive(tripleSettings, interpreter!!).graph) }
+        }
+        if (tripleSettings.sources.getOrDefault("vocabularyFile", false)) {
+            includedGraphs.add(getVocabularyModel().graph)
+        }
+        if (tripleSettings.sources.getOrDefault("externalOntology", false)) {
+            includedGraphs.add(getExternalOntologyAsModel().graph)
+        }
+        val model = ModelFactory.createModelForGraph(MultiUnion(includedGraphs.toTypedArray()))
+        for ((key, value) in prefixMap) model.setNsPrefix(key, value)  // Adding prefixes
+        return model
+    }
+
+    // Returns the Jena model containing statements from the external ontology.
+    // If the external ontology is not given, then it returns an empty model
+    private fun getExternalOntologyAsModel(): Model {
+        val model = ModelFactory.createDefaultModel()
         if(settings.background != "") {
-            if(settings.verbose) println("Using background knowledge...")
-            return ModelFactory.createInfModel(ReasonerRegistry.getOWLReasoner(), model)
+            var str  = ""
+            for ((key, value) in prefixMap) str += "@prefix $key: <$value> .\n"
+            if(settings.background != "") str += settings.background + "\n"
+            val s: InputStream = ByteArrayInputStream(str.toByteArray())
+            model.read(s, null, "TTL")
         }
         return model
     }
 
-    // Returns a Jena model with the statements from the external ontology.
-    // If the external ontology is not given, then it returns an empty model
-    private fun getExternalOntologyAsModel(): Model {
-        val model = ModelFactory.createDefaultModel()
-        var allTriplesString  = ""
-        for ((key, value) in prefixMap) allTriplesString += "@prefix $key: <$value> .\n"
-        if(settings.background != "") allTriplesString += settings.background + "\n"
-        val s: InputStream = ByteArrayInputStream(allTriplesString.toByteArray())
-        model.read(s, null, "TTL")
-        return model
-    }
-
-    // Returns a Jena model corresponding to the file vocab.owl
-    private fun getVocabularyModel():Model {
+    // Returns the Jena model containing statements from vocab.owl
+    private fun getVocabularyModel(): Model {
         val vocabularyModel = ModelFactory.createDefaultModel()
         val vocabURL: URL = this::class.java.classLoader.getResource("vocab.owl") ?: return vocabularyModel
         var str  = ""
         for ((key, value) in prefixMap) str += "@prefix $key: <$value> .\n"
-        str += vocabURL.readText(Charsets.UTF_8) + "\n"
+        str += vocabURL.readText(Charsets.UTF_8)
         val iStream: InputStream = ByteArrayInputStream(str.toByteArray())
-        return vocabularyModel.read(iStream, null, "TTL")
+        val m = vocabularyModel.read(iStream, null, "TTL")
+        return m
     }
 
 
-    // Model merging the graphs of the included sources.
-    private fun getCompleteModelMultiGraph(): Model {
-        val includedGraphs = mutableListOf<Graph>()
-        if (sources.getOrDefault("staticTable", false)) { includedGraphs.add(StaticTableGraph()) }
-        if (sources.getOrDefault("heap", false)) { includedGraphs.add(HeapGraph(interpreter!!)) }
-        if (sources.getOrDefault("vocabularyFile", false)) { includedGraphs.add(getVocabularyModel().graph) }
-        if (sources.getOrDefault("externalOntology", false)) { includedGraphs.add(getExternalOntologyAsModel().graph) }
-        val unionModel = ModelFactory.createModelForGraph(MultiUnion(includedGraphs.toTypedArray()))
-
-        // Turn on inference if requested
-        val reasoner = getReasoner() ?: return unionModel  // Get correct reasoner based on settings
-        return ModelFactory.createInfModel(reasoner, unionModel)
-    }
-
-    private fun getReasoner(): Reasoner? {
-        when (reasoner) {
+    // Get the requested Jena reasoner
+    private fun getJenaReasoner(tripleSettings: TripleSettings): Reasoner? {
+        when (tripleSettings.jenaReasoner) {
             "off" -> { return null }
             "owl" -> { return ReasonerRegistry.getOWLReasoner() }
             "rdfs" -> { return ReasonerRegistry.getRDFSReasoner() }
@@ -215,7 +159,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.
     // It iterates through all elements in the list from start to end.
-    class TripleListIterator(private val tripleList: List<Triple>): NiceIterator<Triple>() {
+    private class TripleListIterator(private val tripleList: List<Triple>): NiceIterator<Triple>() {
         var listIndex: Int = 0  // index of next element
 
         override fun hasNext(): Boolean = listIndex < tripleList.size
@@ -224,24 +168,67 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     }
 
     // Helper method to crate triple with URIs in all three positions
-    fun uriTriple(s: String, p: String, o: String): Triple {
+    private fun uriTriple(s: String, p: String, o: String): Triple {
         return Triple(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
     }
 
     // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
-    fun addIfMatch(candidateTriple: Triple, searchTriple: Triple, matchList: MutableList<Triple>, pseudo: Boolean)  {
+    private fun addIfMatch(candidateTriple: Triple, searchTriple: Triple, matchList: MutableList<Triple>, pseudo: Boolean)  {
+        // This is just a quick fix to resolve the problem with > and < in the uris. They appear for example when the stdlib.smol is used, since it has List<LISTT>.
+        if (candidateTriple.subject.toString().contains(">")) return
+        if (candidateTriple.subject.toString().contains("<")) return
+        if (candidateTriple.predicate.toString().contains(">")) return
+        if (candidateTriple.predicate.toString().contains("<")) return
+        if (candidateTriple.`object`.toString().contains(">")) return
+        if (candidateTriple.`object`.toString().contains("<")) return
         if (searchTriple.matches(candidateTriple) && !pseudo) matchList.add(candidateTriple)
     }
 
+    // Get model for the static table in the naive way:
+    // Extract all triples from the StaticTableGraph, put in model, write model to file, read file to model, return model
+    private fun getStaticTableModelNaive(tripleSettings: TripleSettings): Model {
+        return writeToFileAndReadToModel(StaticTableGraph(tripleSettings))
+    }
+
+    // Get model for the heap in the naive way:
+    // Extract all triples from the Heap, put in model, write model to file, read file to model, return model
+    private fun getHeapModelNaive(tripleSettings: TripleSettings, interpreter: Interpreter): Model {
+        return writeToFileAndReadToModel(HeapGraph(tripleSettings, interpreter))
+    }
+
+    // Helper method for the naive approach
+    private fun writeToFileAndReadToModel(g: Graph): Model {
+        val m1 = ModelFactory.createDefaultModel()
+
+        // Insert into m1
+        val it = g.find()
+        for (i in it) {
+            val p = ResourceFactory.createProperty(i.predicate.toString());
+            val o = ResourceFactory.createResource(i.`object`.toString());
+            m1.createResource(i.subject.toString()).addProperty(p, o);
+        }
+
+        // Write model m1 to file
+        File(settings.outpath).mkdirs()
+        File("${settings.outpath}/output-naive.ttl").createNewFile()
+        m1.write(FileWriter("${settings.outpath}/output-naive.ttl"),"TTL")
+
+        // Read into model m2
+        var m2 = ModelFactory.createDefaultModel()
+        val uri = File("${settings.outpath}/output-naive.ttl").toURL().toString()
+        m2.read(uri, "TTL")
+
+        return m2
+    }
 
     // Graph representing the static table
     // If pseudo is set, we always return all triples. This is needed for type checking, where graphBaseFind is not called
-    inner class StaticTableGraph(val pseudo: Boolean = false): GraphBase() {
+    private inner class StaticTableGraph(val tripleSettings: TripleSettings, val pseudo: Boolean = false): GraphBase() {
 
         // Returns an iterator of all triples in the static table that matches searchTriple
         // graphBaseFind only constructs the triples that match searchTriple.
         public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
-            val useGuardClauses = guards.getOrDefault("staticTable", true)
+            val useGuardClauses = tripleSettings.guards.getOrDefault("staticTable", true)
             val fieldTable: Map<String,FieldEntry> = staticTable.fieldTable
             val methodTable: Map<String,Map<String,MethodInfo>> = staticTable.methodTable
             val hierarchy: MutableMap<String, MutableSet<String>> = staticTable.hierarchy
@@ -417,13 +404,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
 
     // Graph representing the heap
-    inner class HeapGraph(interpreter: Interpreter, val pseudo: Boolean = false): GraphBase() {
+    private inner class HeapGraph(val tripleSettings: TripleSettings, interpreter: Interpreter, val pseudo: Boolean = false): GraphBase() {
         var interpreter: Interpreter = interpreter
 
         // Returns an iterator of all triples in the heap that matches searchTriple
         // graphBaseFind only constructs/fetches the triples that match searchTriple.
         public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
-            val useGuardClauses = guards.getOrDefault("heap", true)
+            val useGuardClauses = tripleSettings.guards.getOrDefault("heap", true)
             val settings: Settings = interpreter.settings
             val heap: GlobalMemory = interpreter.heap
 

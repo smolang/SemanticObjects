@@ -190,13 +190,36 @@ class REPL(private val settings: Settings) {
                     if  (!p1.contains(p[0])) { printRepl("\nFirst parameter must one of: $p1") }
                     if  (!p2.contains(p[1])) { printRepl("\nSecond parameter must one of: $p2") }
                     if (p1.contains(p[0]) && p2.contains(p[1])) {
-                        interpreter!!.tripleManager.guards[p[0]] = (p[1] == "true")
+                        interpreter!!.tripleManager.currentTripleSettings.guards[p[0]] = (p[1] == "true")
                         printRepl("Guard clauses in ${p[0]} set to: ${p[1]}")
                     }
                 }
                 false
             },
             "Enables/disables guard clauses when searching for triples in the heap or the static table",
+            parameterHelp = "[heap|staticTable] [true|false]",
+            requiresParameter = true
+        )
+
+        commands["virtual"] = Command(
+            "virtual",
+            this,
+            { str ->
+                val p1 = listOf("heap", "staticTable")
+                val p2 = listOf("true", "false")
+                val p: List<String> = str.replace("\\s+".toRegex(), " ").trim().split(" ")
+                if (p.size != 2) { printRepl("\n" + "This command requires exactly two parameters.") }
+                else {
+                    if  (!p1.contains(p[0])) { printRepl("\nFirst parameter must one of: $p1") }
+                    if  (!p2.contains(p[1])) { printRepl("\nSecond parameter must one of: $p2") }
+                    if (p1.contains(p[0]) && p2.contains(p[1])) {
+                        interpreter!!.tripleManager.currentTripleSettings.guards[p[0]] = (p[1] == "true")
+                        printRepl("Virtualization for ${p[0]} set to: ${p[1]}")
+                    }
+                }
+                false
+            },
+            "Enables/disables virtualization searching for triples in the heap or the static table. Warning: the alternative to virtualization is naive and slow.",
             parameterHelp = "[heap|staticTable] [true|false]",
             requiresParameter = true
         )
@@ -213,7 +236,7 @@ class REPL(private val settings: Settings) {
                     if  (!p1.contains(p[0])) { printRepl("\nFirst parameter must one of: $p1") }
                     if  (!p2.contains(p[1])) { printRepl("\nSecond parameter must one of: $p2") }
                     if (p1.contains(p[0]) && p2.contains(p[1])) {
-                        interpreter!!.tripleManager.sources[p[0]] = (p[1] == "true")
+                        interpreter!!.tripleManager.currentTripleSettings.sources[p[0]] = (p[1] == "true")
                         printRepl("Use source ${p[0]} set to ${p[1]}")
                     }
                 }
@@ -234,13 +257,13 @@ class REPL(private val settings: Settings) {
                 else {
                     if  (!allowedParameters.contains(p[0])) { printRepl("\nParameter must one of: $allowedParameters") }
                     else {
-                        interpreter!!.tripleManager.reasoner = p[0]
+                        interpreter!!.tripleManager.currentTripleSettings.jenaReasoner = p[0]
                         printRepl("Reasoner changed to: ${p[0]}")
                     }
                 }
                 false
             },
-            "Specify which reasoner to use, or turn it off",
+            "Specify which Jena reasoner to use, or turn it off",
             parameterHelp = "[off|rdfs|owl]",
             requiresParameter = true
         )
@@ -313,7 +336,7 @@ class REPL(private val settings: Settings) {
             "consistency",
             this,
             { _ ->
-                val ontology = interpreter!!.tripleManager.getCompleteOntology()
+                val ontology = interpreter!!.tripleManager.getOntology()
                 val reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
                 ontology.classesInSignature().forEach { println(it) }
                 printRepl("HermiT result ${reasoner.isConsistent}")

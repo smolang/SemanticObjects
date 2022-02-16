@@ -131,7 +131,7 @@ class Interpreter(
     fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
         val out : String = settings.replaceKnownPrefixesNoColon(str.removeSurrounding("\""))
         val m = OWLManager.createOWLOntologyManager()
-        val ontology = tripleManager.getCompleteOntology()
+        val ontology = tripleManager.getOntology()
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)

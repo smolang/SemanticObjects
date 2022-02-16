@@ -7,6 +7,9 @@ reasoner off
 guards heap true
 guards staticTable true
 
+virtual heap true
+virtual staticTable true
+
 source staticTable false
 source heap false
 source externalOntology false
