@@ -138,12 +138,12 @@ main
     // Short example using while loop
     Int counter = 2;
     while (counter <= 4) do
-        Person a = new Person(13025213498, "Irina", 1952, 1.78);
+        Person a = new Person(213498, "Irina", 1952, 1.78);
         counter = counter + 1;
     end
 
     // The first Person
-    Person alice = new Person(13025213498, "Alice", 1952, 1.78);
+    Person alice = new Person(213498, "Alice", 1952, 1.78);
     Int aliceId = alice.getPersonId();
     Int aliceName = alice.getName();
     Int aliceBirthYear = alice.getBirthYear();
@@ -159,10 +159,10 @@ main
     Department csDep = new Department(2, "Department of Computer Science");
 
     // Employees
-    Employee charlie = new Employee(29017413549, "Charlie", 1974, 1.91, 1, mathDep);
-    Employee dave = new Employee(2110195093381, "Dave", 1950, 1.76, 2, csDep);
-    AssociateProfessor ella = new AssociateProfessor(04036204431, "Ella", 1962, 1.86, 3, mathDep);
-    Professor greg = new Professor(05075043523, "Dave", 1950, 1.84, 2, csDep);
+    Employee charlie = new Employee(413549, "Charlie", 1974, 1.91, 1, mathDep);
+    Employee dave = new Employee(95093381, "Dave", 1950, 1.76, 2, csDep);
+    AssociateProfessor ella = new AssociateProfessor(204431, "Ella", 1962, 1.86, 3, mathDep);
+    Professor greg = new Professor(943523, "Dave", 1950, 1.84, 2, csDep);
 
     // Courses
     Course calculus1 = new Course("M1001", "Calculus 1", mathDep, greg);
@@ -173,9 +173,9 @@ main
     Course introToProgramming = new Course("C1001", "Introduction to Programming", csDep, dave);
 
     // Students
-    Student bob = new Student(24098845521, "Bob", 1988, 1.77, 1001, True) models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
-    Student eve = new Student(11118694402, "Eve", 1986, 1.66, 1002, False);
-    Student fred = new Student(09058894388, "Fred", 1988, 1.75, 1003, True);
+    Student bob = new Student(845521, "Bob", 1988, 1.77, 1001, True) models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
+    Student eve = new Student(694402, "Eve", 1986, 1.66, 1002, False);
+    Student fred = new Student(894388, "Fred", 1988, 1.75, 1003, True);
 
     // Get and print all Persons (no reasoning)
     // List<Person> allPersons = access("SELECT ?obj WHERE{ ?obj a prog:Person. }");
