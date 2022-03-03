@@ -62,7 +62,7 @@ sphinx {
     sourceDirectory = "${projectDir}/manual/source"
     configDirectory = "${projectDir}/manual/source"
     outputDirectory = "${projectDir}/manual/build/html"
-    builder = "html"
+    builder = "singlehtml"
 }
 clean {
     delete files("${projectDir}/manual/build")
