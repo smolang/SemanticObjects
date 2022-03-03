@@ -6,10 +6,14 @@
 Welcome to SMOL's documentation!
 ================================
 
+(Starting words about SMOL here...)
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:
 
+   introduction
+   lexical-structure
 
 
 Indices and tables
