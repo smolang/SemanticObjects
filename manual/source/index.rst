@@ -15,6 +15,14 @@ Welcome to SMOL's documentation!
    introduction
    lexical-structure
 
+Glossary
+========
+
+.. glossary::
+   :sorted:
+
+   EBNF
+      Extended Backus-Naur Form, a notation for formally specifying syntax.
 
 Indices and tables
 ==================
