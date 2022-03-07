@@ -1,0 +1,14 @@
+{
+    "name": "language-smol",
+    "version": "0.0.0",
+    "description": "Atom support for the SMOL language (http://abs-models.org)",
+    "keywords": [
+        "language",
+        "grammar"
+    ],
+    "repository": "https://github.com/Edkamb/SemanticObjects",
+    "license": "MIT",
+    "engines": {
+        "atom": ">=1.0.0 <2.0.0"
+    }
+}

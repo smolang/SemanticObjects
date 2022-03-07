@@ -1,0 +1,165 @@
+# If this is your first time writing a language grammar, check out:
+#   - https://flight-manual.atom.io/hacking-atom/sections/creating-a-grammar/
+
+scopeName: 'source.smol'
+name: 'Smol'
+fileTypes: [ 'smol' ]
+patterns: [
+    {
+        include: '#comments'
+    }
+    {
+        include: '#numbers'
+    }
+    {
+        include: '#strings'
+    }
+    {
+        include: '#operators'
+    }
+    {
+        include: '#constants'
+    }
+    {
+        include: '#keywords'
+    }
+    {
+        include: '#functions'
+    }
+    {
+        include: '#variables'
+    }
+    {
+        include: '#types'
+    }
+]
+
+repository:
+    comments:
+        patterns: [
+            {
+                begin: '//'
+                end: '\\n'
+                name: 'comment.line.double-slash.smol'
+            }
+            {
+                begin: '/\\*'
+                beginCaptures:
+                    '0':
+                        name: 'punctuation.definition.comment.begin.smol'
+                end: '\\*/'
+                endCaptures:
+                    '0':
+                        name: 'punctuation.definition.comment.end.smol'
+                name: 'comment.block.smol'
+            }
+        ]
+    numbers:
+        patterns: [
+            {
+                match: '\\b-?[0-9]+\\b'
+                name: 'constant.numeric.integer.smol'
+            }
+            {
+                match: '\\b\\-?[0-9]?\\.[0-9]+((E|e)(\\+|-)?[0-9]+)?\\b'
+                name: 'constant.numeric.float.smol'
+            }
+        ]
+    strings:
+        patterns: [
+            {
+                begin: '"'
+                beginCaptures:
+                    '0':
+                        name: 'punctuation.definition.string.begin.smol'
+                end: '"(?!")'
+                endCaptures:
+                    '0':
+                        name: 'punctuation.definition.string.end.smol'
+                name: 'string.quoted.double.smol'
+                patterns: [
+                    {
+                        match: '\\\\.'
+                        name: 'constant.character.escape.smol'
+                    }
+                ]
+            }
+        ]
+    operators:
+        patterns: [
+            {
+                match: '<\\=|>\\=|\\=\\=|<|>|\\!\\='
+                name: 'keyword.operator.comparison.smol'
+            }
+            {
+                match: '\\='
+                name: 'keyword.operator.assignment.smol'
+            }
+            {
+                match: '\\+|\\-|\\*|/|%'
+                name: 'keyword.operator.arithmetic.smol'
+            }
+            {
+                match: '&|\\||!'
+                name: 'keyword.operator.logical.smol'
+            }
+        ]
+    constants:
+        patterns: [
+            {
+                match: '\\b(True|False|null|this|unit)\\b'
+                name: 'constant.language.smol'
+            }
+        ]
+    keywords:
+        patterns: [
+            {
+                match: '\\b(if|then|else)\\b'
+                name: 'keyword.control.conditional.smol'
+            }
+            {
+                match: '\\b(while|do|main|end)\\b'
+                name: 'keyword.control.repeat.smol'
+            }
+            {
+                match: '\\b(return|skip|print|destroy|access|construct|member|simulate|validate|tick|breakpoint)\\b'
+                name: 'keyword.control.statement.smol'
+            }
+            {
+                match: '\\b(new|super|abstract|class|extends|rule|override|private|protected|nonsemantic|models|domain|in|out)\\b'
+                name: 'keyword.other.smol'
+            }
+        ]
+    functions:
+        patterns: [
+            {
+                match: '\\b([a-z]\\w+)\\s*(\\(|\\[)'
+                captures:
+                    '1':
+                        name: 'entity.name.function.smol'
+                name: 'meta.function.smol'
+            }
+        ]
+    variables:
+        patterns: [
+            {
+                match: '\\b(this)\\.([a-z]\\w*)\\b'
+                captures:
+                    '2':
+                        name: 'variable.field.smol'
+                name: 'meta.field.smol'
+            }
+            # {
+            #     match: '\\b[a-z]\\w*\\b'
+            #     name: 'variable.smol'
+            # }
+        ]
+    types:
+        patterns: [
+            {
+                match: '\\b(Int|Double|Bool|String|Cont)\\b'
+                # we want "type" but atom defines "class" in
+                # https://github.com/atom/atom/blob/master/static/variables/syntax-variables.less
+                name: 'class.smol'
+            }
+        ]
