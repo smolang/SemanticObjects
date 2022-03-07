@@ -1,0 +1,200 @@
+
+abstract class FMU_Wrapper()
+  abstract Int propagate()         //pull
+  abstract Int advance(Double db)
+end
+
+abstract class Wall extends FMU_Wrapper()
+  abstract Double getH()
+end
+
+class Outside (Double temp) end
+
+
+
+class Room extends FMU_Wrapper (
+  Cont[in Double h_InnerWall, in Double h_OuterWall,
+    	in Double h_powerHeater, out Double T_room]  fmuSim,
+  Wall inner,
+  Wall outer,
+  Controller ctrl,
+  Boolean isFirst)
+
+  override Int propagate()
+    this.fmuSim.h_InnerWall = this.inner.getH();
+    this.fmuSim.h_OuterWall = this.outer.getH();
+
+    if(this.isFirst) then
+      this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_room1;
+    else
+      this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_room2;
+    end
+    return 0;
+  end
+
+  override Int advance(Double db)
+    this.fmuSim.tick(db);
+    return 0;
+  end
+
+end
+
+
+
+class Controller extends FMU_Wrapper (
+  Cont[in Double T_room1, in Double T_room2,
+  	in Double T_clock, out Double h_room1,
+  	out Double h_room2] fmuSim,
+  Cont[out Double Clock] clock,
+  Room r1,
+  Room r2)
+
+  override Int propagate()
+    this.fmuSim.T_room1 = this.r1.fmuSim.T_room;
+    this.fmuSim.T_room2 = this.r2.fmuSim.T_room;
+    this.fmuSim.T_clock = this.clock.Clock;
+    return 0;
+  end
+
+  override Int advance(Double db)
+    this.fmuSim.tick(db);
+    this.clock.tick(db);
+    return 0;
+  end
+
+end
+
+
+
+class InnerWall extends Wall(
+  Cont[in Double T_room1, in Double T_room2,
+  	out Double h_wall] fmuSim,
+  Room left,
+  Room right)
+
+  override Int propagate()
+    this.fmuSim.T_room1   = this.left.fmuSim.T_room;
+    this.fmuSim.T_room2   = this.right.fmuSim.T_room;
+    return 0;
+  end
+
+  override Int advance(Double db)
+    this.fmuSim.tick(db);
+    return 0;
+  end
+
+  override Double getH()
+    return this.fmuSim.h_wall;
+  end
+
+end
+
+
+
+class OuterWall1 extends Wall(
+  Cont[in Double T_room1, in Double T_outside,
+  	out Double h_wall] fmuSim,
+  Room inner,
+  Outside outside)
+
+  override Int propagate()
+    this.fmuSim.T_room1   = this.inner.fmuSim.T_room;
+    this.fmuSim.T_outside = this.outside.temp;
+    return 0;
+  end
+
+  override Double getH()
+    return this.fmuSim.h_wall;
+  end
+
+  override Int advance(Double db)
+    this.fmuSim.tick(db);
+    return 0;
+  end
+
+end
+
+class OuterWall2 extends Wall(
+  Cont[in Double T_room2, in Double T_outside,
+  	out Double h_wall] fmuSim,
+  Room inner,
+  Outside outside)
+
+  override Int propagate()
+    this.fmuSim.T_room2   = this.inner.fmuSim.T_room;
+    this.fmuSim.T_outside = this.outside.temp;
+    return 0;
+  end
+
+  override Double getH()
+    return this.fmuSim.h_wall;
+  end
+
+  override Int advance(Double db)
+    this.fmuSim.tick(db);
+    return 0;
+  end
+
+end
+
+
+
+main
+  Cont[in Double T_room1, in Double T_room2, out Double h_wall]
+  i = simulate("examples\House\fmus\InnerWall.fmu");
+
+  Cont[in Double T_room1, in Double T_outside, out Double h_wall]
+  o1 = simulate("examples\House\fmus\OuterWall1.fmu");
+
+  Cont[in Double T_room2, in Double T_outside, out Double h_wall]
+  o2 = simulate("examples\House\fmus\OuterWall2.fmu");
+
+  Cont[in Double h_InnerWall, in Double h_OuterWall,
+	in Double h_powerHeater, out Double T_room]
+  r1 = simulate("examples\House\fmus\Room1.fmu");
+
+  r1.role = "room1";
+
+  Cont[in Double h_InnerWall, in Double h_OuterWall,
+	in Double h_powerHeater, out Double T_room]
+  r2 = simulate("examples\House\fmus\Room2.fmu");
+
+  r2.role = "room2";
+
+  Cont[in Double T_room1, in Double T_room2, in Double T_clock,
+	out Double h_room1, out Double h_room2]
+  ctrl = simulate("examples\House\fmus\TempController.fmu");
+
+  Cont[out Double Clock]
+  cl = simulate("examples\House\fmus\Clock.fmu", Reset = 100);
+
+  Outside outside1 = new Outside(5.3);
+  Outside outside2 = new Outside(4.9);
+  Room room1 = new Room(r1, null, null, null, True);
+  Room room2 = new Room(r2, null, null, null, False);
+  Wall inner  = new InnerWall(i, room1, room2);
+  Wall outer1 = new OuterWall1(o1, room1, outside1);
+  Wall outer2 = new OuterWall2(o2, room2, outside2);
+  Controller control = new Controller(ctrl, cl, room1, room2);
+  room1.ctrl = control; room1.inner = inner; room1.outer = outer1;
+  room2.ctrl = control; room2.inner = inner; room2.outer = outer2;
+  Boolean b = validate("examples\House\shape.ttl");
+  print(b);
+
+  Double step = 0.01;
+  Int at = 0;
+  Int limit = 60000;
+
+  while at < limit do
+    room1.propagate(); room2.propagate();
+    outer1.propagate(); outer2.propagate();
+    inner.propagate(); control.propagate();
+
+    room1.advance(step); room2.advance(step);
+    outer1.advance(step); outer2.advance(step);
+    inner.advance(step); control.advance(step);
+
+    at = at + 1;
+    if(at % 100 == 0) then print(room2.fmuSim.T_room); end
+  end
+end
