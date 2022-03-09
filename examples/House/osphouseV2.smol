@@ -26,32 +26,32 @@ class House(
   out Double h_room1, out Double h_room2]> ctrlList, // controllers
   Outside os1, Outside os2, Int rooms)
 
-  // list of inner rooms in SMOL
+  // list of inner rooms in the FMU wrapper
   List<Room> iRoomList = null;
-  // list of inner walls in SMOL
+  // list of inner walls in the FMU wrapper
   List<Wall> iWallList = null;
-  // list of controllers in SMOL
+  // list of controllers in the FMU wrapper
   List<Controller> controllers = null
 
-  // outer rooms in SMOL
+  // outer rooms in the FMU wrapper
   Room oRoom1 = null;
   Room oRoom2 = null;
-  // outer wall in SMOL
+  // outer wall in the FMU wrapper
   Wall outer1 = null;
   Wall outer2 = null;
 
   Int init()
-    // initialising outer room in SMOL
+    // initialising outer room in the FMU wrapper
     oRoom1 = new Room(or1, null, null, null, True);
-    // initializing outer wall in SMOL
+    // initializing outer wall in the FMU wrapper
     outer1 = new OuterWall(o1, oRoom1, os1);
 
     // base case: two rooms
     if rooms = 2 then
-      // initilalizing inner wall in SMOL
+      // initilalizing inner wall in the FMU wrapper
       Wall inner  = new InnerWall(iList.get(0).content, oRoom1, oRoom2);
       iWallList =  new List(inner, null);
-      // initilalizing controller in SMOL
+      // initilalizing controller in the FMU wrapper
       Controller control = new Controller(ctrlList.get(0).content, cl, oRoom1, oRoom2);
       controllers =  new List(control, null);
     end
@@ -60,7 +60,7 @@ class House(
 
     // more than two rooms
     while counter < (rooms - 2)  do
-      // initilalizing inner rooms in SMOL
+      // initilalizing inner rooms in the FMU wrapper
       Room iRoom = new Room(irList.get(counter).content, null, null, null, True);
       if counter == 0 then
         iRoomList = new List(iRoom,null);
@@ -75,21 +75,21 @@ class House(
 
     while counter < (rooms - 1)  do
 
-      if counter == 0 then
-        // initilalizing inner walls in SMOL
+      if counter == 0 then // first inner wall with an outer room
+        // initilalizing inner walls in the FMU wrapper
         Wall inner  = new InnerWall(iList.get(counter).content, oRoom1, iRoomList.get(counter).content);
-        // initilalizing controller in SMOL
-        Controller control = new Controller(ctrlList.get(counter).get, cl, oRoom1, iRoomList.get(counter).content);
+        // initilalizing controller in the FMU wrapper
+        Controller control = new Controller(ctrlList.get(counter).content, cl, oRoom1, iRoomList.get(counter).content);
       else
-        if counter == (rooms - 2) then
-          // initilalizing inner walls in SMOL
+        if counter == (rooms - 2) then // last inner wall with an outer room
+          // initilalizing inner walls in the FMU wrapper
           Wall inner  = new InnerWall(iList.get(counter).content, iRoomList.get(counter-1).content, oRoom2);
-          // initilalizing controller in SMOL
+          // initilalizing controller in the FMU wrapper
           Controller control = new Controller(ctrlList.get(counter).content, cl, iRoomList.get(counter-1).content, oRoom2);
-        else
-          // initilalizing inner walls in SMOL
+        else // inner wall with two inner rooms
+          // initilalizing inner walls in the FMU wrapper
           Wall inner  = new InnerWall(iList.get(counter).content, iRoomList.get(counter-1).content, iRoomList.get(counter).content);
-          // initilalizing controller in SMOL
+          // initilalizing controller in the FMU wrapper
           Controller control = new Controller(ctrlList.get(counter).content, cl, iRoomList.get(counter-1).content, iRoomList.get(counter).content);
         end
       end
@@ -106,23 +106,23 @@ class House(
     end
 
 
-    // initialising outer room in SMOL
+    // initialising outer room in the FMU wrapper
     oRoom2 = new Room(or2, null, null, null, False);
-    // initializing outer wall in SMOL
+    // initializing outer wall in the FMU wrapper
     outer2 = new OuterWall(o2, oRoom2, os2);
 
-    // initialising outer room in SMOL
+    // initialising outer room in the FMU wrapper
     oRoom1.ctrl = control; oRoom1.left = outer1;  oRoom1.right = iWallList.get(0).content;
 
     counter = 0;
     while counter < (rooms - 2)  do
-      // initialising inner rooms in SMOL
+      // initialising inner rooms in the FMU wrapper
       iRoomList.get(counter).content.ctrl = controllers.get(counter).content;
       iRoomList.get(counter).contnet.left = iWallList.get(counter).content;
       iRoomList.get(counter).content.right = iWallList.get(counter+1).content;
     end
 
-    // initialising outer room in SMOL
+    // initialising outer room in the FMU wrapper 
     oRoom2.ctrl = control; oRoom2.left = iWallList.get(rooms-2).content; oRoom2.right = outer2;
 
     Boolean b = validate("examples\House\shape.ttl");
