@@ -44,7 +44,7 @@ class House(
     // initialising outer room in the FMU wrapper
     oRoom1 = new Room(or1, null, null, null, True);
     // initializing outer wall in the FMU wrapper
-    outer1 = new OuterWall(o1, oRoom1, os1);
+    outer1 = new OuterWall1(o1, oRoom1, os1);
 
     // base case: two rooms
     if rooms = 2 then
@@ -109,7 +109,7 @@ class House(
     // initialising outer room in the FMU wrapper
     oRoom2 = new Room(or2, null, null, null, False);
     // initializing outer wall in the FMU wrapper
-    outer2 = new OuterWall(o2, oRoom2, os2);
+    outer2 = new OuterWall2(o2, oRoom2, os2);
 
     // initialising outer room in the FMU wrapper
     oRoom1.ctrl = control; oRoom1.left = outer1;  oRoom1.right = iWallList.get(0).content;
@@ -122,7 +122,7 @@ class House(
       iRoomList.get(counter).content.right = iWallList.get(counter+1).content;
     end
 
-    // initialising outer room in the FMU wrapper 
+    // initialising outer room in the FMU wrapper
     oRoom2.ctrl = control; oRoom2.left = iWallList.get(rooms-2).content; oRoom2.right = outer2;
 
     Boolean b = validate("examples\House\shape.ttl");
