@@ -85,7 +85,7 @@ class Room extends Area (
   Boolean outside = False;
 
   override Int propagate()
-    wallRigh.propagate();
+    wallRight.propagate();
     if(this.isFirst) then
       ctrl.propagate();
     end
@@ -105,7 +105,7 @@ class Room extends Area (
   end
 
   override Int advance(Double db)
-    righ.advance(db);
+    wallRight.advance(db);
     if(this.isFirst) then
       ctrl.advance(db);
     end
@@ -292,13 +292,13 @@ class House(Cont[out Double Clock] clock)
   end
 
  Int propagate()
-    first.left.propagate();
+    first.wallLeft.propagate();
     first.propagate();
     return 0;
   end
 
  Int advance(Double db)
-    first.left.advance(db);
+    first.wallLeft.advance(db);
     first.advance(db);
     this.clock.tick(db);
     return 0;
