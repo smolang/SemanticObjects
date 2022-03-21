@@ -32,12 +32,12 @@ class Controller extends FMU_Wrapper (
   Cont[in Double T_roomLeft, in Double T_roomRight,
   	in Double T_clock, out Double h_roomLeft,
   	out Double h_roomRight] fmuSim,
-  Room rLeft,
-  Room rRight)
+  Room roomLeft,
+  Room roomRight)
 
   override Int propagate()
-    this.fmuSim.T_roomLeft = this.r1.fmuSim.T_room;
-    this.fmuSim.T_roomLeft = this.r2.fmuSim.T_room;
+    this.fmuSim.T_roomLeft = this.roomLeft.fmuSim.T_room;
+    this.fmuSim.T_roomLeft = this.roomRight.fmuSim.T_room;
     return 0;
   end
 
@@ -212,12 +212,12 @@ class House(Cont[out Double Clock] clock)
     this.lastRoom.wallRight.areaRight = roomLeft;
     roomLeft.ctrl = control;
     roomLeft.wallLeft = this.lastRoom.wallRight;
-    roomLeft.right = wall1;
+    roomLeft.wallRight = wall1;
     roomLeft.nextRoom = roomRight;
 
     roomRight.ctrl = control;
-    roomRight.left = wall1;
-    roomRight.right = wall2;
+    roomRight.wallLeft = wall1;
+    roomRight.wallRight = wall2;
     roomRight.nextRoom = null;
 
     // last element in the list of rooms
@@ -268,15 +268,15 @@ class House(Cont[out Double Clock] clock)
     this.firstRoom.wallLeft.areaLeft = roomRight;
     roomLeft.ctrl = control;
     roomLeft.wallLeft = wall1;
-    roomLeft.right = wall2;
+    roomLeft.wallRight = wall2;
     roomLeft.nextRoom = roomRight;
 
     roomRight.ctrl = control;
-    roomRight.left = wall2;
-    roomRight.right = this.firstRoom.wallLeft;
+    roomRight.wallLeft = wall2;
+    roomRight.wallRight = this.firstRoom.wallLeft;
     roomRight.nextRoom = this.firstRoom;
 
-    // last element in the list of rooms
+    // first element in the list of rooms
     this.firstRoom = roomLeft;
 
     // asset validation
@@ -308,37 +308,53 @@ class House(Cont[out Double Clock] clock)
     // reconfigure controllers
 
     Controller control = new Controller(ctrl, roomLeft, this.firstRoom);
+    // initialising outer room in the FMU wrapper
+    roomLeft = new Room(r1, null, null, null, True, null);
+    // initializing innter wall in the FMU wrapper
+    wall1  = new Wall(w1, this.firstRoom.wallLeft.arealeft, roomLeft);
     this.firstRoom.isFirst = False;
+    this.firstRoom.ctrl = control;
 
     Room iterator = this.firstRoom;
 
-    while iterator.nextRoom
+    roomLeft.ctrl = control;
+    roomLeft.wallLeft = wall1;
+    roomRight.wallRight = this.firstRoom.wallLeft.arealeft;
+    roomRight.nextRoom = this.firstRoom;
 
-    // initialising outer room in the FMU wrapper
-    roomLeft = new Room(r1, null, null, null, True, null);
+    this.firstRoom = roomLeft;
 
-    // initializing innter wall in the FMU wrapper
-    wall1  = new Wall(w1, this.firstRoom.wallLeft.arealeft, roomLeft);
+    Boolean flip = True;
+    while iterator.nextRoom != null do
+      iterator = iterator.nextRoom;
+      iterator.isFirst = flip;
+      if flip == True then
+        if iterator != lastRoom then
+          iterator.controller.roomLeft = iterator;
+          iterator.controller.roomRight= interator.nextRoom;
+        else
+          iterator.controller.roomLeft = iterator;
+          iterator.controller.roomRight= roomRight;
+        end
+      else
+        iterator.ctrl = iterator.wallLeft.roomLeft.ctrl;
+      end
+      flip = !flip // flip the Boolean
+    end
 
     // initialising outer room in the FMU wrapper
     roomRight = new Room(r2, null, null, null, False, null);
     // initializing outer wall in the FMU wrapper
-    wall2 = new Wall(w2, roomLeft, roomRight);
+    wall2 = new Wall(w2, roomLeft, this.lastRoom.wallRight.areaRight);
 
     // connecting wrappers
-    this.firstRoom.wallLeft.areaLeft = roomRight;
-    roomLeft.ctrl = control;
-    roomLeft.wallLeft = wall1;
-    roomLeft.right = wall2;
-    roomLeft.nextRoom = roomRight;
-
-    roomRight.ctrl = control;
-    roomRight.left = wall2;
-    roomRight.right = this.firstRoom.wallLeft;
-    roomRight.nextRoom = this.firstRoom;
+    roomRight.ctrl = this.lastRoom.ctrl;
+    roomRight.wallLeft = this.lastRoom.wallRight;
+    roomRight.wallRight = wall2
+    roomRight.nextRoom = null;
 
     // last element in the list of rooms
-    this.firstRoom = roomLeft;
+    this.lastRoom = roomRight;
 
     // asset validation
     Boolean b = validate("examples\House\shape.ttl");
