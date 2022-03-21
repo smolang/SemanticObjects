@@ -12,17 +12,8 @@ class Wall extends FMU_Wrapper (
   Area areaRight)
 
   override Int propagate()
-    if this.areaLeft.outside then
-        this.fmuSim.T_areaLeft = this.left.temp;
-    else
-        this.fmuSim.T_areaLeft   = this.left.fmuSim.T_room;
-    end
-
-    if this.areaRight.outside then
-        this.fmuSim.T_areaRight = this.right.temp;
-    else
-        this.fmuSim.T_areaRight   = this.right.fmuSim.T_room;
-    end
+    this.fmuSim.T_areaLeft = this.areaLeft.getT();
+    this.fmuSim.T_areaRight = this.areaRight.getT();
     return 0;
   end
 
@@ -41,28 +32,30 @@ class Controller extends FMU_Wrapper (
   Cont[in Double T_roomLeft, in Double T_roomRight,
   	in Double T_clock, out Double h_roomLeft,
   	out Double h_roomRight] fmuSim,
-  //Cont[out Double Clock] clock,
   Room rLeft,
   Room rRight)
 
   override Int propagate()
     this.fmuSim.T_roomLeft = this.r1.fmuSim.T_room;
     this.fmuSim.T_roomLeft = this.r2.fmuSim.T_room;
-    //this.fmuSim.T_clock = this.clock.Clock;
     return 0;
   end
 
   override Int advance(Double db)
     this.fmuSim.tick(db);
-    //this.clock.tick(db);
     return 0;
   end
 end
 
-abstract class Area extends FMU_Wrapper end
+abstract class Area extends FMU_Wrapper
+  abstract Double getT()
+end
 
 class Outside (Double temp) extends Area // Fake FMU wrapper
-  Boolean outside = True;
+
+  override Double getT()
+    return temp
+  end
 
   override Int propagate()
     return 0
@@ -80,21 +73,23 @@ class Room extends Area (
   Wall wallRight,
   Controller ctrl,
   Boolean isFirst,
-  Room next)
+  Room nextRoom)
 
-  Boolean outside = False;
+  override Double getT()
+    return T_room
+  end
 
   override Int propagate()
     wallRight.propagate();
     if(this.isFirst) then
       ctrl.propagate();
     end
-    if this.next != null then
-      next.propagate();
+    if this.nextRoom != null then
+      nextRoom.propagate();
     end
 
-    this.fmuSim.h_wallLeft = this.left.getH();
-    this.fmuSim.h_wallRight = this.right.getH();
+    this.fmuSim.h_wallLeft = this.wallLeft.getH();
+    this.fmuSim.h_wallRight = this.wallRight.getH();
 
     if(this.isFirst) then
       this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_roomLeft;
@@ -109,8 +104,8 @@ class Room extends Area (
     if(this.isFirst) then
       ctrl.advance(db);
     end
-    if next != null then
-      next.advance(db);
+    if nextRoom != null then
+      nextRoom.advance(db);
     end
 
     this.fmuSim.tick(db);
@@ -122,8 +117,8 @@ end
 
 class House(Cont[out Double Clock] clock)
 
-  Room first = null;
-  Room last= null;
+  Room firstRoom = null;
+  Room lastRoom= null;
 
   // built a base house with two rooms
   Int init(
@@ -148,8 +143,8 @@ class House(Cont[out Double Clock] clock)
     Wall wall2  = null;
     Wall wall3 = null;
     // pointers to the first and last element in the list of rooms
-    first = roomLeft;
-    last = roomRight;
+    this.firstRoom = roomLeft;
+    this.lastRoom = roomRight;
 
     // initilalizing controller in the FMU wrapper
     Controller control = new Controller(ctrl, roomLeft, roomRight);
@@ -169,12 +164,12 @@ class House(Cont[out Double Clock] clock)
     roomLeft.ctrl = control;
     roomLeft.wallLeft = wall1;
     roomLeft.wallRight = wall2;
-    roomLeft.next = roomRight;
+    roomLeft.nextRoom = roomRight;
 
     roomRight.ctrl = control;
     roomRight.wallLeft = wall2;
     roomRight.wallRight = wall3;
-    roomRight.next = null;
+    roomRight.nextRoom = null;
 
     // asset validation
     Boolean b = validate("examples\House\shape.ttl");
@@ -185,8 +180,8 @@ class House(Cont[out Double Clock] clock)
 
   //add two rooms to the right
   Int addRight(
-    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, // inner wall
-    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, // inner wall
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, //  wall
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, //  wall
     Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
     out Double h_roomLeft, out Double h_roomRight]> ctrl, // controller
     Cont[in Double h_wallLeft, in Double h_wallRight,
@@ -211,22 +206,22 @@ class House(Cont[out Double Clock] clock)
     // initialising outer room in the FMU wrapper
     roomRight = new Room(r2, null, null, null, False, null);
     // initializing outer wall in the FMU wrapper
-    wall2 = new Wall(w2, roomRight, last.wallRight.areaRight);
+    wall2 = new Wall(w2, roomRight, this.lastRoom.wallRight.areaRight);
 
     // connecting wrappers
-    last.wallRight.areaRight = roomLeft;
+    this.lastRoom.wallRight.areaRight = roomLeft;
     roomLeft.ctrl = control;
-    roomLeft.wallLeft = last.WallRight;
+    roomLeft.wallLeft = this.lastRoom.wallRight;
     roomLeft.right = wall1;
-    roomLeft.next = roomRight;
+    roomLeft.nextRoom = roomRight;
 
     roomRight.ctrl = control;
     roomRight.left = wall1;
     roomRight.right = wall2;
-    roomRight.next = null;
+    roomRight.nextRoom = null;
 
     // last element in the list of rooms
-    last = roomRight;
+    this.lastRoom = roomRight;
 
     // asset validation
     Boolean b = validate("examples\House\shape.ttl");
@@ -238,8 +233,8 @@ class House(Cont[out Double Clock] clock)
 
   //add two rooms to the left
   Int addleft(
-    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, // inner wall
-    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, // inner wall
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, //wall
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, // wall
     Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
     out Double h_roomLeft, out Double h_roomRight]> ctrl, // controller
     Cont[in Double h_wallLeft, in Double h_wallRight,
@@ -262,7 +257,7 @@ class House(Cont[out Double Clock] clock)
     roomLeft = new Room(r1, null, null, null, True, null);
 
     // initializing innter wall in the FMU wrapper
-    wall1  = new Wall(w1, first.wallLeft.arealeft, roomleft);
+    wall1  = new Wall(w1, this.firstRoom.wallLeft.arealeft, roomLeft);
 
     // initialising outer room in the FMU wrapper
     roomRight = new Room(r2, null, null, null, False, null);
@@ -270,19 +265,80 @@ class House(Cont[out Double Clock] clock)
     wall2 = new Wall(w2, roomLeft, roomRight);
 
     // connecting wrappers
-    first.wallLeft.arealeft = roomRight;
+    this.firstRoom.wallLeft.areaLeft = roomRight;
     roomLeft.ctrl = control;
     roomLeft.wallLeft = wall1;
     roomLeft.right = wall2;
-    roomLeft.next = roomRight;
+    roomLeft.nextRoom = roomRight;
 
     roomRight.ctrl = control;
     roomRight.left = wall2;
-    roomRight.right = first.wallLeft;
-    roomRight.next = first;
+    roomRight.right = this.firstRoom.wallLeft;
+    roomRight.nextRoom = this.firstRoom;
 
     // last element in the list of rooms
-    first = roomLeft;
+    this.firstRoom = roomLeft;
+
+    // asset validation
+    Boolean b = validate("examples\House\shape.ttl");
+    print(b);
+
+    return 0
+  end
+
+  //add one room to the left and one room to the right
+  Int addLeftRight(
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, // wall
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, // wall
+    Cont[in Double T_roomLeft, in Double T_roomRight,
+    out Double h_roomLeft, out Double h_roomRight]> ctrl, // controller
+    Cont[in Double h_wallLeft, in Double h_wallRight,
+    in Double h_powerHeater, out Double T_room] r1,  //  room
+    Cont[in Double h_wallLeft, in Double h_wallRight,
+    in Double h_powerHeater, out Double T_room] r2) //  room
+
+    Room roomLeft = null;
+    Room roomRight = null;
+    // Controller in the FMU wrapper
+    Controller control = null;
+    //  walls in the FMU wrapper
+    Wall wall1 = null;
+    Wall wall2  = null;
+
+    // reconfigure controllers
+
+    Controller control = new Controller(ctrl, roomLeft, this.firstRoom);
+    this.firstRoom.isFirst = False;
+
+    Room iterator = this.firstRoom;
+
+    while iterator.nextRoom
+
+    // initialising outer room in the FMU wrapper
+    roomLeft = new Room(r1, null, null, null, True, null);
+
+    // initializing innter wall in the FMU wrapper
+    wall1  = new Wall(w1, this.firstRoom.wallLeft.arealeft, roomLeft);
+
+    // initialising outer room in the FMU wrapper
+    roomRight = new Room(r2, null, null, null, False, null);
+    // initializing outer wall in the FMU wrapper
+    wall2 = new Wall(w2, roomLeft, roomRight);
+
+    // connecting wrappers
+    this.firstRoom.wallLeft.areaLeft = roomRight;
+    roomLeft.ctrl = control;
+    roomLeft.wallLeft = wall1;
+    roomLeft.right = wall2;
+    roomLeft.nextRoom = roomRight;
+
+    roomRight.ctrl = control;
+    roomRight.left = wall2;
+    roomRight.right = this.firstRoom.wallLeft;
+    roomRight.nextRoom = this.firstRoom;
+
+    // last element in the list of rooms
+    this.firstRoom = roomLeft;
 
     // asset validation
     Boolean b = validate("examples\House\shape.ttl");
@@ -292,14 +348,14 @@ class House(Cont[out Double Clock] clock)
   end
 
  Int propagate()
-    first.wallLeft.propagate();
-    first.propagate();
+    firstRoom.wallLeft.propagate();
+    firstRoom.propagate();
     return 0;
   end
 
  Int advance(Double db)
-    first.wallLeft.advance(db);
-    first.advance(db);
+    firstRoom.wallLeft.advance(db);
+    firstRoom.advance(db);
     this.clock.tick(db);
     return 0;
   end
@@ -322,26 +378,26 @@ main
 //House base case: 2 rooms
   // associating an outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w1 = simulate("examples\House\fmus\Wall1.fmu");
+  w1 = simulate("examples\House\fmus\Wall.fmu");
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w2 = simulate("examples\House\fmus\Wall2.fmu");
+  w2 = simulate("examples\House\fmus\Wall.fmu");
   // associating an outer wall outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w3 = simulate("examples\House\fmus\Wall3.fmu");
+  w3 = simulate("examples\House\fmus\Wall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl1 = simulate("examples\House\fmus\TempController1.fmu");
+  ctrl1 = simulate("examples\House\fmus\TempController.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r1 = simulate("examples\House\fmus\Room1.fmu");
+  r1 = simulate("examples\House\fmus\Room.fmu");
   r1.role = "room 1";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r2 = simulate("examples\House\fmus\Room2.fmu");
+  r2 = simulate("examples\House\fmus\Room.fmu");
   r2.role = "room 2";
 
   Int h = house.init(w1, w2, w3, ctrl1, r1, r2, outsideLeft, outsideRight);
@@ -350,29 +406,29 @@ main
     h = house.propagate();
     h = house.advance(step);
     at = at + 1;
-    if(at % 100 == 0) then print(house.last.fmuSim.T_room); end
+    if(at % 100 == 0)  then print(house.lastRoom.getT()); end
   end
 
 //Reconfigure house: add two more rooms to the right of the house
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w4 = simulate("examples\House\fmus\Wall4.fmu");
+  w4 = simulate("examples\House\fmus\Wall.fmu");
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w5 = simulate("examples\House\fmus\Wall5.fmu");
+  w5 = simulate("examples\House\fmus\Wall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl2 = simulate("examples\House\fmus\TempController2.fmu");
+  ctrl2 = simulate("examples\House\fmus\TempController.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r3 = simulate("examples\House\fmus\Room3.fmu");
+  r3 = simulate("examples\House\fmus\Room.fmu");
   r3.role = "room 3";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r4 = simulate("examples\House\fmus\Room4.fmu");
+  r4 = simulate("examples\House\fmus\Room.fmu");
   r4.role = "room 4";
 
   h = house.addRight(w4, w5, ctrl2, r3, r4);
@@ -381,29 +437,29 @@ main
     h = house.propagate();
     h = house.advance(step);
     at = at + 1;
-    if(at % 100 == 0) then print(house.last.fmuSim.T_room); end
+    if(at % 100 == 0)  then print(house.lastRoom.getT()); end
   end
 
 //Reconfigure house: add two more rooms to the left of the house
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w6 = simulate("examples\House\fmus\Wall6.fmu");
+  w6 = simulate("examples\House\fmus\Wall.fmu");
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w7 = simulate("examples\House\fmus\Wall7.fmu");
+  w7 = simulate("examples\House\fmus\Wall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl3 = simulate("examples\House\fmus\TempController3.fmu");
+  ctrl3 = simulate("examples\House\fmus\TempController.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r5 = simulate("examples\House\fmus\Room5.fmu");
+  r5 = simulate("examples\House\fmus\Room.fmu");
   r5.role = "room 5";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r6 = simulate("examples\House\fmus\Room6.fmu");
+  r6 = simulate("examples\House\fmus\Room.fmu");
   r6.role = "room 6";
 
   h = house.addLeft(w6, w7, ctrl3, r5, r6);
@@ -412,6 +468,40 @@ main
     h = house.propagate();
     h = house.advance(step);
     at = at + 1;
-    if(at % 100 == 0) then print(house.last.fmuSim.T_room); end
+    if(at % 100 == 0) then  then print(house.lastRoom.getT()); end
   end
+
+  //Reconfigure house: add one room to the left and one room to the right
+    // associating an innter wall FMU
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
+    w8 = simulate("examples\House\fmus\Wall.fmu");
+    // associating an innter wall FMU
+    Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
+    w9 = simulate("examples\House\fmus\Wall.fmu");
+    // associating a controller FMUs
+    Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
+    out Double h_roomLeft, out Double h_roomRight]
+    ctrl4 = simulate("examples\House\fmus\TempController.fmu");
+    // associating a room FMU
+    Cont[in Double h_wallLeft, in Double h_wallRight,
+    in Double h_powerHeater, out Double T_room]
+    r7 = simulate("examples\House\fmus\Room.fmu");
+    r7.role = "room 7";
+    // associating a room FMU
+    Cont[in Double h_wallLeft, in Double h_wallRight,
+    in Double h_powerHeater, out Double T_room]
+    r8 = simulate("examples\House\fmus\Room.fmu");
+    r8.role = "room 8";
+
+    h = house.addLeftRight(w8, w9, ctrl4, r7, r8);
+
+    while at < limit*3 do
+      h = house.propagate();
+      h = house.advance(step);
+      at = at + 1;
+      if(at % 100 == 0) then print(house.lastRoom.getT()); end
+    end
+
+
+
 end
