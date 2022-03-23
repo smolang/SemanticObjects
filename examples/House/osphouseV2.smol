@@ -151,7 +151,7 @@ class House(Cont[out Double Clock] clock)
     // initialising outer room in the FMU wrapper
     roomLeft = new Room(r1, null, null, null, True, null);
     // initializing outer wall in the FMU wrapper
-    wall1 = new Wall(w1, roomLeft, osLeft);
+    wall1 = new Wall(w1, osLeft, roomLeft);
     // initializing innter wall in the FMU wrapper
     wall2  = new Wall(w2, roomLeft, roomRight);
     // initialising outer room in the FMU wrapper
@@ -511,13 +511,12 @@ main
 
     h = house.addLeftRight(w8, w9, ctrl4, r7, r8);
 
-    while at < limit*3 do
+    while at < limit*4 do
       h = house.propagate();
       h = house.advance(step);
       at = at + 1;
       if(at % 100 == 0) then print(house.lastRoom.getT()); end
     end
-
 
 
 end
