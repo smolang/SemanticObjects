@@ -54,9 +54,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     // Here we compare against literal strings "in", "out"; if
                     // the grammar is changed, adapt the two `filter`
                     // expressions below accordingly.
-                    val ins = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "in" }.map { Pair(it.param().NAME().text, translateType(it.param().type(), className, generics)) }
+                    val ins = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "in" }.map {Triple(it.param().NAME().text, translateType(it.param().type(), className, generics), it.smol_name?.text ?: it.param().NAME().text) }
                     else emptyList()
-                    val outs = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "out" }.map { Pair(it.param().NAME().text, translateType(it.param().type(), className, generics)) }
+                    val outs = if(ctx.fmuParamList() != null) ctx.fmuParamList().fmuparam().filter { it.direction.text == "out" }.map {Triple(it.param().NAME().text, translateType(it.param().type(), className, generics), it.smol_name?.text ?: it.param().NAME().text) }
                     else emptyList()
                     SimulatorType(ins,outs)
                 }
@@ -751,8 +751,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     else
                                  emptyMap()
 
-                    var ins = listOf<Pair<String,Type>>()
-                    var outs = listOf<Pair<String,Type>>()
+                    var ins = listOf<Triple<String,Type, String>>() // fmu name, type, smol name
+                    var outs = listOf<Triple<String,Type, String>>() // ditto
 
                     for(mVar in sim.modelDescription.modelVariables){
                         if(mVar.causality == "input" || mVar.causality == "state"){
@@ -763,8 +763,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             log("Cannot initialize output or/and calculated variable ${mVar.name}",ctx)
                         }
 
-                        if(mVar.causality == "input") ins = ins + Pair(mVar.name, getSimType(mVar.typeName))
-                        if(mVar.causality == "output") outs = outs + Pair(mVar.name, getSimType(mVar.typeName))
+                        if(mVar.causality == "input") ins = ins + Triple(mVar.name, getSimType(mVar.typeName), mVar.name)
+                        if(mVar.causality == "output") outs = outs + Triple(mVar.name, getSimType(mVar.typeName), mVar.name)
                     }
                     val simType = SimulatorType(ins, outs)
 
@@ -938,12 +938,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
                 val name = eCtx.STRING().text.removeSurrounding("\"")
                 return if(read){
-                    val inVar = t1.outVar.firstOrNull { it.first == name }
+                    val inVar = t1.outVar.firstOrNull { it.third == name }
                     if(inVar == null)
                         log("Trying to read from a field that is not an outport: $name", eCtx)
                     inVar?.second ?: ERRORTYPE
                 } else {
-                    val inVar = t1.inVar.firstOrNull { it.first == name}
+                    val inVar = t1.inVar.firstOrNull { it.third == name}
                     if(inVar == null)
                         log("Trying to write into a field that is not an inport: $name", eCtx)
                     inVar?.second ?: ERRORTYPE

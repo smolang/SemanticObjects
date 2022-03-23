@@ -30,15 +30,19 @@ abstract class SimpleType : Type() {
     override fun getPrimary(): SimpleType = this
 }
 
-data class SimulatorType(val inVar : List<Pair<String, Type>>, val outVar : List<Pair<String, Type>>) : SimpleType() {
-    override fun toString() : String  = "Cont[ ${inVar.joinToString(", ") { "in " + it.second + " " + it.first}}, ${outVar.joinToString(", ") { "out " + it.second + " " + it.first}}]"
+data class SimulatorType(val inVar : List<Triple<String, Type, String>>, val outVar : List<Triple<String, Type, String>>) : SimpleType() {
+    override fun toString() : String  = "Cont[ ${inVar.joinToString(", ") {"in " + it.second + " " + it.first + if (it.third != it.first) " as " + it.third else ""}}, ${outVar.joinToString(", ") { "out " + it.second + " " + it.first + if (it.third != it.first) " as " + it.third else ""}}]"
     override fun getNameString() : String  = "Cont"
     override fun isFullyConcrete() : Boolean =
         inVar.map { it.second }.any { it.isFullyConcrete() } && outVar.map { it.second }.any { it.isFullyConcrete() }
     override fun containsUnknown(types: Set<String>): Boolean =
         inVar.map { it.second }.any { it.containsUnknown(types) } || outVar.map { it.second }.any { it.containsUnknown(types) }
     override fun isAssignable(rhs : Type, extends : MutableMap<String, Type>) : Boolean  =
-        super.isAssignable(rhs, extends) || (rhs is SimulatorType && rhs.inVar.containsAll(this.inVar) && rhs.outVar.containsAll(this.outVar))
+        super.isAssignable(rhs, extends)
+        || (rhs is SimulatorType
+            //  only compare first, second element (third element is renaming)
+            && inVar.all { invare -> rhs.inVar.find { it.first.equals(invare.first) && it.second == invare.second } != null }
+            && outVar.all { outvare -> rhs.outVar.find { it.first.equals(outvare.first) && it.second == outvare.second } != null })
 }
 
 data class GenericType(val name : String) : SimpleType() {
