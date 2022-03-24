@@ -6,8 +6,8 @@ main
     Cont[in Double x, out Double y] predator = simulate("examples/SimulationDemo/Predator.fmu", x = 10);
     Int i = 0;
     while (i <= 1000) do
-        prey.tick(0.1);
-        predator.tick(0.1);
+        prey.doStep(0.1);
+        predator.doStep(0.1);
         prey.y = predator.y;
         predator.x = prey.x;
         i = i+1;
@@ -20,8 +20,8 @@ main
     while (i <= 1000) do
         prey.y = predator.y;
         predator.x = prey.x;
-        prey.tick(0.1);
-        predator.tick(0.1);
+        prey.doStep(0.1);
+        predator.doStep(0.1);
         i = i+1;
     end
     print("Finished");

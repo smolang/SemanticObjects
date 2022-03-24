@@ -38,7 +38,7 @@ class CoSim(List<Connection> list, List<Cont[]> sims, Double stepSize)
         length = this.sims.length();
         while i < length do
             Cont[] de = this.sims.get(i);
-            de.tick(this.stepSize);
+            de.doStep(this.stepSize);
             i = i + 1;
         end
         return i;

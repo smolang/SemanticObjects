@@ -1,3 +1,5 @@
+//To run this example, please download the FMUs from https://github.com/open-simulation-platform/demo-cases/tree/master/house
+//Only runs on windows
 abstract class Dynamic()
     abstract Int propagate()         //pull
     abstract Int advance(Double db)
@@ -24,7 +26,7 @@ class Room extends Dynamic(Cont[in Double h_InnerWall, in Double h_OuterWall, in
         return 0;
     end
     override Int advance(Double db)
-        this.dynamics.tick(db);
+        this.dynamics.doStep(db);
         return 0;
     end
 end
@@ -39,8 +41,8 @@ class Controller extends Dynamic(Cont[in Double T_room1, in Double T_room2, in D
             return 0;
     end
     override Int advance(Double db)
-        this.dynamics.tick(db);
-        this.clock.tick(db);
+        this.dynamics.doStep(db);
+        this.clock.doStep(db);
         return 0;
     end
 end
@@ -51,7 +53,7 @@ class InnerWall extends Wall(Cont[in Double T_room1, in Double T_room2, out Doub
             return 0;
     end
     override Int advance(Double db)
-        this.dynamics.tick(db);
+        this.dynamics.doStep(db);
         return 0;
     end
     override Double getH()
@@ -68,7 +70,7 @@ class OuterWall1 extends Wall(Cont[in Double T_room1, in Double T_outside, out D
         return this.dynamics.h_wall;
     end
     override Int advance(Double db)
-        this.dynamics.tick(db);
+        this.dynamics.doStep(db);
         return 0;
     end
 end
@@ -82,7 +84,7 @@ class OuterWall2 extends Wall(Cont[in Double T_room2, in Double T_outside, out D
         return this.dynamics.h_wall;
     end
     override Int advance(Double db)
-        this.dynamics.tick(db);
+        this.dynamics.doStep(db);
         return 0;
     end
 end

@@ -42,7 +42,7 @@ class ExplorationShadow(Double value, Double assumedSlope, Buffer buffer)
         Int i = 0;
         while i < l do
             this.buffer.add(shadow.value);
-            shadow.tick(1.0);
+            shadow.doStep(1.0);
             i = i + 1;
         end
         Double error = record.distance(this.buffer);
@@ -65,8 +65,8 @@ class MonitorShadow(Cont[out Double value] system, Double value, Double assumedS
 
         Int sinceReset = 0;
         while step < this.limit do
-            this.system.tick(1.0);
-            shadow.tick(1.0);
+            this.system.doStep(1.0);
+            shadow.doStep(1.0);
             this.bufferSystem.add(this.system.value);
             this.bufferShadow.add(shadow.value);
             Double error = this.bufferSystem.distance(this.bufferShadow);

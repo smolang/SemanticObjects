@@ -7,7 +7,7 @@ class Shadow(Double value, Double assumedSlope)
         while step <= 5 do
             Double assumedSlope = this.assumedSlope + step * 0.2;
             shadow = simulate("examples/Shadow/Sim.fmu", iValue = lastVal, slope = assumedSlope);
-            shadow.tick(1.0);
+            shadow.doStep(1.0);
             Double result = shadow.value;
             Double diff = sysVal - result;
             if(diff <= 0.1) then
@@ -29,8 +29,8 @@ class Shadow(Double value, Double assumedSlope)
         Double lastVal = 2.0;
         while i <= 200 do
             lastVal = system.value;
-            system.tick(1.0);
-            shadow.tick(1.0);
+            system.doStep(1.0);
+            shadow.doStep(1.0);
             Double sysVal = system.value;
             Double shaVal = shadow.value;
             Double diff = system.value - shadow.value;

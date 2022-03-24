@@ -5,8 +5,8 @@ main
 
     Int i = 0;
     while i <= 200 do
-        system.tick(1.0);
-        shadow.tick(1.0);
+        system.doStep(1.0);
+        shadow.doStep(1.0);
         Double sysVal = system.value;
         Double shaVal = shadow.value;
         Double diff = system.value - shadow.value;

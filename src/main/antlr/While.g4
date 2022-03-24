@@ -29,7 +29,7 @@ CONSTRUCT : 'construct';
 MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
-TICK : 'tick';
+TICK : 'doStep';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
 DESTROY : 'destroy';

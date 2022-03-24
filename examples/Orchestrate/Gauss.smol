@@ -32,7 +32,7 @@ class CoSim(List<Connection> list, List<Cont[]> sims, Double stepSize)
             Connection c = this.list.get(i);
             c.propagate();
             Cont[] de = this.sims.get(i); //note: we do check here that we do not advance twice if an FMU has two output connections
-            de.tick(this.stepSize);
+            de.doStep(this.stepSize);
             i = i+1;
         end
         return i;

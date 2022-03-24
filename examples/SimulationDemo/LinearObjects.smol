@@ -36,7 +36,7 @@ class CoSim(List<Connection> list, List<WrappedSimulator> sims)
         while i < length do
             WrappedSimulator s = this.sims.get(i);
             Cont[] de = s.content;
-            de.tick(t);
+            de.doStep(t);
             i = i + 1;
         end
         return i;

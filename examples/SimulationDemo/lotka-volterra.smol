@@ -6,12 +6,12 @@ end
 class PreyObject extends UnitObject (Cont[in Double y, out Double x] prey)
     override Double get() return this.prey.x; end
     override Double set(Double v) this.prey.y = v; return v; end
-    override Double doStep(Double step) this.prey.tick(step); return step; end
+    override Double doStep(Double step) this.prey.doStep(step); return step; end
 end
 class PredatorObject extends UnitObject (Cont[in Double x, out Double y] predator)
     override Double get() return this.predator.y; end
     override Double set(Double v) this.predator.x = v; return v; end
-    override Double doStep(Double step) this.predator.tick(step); return step; end
+    override Double doStep(Double step) this.predator.doStep(step); return step; end
 end
 class CoupledPair(UnitObject a, UnitObject b, Double step)
     Int step()
