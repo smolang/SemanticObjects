@@ -1,3 +1,4 @@
+//Digital Shadow 1: just shadows the system and outputs the difference between system and simulation
 main
 
     Cont[out Double value] system = simulate("examples/Shadow/Realsys.fmu", iValue = 2, slope = 1);

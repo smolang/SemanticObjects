@@ -1,3 +1,5 @@
+//Digital Shadow 2: Reacts by reconfiguring the simulator if an error is detected
+
 class Shadow(Double value, Double assumedSlope)
 
     Cont[out Double value] findNewShadow(Double lastVal, Double sysVal)

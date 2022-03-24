@@ -26,4 +26,13 @@ docker run -it --rm -v "$PWD":/root/smol smol
 
 Inside the REPL, enter `help` for an overview over the available commands.
 
-To run the digital shadows scenarios, use the examples under examples/Shadow.
+To run the digital shadows scenarios, use the examples under examples/Shadow:
+
+```
+./gradlew shadowJar
+java -jar build/libs/MicroObjects-0.2-all.jar -e -i examples/Shadow/shadow.smol
+```
+
+There are three shadow examples: `examples/Shadow/shadow.smol` does not react to anomalies, 
+`examples/Shadow/detect.smol` performs a reconfiguration once the difference reaches a certain threshold and
+`examples/Shadow/series.smol` detects the anomaly over the last 5 time units.

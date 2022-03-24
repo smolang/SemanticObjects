@@ -1,3 +1,6 @@
+//Digital Shadow 3: more complex reconfiguration using a buffer to detect an accumulated error over multiple time steps
+
+
 //requires length > 0 && content == null
 class Buffer(Int length, List<Double> content)
     Unit init()
