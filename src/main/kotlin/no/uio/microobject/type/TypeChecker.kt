@@ -450,13 +450,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             translateType(ctx.type(), className, generics)
                         }
                         ctx.target != null -> {
-                            getType(ctx.expression(0), inner, vars, thisType, inRule)
+                            getType(ctx.expression(0), inner, vars, thisType, inRule, read = false)
                         }
                         else -> {
                             null
                         }
                     }
-
 
                 if (lhsType != null && !lhsType.isAssignable(metType, extends))
                     log("Return value of super call cannot be assigned to type.", ctx)
@@ -509,7 +508,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             translateType(ctx.type(), className, generics)
                         }
                         ctx.target != null -> {
-                            getType(ctx.expression(0), inner, vars, thisType, false)
+                            getType(ctx.expression(0), inner, vars, thisType, false, read = false)
                         }
                         else -> {
                             null
@@ -581,7 +580,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             else vars[name] = translateType(ctx.declType, className, generics)
                         }
                         translateType(ctx.declType, className, generics)
-                    } else getType(ctx.expression(0), inner, vars, thisType, false)
+                    } else getType(ctx.expression(0), inner, vars, thisType, false, read = false)
                 val newTypeFound =
                     translateType(ctx.newType, className, generics)
                 val createClass = newTypeFound.getPrimary().getNameString()
@@ -617,8 +616,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 } else {
                     log("Mismatching number of parameters when creating an $createClass instance. Expected ${creationParameters.size}, got ${ctx.expression().size-1}", ctx)
                 }
-
-
 
                 if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
                     log("Type $newType is not assignable to $lhsType", ctx)
@@ -780,7 +777,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             else vars[name] = translateType(ctx.type(), className, generics)
                         }
                     }else{
-                        val declType = getType(ctx.target, inner, vars, thisType, false)
+                        val declType = getType(ctx.target, inner, vars, thisType, false, read = false)
                         if(!declType.isAssignable(simType, extends))
                             log("Type $simType is not assignable to $declType", ctx)
                     }
