@@ -2,15 +2,18 @@ abstract class FMU_Wrapper()
   abstract Int propagate()         //pull
   abstract Int advance(Double db)
 end
+
 abstract class Area extends FMU_Wrapper()
   abstract Double getT()
   abstract Controller getCtrl()
 end
+
 class Wall extends FMU_Wrapper (
   Cont[in Double T_areaLeft, in Double T_areaRight,
   	out Double h_wall] fmuSim,
   Area areaLeft,
   Area areaRight)
+
   override Int propagate()
     Double t = this.areaLeft.getT();
     this.fmuSim.T_areaLeft = t;
@@ -18,10 +21,12 @@ class Wall extends FMU_Wrapper (
     this.fmuSim.T_areaRight = t;
     return 0;
   end
+
   override Int advance(Double db)
     this.fmuSim.tick(db);
     return 0;
   end
+
   Double getH()
     return this.fmuSim.h_wall;
   end
@@ -32,30 +37,39 @@ class Controller extends FMU_Wrapper (
   	out Double h_roomLeft, out Double h_roomRight] fmuSim,
   Room roomLeft,
   Room roomRight)
+
   override Int propagate()
     this.fmuSim.T_roomLeft = this.roomLeft.fmuSim.T_room;
     this.fmuSim.T_roomLeft = this.roomRight.fmuSim.T_room;
     return 0;
   end
+
   override Int advance(Double db)
     this.fmuSim.tick(db);
     return 0;
   end
+
 end
+
 class Outside extends Area(Double temp) // Fake FMU wrapper
   override Int propagate()
     return 0;
   end
+
   override Int advance(Double db)
     return 0;
   end
+
   override Double getT()
     return this.temp;
   end
+
   override Controller getCtrl()
     return null;
   end
+
 end
+
 class Room extends Area (
   Cont[in Double h_wallLeft, in Double h_wallRight,
     	in Double h_powerHeater, out Double T_room]  fmuSim,
@@ -64,12 +78,15 @@ class Room extends Area (
   Controller ctrl,
   Boolean isFirst,
   Room nextRoom)
+
   override Double getT()
     return this.fmuSim.T_room;
   end
+
   override Controller getCtrl()
     return this.ctrl;
   end
+
   override Int propagate()
     this.wallRight.propagate();
     if(this.isFirst) then
@@ -91,6 +108,7 @@ class Room extends Area (
     end
     return 0;
   end
+
   override Int advance(Double db)
     this.wallRight.advance(db);
     if(this.isFirst) then
@@ -104,7 +122,9 @@ class Room extends Area (
     this.fmuSim.tick(db);
     return 0;
   end
+
 end
+
 class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
 
   Int init( // built a base house with two rooms
@@ -144,6 +164,7 @@ class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
     print(b);
     return 0;
   end
+  
   Int addRight(  //add two rooms to the right
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, //  wall
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w2, //  wall
