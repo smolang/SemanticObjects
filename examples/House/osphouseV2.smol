@@ -403,7 +403,7 @@ main
   Int h = 0;
   h = house.init(w1, w2, w3, ctrl1, r1, r2, outsideLeft, outsideRight);
 
-  Double p = 0;
+  Double p = 0.0;
   while at < limit do
     h = house.propagate();
     h = house.advance(step);

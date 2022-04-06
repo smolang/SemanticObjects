@@ -25,6 +25,7 @@ package FMUDummies
   block Room
     input Real h_wallLeft;
     input Real h_wallRight;
+    input Real h_powerHeater;
     output Real t_room;
   equation
     t_room = h_wallLeft + h_wallRight;
@@ -33,6 +34,7 @@ package FMUDummies
   block NewRoom
     input Real h_wallLeft;
     input Real h_wallRight;
+    input Real h_powerHeater;
     output Real t_room;
   equation
     t_room = h_wallLeft + h_wallRight + 1;
