@@ -197,7 +197,7 @@ class House(Cont[out Double Clock] clock,
       this.roomRight.nextRoom = null;
 
       // asset validation
-      b = validate("examples\House\shape.ttl");
+      b = validate("examples/House/shape.ttl");
       print(b);
 
       if b then
@@ -242,7 +242,7 @@ class House(Cont[out Double Clock] clock,
       this.lastRoom = this.roomRight;
 
       // asset validation
-      Boolean b = validate("examples\House\shape.ttl");
+      Boolean b = validate("examples/House/shape.ttl");
       print(b);
 
       if b then
@@ -281,7 +281,7 @@ main
   Int limit = 30000;
 
   Cont[out Double Clock]
-  cl = simulate("../DummyFMUs/Clock.fmu", Reset = 100);
+  cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
   House house = new House(cl, null, null, null, null, null, null, null, null);
   Int h = 0;
@@ -293,36 +293,36 @@ main
 //House base case: 2 rooms
   // associating an outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w1 = simulate("../DummyFMUs/Wall.fmu");
+  w1 = simulate("examples/DummyFMUs/Wall.fmu");
   h = house.addWall(w1);
   ok = house.builtHouse(outsideLeft, outsideRight);
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w2 = simulate("../DummyFMUs/Wall.fmu");
+  w2 = simulate("examples/DummyFMUs/Wall.fmu");
   h = house.addWall(w2);
   ok = house.builtHouse(outsideLeft, outsideRight);
   // associating an outer wall outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w3 = simulate("../DummyFMUs/Wall.fmu");
+  w3 = simulate("examples/DummyFMUs/Wall.fmu");
   h = house.addWall(w3);
   ok = house.builtHouse(outsideLeft, outsideRight);
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl1 = simulate("../DummyFMUs/TempController.fmu");
+  ctrl1 = simulate("examples/DummyFMUs/TempController.fmu");
   h = house.addController(ctrl1);
   ok = house.builtHouse(outsideLeft, outsideRight);
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r1 = simulate("../DummyFMUs/Room.fmu");
+  r1 = simulate("examples/DummyFMUs/Room.fmu");
   r1.role = "room 1";
   h = house.addRoom(r1);
   ok = house.builtHouse(outsideLeft, outsideRight);
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r2 = simulate("../DummyFMUs/Room.fmu");
+  r2 = simulate("examples/DummyFMUs/Room.fmu");
   r2.role = "room 2";
   h = house.addRoom(r2);
   ok = house.builtHouse(outsideLeft, outsideRight);
@@ -339,31 +339,31 @@ main
 
   if ok then // reconfigure
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-    w4 = simulate("../DummyFMUs/Wall.fmu");
+    w4 = simulate("examples/DummyFMUs/Wall.fmu");
     h = house.addWall(w4);
     ok = house.addRoomsRight();
     // associating an innter wall FMU
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-    w5 = simulate("../DummyFMUs/Wall.fmu");
+    w5 = simulate("examples/DummyFMUs/Wall.fmu");
     h = house.addWall(w5);
     ok = house.addRoomsRight();
     // associating a controller FMUs
     Cont[in Double T_roomLeft, in Double T_roomRight, //in Double T_clock,
     out Double h_roomLeft, out Double h_roomRight]
-    ctrl2 = simulate("../DummyFMUs/TempController.fmu");
+    ctrl2 = simulate("examples/DummyFMUs/TempController.fmu");
     h = house.addController(ctrl2);
     ok = house.addRoomsRight();
     // associating a room FMU
     Cont[in Double h_wallLeft, in Double h_wallRight,
     in Double h_powerHeater, out Double T_room]
-    r3 = simulate("../DummyFMUs/Room.fmu");
+    r3 = simulate("examples/DummyFMUs/Room.fmu");
     r3.role = "room 3";
     h = house.addRoom(r3);
     ok = house.addRoomsRight();
     // associating a room FMU
     Cont[in Double h_wallLeft, in Double h_wallRight,
     in Double h_powerHeater, out Double T_room]
-    r4 = simulate("../DummyFMUs/Room.fmu");
+    r4 = simulate("examples/DummyFMUs/Room.fmu");
     r4.role = "room 4";
     h = house.addRoom(r4);
     ok = house.addRoomsRight();

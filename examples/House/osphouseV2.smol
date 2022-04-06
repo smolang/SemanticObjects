@@ -160,7 +160,7 @@ class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
     roomRight.wallLeft = wall2;
     roomRight.wallRight = wall3;
     roomRight.nextRoom = null;
-    Boolean b = validate("examples\House\shape.ttl");   // asset validation
+    Boolean b = validate("examples/House/shape.ttl");   // asset validation
     print(b);
     return 0;
   end
@@ -206,7 +206,7 @@ class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
     this.lastRoom = roomRight;
 
     // asset validation
-    Boolean b = validate("examples\House\shape.ttl");
+    Boolean b = validate("examples/House/shape.ttl");
     print(b);
 
     return 0;
@@ -262,7 +262,7 @@ class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
     this.firstRoom = roomLeft;
 
     // asset validation
-    Boolean b = validate("examples\House\shape.ttl");
+    Boolean b = validate("examples/House/shape.ttl");
     print(b);
 
     return 0;
@@ -343,7 +343,7 @@ class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
     this.lastRoom = roomRight;
 
     // asset validation
-    Boolean b = validate("examples\House\shape.ttl");
+    Boolean b = validate("examples/House/shape.ttl");
     print(b);
 
     return 0;
@@ -369,7 +369,7 @@ main
   Int at = 0;
   Int limit = 30000;
 
-  Cont[out Double Clock] cl = simulate("../DummyFMUs/Clock.fmu", Reset = 100);
+  Cont[out Double Clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
   House house = new House(cl, null, null);
 
@@ -379,25 +379,25 @@ main
 //House base case: 2 rooms
   // associating an outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w1 = simulate("../DummyFMUs/OuterWall.fmu");
+  w1 = simulate("examples/DummyFMUs/OuterWall.fmu");
 
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w2 = simulate("../DummyFMUs/InnerWall.fmu");
+  w2 = simulate("examples/DummyFMUs/InnerWall.fmu");
   // associating an outer wall outer wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w3 = simulate("../DummyFMUs/OuterWall.fmu");
+  w3 = simulate("examples/DummyFMUs/OuterWall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl1 = simulate("../DummyFMUs/Controller.fmu");
+  ctrl1 = simulate("examples/DummyFMUs/Controller.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double T_room]
-  r1 = simulate("../DummyFMUs/Room.fmu");
+  r1 = simulate("examples/DummyFMUs/Room.fmu");
 //  r1.role = "room 1";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double T_room]
-  r2 = simulate("../DummyFMUs/Room.fmu");
+  r2 = simulate("examples/DummyFMUs/Room.fmu");
 //  r2.role = "room 2";
 
   Int h = 0;
@@ -415,23 +415,23 @@ main
 //Reconfigure house: add two more rooms to the right of the house
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w4 = simulate("../DummyFMUs/InnerWall.fmu");
+  w4 = simulate("examples/DummyFMUs/InnerWall.fmu");
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w5 = simulate("../DummyFMUs/InnerWall.fmu");
+  w5 = simulate("examples/DummyFMUs/InnerWall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl2 = simulate("../DummyFMUs/Controller.fmu");
+  ctrl2 = simulate("examples/DummyFMUs/Controller.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r3 = simulate("../DummyFMUs/Room.fmu");
+  r3 = simulate("examples/DummyFMUs/Room.fmu");
   //r3.role = "room 3";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r4 = simulate("../DummyFMUs/Room.fmu");
+  r4 = simulate("examples/DummyFMUs/Room.fmu");
 //  r4.role = "room 4";
 
   h = house.addRight(w4, w5, ctrl2, r3, r4);
@@ -447,23 +447,23 @@ main
 //Reconfigure house: add two more rooms to the left of the house
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w6 = simulate("../DummyFMUs/InnerWall.fmu");
+  w6 = simulate("examples/DummyFMUs/InnerWall.fmu");
   // associating an innter wall FMU
   Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-  w7 = simulate("../DummyFMUs/InnerWall.fmu");
+  w7 = simulate("examples/DummyFMUs/InnerWall.fmu");
   // associating a controller FMUs
   Cont[in Double T_roomLeft, in Double T_roomRight,
   out Double h_roomLeft, out Double h_roomRight]
-  ctrl3 = simulate("../DummyFMUs/Controller.fmu");
+  ctrl3 = simulate("examples/DummyFMUs/Controller.fmu");
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r5 = simulate("../DummyFMUs/Room.fmu");
+  r5 = simulate("examples/DummyFMUs/Room.fmu");
 //  r5.role = "room 5";
   // associating a room FMU
   Cont[in Double h_wallLeft, in Double h_wallRight,
   in Double h_powerHeater, out Double T_room]
-  r6 = simulate("../DummyFMUs/Room.fmu");
+  r6 = simulate("examples/DummyFMUs/Room.fmu");
 //  r6.role = "room 6";
 
   h = house.addLeft(w6, w7, ctrl3, r5, r6);
@@ -479,23 +479,23 @@ main
   //Reconfigure house: add one room to the left and one room to the right
     // associating an innter wall FMU
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-    w8 = simulate("../DummyFMUs/InnerWall.fmu");
+    w8 = simulate("examples/DummyFMUs/InnerWall.fmu");
     // associating an innter wall FMU
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall]
-    w9 = simulate("../DummyFMUs/InnerWall.fmu");
+    w9 = simulate("examples/DummyFMUs/InnerWall.fmu");
     // associating a controller FMUs
     Cont[in Double T_roomLeft, in Double T_roomRight,
     out Double h_roomLeft, out Double h_roomRight]
-    ctrl4 = simulate("../DummyFMUs/Controller.fmu");
+    ctrl4 = simulate("examples/DummyFMUs/Controller.fmu");
     // associating a room FMU
     Cont[in Double h_wallLeft, in Double h_wallRight,
     in Double h_powerHeater, out Double T_room]
-    r7 = simulate("../DummyFMUs/Room.fmu");
+    r7 = simulate("examples/DummyFMUs/Room.fmu");
   //  r7.role = "room 7";
     // associating a room FMU
     Cont[in Double h_wallLeft, in Double h_wallRight,
     in Double h_powerHeater, out Double T_room]
-    r8 = simulate("../DummyFMUs/Room.fmu");
+    r8 = simulate("examples/DummyFMUs/Room.fmu");
 //    r8.role = "room 8";
 
     h = house.addLeftRight(w8, w9, ctrl4, r7, r8);

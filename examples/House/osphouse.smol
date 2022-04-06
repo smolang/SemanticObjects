@@ -88,15 +88,15 @@ class OuterWall2 extends Wall(Cont[in Double T_room2, in Double T_outside, out D
 end
 
 main
-    Cont[in Double T_room1, in Double T_room2, out Double h_wall] i = simulate("../DummyFMUs/InnerWall.fmu");
-    Cont[in Double T_room1, in Double T_outside, out Double h_wall] o1 = simulate("../DummyFMUs/OuterWall1.fmu");
-    Cont[in Double T_room2, in Double T_outside, out Double h_wall] o2 = simulate("../DummyFMUs/OuterWall2.fmu");
-    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r1 = simulate("../DummyFMUs/Room1.fmu");
+    Cont[in Double T_room1, in Double T_room2, out Double h_wall] i = simulate("examples/DummyFMUs/InnerWall.fmu");
+    Cont[in Double T_room1, in Double T_outside, out Double h_wall] o1 = simulate("examples/DummyFMUs/OuterWall1.fmu");
+    Cont[in Double T_room2, in Double T_outside, out Double h_wall] o2 = simulate("examples/DummyFMUs/OuterWall2.fmu");
+    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r1 = simulate("examples/DummyFMUs/Room1.fmu");
     r1.role = "room1";
-    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r2 = simulate("../DummyFMUs/Room2.fmu");
+    Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r2 = simulate("examples/DummyFMUs/Room2.fmu");
     r2.role = "room2";
-    Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] ctrl = simulate("../DummyFMUs/TempController.fmu");
-    Cont[out Double Clock] cl = simulate("../DummyFMUs/Clock.fmu", Reset = 100);
+    Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] ctrl = simulate("examples/DummyFMUs/TempController.fmu");
+    Cont[out Double Clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
 
     Outside outside1 = new Outside(5.3);
@@ -113,7 +113,7 @@ main
     room2.ctrl = control;
     room2.inner = inner;
     room2.outer = outer2;
-    Boolean b = validate("examples\House\shape.ttl");
+    Boolean b = validate("examples/House/shape.ttl");
     print(b);
 
     Double step = 0.01;
