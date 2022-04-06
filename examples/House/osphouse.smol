@@ -29,7 +29,7 @@ class Room extends Dynamic(Cont[in Double h_InnerWall, in Double h_OuterWall, in
     end
 end
 class Controller extends Dynamic(Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] dynamics,
-                                 Cont[out Double Clock] clock,
+                                 Cont[out Double clock] clock,
                                  Room r1,
                                  Room r2)
     override Int propagate()
@@ -96,7 +96,7 @@ main
     Cont[in Double h_InnerWall, in Double h_OuterWall, in Double h_powerHeater, out Double T_room] r2 = simulate("examples/DummyFMUs/Room2.fmu");
     r2.role = "room2";
     Cont[in Double T_room1, in Double T_room2, in Double T_clock, out Double h_room1, out Double h_room2] ctrl = simulate("examples/DummyFMUs/TempController.fmu");
-    Cont[out Double Clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
+    Cont[out Double clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
 
     Outside outside1 = new Outside(5.3);

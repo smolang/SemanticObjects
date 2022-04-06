@@ -125,7 +125,7 @@ class Room extends Area (
 
 end
 
-class House(Cont[out Double Clock] clock, Room firstRoom, Room lastRoom)
+class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
 
   Int init( // built a base house with two rooms
     Cont[in Double T_areaLeft, in Double T_areaRight, out Double h_wall] w1, //outer wall
@@ -369,7 +369,7 @@ main
   Int at = 0;
   Int limit = 30000;
 
-  Cont[out Double Clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
+  Cont[out Double clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
   House house = new House(cl, null, null);
 
