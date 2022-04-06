@@ -7,45 +7,45 @@ package FMUDummies
   end Clock;
 
   block InnerWall
-    input Real r1;
-    input Real r2;
-    output Real o;
+    input Real t_areaLeft;
+    input Real t_areaRight;
+    output Real h_wall;
   equation
-    o = r1 + r2;
+    h_wall = t_areaLeft + t_areaRight;
   end InnerWall;
 
   block OuterWall
-    input Real r1;
-    input Real r2;
-    output Real o;
+    input Real t_areaLeft;
+    input Real t_areaRight;
+    output Real h_wall;
   equation
-    o = r1 + r2 * 0.5;
+    h_wall = t_areaLeft + t_areaRight * 0.5;
   end OuterWall;
 
   block Room
-    input Real r1;
-    input Real r2;
-    output Real o;
+    input Real h_wallLeft;
+    input Real h_wallRight;
+    output Real t_room;
   equation
-    o = r1 + r2;
+    t_room = h_wallLeft + h_wallRight;
   end Room;
 
   block NewRoom
-    input Real r1;
-    input Real r2;
-    output Real o;
+    input Real h_wallLeft;
+    input Real h_wallRight;
+    output Real t_room;
   equation
-    o = r1 + r2 + 1;
+    t_room = h_wallLeft + h_wallRight + 1;
   end NewRoom;
 
   block Controller
-    input Real r1;
-    input Real r2;
-    output Real o1;
-    output Real o2;
+    input Real t_roomLeft;
+    input Real t_roomRight;
+    output Real h_roomLeft;
+    output Real h_roomRight;
   equation
-    o1 = r1 + r2 + 1;
-    o2 = r1 + r2 - 1;
+    h_roomLeft = t_roomLeft + t_roomRight + 1;
+    h_roomRight = t_roomLeft + t_roomRight - 1;
   end Controller;
 
   /* These FMUs do nothing, but can be loaded for type checking */
