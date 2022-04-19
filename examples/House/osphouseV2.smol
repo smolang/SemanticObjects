@@ -164,10 +164,10 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
     print(b);
     return 0;
   end
-  
+
   Int addRight(  //add two rooms to the right
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w1, //  wall
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w2, //  wall
+    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w1, //  inner wall
+    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w2, //  inner wall
     Cont[in Double t_roomLeft, in Double t_roomRight,
     out Double h_roomLeft, out Double h_roomRight] ctrl, // controller
     Cont[in Double h_wallLeft, in Double h_wallRight,
@@ -188,7 +188,9 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
     // initialising outer room in the FMU wrapper
     roomRight = new Room(r2, null, null, null, False, null);
     // initializing outer wall in the FMU wrapper
-    wall2 = new Wall(w2, roomRight, this.lastRoom.wallRight.areaRight);
+    wall2 = new Wall(this.lastroom.wallRight.fmuSim, roomRight, this.lastRoom.wallRight.areaRight);
+    // shifting outer to inner
+    this.lastroom.wallRight.fmuSim = w2;
 
     // connecting wrappers
     this.lastRoom.wallRight.areaRight = roomLeft;
@@ -238,12 +240,14 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
     // initialising outer room in the FMU wrapper
     roomLeft = new Room(r1, null, null, null, True, null);
 
-    // initializing innter wall in the FMU wrapper
-    wall1  = new Wall(w1, this.firstRoom.wallLeft.areaLeft, roomLeft);
-
-    // initialising outer room in the FMU wrapper
-    roomRight = new Room(r2, null, null, null, False, null);
     // initializing outer wall in the FMU wrapper
+    wall1  = new Wall(this.firstRoom.wallLeft.fmuSim, this.firstRoom.wallLeft.areaLeft, roomLeft);
+    // shifting outer to inner
+    this.firstRoom.wallLeft.fmuSim = w1;
+
+    // initialising inner room in the FMU wrapper
+    roomRight = new Room(r2, null, null, null, False, null);
+    // initializing inner wall in the FMU wrapper
     wall2 = new Wall(w2, roomLeft, roomRight);
 
     // connecting wrappers
@@ -270,8 +274,8 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
 
   //add one room to the left and one room to the right
   Int addLeftRight(
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w1, // wall
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w2, // wall
+    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w1, // innerwall
+    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] w2, // innerwall
     Cont[in Double t_roomLeft, in Double t_roomRight,
     out Double h_roomLeft, out Double h_roomRight] ctrl, // controller
     Cont[in Double h_wallLeft, in Double h_wallRight,
@@ -292,8 +296,12 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
     control = new Controller(ctrl, roomLeft, this.firstRoom);
     // initialising outer room in the FMU wrapper
     roomLeft = new Room(r1, null, null, null, True, null);
-    // initializing innter wall in the FMU wrapper
-    wall1  = new Wall(w1, this.firstRoom.wallLeft.areaLeft, roomLeft);
+    // initializing outer wall in the FMU wrapper
+    wall1  = new Wall(this.firstRoom.wallLeft.fmuSim, this.firstRoom.wallLeft.areaLeft, roomLeft);
+    // shifting outer to inner
+    this.firstRoom.wallLeft.fmuSim = w1;
+
+
     this.firstRoom.isFirst = False;
     this.firstRoom.ctrl = control;
 
@@ -330,8 +338,11 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
 
     // initialising outer room in the FMU wrapper
     roomRight = new Room(r2, null, null, null, False, null);
+
     // initializing outer wall in the FMU wrapper
-    wall2 = new Wall(w2, roomLeft, this.lastRoom.wallRight.areaRight);
+    wall2 = new Wall(this.lastroom.wallRight.fmuSim, roomRight, this.lastRoom.wallRight.areaRight);
+    // shifting outer to inner
+    this.lastroom.wallRight.fmuSim = w2;
 
     // connecting wrappers
     roomRight.ctrl = this.lastRoom.ctrl;
