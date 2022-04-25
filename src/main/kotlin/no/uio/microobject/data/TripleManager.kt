@@ -40,9 +40,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
     // Default settings. These can be changed with REPL commands.
     var currentTripleSettings = TripleSettings(
-        sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "externalOntology" to (settings.background != "")),
+        sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "fmos" to true, "externalOntology" to (settings.background != "")),
         guards = hashMapOf("heap" to true, "staticTable" to true),
-        virtualization = hashMapOf("heap" to true, "staticTable" to true),
+        virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
         jenaReasoner = "owl"
     )
 
@@ -108,6 +108,10 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         if (tripleSettings.sources.getOrDefault("heap", false)) {
             if (tripleSettings.virtualization.getOrDefault("heap", false)) { includedGraphs.add(HeapGraph(tripleSettings, interpreter!!)) }
             else { includedGraphs.add(getHeapModelNaive(tripleSettings, interpreter!!).graph) }
+        }
+        if (tripleSettings.sources.getOrDefault("fmos", false)) {
+            if (tripleSettings.virtualization.getOrDefault("fmos", false)) { includedGraphs.add(FMOGraph()) }
+            else { includedGraphs.add(getFMOModelNaive().graph) }
         }
         if (tripleSettings.sources.getOrDefault("vocabularyFile", false)) {
             includedGraphs.add(getVocabularyModel().graph)
@@ -184,6 +188,10 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         if (searchTriple.matches(candidateTriple) && !pseudo) matchList.add(candidateTriple)
     }
 
+    private fun getFMOModelNaive(): Model {
+        return writeToFileAndReadToModel(FMOGraph())
+    }
+
     // Get model for the static table in the naive way:
     // Extract all triples from the StaticTableGraph, put in model, write model to file, read file to model, return model
     private fun getStaticTableModelNaive(tripleSettings: TripleSettings): Model {
@@ -219,6 +227,37 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         m2.read(uri, "TTL")
 
         return m2
+    }
+
+    private inner class FMOGraph() : GraphBase() {
+        override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
+            if(interpreter == null)
+                return TripleListIterator(mutableListOf())
+
+            val rdf = prefixMap["rdf"]
+            val smol = prefixMap["smol"]
+            val run = prefixMap["run"]
+
+            val matchingTriples: MutableList<Triple> = mutableListOf()
+
+            for( fmo in interpreter.simMemory ){
+                val name = fmo.key.literal;
+                val value = fmo.value.path;
+                val valueNode = getLiteralNode(LiteralExpr(value, STRINGTYPE), settings)
+
+                val resTriple =
+                    Triple(
+                        NodeFactory.createURI("${run}${name}"),
+                        NodeFactory.createURI("${smol}loads"),
+                        valueNode
+                    )
+                addIfMatch(resTriple, searchTriple, matchingTriples, false)
+                addIfMatch(uriTriple("${run}${name}", "${rdf}type", "${smol}Simulation"), searchTriple, matchingTriples, false)
+            }
+
+            return TripleListIterator(matchingTriples)
+        }
+
     }
 
     // Graph representing the static table
@@ -280,7 +319,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
                 for(fieldEntry in classObj.value){
                     val fieldName: String = classObj.key+"_"+fieldEntry.name
-
                     // Guard clause: Skip this fieldName when the subject of the search triple is different from both "${prog}${className}" and "${prog}$fieldName"
                     if (useGuardClauses) {
                         if (searchTriple.subject is Node_URI){
@@ -310,9 +348,27 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
                         }
                         else -> {
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", "${prog}${fieldEntry.type}"), searchTriple, matchingTriples, pseudo)
+                            if(fieldEntry.type !is SimulatorType) {
+                                addIfMatch(
+                                    uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"),
+                                    searchTriple,
+                                    matchingTriples,
+                                    pseudo
+                                )
+                                addIfMatch(
+                                    uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"),
+                                    searchTriple,
+                                    matchingTriples,
+                                    pseudo
+                                )
+                                addIfMatch(
+                                    uriTriple(
+                                        "${prog}${fieldName}",
+                                        "${rdfs}range",
+                                        "${prog}${fieldEntry.type}"
+                                    ), searchTriple, matchingTriples, pseudo
+                                )
+                            }
                         }
                     }
                 }

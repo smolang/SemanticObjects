@@ -41,7 +41,7 @@ class Command(
 class REPL(private val settings: Settings) {
     private var interpreter: Interpreter? = null
     private val commands: MutableMap<String, Command> = mutableMapOf()
-    private var rules = ""
+
     init{
         initCommands()
     }
@@ -125,8 +125,7 @@ class REPL(private val settings: Settings) {
             initGlobalStore,
             mutableMapOf(),
             pair.second,
-            settings,
-            rules,
+            settings
         )
         iB.interpreter = interpreter
     }
