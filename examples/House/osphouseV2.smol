@@ -1,27 +1,21 @@
-/*
-Object-oriented structure around simulation unit to unify propagation and time advance
-without having an explicit list to keep track of FMUs.
-*/
-abstract class FMU_Wrapper
+// Object-oriented structure around simulation unit to unify propagation and time advance
+// without having an explicit list to keep track of FMUs.
+abstract class FMU_Wrapper()
   abstract Unit propagate()         //pull propagation
   abstract Unit advance(Double db)
 end
 
-/*
-Abstracts over rooms and the outside.
-The @id field is used to connect with the asset model.
-*/
-abstract class Area(Int id) extends FMU_Wrapper()
+// Abstracts over rooms and the outside.
+// The @id field is used to connect with the asset model.
+abstract class Area extends FMU_Wrapper (Int id)
   abstract Double getT()
   abstract Controller getCtrl()
 end
 
-/*
- Wrapped for wall FMUs. Whether it is an inner or outer wall is determined by the loaded FMU
-The @id field is used to connect with the asset model.
- TODO: make name of FMU readable from within SMOL
-*/
-class Wall(Int id) extends FMU_Wrapper (
+// Wrapped for wall FMUs. Whether it is an inner or outer wall is determined by the loaded FMU
+// The @id field is used to connect with the asset model.
+// TODO: make name of FMU readable from within SMOL
+class Wall extends FMU_Wrapper (Int id,
   Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] fmuSim,
   Area areaLeft, Area areaRight)
 
@@ -67,7 +61,7 @@ class Room extends Area (
 
     //debugging
     Unit ping()
-        print(this);
+        print(this.id);
         if this.nextRoom != null then this.nextRoom.ping(); end
     end
 
@@ -129,7 +123,7 @@ class House(Room firstRoom, Room lastRoom)
   end
 
   /* creates the default house with 2 rooms */
-  Unit init(Outside osLeft, Outside osRight)
+  Unit init(Outside osLeft, Outside osRight, Int idLeftWall, Int idMiddleWall, Int idRightWall, Int idLeftRoom, Int idRightRoom)
   // Walls
   Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
     w_left = simulate("examples/DummyFMUs/OuterWall.fmu");
@@ -151,12 +145,12 @@ class House(Room firstRoom, Room lastRoom)
   Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
     ctrl = simulate("examples/DummyFMUs/Controller.fmu");
 
-    Room roomLeft = new Room(r_left, null, null, null, True, null);
-    Room roomRight = new Room(r_right, null, null, null, False, null);
+    Room roomLeft = new Room(idLeftRoom, r_left, null, null, null, True, null);
+    Room roomRight = new Room(idRightRoom, r_right, null, null, null, False, null);
     Controller control = new Controller(ctrl, roomLeft, roomRight);
-    Wall wall1 = new Wall(w_left, osLeft, roomLeft);
-    Wall wall2  = new Wall(w_middle, roomLeft, roomRight);
-    Wall wall3 = new Wall(w_right, roomRight, osRight);
+    Wall wall1 = new Wall(idLeftWall, w_left, osLeft, roomLeft);
+    Wall wall2  = new Wall(idMiddleWall, w_middle, roomLeft, roomRight);
+    Wall wall3 = new Wall(idRightWall, w_right, roomRight, osRight);
 
     //connect wrappers
     roomLeft.ctrl = control;
@@ -179,18 +173,18 @@ class House(Room firstRoom, Room lastRoom)
   /*****************************
   Adds one room at the beginning, i.e., to the left
   *****************************/
-  Unit addOneLeft()
+  Unit addOneLeft(Int id_wall, Int id_room)
     //create new wall
     Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
       new_outer = simulate("examples/DummyFMUs/OuterWall.fmu");
 
-    Wall new_wall  = new Wall(new_outer, null, null);
+    Wall new_wall  = new Wall(id_wall, new_outer, null, null);
 
     //create new room
     Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
       new_room_fmu = simulate("examples/DummyFMUs/Room.fmu");
 
-    Room new_room = new Room(new_room_fmu, null, null, null, False, null);
+    Room new_room = new Room(id_room, new_room_fmu, null, null, null, False, null);
 
     //link
     new_wall.areaLeft = this.firstRoom.wallLeft.areaLeft;
@@ -210,18 +204,18 @@ class House(Room firstRoom, Room lastRoom)
     /*****************************
     Adds one room at the end, i.e., to the right
     *****************************/
-    Unit addOneRight()
+    Unit addOneRight(Int id_wall, Int id_room)
       //create new wall
       Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
         new_outer = simulate("examples/DummyFMUs/OuterWall.fmu");
 
-      Wall new_wall  = new Wall(new_outer, null, null);
+      Wall new_wall  = new Wall(id_wall, new_outer, null, null);
 
       //create new room
       Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
         new_room_fmu = simulate("examples/DummyFMUs/Room.fmu");
 
-      Room new_room = new Room(new_room_fmu, null, null, null, False, null);
+      Room new_room = new Room(id_room, new_room_fmu, null, null, null, False, null);
 
       //link
       new_wall.areaLeft = new_room; //this.firstRoom.wallLeft.areaLeft;
@@ -239,9 +233,9 @@ class House(Room firstRoom, Room lastRoom)
     end
 
 
-  Unit addTwoLeft()
-    this.addOneLeft();
-    this.addOneLeft();
+  Unit addTwoLeft(Int id_wall1, Int id_room1, Int id_wall2, Int id_room2)
+    this.addOneLeft(id_wall1, id_room1);
+    this.addOneLeft(id_wall2, id_room2);
 
     //repair controller structure
     Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
@@ -255,10 +249,10 @@ class House(Room firstRoom, Room lastRoom)
     print(b);
   end
 
-  Unit addTwoRight()
-    this.addOneRight();
+  Unit addTwoRight(Int id_wall1, Int id_room1, Int id_wall2, Int id_room2)
+    this.addOneRight(id_wall1, id_room1);
     Room nextToLast = this.lastRoom;
-    this.addOneRight();
+    this.addOneRight(id_wall2, id_room2);
 
     //repair controller structure
     Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
@@ -272,10 +266,10 @@ class House(Room firstRoom, Room lastRoom)
     print(b);
   end
 
-  Unit addLeftRight()
+  Unit addLeftRight(Int id_wall1, Int id_room1, Int id_wall2, Int id_room2)
     Room nextToLast = this.lastRoom;
-    this.addOneLeft();
-    this.addOneRight();
+    this.addOneLeft(id_wall1, id_room1);
+    this.addOneRight(id_wall2, id_room2);
 
     //repair controller structure
     this.firstRoom.rebuildCtrl();
@@ -330,14 +324,14 @@ main
   Double step = 0.01;
   Int limit = 5;
 
-  House house = new House(cl, null, null);
-  Outside outside_left = new Outside(5.3);
-  Outside outside_right = new Outside(4.9);
+  House house = new House(null, null);
+  Outside outside_left = new Outside(0, 5.3);
+  Outside outside_right = new Outside(0, 4.9);
 
   /*****************************
   Build initial house and simulate for a while (first time)
   *****************************/
-  house.init(outside_left, outside_right);
+  house.init(outside_left, outside_right, 1 ,2, 3, 4, 5);
   print(" ### House built!"); house.layout();
   house.simulation(step, limit);
   print(" ### Simulation phase 1 finished");
@@ -346,7 +340,7 @@ main
   /*****************************
   Reconfigure (add two rooms to the right) and simulate
   *****************************/
-  house.addTwoRight();
+  house.addTwoRight(11,12,13,14);
   print(" ### House restructured addTwoRight!"); house.layout();
   house.simulation(step, limit);
   print(" ### Simulation phase 2 finished");
@@ -355,7 +349,7 @@ main
   /*****************************
   Reconfigure (add two rooms to the left) and simulate
   *****************************/
-  house.addTwoLeft();
+  house.addTwoLeft(21,22,23,24);
   print(" ### House restructured addTwoLeft!"); house.layout();
   house.simulation(step, limit);
   print(" ### Simulation phase 3 finished");
@@ -364,7 +358,7 @@ main
   /*****************************
   Reconfigure (add one room to the left and one to the right) and simulate
   *****************************/
-  house.addLeftRight();
+  house.addLeftRight(31,32,33,34);
   print(" ### House restructured addLeftRight!"); house.layout();
   house.simulation(step, limit);
   print(" ### Simulation phase 4 finished");
