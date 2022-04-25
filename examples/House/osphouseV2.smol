@@ -14,7 +14,6 @@ end
 
 // Wrapped for wall FMUs. Whether it is an inner or outer wall is determined by the loaded FMU
 // The @id field is used to connect with the asset model.
-// TODO: make name of FMU readable from within SMOL
 class Wall extends FMU_Wrapper (Int id,
   Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] fmuSim,
   Area areaLeft, Area areaRight)

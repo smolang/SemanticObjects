@@ -49,7 +49,7 @@ class REPL(private val settings: Settings) {
     fun command(str: String, param: String): Boolean {
         // returns `true` if REPL should exit
         val start = LocalTime.now()
-        var result: Boolean
+        val result: Boolean
         if (str == "help") {
             for (cmd in commands.values.distinct()) {
                 println(String.format("%-11s - %s", cmd.name, cmd.help))
@@ -78,9 +78,9 @@ class REPL(private val settings: Settings) {
                 }
             }
         }
-        if (settings.verbose && result == false) {
-            val elapsed_time = Duration.between(start, LocalTime.now())
-            printRepl("Evaluation took ${elapsed_time.getSeconds()}.${elapsed_time.getNano()} seconds")
+        if (settings.verbose && !result) {
+            val elapsedTime = Duration.between(start, LocalTime.now())
+            printRepl("Evaluation took ${elapsedTime.seconds}.${elapsedTime.nano} seconds")
         }
         return result
     }

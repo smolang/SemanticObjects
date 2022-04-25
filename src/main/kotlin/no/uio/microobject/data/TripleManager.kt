@@ -77,13 +77,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     // Return an OWL ontology corresponding to the requested sources.
     private fun getOntologyFromModel(tripleSettings: TripleSettings): OWLOntology {
         val model = getModelUnion(tripleSettings)
-        val manager: OntologyManager = OntManagers.createManager();
+        val manager: OntologyManager = OntManagers.createManager()
 
         // Settings related to how model is loaded into an ontology.
         val conf: OntLoaderConfiguration = manager.ontologyLoaderConfiguration
         conf.isPerformTransformation = true
 
-        val ontology: Ontology = manager.addOntology(model.graph, conf);
+        val ontology: Ontology = manager.addOntology(model.graph, conf)
         return ontology
     }
 
@@ -131,7 +131,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         if(settings.background != "") {
             var str  = ""
             for ((key, value) in prefixMap) str += "@prefix $key: <$value> .\n"
-            if(settings.background != "") str += settings.background + "\n"
+            str += settings.background + "\n"
             val s: InputStream = ByteArrayInputStream(str.toByteArray())
             model.read(s, null, "TTL")
         }
@@ -142,12 +142,11 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     private fun getVocabularyModel(): Model {
         val vocabularyModel = ModelFactory.createDefaultModel()
         val vocabURL: URL = this::class.java.classLoader.getResource("vocab.owl") ?: return vocabularyModel
-        var str  = ""
+        var str = ""
         for ((key, value) in prefixMap) str += "@prefix $key: <$value> .\n"
         str += vocabURL.readText(Charsets.UTF_8)
         val iStream: InputStream = ByteArrayInputStream(str.toByteArray())
-        val m = vocabularyModel.read(iStream, null, "TTL")
-        return m
+        return vocabularyModel.read(iStream, null, "TTL")
     }
 
 
@@ -211,9 +210,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         // Insert into m1
         val it = g.find()
         for (i in it) {
-            val p = ResourceFactory.createProperty(i.predicate.toString());
-            val o = ResourceFactory.createResource(i.`object`.toString());
-            m1.createResource(i.subject.toString()).addProperty(p, o);
+            val p = ResourceFactory.createProperty(i.predicate.toString())
+            val o = ResourceFactory.createResource(i.`object`.toString())
+            m1.createResource(i.subject.toString()).addProperty(p, o)
         }
 
         // Write model m1 to file
@@ -229,7 +228,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return m2
     }
 
-    private inner class FMOGraph() : GraphBase() {
+    private inner class FMOGraph : GraphBase() {
         override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
             if(interpreter == null)
                 return TripleListIterator(mutableListOf())
@@ -241,8 +240,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             val matchingTriples: MutableList<Triple> = mutableListOf()
 
             for( fmo in interpreter.simMemory ){
-                val name = fmo.key.literal;
-                val value = fmo.value.path;
+                val name = fmo.key.literal
+                val value = fmo.value.path
                 val valueNode = getLiteralNode(LiteralExpr(value, STRINGTYPE), settings)
 
                 val resTriple =

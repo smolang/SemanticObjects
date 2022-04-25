@@ -84,7 +84,7 @@ data class ComposedType(val name : Type, val params : List<Type>) : Type() {
         var ret = this.name.isAssignable(rhs.name, extends)
         for (i in this.params.indices) {
             if (!ret) break
-            ret = ret && this.params[i].isAssignable(rhs.params[i], extends)
+            ret = this.params[i].isAssignable(rhs.params[i], extends)
         }
         return ret
     }
