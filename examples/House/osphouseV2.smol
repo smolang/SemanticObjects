@@ -1,14 +1,27 @@
-abstract class FMU_Wrapper()
-  abstract Unit propagate()         //pull
+/*
+Object-oriented structure around simulation unit to unify propagation and time advance
+without having an explicit list to keep track of FMUs.
+*/
+abstract class FMU_Wrapper
+  abstract Unit propagate()         //pull propagation
   abstract Unit advance(Double db)
 end
 
-abstract class Area extends FMU_Wrapper()
+/*
+Abstracts over rooms and the outside.
+The @id field is used to connect with the asset model.
+*/
+abstract class Area(Int id) extends FMU_Wrapper()
   abstract Double getT()
   abstract Controller getCtrl()
 end
 
-class Wall extends FMU_Wrapper (
+/*
+ Wrapped for wall FMUs. Whether it is an inner or outer wall is determined by the loaded FMU
+The @id field is used to connect with the asset model.
+ TODO: make name of FMU readable from within SMOL
+*/
+class Wall(Int id) extends FMU_Wrapper (
   Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] fmuSim,
   Area areaLeft, Area areaRight)
 
@@ -22,6 +35,9 @@ class Wall extends FMU_Wrapper (
   Double getH() return this.fmuSim.h_wall; end
 end
 
+/*
+Controls two adjacent rooms. Has no id because it is part of the DT and is not part of the physical asset.
+*/
 class Controller extends FMU_Wrapper (
   Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight] fmuSim,
   Room roomLeft, Room roomRight)
@@ -34,23 +50,31 @@ class Controller extends FMU_Wrapper (
   override Unit advance(Double db) this.fmuSim.tick(db); end
 end
 
-class Outside extends Area(Double temp) // Fake FMU wrapper
+class Outside extends Area(Double temp)
   override Unit propagate() skip; end
   override Unit advance(Double db) skip; end
   override Double getT() return this.temp; end
   override Controller getCtrl() return null; end
 end
 
+/*
+Rooms and walls form a doubly linked list, and @nextRoom skips the walls,.
+*/
 class Room extends Area (
   Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]  fmuSim,
   Wall wallLeft, Wall wallRight,
   Controller ctrl, Boolean isFirst, Room nextRoom)
 
+    //debugging
     Unit ping()
         print(this);
         if this.nextRoom != null then this.nextRoom.ping(); end
     end
 
+  /*
+  Deletes all controllers and creates new ones to preserve the constraint on the adjacency of rooms controller by one
+  controller. MUST be called on the first room in a house with an even number of rooms.
+  */
   Unit rebuildCtrl()
       Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
         ctrl = simulate("examples/DummyFMUs/Controller.fmu");
@@ -60,7 +84,7 @@ class Room extends Area (
         destroy(this.ctrl);
       end
       this.ctrl = control;
-      this.nextRoom.ctrl = control; //XX
+      this.nextRoom.ctrl = control;
       if this.nextRoom.nextRoom != null then
           this.nextRoom.nextRoom.rebuildCtrl();
       end
@@ -76,10 +100,8 @@ class Room extends Area (
     if this.nextRoom != null then this.nextRoom.propagate(); end
     this.fmuSim.h_wallLeft = this.wallLeft.getH();
     this.fmuSim.h_wallRight = this.wallRight.getH();
-    if(this.isFirst) then
-      this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_roomLeft;
-    else
-      this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_roomRight;
+    if(this.isFirst) then this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_roomLeft;
+    else                  this.fmuSim.h_powerHeater = this.ctrl.fmuSim.h_roomRight;
     end
   end
 
@@ -92,8 +114,10 @@ class Room extends Area (
 
 end
 
-class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
+//wrapper to manage changes in the house
+class House(Room firstRoom, Room lastRoom)
 
+  /* debugging */
   Unit layout()
     print(" # firstRoom: ");
     print(this.firstRoom);
@@ -104,6 +128,7 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
       print("  # rows end ");
   end
 
+  /* creates the default house with 2 rooms */
   Unit init(Outside osLeft, Outside osRight)
   // Walls
   Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
@@ -273,7 +298,7 @@ class House(Cont[out Double clock] clock, Room firstRoom, Room lastRoom)
     if this.firstRoom != null then
         this.firstRoom.wallLeft.advance(db);
         this.firstRoom.advance(db);
-        this.clock.tick(db);
+
     end
   end
 
@@ -304,9 +329,7 @@ main
   *****************************/
   Double step = 0.01;
   Int limit = 5;
-  Cont[out Double clock] cl = simulate("examples/DummyFMUs/Clock.fmu", Reset = 100);
 
-  // General structures
   House house = new House(cl, null, null);
   Outside outside_left = new Outside(5.3);
   Outside outside_right = new Outside(4.9);
