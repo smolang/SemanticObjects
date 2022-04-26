@@ -18,11 +18,11 @@ import no.uio.microobject.data.TripleManager
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
-    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:")
+    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
     protected fun loadBackground(path : String){
         val file = File(path)
         val backgr = file.readText()
-        settings = Settings(false, false,  "/tmp/mo",backgr,"","urn:")
+        settings = Settings(false, false,  "/tmp/mo",backgr,"","urn:", extraPrefixes = hashMapOf())
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
@@ -107,7 +107,7 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val settings = Settings(false, true, "/tmp/mo","","","urn:")
+        val settings = Settings(false, true, "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
         val tripleManager = TripleManager(settings, pair.second, null)
 
         val tC = TypeChecker(ast, settings, tripleManager)
