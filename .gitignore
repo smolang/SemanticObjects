@@ -4,3 +4,5 @@
 /build/classes/java/main/
 *.elc
 *.yml
+.DS_Store
+/bin/
