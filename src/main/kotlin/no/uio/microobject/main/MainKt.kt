@@ -1,10 +1,7 @@
 package no.uio.microobject.main
 
 import com.github.ajalt.clikt.core.CliktCommand
-import com.github.ajalt.clikt.parameters.options.default
-import com.github.ajalt.clikt.parameters.options.flag
-import com.github.ajalt.clikt.parameters.options.option
-import com.github.ajalt.clikt.parameters.options.switch
+import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.path
 import org.jline.reader.LineReaderBuilder
 import no.uio.microobject.runtime.REPL
@@ -19,36 +16,50 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
-                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#"
+                    val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#",
+                    val extraPrefixes : HashMap<String, String>
                     ){
+    var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {
-        return hashMapOf(
-        "domain" to domainPrefix,
-        "smol" to langPrefix,
-        "prog" to progPrefix,
-        "run" to runPrefix,
-        "owl" to "http://www.w3.org/2002/07/owl#",
-        "rdf" to "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
-        "rdfs" to "http://www.w3.org/2000/01/rdf-schema#",
-        "xsd" to "http://www.w3.org/2001/XMLSchema#")
+        if(prefixMapCache != null) return prefixMapCache as HashMap<String, String>
+        prefixMapCache = hashMapOf(
+            "domain" to domainPrefix,
+            "smol" to langPrefix,
+            "prog" to progPrefix,
+            "run" to runPrefix,
+            "owl" to "http://www.w3.org/2002/07/owl#",
+            "rdf" to "http://www.w3.org/1999/02/22-rdf-syntax-ns#",
+            "rdfs" to "http://www.w3.org/2000/01/rdf-schema#",
+            "xsd" to "http://www.w3.org/2001/XMLSchema#"
+        )
+        prefixMapCache!!.putAll(extraPrefixes)
+        return prefixMapCache as HashMap<String, String>
     }
+
     fun replaceKnownPrefixes(string: String) : String{
-        return string.replace("domain:", "$domainPrefix:")
+        var res = string.replace("domain:", "$domainPrefix:")
             .replace("prog:", "$progPrefix:")
             .replace("run:", "$runPrefix:")
             .replace("smol:", "$langPrefix:")
+        for( (k,v) in extraPrefixes) res = res.replace("$k:", "$v:")
+        return res;
     }
     fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWARE: requires that the prefixes and in #
-        return string.replace("domain:", domainPrefix)
+        var res= string.replace("domain:", domainPrefix)
             .replace("prog:", progPrefix)
             .replace("run:", runPrefix)
             .replace("smol:", langPrefix)
+        for( (k,v) in extraPrefixes) res = res.replace("$k:", v)
+        return res;
     }
-    fun prefixes() : String =
-        """@prefix smol: <${langPrefix}> .
+    fun prefixes() : String {
+        var res = """@prefix smol: <${langPrefix}> .
            @prefix prog: <${progPrefix}>.
            @prefix domain: <${domainPrefix}>.
            @prefix run: <${runPrefix}> .""".trimIndent()
+        for( (k,v) in extraPrefixes) res = "$res\n@prefix $k: <$v>."
+        return res + "\n";
+    }
 
     fun getHeader() : String {
         return """
@@ -73,6 +84,7 @@ class Main : CliktCommand() {
     private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
     private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
+    private val extra        by option("--prefixes", "-p", help="Extra prefixes, given as a list PREFIX=URI").associate()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -91,7 +103,7 @@ class Main : CliktCommand() {
             exitProcess(-1)
         }
 
-        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, domainPrefix))
+        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra)))
         if(input != null){
             repl.command("read", input.toString())
         }

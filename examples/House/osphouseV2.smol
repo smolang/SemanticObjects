@@ -338,7 +338,7 @@ main
   house.simulation(step, limit);
   print(" ### Simulation phase 1 finished");
 
-  List<RoomAssert> walls = construct("SELECT ?room ?wallLeft ?wallRight WHERE { ?x a domain:Room; domain:right [domain:Wall_id ?wallRight]; domain:left [domain:Wall_id ?wallLeft]; domain:Room_id ?room. FILTER NOT EXISTS {?q a prog:Room; prog:Room_id ?room.} }");
+  List<RoomAssert> walls = construct("SELECT ?room ?wallLeft ?wallRight WHERE { ?x a asset:Room; asset:right [asset:Wall_id ?wallRight]; asset:left [asset:Wall_id ?wallLeft]; asset:Room_id ?room. FILTER NOT EXISTS {?q a prog:Room; prog:Room_id ?room.} }");
   Int newRooms = walls.length();
   if newRooms != 2 then
     print(" ## Not twinnable!");
@@ -348,18 +348,18 @@ main
   RoomAssert new2 = walls.next.content;
   if new1.wallLeft == new2.wallRight then // new2 - new1 - old
       house.addTwoRight(new1.wallLeft, new1.room, new2.wallLeft, new2.room);
-      print(" ## House restructured addTwoLeft!"); //house.layout();
+      print(" ## House restructured addTwoLeft!");
   else
     if new1.wallRight == new2.wallLeft then // old - new1 - new2
       house.addTwoRight(new1.wallRight, new1.room, new2.wallRight, new2.room);
-      print(" ## House restructured addTwoRight!"); //house.layout();
+      print(" ## House restructured addTwoRight!");
     else
       if house.firstRoom.wallLeft.id == new1.wallRight then //new1 - old - new2
           house.addLeftRight(new1.wallLeft, new1.room, new2.wallRight, new2.room);
       else //new2 - old - new1
           house.addLeftRight(new2.wallLeft, new2.room, new1.wallRight, new1.room);
       end
-      print(" ## House restructured addLeftRight!"); //house.layout();
+      print(" ## House restructured addLeftRight!");
     end
   end
   house.simulation(step, limit);

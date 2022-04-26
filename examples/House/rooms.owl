@@ -1,31 +1,21 @@
-@prefix owl: <http://www.w3.org/2002/07/owl#> .
-@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
-@prefix xml: <http://www.w3.org/XML/1998/namespace> .
-@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
-@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
-@base <http://www.w3.org/2002/07/owl#> .
-
-[ rdf:type owl:Ontology
- ] .
-
 #################################################################
 #    Object Properties
 #################################################################
 
 ###  http://www.github.com/#left
-domain:left rdf:type owl:ObjectProperty ;
-            rdfs:subPropertyOf domain:next .
+asset:left rdf:type owl:ObjectProperty ;
+            rdfs:subPropertyOf asset:next .
 
 
 ###  http://www.github.com/#next
-domain:next rdf:type owl:ObjectProperty ;
-            rdfs:domain domain:Room ;
-            rdfs:range domain:Wall .
+asset:next rdf:type owl:ObjectProperty ;
+            rdfs:domain asset:Room ;
+            rdfs:range asset:Wall .
 
 
 ###  http://www.github.com/#right
-domain:right rdf:type owl:ObjectProperty ;
-             rdfs:subPropertyOf domain:next .
+asset:right rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf asset:next .
 
 
 
@@ -35,15 +25,15 @@ domain:right rdf:type owl:ObjectProperty ;
 #################################################################
 
 ###  http://www.github.com/#Room_id
-domain:Room_id rdf:type owl:DatatypeProperty ;
-               rdfs:domain domain:Room ;
+asset:Room_id rdf:type owl:DatatypeProperty ;
+               rdfs:domain asset:Room ;
                rdfs:range xsd:string .
 
 
 ###  http://www.github.com/#Wall_id
-domain:Wall_id rdf:type owl:DatatypeProperty ,
+asset:Wall_id rdf:type owl:DatatypeProperty ,
                         owl:FunctionalProperty ;
-               rdfs:domain domain:Wall ;
+               rdfs:domain asset:Wall ;
                rdfs:range xsd:string .
 
 
@@ -52,23 +42,23 @@ domain:Wall_id rdf:type owl:DatatypeProperty ,
 #################################################################
 
 ###  http://www.github.com/#InnerWall
-domain:InnerWall rdf:type owl:Class ;
-                 rdfs:subClassOf domain:Wall .
+asset:InnerWall rdf:type owl:Class ;
+                 rdfs:subClassOf asset:Wall .
 
 
 ###  http://www.github.com/#OuterWall
-domain:OuterWall rdf:type owl:Class ;
-                 rdfs:subClassOf domain:Wall .
+asset:OuterWall rdf:type owl:Class ;
+                 rdfs:subClassOf asset:Wall .
 
 
 ###  http://www.github.com/#Room
-domain:Room rdf:type owl:Class .
+asset:Room rdf:type owl:Class .
 
 
 ###  http://www.github.com/#Wall
-domain:Wall rdf:type owl:Class ;
-            owl:disjointUnionOf ( domain:InnerWall
-                                  domain:OuterWall
+asset:Wall rdf:type owl:Class ;
+            owl:disjointUnionOf ( asset:InnerWall
+                                  asset:OuterWall
                                 ) .
 
 
@@ -77,65 +67,65 @@ domain:Wall rdf:type owl:Class ;
 #################################################################
 
 ###  http://www.github.com/#room1
-domain:room1 rdf:type owl:NamedIndividual ;
-             a domain:Room;
-             domain:left domain:wall1 ;
-             domain:right domain:wall2 ;
-             domain:Room_id "r1"^^xsd:string .
+asset:room1 rdf:type owl:NamedIndividual ;
+             a asset:Room;
+             asset:left asset:wall1 ;
+             asset:right asset:wall2 ;
+             asset:Room_id "r1"^^xsd:string .
 
 
 ###  http://www.github.com/#room2
-domain:room2 rdf:type owl:NamedIndividual ;
-             a domain:Room;
-             domain:left domain:wall2 ;
-             domain:right domain:wall3 ;
-             domain:Room_id "r2"^^xsd:string .
+asset:room2 rdf:type owl:NamedIndividual ;
+             a asset:Room;
+             asset:left asset:wall2 ;
+             asset:right asset:wall3 ;
+             asset:Room_id "r2"^^xsd:string .
 
 
 ###  http://www.github.com/#room3
-domain:room3 rdf:type owl:NamedIndividual ;
-             a domain:Room;
-             domain:left domain:wall3 ;
-             domain:right domain:wall4 ;
-             domain:Room_id "r3"^^xsd:string .
+asset:room3 rdf:type owl:NamedIndividual ;
+             a asset:Room;
+             asset:left asset:wall3 ;
+             asset:right asset:wall4 ;
+             asset:Room_id "r3"^^xsd:string .
 
 
 ###  http://www.github.com/#room4
-domain:room4 rdf:type owl:NamedIndividual ;
-             a domain:Room;
-             domain:left domain:wall4 ;
-             domain:right domain:wall5 ;
-             domain:Room_id "r4"^^xsd:string .
+asset:room4 rdf:type owl:NamedIndividual ;
+             a asset:Room;
+             asset:left asset:wall4 ;
+             asset:right asset:wall5 ;
+             asset:Room_id "r4"^^xsd:string .
 
 
 ###  http://www.github.com/#wall1
-domain:wall1 rdf:type owl:NamedIndividual ,
-                      domain:OuterWall ;
-             domain:Wall_id "w1" .
+asset:wall1 rdf:type owl:NamedIndividual ,
+                      asset:OuterWall ;
+             asset:Wall_id "w1" .
 
 
 ###  http://www.github.com/#wall2
-domain:wall2 rdf:type owl:NamedIndividual ,
-                      domain:Wall ;
-             domain:Wall_id "w2" .
+asset:wall2 rdf:type owl:NamedIndividual ,
+                      asset:Wall ;
+             asset:Wall_id "w2" .
 
 
 ###  http://www.github.com/#wall3
-domain:wall3 rdf:type owl:NamedIndividual ,
-                      domain:Wall ;
-             domain:Wall_id "w3" .
+asset:wall3 rdf:type owl:NamedIndividual ,
+                      asset:Wall ;
+             asset:Wall_id "w3" .
 
 
 ###  http://www.github.com/#wall4
-domain:wall4 rdf:type owl:NamedIndividual ,
-                      domain:Wall ;
-             domain:Wall_id "w4" .
+asset:wall4 rdf:type owl:NamedIndividual ,
+                      asset:Wall ;
+             asset:Wall_id "w4" .
 
 
 ###  http://www.github.com/#wall5
-domain:wall5 rdf:type owl:NamedIndividual ,
-                      domain:OuterWall ;
-             domain:Wall_id "w5"^^xsd:string .
+asset:wall5 rdf:type owl:NamedIndividual ,
+                      asset:OuterWall ;
+             asset:Wall_id "w5"^^xsd:string .
 
 
 ###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi

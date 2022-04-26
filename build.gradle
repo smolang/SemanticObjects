@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.4.10'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.0'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
 }
@@ -23,7 +23,7 @@ dependencies {
     testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.0")
     compileClasspath("io.kotlintest:kotlintest-runner-junit5:3.4.0")
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-    implementation("com.github.ajalt:clikt:2.3.0")
+    implementation('com.github.ajalt.clikt:clikt:3.4.2')
     implementation "org.antlr:antlr4:4.8"
     antlr "org.antlr:antlr4:4.8"
     implementation 'net.sourceforge.owlapi:org.semanticweb.hermit:1.4.5.519'
