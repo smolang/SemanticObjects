@@ -1,32 +1,33 @@
 package no.uio.microobject.test.type
 
+import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
 import kotlin.test.assertFalse
 
 class FMOLTypeTest : MicroObjectTypeTest()  {
     init{
-        "Simulate success 1"{
+        "Simulate success 1".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("SuccessClass", "start", "test_fmu")
             assert(tC.report(false))
         }
-        "Simulate success 2"{
+        "Simulate success 2".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("SuccessClass", "assign", "test_fmu")
             assert(tC.report(false))
         }
-        "Simulate success 3"{
+        "Simulate success 3".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("SuccessClass", "portTest", "test_fmu")
             assert(tC.report(false))
         }
         for( i in 1..6 )
-        "Simulate fail $i"{
+        "Simulate fail $i".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("FailClass", "fail$i", "test_fmu")
             assertFalse(tC.report(false))
         }
         for( i in 1..6 )
-        "fields $i"{
+        "fields $i".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("SuccessClass", "fieldfail$i", "test_fmu")
             assertFalse(tC.report(false))
         }
-        "extra fields"{
+        "extra fields".config(enabled = !IS_OS_MAC) {
             val tC = checkMet("SuccessClass", "extra", "test_fmu")
             assert(tC.report(false))
         }

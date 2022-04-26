@@ -12,6 +12,8 @@ import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import kotlin.test.assertEquals
 import no.uio.microobject.data.TripleManager
+import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
+import org.junit.Assume
 
 class BasicTest : StringSpec() {
     private fun load(path : String) : Int {
@@ -38,14 +40,11 @@ class BasicTest : StringSpec() {
     }
 
     init {
-        "parsing Jacobi"{
-            if (!(File("examples/SimulationDemo/Prey.fmu").exists()
-                  && File("examples/SimulationDemo/Predator.fmu").exists())) {
-                // TODO: ignoring the test with a message would be better here
-                kotlin.test.assertTrue(true)
-            } else {
-                assertEquals(load(this::class.java.classLoader.getResource("Jacobi.smol").file), 0)
-            }
+        "parsing Jacobi".config(enabled = !IS_OS_MAC) {
+            Assume.assumeTrue("FMUs not found",
+                File("examples/SimulationDemo/Prey.fmu").exists()
+                        && File("examples/SimulationDemo/Predator.fmu").exists())
+            assertEquals(load(this::class.java.classLoader.getResource("Jacobi.smol").file), 0)
         }
     }
 }
