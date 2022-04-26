@@ -359,7 +359,7 @@ class Interpreter(
                         for(f in m){
                             if(!r.varNames().asSequence().contains(f.name))
                                 throw Exception("Could find variable for field ${f.name} in query $str")
-                            val extractedName  = r.getResource(f.name).toString().removePrefix(settings.runPrefix)
+                            val extractedName  = r.getLiteral(f.name).toString().removePrefix(settings.runPrefix)
                             if(!Type.isAtomic(f.type)) {
                                 val foundAny = heap.keys.any { it.literal == extractedName }
                                 if (!foundAny)

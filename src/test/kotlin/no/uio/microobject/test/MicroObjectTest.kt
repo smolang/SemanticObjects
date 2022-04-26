@@ -89,8 +89,7 @@ open class MicroObjectTest : StringSpec() {
             initGlobalStore,
             mutableMapOf(),
             pair.second,
-            settings,
-            rules,
+            settings
         )
         iB.interpreter = interpreter
         return Pair(interpreter, tC)

@@ -16,7 +16,6 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
                     val outpath : String,       //path of temporary outputs
                     val background : String,    //owl background knowledge
-                    val backgroundrules : String,    //owl background knowledge
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
@@ -68,7 +67,6 @@ class Main : CliktCommand() {
     ).default("repl")
 
     private val back         by option("--back",      "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
-    private val backrules    by option("--backrules", "-br", help="path to a file that contains derivation rules in Jena syntax.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
     private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
@@ -88,20 +86,12 @@ class Main : CliktCommand() {
             }else println("Could not find file for background knowledge: ${file.path}")
         }
 
-        var backgrrules = ""
-        if(backrules != null){
-            val file = File(backrules.toString())
-            if(file.exists()){
-                backgrrules = file.readText()
-            }else println("Could not find file for background knowledge: ${file.path}")
-        }
-
         if (input == null && mainMode != "repl"){
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
         }
 
-        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, backgrrules, domainPrefix))
+        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, domainPrefix))
         if(input != null){
             repl.command("read", input.toString())
         }

@@ -103,7 +103,7 @@ FLOAT : INTEGER? '.' DIG+ EXPONENT? ;
 namelist : NAME (COMMA NAME)*;
 
 //Entry point
-program : (class_def)* MAIN statement END;
+program : (class_def)* MAIN statement END (class_def)*;
 
 //classes
 class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
