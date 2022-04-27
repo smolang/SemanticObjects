@@ -1,8 +1,8 @@
 package no.uio.microobject.test
 
+import io.kotest.core.spec.style.StringSpec
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
-import io.kotlintest.specs.StringSpec
 import no.uio.microobject.data.Translate
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.GlobalMemory

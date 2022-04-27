@@ -1,10 +1,11 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.6.0'
+    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
 }
 group = 'me.edkam'
 version = '0.2'
+sourceCompatibility = '1.11'
 
 repositories {
     mavenCentral()
@@ -20,8 +21,7 @@ sourceSets {
     }
 }
 dependencies {
-    testImplementation("io.kotlintest:kotlintest-runner-junit5:3.4.0")
-    compileClasspath("io.kotlintest:kotlintest-runner-junit5:3.4.0")
+    testImplementation("io.kotest:kotest-runner-junit5:5.2.3")
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
     testImplementation("org.apache.commons:commons-lang3:3.12.0")
     implementation('com.github.ajalt.clikt:clikt:3.4.2')
@@ -31,7 +31,7 @@ dependencies {
     implementation 'org.slf4j:slf4j-simple:1.7.25'
     implementation 'org.apache.jena:apache-jena-libs:3.16.0'
     implementation 'org.apache.jena:jena-core:3.16.0'
-    compile 'org.siani.javafmi:fmu-wrapper:2.26.3'
+    implementation 'org.siani.javafmi:fmu-wrapper:2.26.3'
     implementation "com.influxdb:influxdb-client-kotlin:2.3.0"
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.1'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.1'
@@ -44,7 +44,7 @@ generateGrammarSource {
     arguments += ["-visitor"]
 }
 compileKotlin {
-    kotlinOptions.jvmTarget = '1.8'
+    kotlinOptions.jvmTarget = project.sourceCompatibility
 }
 jar {
     manifest {
