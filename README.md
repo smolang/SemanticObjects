@@ -39,18 +39,18 @@ Additionally, eval/ contains the files used for performance evaluation and domai
 
 To execute it, run the following.
 ```
-./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/overload.smol -r examples/overload.imo -b examples/overload.back 
+./gradlew shadowJar
+java -jar build/libs/MicroObjects-0.2-all.jar -i src/test/resources/overload.smol -r examples/overload.imo -b examples/overload.back 
 ```
 
 To change the interpretation of `:Overloaded` modify examples/overload.back, e.g., change the last line to `owl:equivalentClass :ThreeServer.` to consider a server as being overloaded if 2 tasks run.
-Note that the implementation is *not* guaranteeing that no server is overloaded afterwards, but is used to demonstrate the principle of using a domain-specific query to control the execution of the program.
+The implementation is not guaranteeing that no server is overloaded afterwards, but is used to demonstrate the principle of using a domain-specific query to control the execution of the program.
 
 ### FMUs 
 To execute an example for Hybrid SMOL, download the required FMUs as described in `examples/SimulationDemo/lv-simple.smol` and run the following
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -l examples/SimulationDemo/lv-simple.smol -n
+java -jar build/libs/MicroObjects-0.2-all.jar -i examples/SimulationDemo/lv-simple.smol -e
 ```
 ### Geometric Scene
 
@@ -60,7 +60,7 @@ java -jar build/libs/MicroObjects-0.2-all.jar -l examples/SimulationDemo/lv-simp
 To execute it, run the following.
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/scene.smol -r examples/scene.imo
+java -jar build/libs/MicroObjects-0.2-all.jar -i src/test/resources/scene.smol -r examples/scene.imo
 ```
 
 ### 2-3 Trees
@@ -73,7 +73,7 @@ java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/scene.smol -
 To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.2-all.jar -i src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 
@@ -89,16 +89,13 @@ java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/TwoThreeTree
 To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/MicroObjects-0.2-all.jar -l src/test/resources/double.smol -r examples/double.imo 
+java -jar build/libs/MicroObjects-0.2-all.jar -i src/test/resources/double.smol -r examples/double.imo 
 ```
 
 
 
 
 ## Misc.
-  * REPL: If you use `-b` to load background knowledge, OWL reasoning is used for all queries. This may slow down execution.
-  * SMOL: If you use the `query` *statement*, a `List` class with fields `content` and `next` is assumed to exist. The result of the command is a list with all results for the variable `?obj`. 
-  * SMOL: A method modified by `rule` is not allowed to have parameters. 
   * SMOL: Results of type checking are ignored, but output to the user.
   * SMOL: `super` refers to the overloaded method, not the instance as its supertype.
   * General: To run the simulation example, python3 and the zmq package must be installed. 
