@@ -1,33 +1,33 @@
 package no.uio.microobject.test.type
 
-import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
 import kotlin.test.assertFalse
+import io.kotest.core.test.config.enabledOrReasonIf
 
 class FMOLTypeTest : MicroObjectTypeTest()  {
     init{
-        "Simulate success 1".config(enabled = !IS_OS_MAC) {
+        "Simulate success 1".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("SuccessClass", "start", "test_fmu")
             assert(tC.report(false))
         }
-        "Simulate success 2".config(enabled = !IS_OS_MAC) {
+        "Simulate success 2".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("SuccessClass", "assign", "test_fmu")
             assert(tC.report(false))
         }
-        "Simulate success 3".config(enabled = !IS_OS_MAC) {
+        "Simulate success 3".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("SuccessClass", "portTest", "test_fmu")
             assert(tC.report(false))
         }
         for( i in 1..6 )
-        "Simulate fail $i".config(enabled = !IS_OS_MAC) {
+        "Simulate fail $i".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("FailClass", "fail$i", "test_fmu")
             assertFalse(tC.report(false))
         }
         for( i in 1..6 )
-        "fields $i".config(enabled = !IS_OS_MAC) {
+        "fields $i".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("SuccessClass", "fieldfail$i", "test_fmu")
             assertFalse(tC.report(false))
         }
-        "extra fields".config(enabled = !IS_OS_MAC) {
+        "extra fields".config(enabledOrReasonIf = fmuNeedsWindows) {
             val tC = checkMet("SuccessClass", "extra", "test_fmu")
             assert(tC.report(false))
         }

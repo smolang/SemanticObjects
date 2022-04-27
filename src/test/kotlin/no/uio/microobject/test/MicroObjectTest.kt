@@ -1,6 +1,8 @@
 package no.uio.microobject.test
 
 import io.kotest.core.spec.style.StringSpec
+import io.kotest.core.test.Enabled
+import io.kotest.core.test.TestCase
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.Translate
@@ -15,9 +17,26 @@ import org.antlr.v4.runtime.CommonTokenStream
 import java.io.File
 import java.util.*
 import no.uio.microobject.data.TripleManager
+import org.apache.commons.lang3.SystemUtils.IS_OS_LINUX
+import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
+import org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
+
+    val fmuNeedsWindows: (TestCase) -> Enabled = {
+        if (IS_OS_WINDOWS) Enabled.enabled
+        else  Enabled.disabled("The FMU of this test needs to run on Windows.")
+    }
+    val fmuNeedsMac: (TestCase) -> Enabled = {
+        if (IS_OS_MAC) Enabled.enabled
+        else Enabled.disabled("The FMU of this test needs to run on Mac OS.")
+    }
+    val fmuNeedsLinux: (TestCase) -> Enabled = {
+        if (IS_OS_LINUX) Enabled.enabled
+        else Enabled.disabled("The FMU of this test needs to run on Linux.")
+    }
+
     protected var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
     protected fun loadBackground(path : String){
         val file = File(path)
@@ -33,7 +52,7 @@ open class MicroObjectTest : StringSpec() {
     }
 
     private fun loadPath(path : String) : WhileParser.ProgramContext{
-        val localPath = if(System.getProperty("os.name").contains("Windows")) path.removePrefix("/") else path
+        val localPath = if(IS_OS_WINDOWS) path.removePrefix("/") else path
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
         val program =  File(localPath).readText(Charsets.UTF_8)
         val lexer = WhileLexer(CharStreams.fromString(stdLib + program))

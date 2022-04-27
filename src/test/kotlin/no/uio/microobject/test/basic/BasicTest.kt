@@ -13,11 +13,12 @@ import java.io.File
 import kotlin.test.assertEquals
 import no.uio.microobject.data.TripleManager
 import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
+import org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS
 import org.junit.Assume
 
 class BasicTest : StringSpec() {
     private fun load(path : String) : Int {
-        val localPath = if(System.getProperty("os.name").contains("Windows")) path.removePrefix("/") else path
+        val localPath = if(IS_OS_WINDOWS) path.removePrefix("/") else path
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
         val program =  File(localPath).readText(Charsets.UTF_8)
         val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
