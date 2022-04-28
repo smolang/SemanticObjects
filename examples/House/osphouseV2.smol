@@ -364,5 +364,8 @@ main
   end
   house.simulation(step, limit);
   print(" ### Simulation phase 2 finished");
-  breakpoint;
+  //breakpoint;
+
+  Boolean b = validate("examples/House/shape.ttl");
+  print(b);
 end

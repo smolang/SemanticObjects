@@ -1,22 +1,42 @@
 @prefix schema: <http://schema.org/> .
 @prefix sh: <http://www.w3.org/ns/shacl#> .
 
-schema:TestShape
+schema:RWLeftShape
     a sh:NodeShape ;
     sh:targetClass prog:Room ;
-    sh:or (
-    [
         sh:property [
-            sh:path prog:Room_inner ;
-            sh:class prog:InnerWall ;
-            sh:name "No isolated room - left" ;
+            sh:path (prog:Room_wallLeft prog:Wall_areaRight) ;
+            sh:value sh:this ;
+            sh:name "Connection left" ;
         ]
-    ]
-    [
+        .
+
+schema:RWRightShape
+    a sh:NodeShape ;
+    sh:targetClass prog:Room ;
         sh:property [
-            sh:path prog:Room_outer ;
-            sh:class prog:InnerWall ;
-            sh:name "No isolated room - right" ;
+            sh:path (prog:Room_wallRight prog:Wall_areaLeft) ;
+            sh:value sh:this ;
+            sh:name "Connection right" ;
         ]
-    ]
-    ).
+        .
+
+
+schema:FirstShape
+    a sh:NodeShape ;
+    sh:targetClass prog:House ;
+        sh:property [
+            sh:path (prog:House_firstRoom prog:Room_wallLeft prog:Wall_areaLeft) ;
+            sh:value smol:null ;
+            sh:name "Connection first" ;
+        ]
+        .
+schema:LastShape
+    a sh:NodeShape ;
+    sh:targetClass prog:House ;
+        sh:property [
+            sh:path (prog:House_lastRoom prog:Room_wallRight prog:Wall_areaRight) ;
+            sh:value smol:null ;
+            sh:name "Connection last" ;
+        ]
+        .
