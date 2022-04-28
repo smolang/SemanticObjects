@@ -86,7 +86,7 @@
               comment-start-skip "//+\\s-*")
   (setq font-lock-defaults (list 'smol-font-lock-defaults))
   (define-key smol-mode-map (kbd "C-c C-c")
-    'run-smol))
+    'smol-eval-current-file))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.smol\\'" . smol-mode))
@@ -120,6 +120,22 @@ If a smol repl is already running, switch to its buffer."
     (set-process-query-on-exit-flag
      (get-buffer-process smol--inferior-smol-buffer)
      nil)))
+
+;;;###autoload
+(defun smol-eval-current-file (arg)
+  "Start or switch to a SMOL REPL and evaluate the current file.
+When invoked with the `C-u' prefix (i.e., when ARG is set), do
+not evaluate the file in SMOL; otherwise, save the buffer when
+modified."
+  (interactive "P")
+  (if arg
+      (run-smol)
+    (save-buffer)
+    (let ((filename (buffer-file-name (current-buffer))))
+      (run-smol)
+      (sit-for 0.1)
+      (comint-send-string smol--inferior-smol-buffer
+                          (format "reada %s\n" filename)))))
 
 (provide 'smol-mode)
 ;;; smol-mode.el ends here
