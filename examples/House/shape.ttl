@@ -27,7 +27,7 @@ schema:FirstShape
     sh:targetClass prog:House ;
         sh:property [
             sh:path (prog:House_firstRoom prog:Room_wallLeft prog:Wall_areaLeft) ;
-            sh:value smol:null ;
+            sh:class prog:Outside;
             sh:name "Connection first" ;
         ]
         .
@@ -36,7 +36,7 @@ schema:LastShape
     sh:targetClass prog:House ;
         sh:property [
             sh:path (prog:House_lastRoom prog:Room_wallRight prog:Wall_areaRight) ;
-            sh:value smol:null ;
+            sh:class prog:Outside;
             sh:name "Connection last" ;
         ]
         .
