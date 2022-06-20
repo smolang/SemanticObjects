@@ -6,3 +6,4 @@
 *.yml
 .DS_Store
 /bin/
+/manual/build/

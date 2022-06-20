@@ -2,6 +2,7 @@ plugins {
     id 'org.jetbrains.kotlin.jvm' version '1.6.21'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
+    id "kr.motd.sphinx" version "2.10.0"
 }
 group = 'me.edkam'
 version = '0.2'
@@ -55,3 +56,15 @@ jar {
 compileKotlin.dependsOn generateGrammarSource
 
 assemble.dependsOn shadowJar
+
+sphinx {
+    // Documentation at
+    // https://trustin.github.io/sphinx-gradle-plugin/index.html
+    sourceDirectory = "${projectDir}/manual/source"
+    configDirectory = "${projectDir}/manual/source"
+    outputDirectory = "${projectDir}/manual/build/html"
+    builder = "singlehtml"
+}
+clean {
+    delete files("${projectDir}/manual/build")
+}
