@@ -19,15 +19,7 @@ Welcome to SMOL's documentation!
    classes-and-interfaces
    semantic-access
    fmos
-
-Glossary
-========
-
-.. glossary::
-   :sorted:
-
-   EBNF
-      Extended Backus-Naur Form, a notation for formally specifying syntax.
+   glossary
 
 Indices and tables
 ==================
