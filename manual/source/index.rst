@@ -14,6 +14,11 @@ Welcome to SMOL's documentation!
 
    introduction
    lexical-structure
+   expressions
+   statements
+   classes-and-interfaces
+   semantic-access
+   fmos
 
 Glossary
 ========
