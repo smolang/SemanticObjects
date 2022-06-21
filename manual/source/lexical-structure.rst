@@ -8,6 +8,9 @@ using a simple :term:`EBNF` notation as defined by `the W3C
 Line Terminators and Whitespace
 -------------------------------
 
+::
+   Whitespace ::= #x20 | #x09 | #x0D | #x0A | #x0C
+
 The following characters count as whitespace:
 
 .. list-table:: Whitespace
@@ -38,7 +41,7 @@ Comments are syntax elements that are ignored during parsing.
 ::
 
    Comment ::= BlockComment | LineComment
-   BlockComment ::= '/*' .\* '*/'
+   BlockComment ::= '/*' .* '*/'
    LineComment ::= '//' .* EOL
 
 A block comment starts with ``/*`` and extends until the first occurrence of
@@ -47,12 +50,32 @@ A block comment starts with ``/*`` and extends until the first occurrence of
 Identifiers
 -----------
 
+Identifiers start with a letter or underscore followed by a sequence of
+letters, numbers and underscores.  A language keyword cannot be used as an
+identifier.
+
+::
+
+   Identifier ::= [a-zA-Z_] [a-zA-Z0-9_]*
 
 
 Keywords
 --------
 
+Any word occurring in the grammar (e.g., `class`) is a keyword.  Keywords
+cannot be used as identifiers.
+
+TODO: list all language keywords here?
+
 Literals
 --------
 
+A literal is a textual representation of a value.  SMOL supports integer,
+Boolean, string and float literals.
 
+::
+
+   Literal ::= IntLiteral | FloatLiteral | StringLiteral | BoolLiteral
+   IntLiteral ::= '0' | '-'? [1-9] [0-9]*
+   FloatLiteral ::= IntLiteral? '.' [0-9]* ([eE]IntLiteral)?
+   StringLiteral ::= '"' ('\"' | .)* '"'
