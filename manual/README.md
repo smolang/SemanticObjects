@@ -1,5 +1,13 @@
+# Headline Structure
 
-Random helpful links to documentation, 
+Use the following punctuation characters in the section titles:
+
+- `#` for Parts
+- `*` for Chapters
+- `=` for sections (“Heading 1”)
+- `-` for subsections (“Heading 2”)
+- `^` for subsubsections (“Heading 3”)
+- `"` for paragraphs (“Heading 4”)
 
 # Basic rst info
 

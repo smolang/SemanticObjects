@@ -67,6 +67,8 @@ cannot be used as identifiers.
 
 TODO: list all language keywords here?
 
+.. _literals_ref:
+
 Literals
 --------
 
