@@ -2,7 +2,7 @@ Functional Mock-Up Objects
 ==========================
 .. highlight:: EBNF
 
-SMOL implements *functional mock-up objects* (FMOs), encapsulations of *functional mock-up units* (FMUs) as defined by the *functional mock-up interface* (FMI) 2.0.2.
+SMOL implements *functional mock-up objects* (FMOs), encapsulations of *functional mock-up units* (FMUs) as defined by the `*functional mock-up interface* (FMI) 2.0.2. <https://fmi-standard.org/>`_
 An FMO is an abstraction that integrates the FMU into the language; it is a special objects with the inputs and outputs of an FMU as properties/fields
 and special statements that initialize and advance it. It does not not belong to a class, but its inputs and outputs define an FMO-type, on which a subtyping relation is given.
 
@@ -107,7 +107,8 @@ The following shows how an FMO is loaded and manipulated.
 Semantical Lifting
 ------------------
 
-Semantical lifting of FMOs is under development. Currently, they are *completely* ommited from the generated knowledge graph.
+.. NOTE::
+  Semantical lifting of FMOs is under development. Currently, they are *completely* ommited from the generated knowledge graph.
 
 .. rubric:: Footnotes
 
