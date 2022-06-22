@@ -122,6 +122,7 @@ statement :   SKIP_S SEMI                                                       
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
+        // TODO: allow new statements without assignment
 			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                          # create_statement
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
