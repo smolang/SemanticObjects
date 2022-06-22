@@ -3,6 +3,8 @@ Functional Mock-Up Objects
 .. highlight:: EBNF
 
 SMOL implements *functional mock-up objects* (FMOs), encapsulations of *functional mock-up units* (FMUs) as defined by the *functional mock-up interface* (FMI) 2.0.2.
+An FMO is an abstraction that integrates the FMU into the language; it is a special objects with the inputs and outputs of an FMU as properties/fields
+and special statements that initialize and advance it. It does not not belong to a class, but its inputs and outputs define an FMO-type, on which a subtyping relation is given.
 
 Syntax
 ------
@@ -42,13 +44,15 @@ An FMO-type ``T = Cont[in Ti1 i1,... ; out To1 o1...]`` is a subtype of another 
 if (1) each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``, and 
 (2) each output ``i`` of ``T`` is also an ouput ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``.
 
-Statement
+Statements
 ^^^^^^^^^
 
 The ``simulate`` statement takes a path to an FMU and a list of variable initializers, which initialize the FMO.
+The ``doStep`` statement targets an expression with an FMO-type and takes a ``Double`` typed expression as a parameter.
 ::
 
   Statement ::= ... | (Type? NAME '=')? 'simulate' '(' STRING (',' VarInits)?')' 
+                    | Expression '.' 'doStep' '(' Expression ')'
   VarInits  ::= NAME '=' LITERAL (',' VarInits)? 
 
 The variable initializers must target inputs or parameters of the FMU and respect typing.
@@ -81,8 +85,8 @@ Each such operation results in a call to ``fmi2SetXXX``, resp. ``fmi2GetXXX``, a
 Addtionally, each FMO has a field ``role`` of ``String`` type and a field ``offset`` of integer type, which play a role in their semantic lifting and is explained below.
 These fields can be read and written and are not connceted to the encapsulated FMU.
 
-Each FMO has a single method ``Unit doStep(Double t)``, which advances the encapsulated FMU by ``t`` time units. It results
-in a call to ``doStep``.
+The ``doStep`` statement advances the encapsulated FMU by ``t`` time units. It results
+in a call to ``doStep`` of the encapsulated FMU.
 
 
 .. highlight:: Java
