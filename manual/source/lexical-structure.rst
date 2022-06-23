@@ -10,6 +10,7 @@ Line Terminators and Whitespace
 
 ::
    Whitespace ::= #x20 | #x09 | #x0D | #x0A | #x0C
+   EOL ::= #x0A | #x0C
 
 The following characters count as whitespace:
 

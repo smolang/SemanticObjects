@@ -2,17 +2,29 @@ Expressions
 ===========
 
 This chapter describes all expressions of SMOL.  Informally, expressions are
-the language elements that can occur on the right hand side of an assignment.
+the language elements that can occur on the right hand side of an assignment (even though they can be written on their own, see :ref:`expression_statement_ref`).
+
+Expressions are divided syntactially into two categories: *Simple
+Expressions*, which can be nested, and *Top Level Expressions*, which cannot
+be sub-expressions of other expressions.  This slight notational inconvenience
+makes it easier to develop static analysis techniques and tools for SMOL.
 
 ::
 
-   Expression ::= LiteralExpression
-                | OperatorExpression
+   Expression ::= SimpleExpression
+                | TopLevelExpression
+
+   SimpleExpression ::= LiteralExpression
+                      | OperatorExpression
+                      | VariableExpression
+                      | FieldExpression
+
+   TopLevelExpression ::= NewExpression
 
 Literal Expressions
 -------------------
 
-All literals, as defined in :ref:`literals_ref`, can be used as expressions.
+All literals, as defined in :ref:`literals_ref`, can be used as simple expressions.
 
 ::
 
@@ -21,7 +33,8 @@ All literals, as defined in :ref:`literals_ref`, can be used as expressions.
 Unary and Binary Operator Expressions
 -------------------------------------
 
-SMOL has a range of unary and binary operators working on pre-defined datatypes. 
+SMOL has a range of unary and binary operators working on pre-defined
+datatypes.
 
 ::
 
@@ -116,3 +129,67 @@ under ``==`` and vice versa.
 
 The less-than operator ``<`` and the other comparison operators compare
 numbers of different types (integers vs floats) in the expected way.
+
+The Variable Expression
+-----------------------
+
+Variable expressions evaluate to the current content of the named variable.
+
+::
+
+   VariableExpression ::= Identifier
+
+
+
+The Field Expression
+--------------------
+
+Field expressions evaluate to the current content of the named field in the
+current object.  It is an error to use a field expression in the main block.
+
+::
+
+   FieldExpression ::= 'this' '.' Identifier
+
+The New Expression
+------------------
+
+The New expression creates a new object of the given class.  Values for the
+class's constructor parameters are given as simple expressions inside
+parentheses.
+
+The optional ``models`` clause overrides any ``domain`` modifier or ``models``
+clause of the new object's class declarations (see
+:ref:`class_declaration_ref`).
+
+::
+
+   NewExpression ::= 'new' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )?  ')' ( 'models' SimpleExpression )
+
+The New FMU Expression
+-----------------------
+
+SIMULATE
+
+The Method Call Expression
+--------------------------
+
+The ``super`` Expression
+------------------------
+
+The Query Expression
+--------------------
+
+The Construct Expression
+------------------------
+
+The Concept Expression
+---------------------
+
+MEMBER
+
+The Shape Expression
+--------------------
+
+VALIDATE
+
