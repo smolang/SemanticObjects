@@ -154,6 +154,18 @@ current object.  It is an error to use a field expression in the main block.
 The New Expression
 ------------------
 
+The New expression creates a new object of the given class.  Values for the
+class's constructor parameters are given as simple expressions inside
+parentheses.
+
+The optional ``models`` clause overrides any ``domain`` modifier or ``models``
+clause of the new object's class declarations (see
+:ref:`class_declaration_ref`).
+
+::
+
+   NewExpression ::= 'new' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )?  ')' ( 'models' SimpleExpression )
+
 The New FMU Expression
 -----------------------
 
