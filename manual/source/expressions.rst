@@ -16,10 +16,20 @@ makes it easier to develop static analysis techniques and tools for SMOL.
 
    SimpleExpression ::= LiteralExpression
                       | OperatorExpression
+                      | NullExpression
+                      | ThisExpression
                       | VariableExpression
                       | FieldExpression
+                      | FmuFieldExpression
 
    TopLevelExpression ::= NewExpression
+                        | NewFmuExpression
+                        | MethodCallExpression
+                        | SuperExpression
+                        | QueryExpression
+                        | ConstructExpression
+                        | ConceptExpression
+                        | ShapeExpression
 
 Literal Expressions
 -------------------
@@ -130,6 +140,28 @@ under ``==`` and vice versa.
 The less-than operator ``<`` and the other comparison operators compare
 numbers of different types (integers vs floats) in the expected way.
 
+The Null Expression
+-------------------
+
+The null expression evaluates to a value denoting an invalid object.  It can
+be used, e.g., to initialize a variable that will be assigned another value
+later in the program.
+
+::
+
+   NullExpression ::= 'null'
+
+The This Expression
+-------------------
+
+This expression names the current object.  This expression cannot be used in
+the main block, since the main block does not execute within an object.
+
+::
+
+   ThisExpression ::= 'this'
+
+
 The Variable Expression
 -----------------------
 
@@ -145,11 +177,18 @@ The Field Expression
 --------------------
 
 Field expressions evaluate to the current content of the named field in the
-current object.  It is an error to use a field expression in the main block.
+named object.
 
 ::
 
-   FieldExpression ::= 'this' '.' Identifier
+   FieldExpression ::= SimpleExpression '.' Identifier
+
+The FMU Field Expression
+------------------------
+
+::
+
+   FmuFieldExpression ::= SimpleExpression '.' 'port' '(' StringLiteral ')'
 
 The New Expression
 ------------------
@@ -169,27 +208,68 @@ clause of the new object's class declarations (see
 The New FMU Expression
 -----------------------
 
-SIMULATE
+This expression creates a new FMU.  The expression takes first a literal
+string containing the path to the FMU, followed by zero or more initializer
+terms for the FMU's parameters.  All parameters specified by the FMU must be
+initialized in this expression.
+
+::
+
+   NewFmuExpression ::= 'simulate' '(' StringLiteral (',' Identifier ':=' SimpleExpression)* ')'
 
 The Method Call Expression
 --------------------------
 
+::
+
+   MethodCallExpression ::= Expression '.' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )? ')'
+
 The ``super`` Expression
 ------------------------
+
+::
+
+   SuperExpression ::= 'super' '(' ( SimpleExpression ( ',' SimpleExpression)* )? ')'
 
 The Query Expression
 --------------------
 
+..
+   The first argument is the query, second is language spec, then parameters
+
+::
+
+   QueryMode ::= 'SPARQL' | ('INFLUXDB' '(' StringLiteral ')')
+
+   QueryExpression ::= 'access' '(' SimpleExpression (',' QueryMode)? ( ',' SimpleExpression)* ')'
+
 The Construct Expression
 ------------------------
+
+..
+   The first argument is the query, rest are parameters
+
+::
+
+   ConstructExpression ::= 'construct' '(' Expression ( ',' SimpleExpression)* ')'
 
 The Concept Expression
 ----------------------
 
-MEMBER
+..
+   query is single argument
+
+::
+
+   ConceptExpression ::= 'member' '(' Expression ')'
 
 The Shape Expression
 --------------------
 
-VALIDATE
+..
+   query is single argument
+
+::
+
+   ShapeExpression ::= 'validate' '(' Expression ')'
 

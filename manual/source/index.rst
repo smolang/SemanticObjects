@@ -19,6 +19,7 @@ Welcome to SMOL's documentation!
    classes-and-interfaces
    semantic-access
    fmos
+   repl
    glossary
 
 Indices and tables

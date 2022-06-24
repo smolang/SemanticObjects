@@ -11,6 +11,7 @@ This chapter specifies all SMOL statements.
                | AssignmentStatement
                | ConditionalStatement
                | WhileStatement
+               | ReturnStatement
                | TickStatement
                | BreakpointStatement
                | PrintStatement
@@ -87,6 +88,16 @@ until the given condition evalutes to False.
 
    WhileStatement ::= 'while' SimpleExpression 'do' Statement+ 'end'
 
+The Return Statement
+--------------------
+
+The return statement finishes execution of the current method and returns the
+value of its argument as the value of the method.
+
+::
+
+   ReturnStatement ::= 'return' SimpleExpression ';'
+
 The Tick Statement
 ------------------
 
@@ -98,6 +109,9 @@ The Tick statements advances time for the given FMU by the given amount.
 
 The Breakpoint Statement
 ------------------------
+
+The breakpoint statement interrupts execution and transfers control to the
+REPL.  Execution can be resumed at the REPL via the ``auto`` command.
 
 ::
 
