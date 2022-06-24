@@ -184,7 +184,7 @@ The Construct Expression
 ------------------------
 
 The Concept Expression
----------------------
+----------------------
 
 MEMBER
 

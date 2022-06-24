@@ -45,7 +45,7 @@ if (1) each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the 
 (2) each output ``i`` of ``T`` is also an ouput ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``.
 
 Statements
-^^^^^^^^^
+^^^^^^^^^^
 
 The ``simulate`` statement takes a path to an FMU and a list of variable initializers, which initialize the FMO.
 The ``doStep`` statement targets an expression with an FMO-type and takes a ``Double`` typed expression as a parameter.

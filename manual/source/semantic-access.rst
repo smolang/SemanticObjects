@@ -36,7 +36,8 @@ At runtime, these expressions are evaluated and the result is syntactically subs
 The SPARQL query is then executed and the results of the ``?obj`` variable are then translated into a list.
 For example, the following retrieves all objects ``o`` of type ``C`` with ``o.aCB.aB.sealing = x``.
 ::
-  List<C> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing %1 }", this.x);
+
+   List<C> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing %1 }", this.x);
 
 The execution fails if any answer variable than ``?obj`` is used for retrieval, the elements are not literals or IRIs of lifted objects,
 or mixes literals of lifted objects. The compiler outputs a warning if the SPARQL query cannot be shown to always return a list of elements of the type of the target variable.
@@ -48,9 +49,10 @@ Constructing a list of *new* objects from a SPARQL query is done via the ``const
 Its parameters are as the one of the ``access`` top-level expression, but the variables are handled differently:
 Each variable must have the name of a field of the type of the target location. For each field there must be one variable. All fields must be of primitive data type.
 ::
-  class C(Int j1, Int j2) end
-  ...
-  List<C> v = construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
+
+   class C(Int j1, Int j2) end
+   ...
+   List<C> v = construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
 
 .. NOTE::
    For a mechanism to load data into classes with structure, i.e., field of class types, see the *advanced semantic access* section below.
@@ -61,7 +63,8 @@ Shape Access
 Shape access validates the correctness of the lifted knowledge graph with respect to a graph shape using the top-level expression ``validate(Literal)``.
 The parameter must be a ``String``-literal containing a path to `SHACL <https://www.w3.org/TR/shacl/>`_ shapes in `turtle <https://www.w3.org/TR/turtle/>`_ syntax.
 ::
-  Boolean b  = validate("examples/double.ttl");
+
+   Boolean b  = validate("examples/double.ttl");
 
 The execution fails if the file does not accessable or the SHACL shapes are mal-formed.
 
@@ -87,7 +90,7 @@ While not semantic, a syntactically similar mechanism is available to query data
 Syntactically, one passes different parameters to the ``access`` statement.
 The first parameter is a path to a ``String``-literal containing a InfluxQL query, the second parameter is a mode of the form ``INFLUXDB(StringLiteral)``,
 where the parameter of the mode is a ``String``-literal containing a path to a `YAML <https://yaml.org/>`_ configuration to connect to the InfluxDB endpoint.
-In this case, the result is always a ``List`` of ``Double``s.
+In this case, the result is always a ``List`` of ``Double`` values.
 ::
 
   main
