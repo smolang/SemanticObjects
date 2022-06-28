@@ -15,13 +15,12 @@ Types
 ^^^^^
 
 The type of an FMO contains the list of all its inputs and all its outputs. 
-Syntactically, an *FMO-type* has the following form: The keyword ``Cont``, followed by a comma-separated list for inputs, a semicolon and a comma-separated list for outputs.
-The lists are enclosed in brackets.
+Syntactically, an *FMO-type* has the following form: The keyword ``Cont``, followed by a comma-separated list of inputs and outputs enclosed in square brackets.
+
 ::
 
-  TYPE ::= ... | 'Cont' '[' Ins? ';' Outs? ']' 
-  Ins  ::= 'in' TYPE NAME ( ',' Ins)?
-  Outs ::= 'out' TYPE NAME ( ',' Outs)?
+  TYPE ::= ... | 'Cont' '[' (FmuParam (',' FmuParam)* )? ']'
+  FmuParam ::= ('in' | 'out') TYPE NAME
  
 Each input of the underlying FMO that is to be written must be declared via ``in TYPE NAME`` within the first list of type, 
 and every output that is to be read must be declared via ``out TYPE NAME``.
@@ -37,10 +36,10 @@ String    String
 Integer   Int
 ========= =======
 
-The type for FMOs without any inputs and outputs is ``Cont[;]``.
+The type for FMOs without any inputs and outputs is ``Cont[]``.
 
 FMO-types are covariant:
-An FMO-type ``T = Cont[in Ti1 i1,... ; out To1 o1...]`` is a subtype of another FMO-type ``S = Cont[in Sj1 j1,... ; out Sp1 p1...]`` 
+An FMO-type ``T = Cont[in Ti1 i1,... , out To1 o1...]`` is a subtype of another FMO-type ``S = Cont[in Sj1 j1,... , out Sp1 p1...]`` 
 if (1) each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``, and 
 (2) each output ``i`` of ``T`` is also an ouput ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``.
 
@@ -83,7 +82,7 @@ triggers a compile-time warning. [#footnoteinout]_
 Each such operation results in a call to ``fmi2SetXXX``, resp. ``fmi2GetXXX``, an FMO does not buffer read or written values itself.
 
 Addtionally, each FMO has a field ``role`` of ``String`` type and a field ``offset`` of integer type, which play a role in their semantic lifting and is explained below.
-These fields can be read and written and are not connceted to the encapsulated FMU.
+These fields can be read and written and are not connected to the encapsulated FMU.
 
 The ``doStep`` statement advances the encapsulated FMU by ``t`` time units. It results
 in a call to ``doStep`` of the encapsulated FMU.
