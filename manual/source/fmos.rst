@@ -1,6 +1,6 @@
 Functional Mock-Up Objects
 ==========================
-.. highlight:: EBNF
+.. highlight:: BNF
 
 SMOL implements *functional mock-up objects* (FMOs), encapsulations of *functional mock-up units* (FMUs) as defined by the `*functional mock-up interface* (FMI) 2.0.2. <https://fmi-standard.org/>`_
 An FMO is an abstraction that integrates the FMU into the language; it is a special objects with the inputs and outputs of an FMU as properties/fields
