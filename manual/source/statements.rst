@@ -1,6 +1,8 @@
 Statements
 ==========
 
+.. highlight:: BNF
+
 This chapter specifies all SMOL statements.
 
 ::

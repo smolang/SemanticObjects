@@ -1,6 +1,8 @@
 Expressions
 ===========
 
+.. highlight:: BNF
+
 This chapter describes all expressions of SMOL.  Informally, expressions are
 the language elements that can occur on the right hand side of an assignment (even though they can be written on their own, see :ref:`expression_statement_ref`).
 

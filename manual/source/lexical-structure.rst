@@ -1,6 +1,8 @@
 Lexical Structure
 =================
 
+.. highlight:: BNF
+
 This section describes the lexical structure of SMOL.  We define the grammar
 using a simple :term:`EBNF` notation as defined by `the W3C
 <https://www.w3.org/TR/2006/REC-xml11-20060816/#sec-notation>`_.
@@ -9,6 +11,7 @@ Line Terminators and Whitespace
 -------------------------------
 
 ::
+
    Whitespace ::= #x20 | #x09 | #x0D | #x0A | #x0C
    EOL ::= #x0A | #x0C
 
