@@ -156,8 +156,9 @@ later in the program.
 The This Expression
 -------------------
 
-This expression names the current object.  This expression cannot be used in
-the main block, since the main block does not execute within an object.
+This expression evaluates to the current object.  This expression cannot be
+used in the main block, since the main block does not execute within the scope
+of an object.
 
 ::
 
@@ -179,7 +180,9 @@ The Field Expression
 --------------------
 
 Field expressions evaluate to the current content of the named field in the
-named object.
+given object.  The object can be ``this`` or another object.
+
+.. TODO: discuss ``private``, ``public``, ``nonsemantic``
 
 ::
 
@@ -187,6 +190,9 @@ named object.
 
 The FMU Field Expression
 ------------------------
+
+This expression reads the current value of the named out port of the given
+FMU.
 
 ::
 
@@ -222,12 +228,20 @@ initialized in this expression.
 The Method Call Expression
 --------------------------
 
+This expression invokes the named method on the given object instance.
+
+.. TODO: discuss public, private methods
+
 ::
 
    MethodCallExpression ::= Expression '.' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )? ')'
 
 The ``super`` Expression
 ------------------------
+
+This expression invokes the method as defined in a superclass of the current
+object's class from within the overriding method.  The ``super`` expression is
+only valid inside a method that overrides a superclass's method.
 
 ::
 
