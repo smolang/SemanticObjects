@@ -1,3 +1,5 @@
+.. _fmos:
+
 Functional Mock-Up Objects
 ==========================
 .. highlight:: BNF
