@@ -42,6 +42,14 @@ All literals, as defined in :ref:`literals_ref`, can be used as simple expressio
 
    LiteralExpression ::= Literal
 
+*Example:*
+
+.. code-block:: java
+
+   "This is a string"
+   5.13
+   false
+
 Unary and Binary Operator Expressions
 -------------------------------------
 
@@ -59,6 +67,14 @@ datatypes.
    BinaryOperatorExpression ::= Expression BinaryOperator Expression
 
    BinaryOperator ::= '/' | '%' | '*' | '+' | '-' | '==' | '!=' | '>=' | '<=' | '>' | '<' | '&&' | '||'
+
+*Example:*
+
+.. code-block:: java
+
+   1 / 2
+   bid > price || customer == "VIP"
+
 
 The following table describes the meaning as well as the associativity and the
 precedence of the different operators. The list is sorted from low precedence
@@ -153,6 +169,12 @@ later in the program.
 
    NullExpression ::= 'null'
 
+*Example:*
+
+.. code-block:: java
+
+   null
+
 The This Expression
 -------------------
 
@@ -164,6 +186,11 @@ of an object.
 
    ThisExpression ::= 'this'
 
+*Example:*
+
+.. code-block:: java
+
+   this
 
 The Variable Expression
 -----------------------
@@ -174,7 +201,12 @@ Variable expressions evaluate to the current content of the named variable.
 
    VariableExpression ::= Identifier
 
+*Example:*
 
+.. code-block:: java
+
+   x
+   a_long_variable_name
 
 The Field Expression
 --------------------
@@ -188,6 +220,13 @@ given object.  The object can be ``this`` or another object.
 
    FieldExpression ::= SimpleExpression '.' Identifier
 
+*Example:*
+
+.. code-block:: java
+
+   this.x
+   this.a_long_field_name
+
 The FMU Field Expression
 ------------------------
 
@@ -197,6 +236,12 @@ FMU.
 ::
 
    FmuFieldExpression ::= SimpleExpression '.' 'port' '(' StringLiteral ')'
+
+*Example:*
+
+.. code-block:: java
+
+   my_fmu.port("outport")
 
 The New Expression
 ------------------
@@ -213,17 +258,29 @@ clause of the new object's class declarations (see
 
    NewExpression ::= 'new' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )?  ')' ( 'models' SimpleExpression )
 
+*Example:*
+
+.. code-block:: java
+
+   new Person("Name", 35) models "a :person"
+
 The New FMU Expression
 -----------------------
 
 This expression creates a new FMU.  The expression takes first a literal
 string containing the path to the FMU, followed by zero or more initializer
-terms for the FMU's parameters.  All parameters specified by the FMU must be
-initialized in this expression.
+terms for the FMU's parameters.  All parameters specified by the FMU in its
+``modelDescription.xml`` file must be initialized.
 
 ::
 
    NewFmuExpression ::= 'simulate' '(' StringLiteral (',' Identifier ':=' SimpleExpression)* ')'
+
+*Example:*
+
+.. code-block:: java
+
+   simulate("../Sim.fmu", iValue := 0.0, slope := 1.5)
 
 The Method Call Expression
 --------------------------
@@ -236,6 +293,13 @@ This expression invokes the named method on the given object instance.
 
    MethodCallExpression ::= Expression '.' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )? ')'
 
+*Example:*
+
+.. code-block:: java
+
+   this.doWork();
+   worker.processRequest();
+
 The ``super`` Expression
 ------------------------
 
@@ -246,6 +310,12 @@ only valid inside a method that overrides a superclass's method.
 ::
 
    SuperExpression ::= 'super' '(' ( SimpleExpression ( ',' SimpleExpression)* )? ')'
+
+*Example:*
+
+.. code-block:: java
+
+   super.doWork()
 
 The Query Expression
 --------------------
