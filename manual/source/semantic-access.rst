@@ -23,6 +23,87 @@ Semantic Reflection
 
 *general introduction*
 
+Modeling Bridge
+^^^^^^^^^^^^^^^
+
+To connect with the domain model, SMOL implements the modeling bridge, a mechanism to manually add axioms over the lifted SMOL objects.
+A simple modeling bridge takes as a parameter a string containing a `predicate object list <https://www.w3.org/TR/turtle/#grammar-production-predicateObjectList>`_ in turtle syntax.
+The IRI of the lifted objects will be attached as the subject for the predicate object list.
+
+A complex modeling bridge is a sequence of guarded modeling bridges, where the guard is an expression over the fields of an object.
+The guarded predicate object list is used if the corresponding guard evaluated to true. Guarded modeling bridges are evaluated from the top until a guard evaluates to true, the remaining part is skipped. A complex modeling bridge must end with a simple modeling bridge as the default.
+
+A simple modeling bridge can be annotated either to an object creation or to a class. 
+A complex modeling bridge can annotated only to classes.
+If a modeling bridge is given for a class and an object creation of this class, the bridge of the object
+overrides the one of the class.
+::
+  
+  MODELS ::= SIMPLE_MODELS | COMPLEX_MODELS ;
+  SIMPLE_MODELS  ::= `models` STRING `;`;
+  COMPLEX_MODELS ::= `models` `(` Expression `)` STRING `;` MODELS;
+
+
+Example
+
+.. code-block:: Java
+
+  class C (Int i) 
+    models (this.i > 0) "a :containsPositive";
+    models "a :containsNonPositive";
+  end
+
+  main
+    C c = new C(5);
+    C d = new C(0);
+    C e = new C(4) models "a :special";
+  end
+
+The lifting will contain the following axioms:
+
+.. code-block:: none
+
+  run:obj1 prog:C_i 5;
+           a prog:C.
+  run:obj2 prog:C_i 0;
+           a prog:C.
+  run:obj3 prog:C_i 4;
+           a prog:C.
+  run:obj1 a :containsPositive.
+  run:obj2 a :containsNonPositive.
+  run:obj3 a :special.
+
+*domain*
+
+To exclude certain fields in a class from being lifted, they can be annotated with the ``hidden`` modifier.
+The field will be completely ignored during lifting: neither general axioms nor instances are generated.
+The ``hidden`` modifier does not interact with the visibility modifiers
+If the field is of object-type, the object it points to will still be lifted.
+
+.. code-block:: Java
+
+  class C (Int i, hidden C j) end
+  main
+    C c = new C(5,null);
+    C d = new C(6, c);
+  end
+
+The lifiting will contain the following axioms. Note that ``prog:C_j`` is not mentioned.
+
+.. code-block:: none
+
+   prog:C a smol:Class.
+   prog:C_i a smol:Method.
+   prog:C smol:hasMethod prog:C_i.
+
+   run:obj1 a prog:C;
+            C_i 5.
+   run:obj2 a prog:C;
+            C_i 6.
+
+
+
+
 Query Access
 ^^^^^^^^^^^^
 
