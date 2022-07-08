@@ -16,7 +16,7 @@ Welcome to SMOL's documentation!
    lexical-structure
    expressions
    statements
-   classes-and-interfaces
+   classes
    semantic-access
    fmos
    repl

@@ -1,3 +1,5 @@
+.. _fmos:
+
 Functional Mock-Up Objects
 ==========================
 .. highlight:: BNF
@@ -63,10 +65,10 @@ If the path is relative, then it must be relative to the directory where the SMO
 The following shows how an FMO is loaded and passed as a parameter.
 ::
 
-  class C(Cont[ ; out Int i] fmo) end
+  class C(Cont[ out Int i] fmo) end
 
   main 
-    Cont[in Int j; out Int i] cont = simulate("path/to/fmu", j=1, k=1);
+    Cont[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
     C c = new C(cont);
   end
 
@@ -94,7 +96,7 @@ The following shows how an FMO is loaded and manipulated.
 ::
 
   main 
-    Cont[in Int j; out Int i] cont = simulate("path/to/fmu", j=1, k=1);
+    Cont[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
     cont.role = "Example FMO";
     cont.doStep(0.1);
     Int v = cont.i;
@@ -107,7 +109,7 @@ Semantical Lifting
 ------------------
 
 .. NOTE::
-  Semantical lifting of FMOs is under development. Currently, they are *completely* ommited from the generated knowledge graph.
+  Semantical lifting of FMOs is under development. Currently, they are *completely* omitted from the generated knowledge graph.
 
 .. rubric:: Footnotes
 
