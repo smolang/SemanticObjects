@@ -75,7 +75,35 @@ The lifting will contain the following axioms:
   run:obj2 a :containsNonPositive.
   run:obj3 a :special.
 
-*domain*
+Crossing the Modeling Bridge
+""""""""""""""""""""""""""""
+
+Additionally to adding axioms, the ``domain`` modifier can be used to create a *modelled* object.
+If a class contains a field or method modified by ``domain``, then each SMOL object is lifted to *two* objects in the knowledge graph,
+the standard one using the ``run:`` prefix (the modelling object), and a second one using the ``domain:`` prefix (the modelled object). The second object is envisaged to be the corresponding 
+object in the domain, modelled by the created object. The two objects are connected using the ``smol:models`` property.
+
+If a field is annotated with ``domain``, then it is lifted for the modelled object. Its prefix is also changed to ``domain``.
+The same holds for methods (see CSSA.). The modelled object is only created during lifting if at least one field or method is annotated with ``domain``.
+
+.. code-block:: Java
+
+   class C(Int i, domain Int j) end
+   main 
+     C c = new C(5, 4);
+   end
+
+The lifting of the created object is as follows. 
+
+.. code-block:: none
+
+   run:obj1 a prog:C.
+   run:obj1 prog:C_i 5.
+   run:obj1 domain:models domain:obj1.
+   domain:obj1 domain:C_i 4.
+
+Ignoring Fields
+"""""""""""""""
 
 To exclude certain fields in a class from being lifted, they can be annotated with the ``hidden`` modifier.
 The field will be completely ignored during lifting: neither general axioms nor instances are generated.
@@ -90,13 +118,13 @@ If the field is of object-type, the object it points to will still be lifted.
     C d = new C(6, c);
   end
 
-The lifiting will contain the following axioms. Note that ``prog:C_j`` is not mentioned.
+The lifting will contain the following axioms. Note that ``prog:C_j`` is not mentioned.
 
 .. code-block:: none
 
    prog:C a smol:Class.
-   prog:C_i a smol:Method.
-   prog:C smol:hasMethod prog:C_i.
+   prog:C_i a smol:Field.
+   prog:C smol:hasField prog:C_i.
 
    run:obj1 a prog:C;
             C_i 5.
@@ -104,6 +132,44 @@ The lifiting will contain the following axioms. Note that ``prog:C_j`` is not me
             C_i 6.
 
 
+Computational Semantic State Access
+"""""""""""""""""""""""""""""""""""
+
+Methods annotated with ``rule`` generate additional triples during lifting. 
+To this end, for each created object with such a method, the method is executed *in the current state* the return value of the execution is then added to the knowledge graph.
+The used property has the name ``prog:<class>_<method>_builtin_res``.
+
+.. code-block:: Java
+
+  class C(Int i) 
+        rule Int double() return this.i*this.i;
+  end
+  main
+    C c = new C(5);
+  end
+
+
+The lifting will generate the following axioms.
+
+.. code-block:: none
+
+   prog:C a smol:Class.
+   prog:double a smol:Method.
+   prog:C smol:hasMethod prog:double.
+   prog:C_double_builtin_res a owl:ObjectProperty;
+                             rdfs:domain prog:C;
+                             rdfs:range xsd:integer.
+
+   run:obj1 a prog:C.
+   run:obj1 prog:C_i 5.
+   run:obj1 prog:C_double_builtin_res 25.
+
+A ``rule`` method is not allowed to have side-effects (except exceptions), the following restrictions are statically checked:
+
+* It cannot have parameters.
+* It cannot create objects.
+* It cannot call non-``rule`` methods.
+* It cannot write into any fields.
 
 
 Query Access
@@ -191,6 +257,8 @@ In this case, the result is always a ``List`` of ``Double`` values.
 
 .. NOTE::
    Currently, only InfluxQL queries with a single return variable are supported. Influx-mode ``access`` statements are not type-checked.
+
+
 
 Advanced Semantic Access
 ------------------------
