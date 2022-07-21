@@ -127,23 +127,23 @@ to high precedence.
    * - ``e1 - e2``
      - subtraction
      - numeric
-     - Boolean
+     - numeric
    * - ``e1 + e2``
      - addition
      - numeric
-     - Boolean
+     - numeric
    * - ``e1 * e2``
      - multiplication
      - numeric
-     - Boolean
+     - numeric
    * - ``e1 % e2``
      - modulus
      - numeric
-     - Boolean
+     - numeric
    * - ``e1 / e2``
      - division
      - numeric
-     - Boolean
+     - numeric
 
 Semantics of Comparison Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
