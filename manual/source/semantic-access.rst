@@ -23,7 +23,7 @@ SMOL ontology and domain ontology are given as files, while the heap and static 
 If parts of the knowledge graph are not needed, they are skipped. The overall knowledge graph can be accessed either SPARQL (using the `Apache Jena reasoner <https://jena.apache.org/documentation/inference/>`_), SHACL (also using the Apache Jena model) or an OWL/DL concept (using `HermiT <http://www.hermit-reasoner.com/>`_).
 The general structure is pictured below:
 
-.. image: images/alone.png 
+.. figure:: images/alone.png 
 
 *What is generated, what is input, some example*
 
