@@ -3,20 +3,27 @@
 Semantic Access
 ===============
 
-*General Introduction*
+The SMOL interpreter implements *semantic lifting*, the process of generating a knowledge graph from the current program state.
+The generated knowledge graph can either be investigate by external tool, the REPL or special statements for *semantic reflection* through OWL concepts, SHACL shapes or SPARQL queries.
 
 Semantic Lifting
 ----------------
 
-*General introduction*
+Ontology and Virtualization
+^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Ontology
-^^^^^^^^
+The generated knowledge graph has the following parts:
 
-*How does it look like, link to it, .ttl file*
+ * The SMOL ontology defining the general vocabulary and basic axioms for states.
+ * The knowledge generated from the current heap and stack.
+ * The knowledge generated from the static class table. 
+ * (optional) If given, the user-defined domain ontology.
 
-Virtualization and Domain Knowledge
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+SMOL ontology and domain ontology are given as files, while the heap and static table are virtualized, i.e., the knowledge graph is build on demand.
+If parts of the knowledge graph are not needed, they are skipped. The overall knowledge graph can be accessed either SPARQL (using the `Apache Jena reasoner <https://jena.apache.org/documentation/inference/>`_), SHACL (also using the Apache Jena model) or an OWL/DL concept (using `HermiT <http://www.hermit-reasoner.com/>`_).
+The general structure is pictured below:
+
+.. image: images/alone.png 
 
 *What is generated, what is input, some example*
 
