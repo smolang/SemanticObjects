@@ -214,18 +214,20 @@ The Field Expression
 Field expressions evaluate to the current content of the named field in the
 given object.  The object can be ``this`` or another object.
 
+Note that fields of the current object cannot be accessed without the ``this.`` prefix.
+
 .. TODO: discuss ``private``, ``public``, ``nonsemantic``
 
 ::
 
    FieldExpression ::= SimpleExpression '.' Identifier
 
-*Example:*
+Example:*
 
 .. code-block:: java
 
    this.x
-   this.a_long_field_name
+   an_object.a_long_field_name
 
 The FMU Field Expression
 ------------------------
@@ -280,7 +282,7 @@ terms for the FMU's parameters.  All parameters specified by the FMU in its
 
 .. code-block:: java
 
-   simulate("../Sim.fmu", iValue := 0.0, slope := 1.5)
+   simulate("../Sim.fmu", iValue = 0.0, slope = 1.5)
 
 The Method Call Expression
 --------------------------
