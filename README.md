@@ -18,7 +18,12 @@ To compile and run the SMOL REPL, run
 java -jar build/libs/MicroObjects-0.2-all.jar --help
 ```
 
-To compile and run the SMOL REPL inside docker, run
+To run the SMOL REPL pre-compiled using docker, run the following command:
+```
+docker run -it --rm -v "$PWD":/root/smol ghcr.io/smolang/smol:latest
+```
+
+To compile and run the SMOL REPL inside docker, run the following commands:
 ```
 docker build -t smol .
 docker run -it --rm -v "$PWD":/root/smol smol
