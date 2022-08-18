@@ -13,6 +13,7 @@ Welcome to SMOL's documentation!
    :caption: Contents:
 
    introduction
+   getting-started
    lexical-structure
    expressions
    statements

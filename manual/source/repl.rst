@@ -1,3 +1,5 @@
+.. _repl:
+
 The SMOL interactive REPL
 =========================
 
