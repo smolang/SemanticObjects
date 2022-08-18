@@ -118,16 +118,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             methods[name] = computeMethods(name)
             fields[name] = computeFields(name).associate {
                 val cVisibility =
-                    if (it.visibility == null) Visibility.PUBLIC else if (it.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                val iVisibility =
-                    if (it.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
+                    if (it.HIDE() == null) Visibility.HIDE else Visibility.DEFAULT
                 Pair(
                     it.NAME().text,
                     FieldInfo(
                         it.NAME().text,
                         translateType(it.type(), name, generics),
                         cVisibility,
-                        iVisibility,
                         BaseType(name),
                         it.domain != null
                     )
@@ -204,8 +201,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             for( param in clCtx.fieldDeclList().fieldDecl()){
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
-                if(param.infer != null)
-                    log("Inference visibility is not supported yet.", param, Severity.WARNING)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
                 if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE )
@@ -529,10 +524,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                       val met = methods.getOrDefault(otherClassName, listOf()).first { it.NAME().text == calledMet }
                       if(met.builtinrule == null && inRule)
                           log("Method $otherClassName.$calledMet is not a rule-method, but accessed from one.", ctx)
-                      if(met.visibility != null && met.visibility.PRIVATE() != null && BaseType(otherClassName) != thisType)
-                          log("Method $otherClassName.$calledMet is declared private, but accessed from $thisType.", ctx)
-                      if(met.visibility != null && met.visibility.PROTECTED() != null && !BaseType(otherClassName).isAssignable(thisType, extends))
-                          log("Method $otherClassName.$calledMet is declared protected, but accessed from $thisType.", ctx)
                       if(met.paramList() != null) {
                           val callParams : List<Type> = getParameterTypes(met, otherClassName)
                           if (ctx.expression().size - 1 - calleeIndex != callParams.size) {
@@ -835,7 +826,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val name = eCtx.NAME().text
                 if(!fields.containsKey(name))
                     log("Field $name is not declared for $thisType.", eCtx)
-                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)).type
+                return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.DEFAULT, thisType, false)).type
             }
             is WhileParser.Nested_expressionContext -> {
                 return getType(eCtx.expression(), fields, vars, thisType, inRule)
@@ -987,22 +978,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Field ${eCtx.NAME().text} is not declared for $primary.", eCtx)
                     return ERRORTYPE
                 } else {
-                    if(otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE){
-                        if(thisType != otherFields[eCtx.NAME().text]!!.declaredIn)
-                            log("Field ${otherFields[eCtx.NAME().text]!!.declaredIn}.${eCtx.NAME().text} is declared private, but accessed from $thisType.", eCtx)
-                    }
-                    if(otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PROTECTED){
-                        if(!otherFields[eCtx.NAME().text]!!.declaredIn.isAssignable(thisType, extends))
-                            log("Field ${otherFields[eCtx.NAME().text]!!.declaredIn}.${eCtx.NAME().text} is declared protected, but accessed from $thisType.", eCtx)
-                    }
-
-                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PRIVATE && thisType != otherFields[eCtx.NAME().text]!!.declaredIn)
-                        log("Inferprivate field $eCtx.NAME().text accessed in rule-method.", eCtx)
-                    if(inRule && otherFields[eCtx.NAME().text]!!.computationVisibility == Visibility.PROTECTED && !otherFields[eCtx.NAME().text]!!.declaredIn.isAssignable(thisType, extends))
-                        log("Inferprotected field $eCtx.NAME().text accessed in rule-method.", eCtx)
+                    if(inRule && thisType != otherFields[eCtx.NAME().text]!!.declaredIn)
+                        log("Field ${eCtx.NAME().text} accessed in rule-method.", eCtx)
+                    if(inRule && !otherFields[eCtx.NAME().text]!!.declaredIn.isAssignable(thisType, extends))
+                        log("Field ${eCtx.NAME().text} accessed in rule-method.", eCtx)
                 }
                 val fieldType = this.fields.getOrDefault(primary.getNameString(), mutableMapOf()).getOrDefault(eCtx.NAME().text,
-                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.PUBLIC, Visibility.PUBLIC, thisType, false)
+                    FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.DEFAULT, thisType, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
             }

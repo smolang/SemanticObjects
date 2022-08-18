@@ -58,13 +58,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 var res = listOf<FieldInfo>()
                 if(cl.fieldDeclList().fieldDecl() != null) {
                     for (nm in cl.fieldDeclList().fieldDecl()) {
-                        val cVisibility = if(nm.visibility == null) Visibility.PUBLIC else if(nm.visibility.PROTECTED() != null) Visibility.PROTECTED else Visibility.PRIVATE
-                        val iVisibility = if(nm.infer == null) Visibility.PUBLIC else Visibility.PRIVATE
+                        val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
                             cVisibility,
-                            iVisibility,
                             BaseType(cl!!.className.text),
                             nm.domain != null
                         )

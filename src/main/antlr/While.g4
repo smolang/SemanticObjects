@@ -41,9 +41,7 @@ EXTENDS : 'extends';
 RULE : 'rule';
 OVERRIDE : 'override';
 MAIN : 'main';
-PRIVATE : 'private';
-PROTECTED : 'protected';
-INFERPRIVATE : 'nonsemantic';
+HIDE : 'hidden';
 MODELS : 'models';
 DOMAIN : 'domain';
 
@@ -110,7 +108,7 @@ class_def : (abs=ABSTRACT)? CLASS  className = NAME (LT namelist GT)? (EXTENDS s
             (models_block)?
             method_def*
             END;
-method_def :  (abs=ABSTRACT)? (visibility=visibilitymodifier)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
+method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
@@ -179,9 +177,7 @@ param : type NAME;
 paramList : param (COMMA param)*;
 fmuparam : direction=(IN | OUT) param;
 fmuParamList : fmuparam (COMMA fmuparam)*;
-fieldDecl : (infer=INFERPRIVATE)? (visibility=visibilitymodifier)? (domain=DOMAIN)? type NAME;
+fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
-
-visibilitymodifier : PRIVATE | PROTECTED;

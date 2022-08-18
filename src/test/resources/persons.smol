@@ -1,4 +1,4 @@
-class Person (private Int personId, private String name, private Int birthYear, private Double height, private Boolean ownsCar)
+class Person (Int personId, String name, Int birthYear, Double height, Boolean ownsCar)
     Int getPersonId()
         return this.personId;
     end

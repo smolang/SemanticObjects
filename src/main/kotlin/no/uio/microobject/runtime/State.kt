@@ -15,9 +15,9 @@ typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps o
 typealias FieldEntry = List<FieldInfo>                   //list of fields
 typealias ModelsEntry = Pair<Expression, String>      //guard expression and models string
 
-enum class Visibility { PUBLIC, PROTECTED, PRIVATE}
+enum class Visibility { DEFAULT, HIDE }
 
-data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val inferenceVisibility: Visibility, val declaredIn : Type, val isDomain : Boolean)
+data class FieldInfo(val name: String, val type: Type, val computationVisibility : Visibility, val declaredIn : Type, val isDomain : Boolean)
 data class MethodInfo(val stmt: Statement, val params: List<String>, val isRule : Boolean, val isDomain: Boolean, val declaringClass: String, val retType : Type)
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields

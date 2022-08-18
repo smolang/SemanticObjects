@@ -317,6 +317,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                 addIfMatch(uriTriple("${prog}${className}", "${rdfs}subClassOf", "${prog}Object" ), searchTriple, matchingTriples, pseudo)
 
                 for(fieldEntry in classObj.value){
+                    if(fieldEntry.computationVisibility == Visibility.HIDE) continue
                     val fieldName: String = classObj.key+"_"+fieldEntry.name
                     // Guard clause: Skip this fieldName when the subject of the search triple is different from both "${prog}${className}" and "${prog}$fieldName"
                     if (useGuardClauses) {
