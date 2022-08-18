@@ -16,7 +16,7 @@ Class Declarations
 
 ::
 
-   ClassDeclaration ::= 'abstract'? ('private' | 'protected')?
+   ClassDeclaration ::= 'abstract'? 
                         'class' Identifier ( '<' Identifier (',' Identifier)* '>')?
                         ('extends' Type )?
                         '(' (FieldDeclaration (',' FieldDeclaration)* )? ')'
@@ -24,13 +24,18 @@ Class Declarations
                         MethodDefinition*
                         'end'
 
-   FieldDeclaration ::= 'nonsemantic'? ('private' | 'protected')? 'domain'?
+   FieldDeclaration ::= 'hidden'? 'domain'?
                         Type Identifier
 
    ModelsDeclaration ::= ('models' '(' Expression ')' StringLiteral ';')*
                          'models' StringLiteral ';'
 
-   MethodDefinition ::= 'abstract'? ('private' | 'protected')? 'rule'? 'domain'? 'override'?
+   MethodDefinition ::= ConcreteMethod | AbstractMethod
+
+   ConcreteMethod ::= 'rule'? 'domain'? 'override'?
                         Type Identifier '(' (Type Identifier (',' Type Identifier)* )? ')'
                         Statement*
                         'end'
+
+   AbstractMethod ::= 'abstract' 'rule'? 'domain'? 'override'?
+                        Type Identifier '(' (Type Identifier (',' Type Identifier)* )? ')'
