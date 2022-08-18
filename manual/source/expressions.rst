@@ -250,7 +250,7 @@ The New Expression
 
 The New expression creates a new object of the given class.  Values for the
 class's constructor parameters are given as simple expressions inside
-parentheses.
+parentheses. All generic type parameters of a class must be instantiated.
 
 The optional ``models`` clause overrides any ``domain`` modifier or ``models``
 clause of the new object's class declarations (see
@@ -258,7 +258,7 @@ clause of the new object's class declarations (see
 
 ::
 
-   NewExpression ::= 'new' Identifier '(' ( SimpleExpression ( ',' SimpleExpression)* )?  ')' ( 'models' SimpleExpression )
+   NewExpression ::= 'new' Type '(' ( SimpleExpression ( ',' SimpleExpression)* )?  ')' ( 'models' SimpleExpression )
 
 *Example:*
 

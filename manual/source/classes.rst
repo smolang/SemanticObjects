@@ -13,7 +13,8 @@ that can change over time.
 
 Class Declarations
 ------------------
-
+A class can have generic type parameters, field declarations, methods and a modelling bridge.
+Additionally a class may be abstract and contain abstract methods. An abstract class may containt non-abstract methods.
 ::
 
    ClassDeclaration ::= 'abstract'? 
@@ -24,12 +25,25 @@ Class Declarations
                         MethodDefinition*
                         'end'
 
+A field is declared using a type and a name. 
+The ``hidden`` modifier disables semantic lifting for this field.
+The ``domain`` modifier moves the generated triples to the modelled node.
+A field cannot be ``domain`` and ``hidden``.
+::
    FieldDeclaration ::= 'hidden'? 'domain'?
                         Type Identifier
 
+
+
+*models*
+::
    ModelsDeclaration ::= ('models' '(' Expression ')' StringLiteral ';')*
                          'models' StringLiteral ';'
 
+*methods*
+
+A ``rule`` method cannot have side-effects (no object creation, no writing field access), no parameters and can only call other ``rule`` methods.
+::
    MethodDefinition ::= ConcreteMethod | AbstractMethod
 
    ConcreteMethod ::= 'rule'? 'domain'? 'override'?
