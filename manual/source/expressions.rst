@@ -222,7 +222,7 @@ Note that fields of the current object cannot be accessed without the ``this.`` 
 
    FieldExpression ::= SimpleExpression '.' Identifier
 
-Example:*
+*Example:*
 
 .. code-block:: java
 
@@ -322,8 +322,7 @@ only valid inside a method that overrides a superclass's method.
 The Query Expression
 --------------------
 
-..
-   The first argument is the query, second is language spec, then parameters
+The ``access`` top-level expression retrieves a list of literals or lifted objects using a query mode ``SPARQL`` to access the semantically lifted state or ``INFLUXDB`` to access an external InfluxDB database. If no query mode is given, ``SPARQL`` is the default.
 
 ::
 
@@ -331,33 +330,84 @@ The Query Expression
 
    QueryExpression ::= 'access' '(' SimpleExpression (',' QueryMode)? ( ',' SimpleExpression)* ')'
 
+In ``SPARQL`` mode, it takes as its first parameter a ``String``-literal containing an extended `SPARQL <https://www.w3.org/TR/sparql11-overview/>`_ query, which additionally may contain non-answer variables of the form ``%i`` for some strictly positive number ``i``. The set of numbers for the non-answer variables must form an interval [1,n] for some n.
+Additionally, the top-level expression takes a list of expressions of the length n.
+
+At runtime, these expressions are evaluated and the result is syntactically substituted for the corresponding non-answer variable.
+The SPARQL query must contain a ``?obj`` variable.
+
+
+*Example:* The following retrieves all objects ``o`` of type ``C`` with ``o.b.c == this.x``.
+::
+
+   List<C> l = access("SELECT ?obj WHERE {?obj prog:C_b ?b. ?b prog:D_c %1 }", this.x);
+
+In ``INFLUXDB`` mode, the first parameter is an InfluxDB query with a single answer variable. Non-answer variables are not supported and the query mode has a parameter itself, which is
+a ``String``-literal containing a path to a `YAML <https://yaml.org/>`_ configuration to connect to the InfluxDB endpoint.
+The result is always a ``List`` of ``Double`` values.
+
+*Example:*
+::
+
+  main
+    List<Double> list := access(
+    "from(bucket: \"petwin\")
+      |> range(start: -1h, stop: -1m)
+      |> filter(fn: (r) => r[\"_measurement\"] == \"chili\")
+      |> filter(fn: (r) => r[\"_field\"] == \"temperature\")
+      |> filter(fn: (r) => r[\"name\"] == \"faarikaal1\")
+      |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+      |> yield(name: \"mean\")",
+    INFLUXDB("petwin.yml"));
+    print(list.content);
+  end
+
 The Construct Expression
 ------------------------
 
-..
-   The first argument is the query, rest are parameters
-
+The ``construct`` top-level expression constructs a list of *new* objects from a SPARQL query.
+Its parameters are as the one of the ``access`` top-level expression, but the variables are handled differently:
 ::
 
    ConstructExpression ::= 'construct' '(' Expression ( ',' SimpleExpression)* ')'
 
+Each variable must have the name of a field of the type of the target location. For each field there must be one variable. All fields must be of primitive data type.
+
+*Example:*
+::
+
+   class C(Int j1, Int j2) end
+   ...
+   List<C> v = construct("SELECT ?j1 ?j2 WHERE { ?y a prog:B. ?y prog:B_i2 ?j2.?y prog:B_a ?x.?x a prog:A. ?x prog:A_i1 ?j1 }");
+
 The Concept Expression
 ----------------------
 
-..
-   query is single argument
-
+The ``member`` top-level expression retrieves the list of objects described by an OWL concept.
+The parameter must be a ``String``-literal containing a concept in `Manchester syntax <https://www.w3.org/TR/owl2-manchester-syntax/>`_.
 ::
 
    ConceptExpression ::= 'member' '(' Expression ')'
 
+*Example:* The following retrieves all members of class ``C`` that model some domain concept ``domain:D``.
+::
+
+  List<C> list := member("<domain:models> some <domain:D>");
+
+The execution fails if the concept is either mal-formed or contains elements that are not IRIs of lifted objects.
+
 The Shape Expression
 --------------------
 
-..
-   query is single argument
-
+Shape access validates the correctness of the lifted knowledge graph with respect to a graph shape using the top-level expression ``validate(Literal)``.
+The parameter must be a ``String``-literal containing a path to `SHACL <https://www.w3.org/TR/shacl/>`_ shapes in `turtle <https://www.w3.org/TR/turtle/>`_ syntax.
 ::
 
    ShapeExpression ::= 'validate' '(' Expression ')'
 
+*Example:*
+::
+
+   Boolean b  = validate("examples/double.ttl");
+
+The execution fails if the file does not accessable or the SHACL shapes are mal-formed.
