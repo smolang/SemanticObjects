@@ -7,6 +7,7 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 // Running sparql queries with different settings to check that the correct number of triples returns.
+// XXX: this is super fragile, as every change to the lifting changes the number of lifted axioms
 class SparqlCountTest: MicroObjectTest() {
     init {
         // Initialize interpreter and triple settings

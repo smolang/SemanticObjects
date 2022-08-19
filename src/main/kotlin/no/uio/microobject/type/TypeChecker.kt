@@ -720,9 +720,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Output_statementContext -> {
-                //For now, we print everything
-                /*val innerType = getType(ctx.expression(), inner, vars, thisType)
-                if(innerType != no.uio.microobject.data.getERRORTYPE && innerType != no.uio.microobject.data.getSTRINGTYPE)
+                //For now, we print everything, so the important thing is just that it is not an error
+                val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
+                /*if(innerType == ERRORTYPE)
                     log("Println statement expects a string, but parameter has type $innerType.", ctx)*/
             }
             is WhileParser.Skip_statmentContext -> { }

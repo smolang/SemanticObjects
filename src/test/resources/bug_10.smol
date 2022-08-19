@@ -1,0 +1,10 @@
+class Hello(String message)
+ Unit say_hello()
+   print(message); //error, should be this.message
+  end
+end
+
+main
+  Hello hello = new Hello("Hello world!");
+  hello.say_hello();
+end
