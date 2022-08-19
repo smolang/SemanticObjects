@@ -38,10 +38,10 @@ open class MicroObjectTest : StringSpec() {
     }
 
     protected var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
-    protected fun loadBackground(path : String){
+    protected fun loadBackground(path : String, domainPrefix : String = ""){
         val file = File(path)
         val backgr = file.readText()
-        settings = Settings(false, false,  "/tmp/mo",backgr,"","urn:", extraPrefixes = hashMapOf())
+        settings = Settings(false, false,  "/tmp/mo",backgr,domainPrefix,"urn:", extraPrefixes = hashMapOf())
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"

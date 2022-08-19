@@ -16,7 +16,7 @@ import kotlin.test.assertNotNull
 class SMOLExecutionTest: MicroObjectTest() {
     init {
         "models override"{
-            loadBackground("src/test/resources/models.owl")
+            loadBackground("src/test/resources/models.owl","urn:")
             val (a,_) = initInterpreter("models", StringLoad.RES)
             executeUntilBreak(a)
             assertEquals(1, a.stack.size)
