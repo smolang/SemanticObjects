@@ -17,6 +17,9 @@ semantics to the lifted program state.  Section :ref:`semantic-access` describes
 Co-Simulation and SMOL
 ----------------------
 
-Dynamic simulation model components following the `FMI standard
-<https://fmi-standard.org>`_ (:term:`FMU`\ s) can be directly integrated into SMOL code.  SMOL
-drives the dynamic model inputs and controls the advancement of time for all FMUs.  This is discussed further in Section :ref:`fmos`.
+Dynamic simulation model components (:term:`FMU`\ s) that follow the `FMI
+standard <https://fmi-standard.org>`_ can be directly integrated into SMOL
+code.  A SMOL program can drive the dynamic model inputs and controls the
+advancement of time for all FMUs, and can access the dynamic model outputs,
+making them available for semantic lifting.  This is discussed further in
+Section :ref:`fmos`.
