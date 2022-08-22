@@ -233,7 +233,7 @@ The FMU Field Expression
 ------------------------
 
 This expression reads the current value of the named out port of the given
-FMU.
+:term:`FMU`.
 
 ::
 
@@ -269,10 +269,10 @@ clause of the new object's class declarations (see
 The New FMU Expression
 -----------------------
 
-This expression creates a new FMU.  The expression takes first a literal
-string containing the path to the FMU, followed by zero or more initializer
-terms for the FMU's parameters.  All parameters specified by the FMU in its
-``modelDescription.xml`` file must be initialized.
+This expression creates a new instance of the given FMU.  The expression takes
+first a literal string containing the path to the FMU file, followed by zero
+or more initializer terms for the FMU's parameters.  All parameters specified
+by the FMU in its ``modelDescription.xml`` file must be initialized.
 
 ::
 
