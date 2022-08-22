@@ -85,3 +85,7 @@ Boolean, string and float literals.
    IntLiteral ::= '0' | '-'? [1-9] [0-9]*
    FloatLiteral ::= IntLiteral? '.' [0-9]* ([eE]IntLiteral)?
    StringLiteral ::= '"' ('\"' | .)* '"'
+
+String literals are delimited with quotation mark (``"``) characters;
+quotation marks in the middle of a string are escaped with a backslash (``\``)
+character.  Strings can contain linebreaks.
