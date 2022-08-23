@@ -39,6 +39,9 @@ A field cannot be ``domain`` and ``hidden``.
 
 *models*
 
+The ``models`` declarations are used to connect object structure to semantic
+reflection; see Section :ref:`modeling-bridge`.
+
 ::
 
    ModelsDeclaration ::= ('models' '(' Expression ')' StringLiteral ';')*
