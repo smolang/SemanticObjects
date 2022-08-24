@@ -4,7 +4,7 @@ plugins {
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
 }
-group = 'me.edkam'
+group = 'org.smolang'
 version = '0.2'
 sourceCompatibility = '1.11'
 
@@ -44,17 +44,21 @@ generateGrammarSource {
     outputDirectory = file("build/generated-src/main/no/uio/microobject/antlr")
     arguments += ["-visitor"]
 }
+
 compileKotlin {
     kotlinOptions.jvmTarget = project.sourceCompatibility
 }
+compileKotlin.dependsOn generateGrammarSource
+
 jar {
+    archiveBaseName='smol'
     manifest {
         attributes 'Main-Class': 'no.uio.microobject.main.MainKtKt'
     }
 }
-
-compileKotlin.dependsOn generateGrammarSource
-
+shadowJar {
+    archiveBaseName='smol'
+}
 assemble.dependsOn shadowJar
 
 sphinx {

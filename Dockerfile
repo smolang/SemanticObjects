@@ -15,6 +15,6 @@ COPY . /usr/local/src/smol
 WORKDIR /usr/local/src/smol
 RUN ./gradlew --no-daemon assemble
 WORKDIR /root/smol
-CMD ["java", "-jar", "/usr/local/src/smol/build/libs/MicroObjects-0.2-all.jar"]
-# CMD java -jar /usr/local/src/smol/build/libs/MicroObjects-0.2-all.jar -i examples/House/osphouseV2.smol -e -b examples/House/rooms.owl -p asset=https://github.com/Edkamb/SemanticObjects/Asset# -m
+CMD ["java", "-jar", "/usr/local/src/smol/build/libs/smol-0.2-all.jar"]
+# CMD java -jar /usr/local/src/smol/build/libs/smol-0.2-all.jar -i examples/House/osphouseV2.smol -e -b examples/House/rooms.owl -p asset=https://github.com/Edkamb/SemanticObjects/Asset# -m
 

@@ -7,10 +7,11 @@ This section shows how to run a simple SMOL program.
 
 SMOL itself is started from the command line and is typically used via an
 interactive prompt (:term:`REPL`).  SMOL needs Java (version 11 or later) to
-be installed.  A command like the following starts a SMOL REPL in the
-terminal::
+be installed.  A command like the following starts a SMOL REPL in the terminal
+(assuming the current directory is the root of the smol source tree and smol
+has been built)::
 
-  java -jar MicroObjects-0.2-all.jar
+  java -jar build/libs/smol-0.2-all.jar
 
 Here is a SMOL program that prints the canonical message::
 

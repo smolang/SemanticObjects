@@ -29,7 +29,7 @@
   "Major mode for editing files in the SMOL language."
   :group 'languages)
 
-(defcustom smol-jar-file "build/libs/MicroObjects-0.2-all.jar"
+(defcustom smol-jar-file "build/libs/smol-0.2-all.jar"
   "The jar file containing the SMOL interpreter."
   :type '(file :must-match t)
   :group 'smol
