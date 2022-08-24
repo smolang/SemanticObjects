@@ -4,46 +4,63 @@ Functional Mock-Up Objects
 ==========================
 .. highlight:: BNF
 
-SMOL implements *functional mock-up objects* (FMOs), encapsulations of *functional mock-up units* (FMUs) as defined by the `*functional mock-up interface* (FMI) 2.0.2. <https://fmi-standard.org/>`_
-An FMO is an abstraction that integrates the FMU into the language; it is a special objects with the inputs and outputs of an FMU as properties/fields
-and special statements that initialize and advance it. It does not not belong to a class, but its inputs and outputs define an FMO-type, on which a subtyping relation is given.
+SMOL implements *functional mock-up objects* (FMOs), encapsulations of
+*functional mock-up units* (:term:`FMU`\ s) as defined by the `FMI standard
+<https://fmi-standard.org/>`_, currently `version 2.0.2
+<https://github.com/modelica/fmi-standard/releases/download/v2.0.2/FMI-Specification-2.0.2.pdf>`_.
+An FMO is a wrapper that integrates FMUs into the language; it is a special
+object with the inputs and outputs of an FMU as properties/fields and special
+statements that initialize and advance the wrapped FMU. An FMO is not an
+instance of a SMOL class, but its inputs and outputs define an FMO-type on
+which a subtyping relation is given.
 
 Syntax
 ------
 
-Syntactically, FMOs are treated as special objects with distinct *FMO-types* and a distinct statement for their instantiation.
+Syntactically, FMOs are treated as special objects with distinct *FMO-types*
+and a distinct expression for their instantiation.
 
 Types
 ^^^^^
 
-The type of an FMO contains the list of all its inputs and all its outputs. 
-Syntactically, an *FMO-type* has the following form: The keyword ``Cont``, followed by a comma-separated list of inputs and outputs enclosed in square brackets.
+The type of an FMO contains the list of all its inputs and all its outputs.
+Syntactically, an *FMO-type* has the following form: The keyword ``Cont``,
+followed by a comma-separated list of inputs and outputs enclosed in square
+brackets.
 
 ::
 
   TYPE ::= ... | 'Cont' '[' (FmuParam (',' FmuParam)* )? ']'
   FmuParam ::= ('in' | 'out') TYPE NAME
- 
-Each input of the underlying FMO that is to be written must be declared via ``in TYPE NAME`` within the first list of type, 
-and every output that is to be read must be declared via ``out TYPE NAME``.
 
-The type of an input or output is the SMOL equivalent according to the following table:
+Each input of the underlying FMO that is to be written must be declared via
+``in TYPE NAME``, and every output that is to be read must be declared via
+``out TYPE NAME``.  ``NAME`` must be the name of an input or output variable,
+respectively, as declared by the underlying FMU in its
+``modelDescription.xml`` file.
+
+Types of input and output variables must be given as SMOL types.  The
+following table shows the type names used by the FMI standard and how they
+translate to SMOL type names:
 
 ========= =======
 FMI 2.0.2 SMOL
 ========= =======
 Real      Double
-Booean    Boolean
+Boolean   Boolean
 String    String
 Integer   Int
 ========= =======
 
-The type for FMOs without any inputs and outputs is ``Cont[]``.
+The type of an FMO wrapping an FMU without any inputs and outputs is
+``Cont[]``.
 
 FMO-types are covariant:
 An FMO-type ``T = Cont[in Ti1 i1,... , out To1 o1...]`` is a subtype of another FMO-type ``S = Cont[in Sj1 j1,... , out Sp1 p1...]`` 
-if (1) each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``, and 
-(2) each output ``i`` of ``T`` is also an ouput ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``.
+if
+
+1. each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``, and 
+2. each output ``i`` of ``T`` is also an output ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``.
 
 Statements
 ^^^^^^^^^^
@@ -76,7 +93,7 @@ The following shows how an FMO is loaded and passed as a parameter.
 Semantics
 ---------
 
-The fields and methods of an FMO are auto-generated: there is one field for every input and one field for every ouput.
+The fields and methods of an FMO are auto-generated: there is one field for every input and one field for every output.
 Assigning to a field that is an output
 triggers at a compile-time error. 
 Reading a field that is an input 
@@ -105,8 +122,8 @@ The following shows how an FMO is loaded and manipulated.
 
   
 
-Semantical Lifting
-------------------
+Semantic Lifting
+----------------
 
 .. NOTE::
   Semantical lifting of FMOs is under development. Currently, they are *completely* omitted from the generated knowledge graph.
