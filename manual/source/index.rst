@@ -20,7 +20,6 @@ Welcome to SMOL's documentation!
    classes
    semantic-access
    fmos
-   repl
    glossary
 
 Indices and tables
