@@ -65,6 +65,29 @@ and in the program.
 
 .. _repl:
 
+Starting SMOL
+-------------
+
+(describe how to compile and start the jar ...)
+
+::
+
+   Options:
+     -e, -l, --execute, --load
+     -b, --back PATH            path to a .ttl file that contains OWL class
+                                definitions as background knowledge.
+     -d, --domain TEXT          prefix for domain:.
+     -i, --input PATH           path to a .smol file which is loaded on startup.
+     -r, --replay PATH          path to a file containing a series of shell
+                                commands.
+     -t, --tmp PATH             path to a directory used to store temporary
+                                files.
+     -v, --verbose              Verbose output.
+     -m, --materialize          Materialize triples and dump to file.
+     -p, --prefixes VALUE       Extra prefixes, given as a list PREFIX=URI
+     -h, --help                 Show this message and exit
+
+
 The SMOL interactive REPL
 -------------------------
 
