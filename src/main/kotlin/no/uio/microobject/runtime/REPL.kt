@@ -302,12 +302,12 @@ class REPL(private val settings: Settings) {
                             out += r.getLiteral("at").double.toString() + "\t"+r.getLiteral("val").double.toString() + "\n"
                         }
 
-                        val output = File("${settings.outpath}/plotting.data")
+                        val output = File("${settings.outpath}/plotting.tsv")
                         if (!output.exists()) output.createNewFile()
                         output.writeText(out)
-                        val output2 = File("${settings.outpath}/plotting.gnu")
+                        val output2 = File("${settings.outpath}/plotting.gp")
                         if (!output2.exists()) output.createNewFile()
-                        output2.writeText("set terminal postscript \n set output \"${settings.outpath}/out.ps\" \n plot \"${settings.outpath}/plotting.data\" with linespoints")
+                        output2.writeText("set terminal postscript \n set output \"${settings.outpath}/out.ps\" \n plot \"${settings.outpath}/plotting.tsv\" with linespoints")
 
 
                         val rt = Runtime.getRuntime()
@@ -321,7 +321,7 @@ class REPL(private val settings: Settings) {
                             printRepl("Cannot find gnuplot or atril, try to plot and display the files in ${settings.outpath} manually.")
                         } else {
                             printRepl("Plotting....")
-                            Runtime.getRuntime().exec("gnuplot ${settings.outpath}/plotting.gnu")
+                            Runtime.getRuntime().exec("gnuplot ${settings.outpath}/plotting.gp")
                             Runtime.getRuntime().exec("atril ${settings.outpath}/out.ps")
                         }
                     }
