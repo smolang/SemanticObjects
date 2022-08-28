@@ -162,6 +162,21 @@ class REPL(private val settings: Settings) {
         commands["e"] = examine
         commands["dump"] =
             Command("dump", this, { dump(); false }, "dumps into \${tmp_path}/output.ttl")
+        commands["outdir"] = Command(
+            "outdir",
+            this,
+            { str ->
+                  if (str == "") {
+                      printRepl("Current output directory is ${settings.outdir}")
+                  } else {
+                      settings.outdir = str
+                  }
+              false
+            },
+            "sets or prints the output path",
+            parameterHelp = "[path] (optional)",
+        )
+
         commands["auto"] = Command(
             "auto",
             this,
@@ -302,12 +317,12 @@ class REPL(private val settings: Settings) {
                             out += r.getLiteral("at").double.toString() + "\t"+r.getLiteral("val").double.toString() + "\n"
                         }
 
-                        val output = File("${settings.outpath}/plotting.tsv")
+                        val output = File("${settings.outdir}/plotting.tsv")
                         if (!output.exists()) output.createNewFile()
                         output.writeText(out)
-                        val output2 = File("${settings.outpath}/plotting.gp")
+                        val output2 = File("${settings.outdir}/plotting.gp")
                         if (!output2.exists()) output.createNewFile()
-                        output2.writeText("set terminal postscript \n set output \"${settings.outpath}/out.ps\" \n plot \"${settings.outpath}/plotting.tsv\" with linespoints")
+                        output2.writeText("set terminal postscript \n set output \"${settings.outdir}/out.ps\" \n plot \"${settings.outdir}/plotting.tsv\" with linespoints")
 
 
                         val rt = Runtime.getRuntime()
@@ -318,11 +333,12 @@ class REPL(private val settings: Settings) {
                         proc2.waitFor()
                         val exitVal2 = proc2.exitValue()
                         if(exitVal != 0 || exitVal2 != 0){
-                            printRepl("Cannot find gnuplot or atril, try to plot and display the files in ${settings.outpath} manually.")
+                            printRepl("Cannot find gnuplot or atril, try to plot and display the files in ${settings.outdir} manually.")
                         } else {
                             printRepl("Plotting....")
-                            Runtime.getRuntime().exec("gnuplot ${settings.outpath}/plotting.gp")
-                            Runtime.getRuntime().exec("atril ${settings.outpath}/out.ps")
+                            Runtime.getRuntime().exec("gnuplot ${settings.outdir}/plotting.gp")
+                            Runtime.getRuntime().exec("atril ${settings.outdir}/out.ps")
+                            printRepl("Finished. Generated files are in ${settings.outdir}.")
                         }
                     }
                 }

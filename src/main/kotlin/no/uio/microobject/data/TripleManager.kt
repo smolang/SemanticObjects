@@ -54,9 +54,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
         // If the materialize flag is given, then write to file
         if (settings.materialize) {
-            File(settings.outpath).mkdirs()
-            File("${settings.outpath}/output.ttl").createNewFile()
-            model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
+            File(settings.outdir).mkdirs()
+            File("${settings.outdir}/output.ttl").createNewFile()
+            model.write(FileWriter("${settings.outdir}/output.ttl"),"TTL")
         }
         return model
     }
@@ -216,13 +216,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         }
 
         // Write model m1 to file
-        File(settings.outpath).mkdirs()
-        File("${settings.outpath}/output-naive.ttl").createNewFile()
-        m1.write(FileWriter("${settings.outpath}/output-naive.ttl"),"TTL")
+        File(settings.outdir).mkdirs()
+        File("${settings.outdir}/output-naive.ttl").createNewFile()
+        m1.write(FileWriter("${settings.outdir}/output-naive.ttl"),"TTL")
 
         // Read into model m2
         var m2 = ModelFactory.createDefaultModel()
-        val uri = File("${settings.outpath}/output-naive.ttl").toURL().toString()
+        val uri = File("${settings.outdir}/output-naive.ttl").toURL().toString()
         m2.read(uri, "TTL")
 
         return m2

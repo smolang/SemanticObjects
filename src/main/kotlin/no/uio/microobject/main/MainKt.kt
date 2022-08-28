@@ -11,7 +11,7 @@ import kotlin.system.exitProcess
 
 data class Settings(var verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
-                    val outpath : String,       //path of temporary outputs
+                    var outdir : String,        //path of temporary outputs
                     val background : String,    //owl background knowledge
                     val domainPrefix : String,  //prefix used in the domain model (domain:)
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
@@ -80,8 +80,8 @@ class Main : CliktCommand() {
     private val back         by option("--back",      "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
     private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
-    private val replay       by option("--replay",    "-r",  help="path to a file containing a series of shell commands.").path()
-    private val tmp          by option("--tmp",       "-t",  help="path to a directory used to store temporary files.").path().default(Paths.get("/tmp/mo"))
+    private val replay       by option("--replay",    "-r",  help="path to a file containing a series of REPL commands.").path()
+    private val outdir       by option("--outdir",    "-o",   help="path to a directory used to create data files.").path().default(Paths.get("").toAbsolutePath())
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
     private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
     private val extra        by option("--prefixes", "-p", help="Extra prefixes, given as a list PREFIX=URI").associate()
@@ -103,7 +103,7 @@ class Main : CliktCommand() {
             exitProcess(-1)
         }
 
-        val repl = REPL( Settings(verbose, materialize, tmp.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra)))
+        val repl = REPL( Settings(verbose, materialize, outdir.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra)))
         if(input != null){
             repl.command("read", input.toString())
         }

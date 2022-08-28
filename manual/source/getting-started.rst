@@ -80,7 +80,7 @@ Starting SMOL
      -i, --input PATH           path to a .smol file which is loaded on startup.
      -r, --replay PATH          path to a file containing a series of shell
                                 commands.
-     -t, --tmp PATH             path to a directory used to store temporary
+     -o, --outdir PATH          path to a directory used to create data
                                 files.
      -v, --verbose              Verbose output.
      -m, --materialize          Materialize triples and dump to file.
@@ -111,6 +111,10 @@ General Commands
    * - ``verbose`` enabled
      - Sets verbose output to on or off
      - ``enabled``: ``true`` or ``false``
+   * - ``outpath`` path
+     - Sets or prints the directory where SMOL write data files
+     - ``path``: a directory name; if omitted, the REPL will print the current
+       outpath
 
 Commands for Running SMOL
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -194,7 +198,7 @@ Diagnostic Commands
      - Print state in internal format
      -
    * - ``dump``
-     - Dump into ``${tmp_path}/output.ttl``
+     - Create ttl file ``${outpath}/output.ttl`` with the current heap state
      -
    * - ``guards`` guard enabled
      - Enables/disables guard clauses when searching for triples in the heap

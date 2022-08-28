@@ -138,12 +138,12 @@ class Interpreter(
         return reasoner.getInstances(expr)
     }
 
-    // Dump all triples in the virtual model to ${settings.outpath}/output.ttl
+    // Dump all triples in the virtual model to ${settings.outdir}/output.ttl
     internal fun dump() {
         val model = tripleManager.getModel()
-        File(settings.outpath).mkdirs()
-        File("${settings.outpath}/output.ttl").createNewFile()
-        model.write(FileWriter("${settings.outpath}/output.ttl"),"TTL")
+        File(settings.outdir).mkdirs()
+        File("${settings.outdir}/output.ttl").createNewFile()
+        model.write(FileWriter("${settings.outdir}/output.ttl"),"TTL")
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
@@ -381,14 +381,14 @@ class Interpreter(
                 val fileName = stmt.query.literal.removeSurrounding("\"")
                 val file = File(fileName)
                 if(!file.exists()) throw Exception("file $fileName does not exist")
-                val newFile = File("${settings.outpath}/shape.ttl")
+                val newFile = File("${settings.outdir}/shape.ttl")
                 if(!newFile.exists()) {
-                    File(settings.outpath).mkdirs()
+                    File(settings.outdir).mkdirs()
                     newFile.createNewFile()
                 }
                 newFile.writeText(settings.prefixes() + "\n"+ settings.getHeader() + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
                 newFile.appendText(file.readText())
-                val shapesGraph = RDFDataMgr.loadGraph("${settings.outpath}/shape.ttl")
+                val shapesGraph = RDFDataMgr.loadGraph("${settings.outdir}/shape.ttl")
                 val dataGraph = tripleManager.getModel().graph
 
                 val shapes: Shapes = Shapes.parse(shapesGraph)
