@@ -113,8 +113,7 @@ General Commands
      - ``enabled``: ``true`` or ``false``
    * - ``outpath`` path
      - Sets or prints the directory where SMOL write data files
-     - ``path``: a directory name; if omitted, the REPL will print the current
-       outpath
+     - ``path``: a directory name; if omitted, print the current value
 
 Commands for Running SMOL
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -176,6 +175,10 @@ Commands for Querying SMOL
        - ``port``: The output port of the FMO to be plotted
        - ``from``: (optional) the starting time of the plot
        - ``to``: (optional) the end time of the plot
+   * - ``dump`` file
+     - Create file in ``outpath`` containing the current heap state in TRTL
+       format
+     - ``file`` (optional): the file to create; default ``output.ttl``
 
 Diagnostic Commands
 ^^^^^^^^^^^^^^^^^^^
@@ -196,9 +199,6 @@ Diagnostic Commands
      -
    * - ``examine``
      - Print state in internal format
-     -
-   * - ``dump``
-     - Create ttl file ``${outpath}/output.ttl`` with the current heap state
      -
    * - ``guards`` guard enabled
      - Enables/disables guard clauses when searching for triples in the heap

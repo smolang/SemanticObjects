@@ -84,8 +84,8 @@ class REPL(private val settings: Settings) {
         }
         return result
     }
-    fun dump() {
-        interpreter!!.dump()
+    fun dump(file: String) {
+        interpreter!!.dump(file)
     }
 
     fun runAndTerminate(){
@@ -161,7 +161,15 @@ class REPL(private val settings: Settings) {
         commands["examine"] = examine
         commands["e"] = examine
         commands["dump"] =
-            Command("dump", this, { dump(); false }, "dumps into \${tmp_path}/output.ttl")
+            Command("dump",
+                    this,
+                    { str ->
+                        val file = if (str == "") "output.ttl" else str
+                        dump(file); false
+                    },
+                    "dumps into \${outdir}/\${file}",
+                    parameterHelp = "file: filename, default \"output.ttl\""
+            )
         commands["outdir"] = Command(
             "outdir",
             this,
@@ -174,7 +182,7 @@ class REPL(private val settings: Settings) {
               false
             },
             "sets or prints the output path",
-            parameterHelp = "[path] (optional)",
+            parameterHelp = "path (optional): the new value of outdir",
         )
 
         commands["auto"] = Command(

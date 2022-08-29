@@ -138,12 +138,12 @@ class Interpreter(
         return reasoner.getInstances(expr)
     }
 
-    // Dump all triples in the virtual model to ${settings.outdir}/output.ttl
-    internal fun dump() {
+    // Dump all triples in the virtual model to ${settings.outdir}/file
+    internal fun dump(file: String) {
         val model = tripleManager.getModel()
         File(settings.outdir).mkdirs()
-        File("${settings.outdir}/output.ttl").createNewFile()
-        model.write(FileWriter("${settings.outdir}/output.ttl"),"TTL")
+        File("${settings.outdir}/${file}").createNewFile()
+        model.write(FileWriter("${settings.outdir}/${file}"),"TTL")
     }
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
