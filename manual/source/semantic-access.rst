@@ -5,10 +5,11 @@ Semantic Access
 
 The SMOL interpreter implements *semantic lifting*, the process of generating
 a knowledge graph from the current program state.  The generated knowledge
-graph can either be investigated by external tools, queried in the REPL during
-breakpoints, or accessed within the running program itself via special
-statements for *semantic reflection* through OWL concepts, SHACL shapes or
-SPARQL queries.
+graph can be investigated by external tools after creating a ``.ttl`` file via
+the REPL ``dump`` command, queried during breakpoints using the REPL commands
+listed in :ref:`querying-smol`, or accessed within the running program itself
+via special statements for *semantic reflection* through OWL concepts, SHACL
+shapes or SPARQL queries.
 
 Semantic Lifting
 ----------------

@@ -63,8 +63,6 @@ be queried from the REPL::
 Runtime state is queried using the SPARQL query language, both from the REPL
 and in the program.
 
-.. _repl:
-
 Starting SMOL
 -------------
 
@@ -87,6 +85,8 @@ Starting SMOL
      -p, --prefixes VALUE       Extra prefixes, given as a list PREFIX=URI
      -h, --help                 Show this message and exit
 
+
+.. _repl:
 
 The SMOL interactive REPL
 -------------------------
@@ -139,6 +139,8 @@ Commands for Running SMOL
    * - ``step``
      - executes the next statement
      -
+
+.. _querying-smol:
 
 Commands for Querying SMOL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
