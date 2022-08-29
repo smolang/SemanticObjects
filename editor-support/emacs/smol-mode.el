@@ -98,7 +98,8 @@
 
 (define-derived-mode inferior-smol-mode
   comint-mode "inferior-smol"
-  "Major mode for running the SMOL REPL.")
+  "Major mode for running the SMOL REPL."
+  (setq comint-process-echoes t))
 
 ;;;###autoload
 (defun run-smol ()
