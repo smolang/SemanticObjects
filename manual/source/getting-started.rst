@@ -91,7 +91,7 @@ Starting SMOL
 The SMOL interactive REPL
 -------------------------
 
-SMOL programs are run and queried via a :term:`REPL`.  Currently, the
+SMOL programs are run and queried via the :term:`REPL`.  Currently, the
 REPL offers the following commands:
 
 General Commands
@@ -108,12 +108,12 @@ General Commands
    * - ``exit``
      - exits the REPL
      -
-   * - ``verbose`` enabled
+   * - ``verbose`` *enabled*
      - Sets verbose output to on or off
-     - ``enabled``: ``true`` or ``false``
-   * - ``outpath`` path
+     - *enabled*: ``true`` or ``false``
+   * - ``outpath`` *path*
      - Sets or prints the directory where SMOL write data files
-     - ``path``: a directory name; if omitted, print the current value
+     - *path*: a directory name; if omitted, print the current value
 
 Commands for Running SMOL
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -126,19 +126,19 @@ Commands for Running SMOL
    * - Command
      - Description
      - Parameters
-   * - ``read`` file
+   * - ``read`` *file*
      - reads a SMOL file
-     - ``file``: Path to the ``.smol`` file
-   * - ``reada`` file
+     - *file*: Path to the ``.smol`` file
+   * - ``reada`` *file*
      - reads and runs the given file
-     - ``file``: Path to the ``.smol`` file
+     - *file*: Path to the ``.smol`` file
    * - ``auto``
      - starts or continues execution of the currently-loaded smol file until
        the next breakpoint
-     - none
+     -
    * - ``step``
      - executes the next statement
-     - none
+     -
 
 Commands for Querying SMOL
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -151,34 +151,34 @@ Commands for Querying SMOL
    * - Command
      - Description
      - Parameters
-   * - ``eval`` expression
+   * - ``eval`` *expression*
      - evaluates a smol expression in the current program state
-     - ``expression``: a smol expression
-   * - ``query`` query
+     - *expression*: a smol expression
+   * - ``query`` *query*
      - executes a SPARQL query in the current program state
-     - ``query``: The SPARQL query to execute
-   * - ``source`` source enabled
+     - *query*: The SPARQL query to execute
+   * - ``source`` *source* *enabled*
      - Set which sources to include (true) or exclude (false) when querying
-     - - ``source``: ``heap`` or ``staticTable`` or ``vocabularyFile`` or
+     - - *source*: ``heap`` or ``staticTable`` or ``vocabularyFile`` or
          ``externalOntology``
-       - ``enabled``: ``true`` or ``false``
-   * - ``reasoner`` reasoner
+       - *enabled*: ``true`` or ``false``
+   * - ``reasoner`` *reasoner*
      - Specify which Jena reasoner to use, or turn it off
-     - ``reasoner``: ``off`` or ``rdfs`` or ``owl``
-   * - ``class`` class
+     - *reasoner*: ``off`` or ``rdfs`` or ``owl``
+   * - ``class`` *class*
      - List all members of a class
-     - ``class``: class expression in Manchester Syntax, e.g., ``<smol:Class>``
-   * - ``plot`` role port from to
+     - *class*: class expression in Manchester Syntax, e.g., ``<smol:Class>``
+   * - ``plot`` *role* *port* *from* *to*
      - Plots data from the given output port of an FMO in the given interval.
        In order to use this command, gnuplot must be installed.
-     - - ``role``: The FMO to plot data from, as named by its ``role`` field.
-       - ``port``: The output port of the FMO to be plotted
-       - ``from``: (optional) the starting time of the plot
-       - ``to``: (optional) the end time of the plot
-   * - ``dump`` file
+     - - *role*: The FMO to plot data from, as named by its ``role`` field.
+       - *port*: The output port of the FMO to be plotted
+       - *from*: (optional) the starting time of the plot
+       - *to*: (optional) the end time of the plot
+   * - ``dump`` *file*
      - Create file in ``outpath`` containing the current heap state in TRTL
        format
-     - ``file`` (optional): the file to create; default ``output.ttl``
+     - *file* (optional): the file to create; default ``output.ttl``
 
 Diagnostic Commands
 ^^^^^^^^^^^^^^^^^^^
@@ -200,15 +200,15 @@ Diagnostic Commands
    * - ``examine``
      - Print state in internal format
      -
-   * - ``guards`` guard enabled
+   * - ``guards`` *guard* *enabled*
      - Enables/disables guard clauses when searching for triples in the heap
        or the static table.  This command is mainly used for debugging and
        performance measuring.
-     - - ``guard``: ``heap`` or ``staticTable``
-       - ``enabled``: ``true`` or ``false``
-   * - ``virtual`` guard enabled
+     - - *guard*: ``heap`` or ``staticTable``
+       - *enabled*: ``true`` or ``false``
+   * - ``virtual`` *guard* *enabled*
      - Enables/disables virtualization searching for triples in the heap or
        the static table.  This command is mainly used for debugging and
        performance measuring.
-     - - ``guard``: ``heap`` or ``staticTable``
-       - ``enabled``: ``true`` or ``false``
+     - - *guard*: ``heap`` or ``staticTable``
+       - *enabled*: ``true`` or ``false``
