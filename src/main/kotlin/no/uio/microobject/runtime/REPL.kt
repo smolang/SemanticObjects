@@ -53,7 +53,7 @@ class REPL(private val settings: Settings) {
         if (str == "help") {
             for (cmd in commands.values.distinct()) {
                 println(String.format("%-11s - %s", cmd.name, cmd.help))
-                if (cmd.requiresParameter) {
+                if (cmd.parameterHelp != "") {
                     println(String.format("%14s- parameter: %s", "", cmd.parameterHelp))
                 }
             }
