@@ -6,7 +6,12 @@
 Welcome to SMOL's documentation!
 ================================
 
-(Starting words about SMOL here...)
+SMOL is an imperative, object-oriented research language. SMOL integrates
+semantic web technologies and numerical simulation blocks, and can serve as a
+test bed for creating digital twins.
+
+SMOL is released under the terms of the 3-clause BSD license, the source is
+available at https://github.com/smolang/SemanticObjects.
 
 .. toctree::
    :maxdepth: 2
