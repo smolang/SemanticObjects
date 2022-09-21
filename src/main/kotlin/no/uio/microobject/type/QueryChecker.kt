@@ -85,7 +85,7 @@ class QueryChecker(
             parser.setDefaultOntology(ontology)
             return parser.parseClassExpression(out)
         } catch (e: Exception) {
-            e.printStackTrace()
+            if(settings.verbose) e.printStackTrace()
             return null
         }
     }

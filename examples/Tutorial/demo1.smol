@@ -1,0 +1,17 @@
+class C(Int i)
+    Unit inc() breakpoint; this.i = this.i + 1; end
+end
+
+main
+    C c = new C(5);
+    c.inc();
+end
+
+/*
+Get everything
+    query SELECT * WHERE { ?a a ?b }
+Get all objects of class C
+    query SELECT * WHERE { ?a a prog:C}
+Get all objects and its fields
+    query SELECT * WHERE { ?a a prog:C. ?a prog:C_i ?b }
+*/

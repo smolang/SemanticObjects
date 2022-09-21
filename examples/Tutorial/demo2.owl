@@ -1,0 +1,169 @@
+
+
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  asset:controlsLeft
+asset:controlsLeft rdf:type owl:ObjectProperty ;
+                     rdfs:subPropertyOf owl:topObjectProperty ;
+                     rdfs:domain asset:Controller ;
+                     rdfs:range asset:Room .
+
+
+###  asset:controlsRight
+asset:controlsRight rdf:type owl:ObjectProperty ;
+                      rdfs:subPropertyOf owl:topObjectProperty ;
+                      rdf:type owl:FunctionalProperty ;
+                      rdfs:domain asset:Controller ;
+                      rdfs:range asset:Room .
+
+
+###  asset:left
+asset:left rdf:type owl:ObjectProperty ;
+             rdfs:subPropertyOf owl:topObjectProperty ;
+             owl:inverseOf asset:leftOf ;
+             rdf:type owl:FunctionalProperty ;
+             rdfs:domain asset:Room ;
+             rdfs:range asset:Wall .
+
+
+###  asset:leftOf
+asset:leftOf rdf:type owl:ObjectProperty ;
+               rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  asset:right
+asset:right rdf:type owl:ObjectProperty ;
+              rdfs:subPropertyOf owl:topObjectProperty ;
+              owl:inverseOf asset:rightOf ;
+              rdf:type owl:FunctionalProperty ;
+              rdfs:domain asset:Room ;
+              rdfs:range asset:Wall .
+
+
+###  asset:rightOf
+asset:rightOf rdf:type owl:ObjectProperty ;
+                rdfs:subPropertyOf owl:topObjectProperty .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  asset:id
+asset:id rdf:type owl:DatatypeProperty ;
+           rdfs:subPropertyOf owl:topDataProperty ;
+           rdf:type owl:FunctionalProperty ;
+           rdfs:domain asset:Asset ;
+           rdfs:range xsd:integer .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  asset:Asset
+asset:Asset rdf:type owl:Class .
+
+
+###  asset:Controller
+asset:Controller rdf:type owl:Class ;
+                   rdfs:subClassOf asset:Asset .
+
+
+###  asset:InnerWall
+asset:InnerWall rdf:type owl:Class ;
+                  owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                               owl:onProperty asset:leftOf ;
+                                                               owl:someValuesFrom asset:Room
+                                                             ]
+                                                             [ rdf:type owl:Restriction ;
+                                                               owl:onProperty asset:rightOf ;
+                                                               owl:someValuesFrom asset:Room
+                                                             ]
+                                                           ) ;
+                                        rdf:type owl:Class
+                                      ] ;
+                  rdfs:subClassOf asset:Wall ;
+                  owl:disjointWith asset:OuterWall .
+
+
+###  asset:OuterWall
+asset:OuterWall rdf:type owl:Class ;
+                  rdfs:subClassOf asset:Wall .
+
+
+###  asset:Room
+asset:Room rdf:type owl:Class ;
+             owl:equivalentClass [ rdf:type owl:Class ;
+                                   owl:oneOf ( asset:r1
+                                               asset:r2
+                                             )
+                                 ] ;
+             rdfs:subClassOf asset:Asset .
+
+
+###  asset:Wall
+asset:Wall rdf:type owl:Class ;
+             rdfs:subClassOf asset:Asset ;
+             owl:disjointUnionOf ( asset:InnerWall
+                                   asset:OuterWall
+                                 ) .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  asset:c1
+asset:c1 rdf:type owl:NamedIndividual ,
+                    asset:Controller ;
+           asset:controlsLeft asset:r2 ;
+           asset:controlsRight asset:r1 ;
+           asset:id 1 .
+
+
+###  asset:r1
+asset:r1 rdf:type owl:NamedIndividual ;
+           asset:left asset:w1 ;
+           asset:right asset:w2 ;
+           asset:id 10 .
+
+
+###  asset:r2
+asset:r2 rdf:type owl:NamedIndividual ;
+           asset:left asset:w2 ;
+           asset:right asset:w3 ;
+           asset:id 11 .
+
+
+###  asset:w1
+asset:w1 rdf:type owl:NamedIndividual ;
+           asset:id 21 .
+
+
+###  asset:w2
+asset:w2 rdf:type owl:NamedIndividual ;
+           asset:id 22 .
+
+
+###  asset:w3
+asset:w3 rdf:type owl:NamedIndividual ;
+           asset:id 23 .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( asset:Controller
+                asset:Room
+                asset:Wall
+              )
+] .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi

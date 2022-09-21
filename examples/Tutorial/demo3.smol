@@ -1,0 +1,58 @@
+class RoomAsrt(Int room, Int wallLt, Int wallRt) end
+
+abstract class Twin(Int id) end
+
+
+class Room extends Twin
+          (Cont[in Double left,
+                in Double right,
+                in Double target,
+                out Double val] fmu,
+            Wall toLeft,
+            Wall toRight) end
+
+class Wall extends Twin
+          (Cont[in Double left,
+                in Double right,
+                out Double val] fmu,
+           Room toLeft,
+           Room toRight)  end
+
+class Controller(Cont[in Double left,
+                      in Double right,
+                      out Double target] fmu,
+                 Room left,
+                 Room right) end
+
+
+main
+        Wall wall1 = new Wall(0, null, null, null);
+        Wall wall2 = new Wall(1, null, null, null);
+        Wall wall3 = new Wall(2, null, null, null);
+        Room room1 = new Room(10, null, wall1, wall2);
+        Room room2 = new Room(11, null, wall2, wall3);
+
+        wall1.toRight = room1;
+        wall2.toLeft = room1;
+        wall2.toRight = room2;
+        wall3.toLeft = room2;
+
+        breakpoint;
+
+        List<RoomAsrt> newRooms =
+        construct("SELECT ?room ?wallLt ?wallRt{ ?x a asset:Room; asset:right [asset:id ?wallRt]; asset:left [asset:id ?wallLt]; asset:id ?room. FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?room} }");
+        if newRooms == null then print("no new rooms"); else
+          RoomAsrt firstRoom = newRooms.content;
+          if firstRoom.wallLt == wall3.id then //new room is right
+            Wall nWall = new Wall(firstRoom.wallRt, null, room2, null);
+            Room nRoom = new Room(firstRoom.room, null, wall3, nWall);
+            nWall.toRight = nRoom;
+          end
+          if firstRoom.wallRt == wall1.id then //new room is left
+            Wall nWall2 = new Wall(firstRoom.wallLt, null, null, room1);
+            Room nRoom2 = new Room(firstRoom.room, null, nWall2, wall1);
+            nWall2.toLeft = nRoom2;
+          end
+          if newRooms.next != null then print("tutorial only repairs first room!"); end
+        end
+end

@@ -17,7 +17,8 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val progPrefix : String = "https://github.com/Edkamb/SemanticObjects/Program#",    //prefix for the program (prog:)
                     val runPrefix : String  = "https://github.com/Edkamb/SemanticObjects/Run${System.currentTimeMillis()}#",    //prefix for this run (run:)
                     val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#",
-                    val extraPrefixes : HashMap<String, String>
+                    val extraPrefixes : HashMap<String, String>,
+                    val useQueryType : Boolean = false
                     ){
     var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {
@@ -84,6 +85,7 @@ class Main : CliktCommand() {
     private val outdir       by option("--outdir",    "-o",   help="path to a directory used to create data files.").path().default(Paths.get("").toAbsolutePath())
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
     private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
+    private val queryType    by option("--useQueryType", "-q",  help="Activates the type checker for access").flag()
     private val extra        by option("--prefixes", "-p", help="Extra prefixes, given as a list PREFIX=URI").associate()
 
     override fun run() {
@@ -103,7 +105,7 @@ class Main : CliktCommand() {
             exitProcess(-1)
         }
 
-        val repl = REPL( Settings(verbose, materialize, outdir.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra)))
+        val repl = REPL( Settings(verbose, materialize, outdir.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra), useQueryType = queryType))
         if(input != null){
             repl.command("read", input.toString())
         }

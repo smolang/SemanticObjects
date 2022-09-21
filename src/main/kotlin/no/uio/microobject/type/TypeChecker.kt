@@ -374,7 +374,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             log("Domain metnhod must have literal retur types, but $retType found", mtCtx)
 
         //check queries
-        queryCheckers.forEach { it.type(tripleManager) }
+        if(settings.useQueryType) queryCheckers.forEach { it.type(tripleManager) }
     }
 
     // This cannot be done with extension methods because they cannot override StatementContext.checkStatement()

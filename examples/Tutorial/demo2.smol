@@ -1,0 +1,91 @@
+abstract class Twin(Int id) end
+
+
+class Room extends Twin
+          (Cont[in Double left,
+                in Double right,
+                in Double target,
+                out Double val] fmu,
+            Wall toLeft,
+            Wall toRight) end
+
+class Wall extends Twin
+          (Cont[in Double left,
+                in Double right,
+                out Double val] fmu,
+           Room toLeft,
+           Room toRight)  end
+
+class Controller(Cont[in Double left,
+                      in Double right,
+                      out Double target] fmu,
+                 Room left,
+                 Room right) end
+
+
+class DigitalTwin(Wall wall1, Room room1, Wall wall2, Room room2, Wall wall3, Controller ctrl)
+
+    Int lengthOfList(List<Room> l)
+        if l == null then return 0; end
+        Int lg = l.length();
+        return lg;
+    end
+
+    /* Demo setup for internal consistency */
+    Unit setupOne()
+        this.wall1 = new Wall(0, null, null, null);
+        this.wall2 = new Wall(1, null, null, null);
+        this.wall3 = new Wall(2, null, null, null);
+        this.room1 = new Room(10, null, this.wall1, this.wall2);
+        this.room2 = new Room(11, null, this.wall2, this.wall3);
+
+        this.wall1.toRight = this.room1;
+        this.wall2.toLeft = this.room1;
+        this.wall2.toRight = this.room2;
+        this.wall3.toLeft = this.room2;
+
+        this.ctrl = new Controller(null, this.room1, this.room1); //bug!
+        //this.ctrl = new Controller(null, this.room1, this.room2); //fix
+    end
+
+    Unit consistencyOne()
+       List<Room> r = access("SELECT ?obj WHERE { ?obj a prog:Controller. ?obj prog:Controller_left ?room. ?obj prog:Controller_right ?room }");
+       Int faults = this.lengthOfList(r);
+       print("Number of faulty rooms: ");
+       print(faults);
+    end
+
+    /* Demo setup for twinning */
+    Unit setupTwo()
+        this.wall1 = new Wall(0, null, null, null);
+        this.wall2 = new Wall(1, null, null, null);
+        this.wall3 = new Wall(2, null, null, null);
+        this.room1 = new Room(10, null, this.wall1, this.wall2);
+        this.room2 = new Room(11, null, this.wall2, this.wall3);
+
+        this.wall1.toRight = this.room1;
+        this.wall2.toLeft = this.room1;
+        this.wall2.toRight = this.room2;
+        this.wall3.toLeft = this.room2;
+
+        this.ctrl = new Controller(null, this.room1, this.room2);
+        breakpoint;
+        /*
+        get asset view
+SELECT ?id1 ?id2 WHERE { ?h1 asset:id ?id1. ?h2 asset:id ?id2. ?h1 asset:left ?a. ?h2 asset:right ?a }
+        get program view
+SELECT ?id1 ?id2 WHERE { ?o1 prog:Room_id ?id1.  ?o2 prog:Room_id ?id2. ?c a prog:Controller. ?c prog:Controller_right ?o1. ?c prog:Controller_left ?o2  }
+        get combined view
+SELECT ?id1 ?id2 WHERE { ?o1 prog:Room_id ?id1. ?h1 asset:id ?id1. ?o2 prog:Room_id ?id2. ?h2 asset:id ?id2. ?h1 asset:left ?a. ?h2 asset:right ?a. ?c a prog:Controller. ?c prog:Controller_right ?o1. ?c prog:Controller_left ?o2  }
+        */
+    end
+
+end
+
+main
+    DigitalTwin dt = new DigitalTwin(null, null, null, null, null, null);
+    //dt.setupOne();
+    //dt.consistencyOne();
+
+    dt.setupTwo();
+end
