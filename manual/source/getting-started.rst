@@ -3,15 +3,32 @@ Getting Started
 
 .. highlight:: java
 
-This section shows how to run a simple SMOL program.
+Installation
+------------
 
-SMOL itself is started from the command line and is typically used via an
-interactive prompt (:term:`REPL`).  SMOL needs Java (version 11 or later) to
-be installed.  A command like the following starts a SMOL REPL in the terminal
-(assuming the current directory is the root of the smol source tree and smol
-has been built)::
+Currently, SMOL is best installed from source.
+
+SMOL needs a Java JDK (version 11 or later) to be installed.  The smol source
+code can be checked out via::
+
+  git clone https://github.com/smolang/SemanticObjects.git
+
+or by downloading and unpacking the zip archive from
+https://github.com/smolang/SemanticObjects/archive/refs/heads/master.zip.
+
+After obtaining the source code, change into that directory and execute the command::
+
+  ./gradlew assemble
+
+After a successful build, the SMOL REPL can be started in that directory via::
 
   java -jar build/libs/smol-0.2-all.jar
+
+Running a Simple SMOL Program
+-----------------------------
+
+SMOL itself is started from the command line and is typically used via an
+interactive prompt (a.k.a. :term:`REPL`).
 
 Here is a SMOL program that prints the canonical message::
 
@@ -37,14 +54,14 @@ Here is a more involved example, involving classes and breakpoints::
      print(this.message);
     end
   end
-  
+
   main
     print("Creating class ...");
     Hello hello = new Hello("Hello world!");
     breakpoint;
     hello.say_hello();
   end
-  
+
 Since the program will stop execution at the breakpoint, the runtime state can
 be queried from the REPL::
 
@@ -63,10 +80,8 @@ be queried from the REPL::
 Runtime state is queried using the SPARQL query language, both from the REPL
 and in the program.
 
-Starting SMOL
--------------
-
-(describe how to compile and start the jar ...)
+SMOL Command-Line Parameters
+----------------------------
 
 ::
 
