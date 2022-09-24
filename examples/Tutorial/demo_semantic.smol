@@ -1,0 +1,8 @@
+main
+    List<Int> results = access("SELECT ?obj {?a a asset:Room. ?a asset:id ?obj}");
+    while results != null do
+        Int current = results.content;
+        results = results.next;
+        print(current);
+    end
+end

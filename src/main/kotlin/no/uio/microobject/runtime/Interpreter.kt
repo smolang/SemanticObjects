@@ -329,7 +329,7 @@ class Interpreter(
                         }
                         if (!newMemory.containsKey("content")) {
                             if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] = LiteralExpr("\""+found+"\"", STRINGTYPE)
-                            else if(objNameCand.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
+                            else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())) newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
                             else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
