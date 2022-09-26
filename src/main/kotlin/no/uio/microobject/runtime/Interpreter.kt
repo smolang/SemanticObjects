@@ -329,7 +329,10 @@ class Interpreter(
                         }
                         if (!newMemory.containsKey("content")) {
                             if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] = LiteralExpr("\""+found+"\"", STRINGTYPE)
-                            else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())) newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
+                            else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDinteger)
+                                newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
+                            else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                                newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
                             else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
                             else throw Exception("Query returned unknown object/literal: $found")
                         }
@@ -365,7 +368,12 @@ class Interpreter(
                                 if (!foundAny)
                                     throw Exception("Query returned unknown object/literal: $extractedName")
                             }
-                            newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
+                            if(r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^").get(0), INTTYPE)
+                            else if(extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^").get(0), INTTYPE)
+                            else
+                                newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
                         }
                         heap[newObjName] = newObjMemory
                         newListMemory["content"] = newObjName
