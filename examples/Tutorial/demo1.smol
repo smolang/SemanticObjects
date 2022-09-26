@@ -14,4 +14,6 @@ Get all objects of class C
     query SELECT * WHERE { ?a a prog:C}
 Get all objects and its fields
     query SELECT * WHERE { ?a a prog:C. ?a prog:C_i ?b }
+Get all objects of class C with value 5
+    query SELECT * WHERE { ?a a prog:C. ?a prog:C_i 5 }
 */

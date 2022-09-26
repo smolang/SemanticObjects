@@ -44,8 +44,8 @@ class DigitalTwin(Wall wall1, Room room1, Wall wall2, Room room2, Wall wall3, Co
         this.wall2.toRight = this.room2;
         this.wall3.toLeft = this.room2;
 
-        this.ctrl = new Controller(null, this.room1, this.room1); //bug!
-        //this.ctrl = new Controller(null, this.room1, this.room2); //fix
+        //this.ctrl = new Controller(null, this.room1, this.room1); //bug!
+        this.ctrl = new Controller(null, this.room1, this.room2); //fix
     end
 
     Unit consistencyOne()
@@ -68,7 +68,8 @@ class DigitalTwin(Wall wall1, Room room1, Wall wall2, Room room2, Wall wall3, Co
         this.wall2.toRight = this.room2;
         this.wall3.toLeft = this.room2;
 
-        this.ctrl = new Controller(null, this.room1, this.room2);
+        this.ctrl = new Controller(null, this.room2, this.room1); //bug
+        //this.ctrl = new Controller(null, this.room2, this.room1); //fix
         breakpoint;
         /*
         get asset view
