@@ -20,6 +20,7 @@ available at https://github.com/smolang/SemanticObjects.
    introduction
    getting-started
    lexical-structure
+   datatypes
    expressions
    statements
    classes
