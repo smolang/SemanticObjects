@@ -26,7 +26,7 @@ https://chiplicity.readthedocs.io/en/latest/Using_Sphinx/OnReStructuredText.html
 
 [eradman/entr: Run arbitrary commands when files change](https://github.com/eradman/entr)
 
-    find source -name '*.rst' | entr -d make singlehtml
+    find source -name '*.rst' | entr -d make html
 
 # Citations
 

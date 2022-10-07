@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to SMOL's documentation!
-********************************
+The SMOL Language Manual
+========================
 
 SMOL is an imperative, object-oriented research language. SMOL integrates
 semantic web technologies and numerical simulation blocks, and can serve as a
@@ -17,15 +17,11 @@ available at https://github.com/smolang/SemanticObjects.
    :maxdepth: 2
    :caption: Contents:
 
-   Introduction <introduction>
-   Getting Started <getting-started>
-   Language Manual <language>
-   Tutorial <tutorial>
-   Publications <publications>
-
-Indices and tables
-******************
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
+   lexical-structure
+   datatypes
+   expressions
+   statements
+   classes
+   semantic-access
+   fmos
+   glossary
