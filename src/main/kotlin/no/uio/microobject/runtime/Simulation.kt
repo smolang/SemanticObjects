@@ -6,13 +6,20 @@ import no.uio.microobject.data.LiteralExpr
 import no.uio.microobject.data.TRUEEXPR
 import no.uio.microobject.type.DOUBLETYPE
 import no.uio.microobject.type.STRINGTYPE
+import no.uio.microobject.type.Type
 import org.javafmi.modeldescription.SimpleType
 import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
 
 data class Snapshot( val time : Double, val values : List<Pair<String, Double>>, val role : String?)
 
-class SimulatorObject(val path : String, memory : Memory){
+class SimulatorObject(val path : String,
+                      memory : Memory,
+                      // optional variable name transformers: first element is
+                      // FMU-side name, third element is SMOL-side name
+                      val inVals : List<Triple<String, Type, String>>?,
+                      val outVals : List<Triple<String, Type, String>>?)
+{
     companion object  {
         const val ROLEFIELDNAME = "role"
         const val PSEUDOOFFSETFIELDNAME = "pseudoOffset"
@@ -30,11 +37,12 @@ class SimulatorObject(val path : String, memory : Memory){
         if(name == ROLEFIELDNAME) return LiteralExpr(role, STRINGTYPE)
         if(name == PSEUDOOFFSETFIELDNAME) return LiteralExpr(pseudoOffset.toString(), DOUBLETYPE)
         if(name == TIMEFIELDNAME) return LiteralExpr(time.toString(), DOUBLETYPE)
-        val v = sim.modelDescription.getModelVariable(name)
-        if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
-        if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE)
-        if(v.typeName == "Real") return LiteralExpr(sim.read(name).asDouble().toString(), DOUBLETYPE)
-        return LiteralExpr(sim.read(name).asString(), STRINGTYPE)
+        val realname = (inVals?.find { it.third.equals(name)})?.first ?: name
+        val v = sim.modelDescription.getModelVariable(realname)
+        if(v.typeName == "Integer") return LiteralExpr(sim.read(realname).asInteger().toString(), INTTYPE)
+        if(v.typeName == "Boolean") return LiteralExpr(sim.read(realname).asBoolean().toString(), BOOLEANTYPE)
+        if(v.typeName == "Real") return LiteralExpr(sim.read(realname).asDouble().toString(), DOUBLETYPE)
+        return LiteralExpr(sim.read(realname).asString(), STRINGTYPE)
     }
     fun tick(i : Double){
         sim.doStep(i)
@@ -66,19 +74,20 @@ class SimulatorObject(val path : String, memory : Memory){
         if(name == TIMEFIELDNAME){
             throw Exception("You cannot write the time of an FMU.")
         }
+        val realname = (outVals?.find { it.third.equals(name)})?.first ?: name
         for(mVar in sim.modelDescription.modelVariables){
-            if(mVar.name == name){
+            if(mVar.name == realname){
                 if(mVar.causality == "input" && mVar.typeName == "Integer"){
-                    sim.write(name).with(res.literal.toInt())
+                    sim.write(realname).with(res.literal.toInt())
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "Boolean"){
-                    sim.write(name).with(res == TRUEEXPR)
+                    sim.write(realname).with(res == TRUEEXPR)
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "Real"){
-                    sim.write(name).with(res.literal.toDouble())
+                    sim.write(realname).with(res.literal.toDouble())
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "String"){
-                    sim.write(name).with(res.literal )
+                    sim.write(realname).with(res.literal )
                     break
                 }
             }

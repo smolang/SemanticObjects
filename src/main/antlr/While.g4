@@ -86,6 +86,7 @@ INFLUXMODE : 'INFLUXDB';
 // changing the syntax here
 IN : 'in';
 OUT : 'out';
+AS : 'as';
 
 //Names etc.
 fragment DIG : [0-9];
@@ -175,7 +176,7 @@ type : NAME                                                    #simple_type
 typelist : type (COMMA type)*;
 param : type NAME;
 paramList : param (COMMA param)*;
-fmuparam : direction=(IN | OUT) param;
+fmuparam : direction=(IN | OUT) param (AS smol_name=NAME)?;
 fmuParamList : fmuparam (COMMA fmuparam)*;
 fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;

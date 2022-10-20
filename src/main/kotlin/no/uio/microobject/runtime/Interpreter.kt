@@ -507,6 +507,8 @@ class Interpreter(
                 return Pair(null, emptyList())
             }
             is SimulationStmt -> {
+                val inVars = (stmt.declares as? SimulatorType)?.inVar
+                val outVars = (stmt.declares as? SimulatorType)?.outVar
                 val simObj = SimulatorObject(stmt.path, stmt.params.associate {
                     Pair(
                         it.name, eval(
@@ -516,7 +518,7 @@ class Interpreter(
                             obj
                         )
                     )
-                }.toMutableMap())
+                }.toMutableMap(), inVars, outVars)
                 val name = Names.getObjName("CoSimulation")
                 simMemory[name] = simObj
                 return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())
