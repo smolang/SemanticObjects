@@ -1,6 +1,6 @@
 
 
-class WrappedSimulator(Cont[in Int inPort, out Int outPort, out Int leak] content) end
+class WrappedSimulator(FMO[in Int inPort, out Int outPort, out Int leak] content) end
 
 class Connection(WrappedSimulator from, WrappedSimulator to)
     Int propagate()
@@ -35,7 +35,7 @@ class CoSim(List<Connection> list, List<WrappedSimulator> sims)
         length = this.sims.length();
         while i < length do
             WrappedSimulator s = this.sims.get(i);
-            Cont[] de = s.content;
+            FMO[] de = s.content;
             de.tick(t);
             i = i + 1;
         end
@@ -44,8 +44,8 @@ class CoSim(List<Connection> list, List<WrappedSimulator> sims)
 end
 
 main
-    Cont[in Int inPort, out Int outPort, out Int leak] de1 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 2);
-    Cont[in Int inPort, out Int outPort, out Int leak] de2 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 0);
+    FMO[in Int inPort, out Int outPort, out Int leak] de1 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 2);
+    FMO[in Int inPort, out Int outPort, out Int leak] de2 = simulate("examples/SimulationDemo/Linear.fmu", inPort = 0);
     WrappedSimulator s1 = new WrappedSimulator(de1);
     WrappedSimulator s2 = new WrappedSimulator(de2);
     Connection c = new Connection(s1, s2);

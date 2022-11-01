@@ -10,6 +10,9 @@ Glossary
    FMU
       Functional Mock-up Unit, a simulation model following the `FMI standard <https://fmi-standard.org>`_ for multi-model simulation.
 
+   FMO
+      Functional Mock-up Object, a SMOL object encapsulating an instance of an FMU.
+
    RDF
       Resource Description Framework, a standard model for data interchange on the web.  See https://www.w3.org/RDF/.
 

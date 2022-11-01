@@ -2,7 +2,7 @@ abstract class Twin(Int id) end
 
 
 class Room extends Twin
-          (Cont[in Double left,
+          (FMO[in Double left,
                 in Double right,
                 in Double target,
                 out Double val] fmu,
@@ -10,13 +10,13 @@ class Room extends Twin
             Wall toRight) end
 
 class Wall extends Twin
-          (Cont[in Double left,
+          (FMO[in Double left,
                 in Double right,
                 out Double val] fmu,
            Room toLeft,
            Room toRight)  end
 
-class Controller(Cont[in Double left,
+class Controller(FMO[in Double left,
                       in Double right,
                       out Double target] fmu,
                  Room left,

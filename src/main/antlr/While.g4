@@ -77,7 +77,7 @@ CPARAN : ')';
 OBRACK : '[';
 CBRACK : ']';
 COMMA : ',';
-FMU : 'Cont';
+FMU : 'FMO';
 PORT : 'port';
 SPARQLMODE : 'SPARQL';
 INFLUXMODE : 'INFLUXDB';

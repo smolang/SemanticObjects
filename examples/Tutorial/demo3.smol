@@ -3,7 +3,7 @@ class RoomAsrt(Int room, Int wallLt, Int wallRt) end
 abstract class Twin(Int id) end
 
 class Room extends Twin
-          (Cont[in Double left,
+          (FMO[in Double left,
                 in Double right,
                 in Double target,
                 out Double val] fmu,
@@ -11,13 +11,13 @@ class Room extends Twin
             Wall toRight) end
 
 class Wall extends Twin
-          (Cont[in Double left,
+          (FMO[in Double left,
                 in Double right,
                 out Double val] fmu,
            Room toLeft,
            Room toRight)  end
 
-class Controller(Cont[in Double left,
+class Controller(FMO[in Double left,
                       in Double right,
                       out Double target] fmu,
                  Room left,
@@ -25,15 +25,15 @@ class Controller(Cont[in Double left,
 
 
 main
-        Cont[in Double left, in Double right, out Double val] wFmu1 =
+        FMO[in Double left, in Double right, out Double val] wFmu1 =
             simulate("examples/Tutorial/Wall.fmu");
-        Cont[in Double left, in Double right, out Double val] wFmu2 =
+        FMO[in Double left, in Double right, out Double val] wFmu2 =
             simulate("examples/Tutorial/Wall.fmu");
-        Cont[in Double left, in Double right, out Double val] wFmu3 =
+        FMO[in Double left, in Double right, out Double val] wFmu3 =
             simulate("examples/Tutorial/Wall.fmu");
-        Cont[in Double left, in Double right, in Double target, out Double val] rFmu1 =
+        FMO[in Double left, in Double right, in Double target, out Double val] rFmu1 =
             simulate("examples/Tutorial/Room.fmu");
-        Cont[in Double left, in Double right, in Double target, out Double val] rFmu2 =
+        FMO[in Double left, in Double right, in Double target, out Double val] rFmu2 =
             simulate("examples/Tutorial/Room.fmu");
 
 
@@ -61,9 +61,9 @@ main
           print(firstRoom.wallLt);
           print(firstRoom.room);
           print(firstRoom.wallRt);
-            Cont[in Double left, in Double right, out Double val] wFmuNew =
+            FMO[in Double left, in Double right, out Double val] wFmuNew =
                 simulate("examples/Tutorial/Wall.fmu");
-            Cont[in Double left, in Double right, in Double target, out Double val] rFmuNew =
+            FMO[in Double left, in Double right, in Double target, out Double val] rFmuNew =
                 simulate("examples/Tutorial/Room.fmu");
           if firstRoom.wallLt == wall3.id then //new room is right
           print("right");

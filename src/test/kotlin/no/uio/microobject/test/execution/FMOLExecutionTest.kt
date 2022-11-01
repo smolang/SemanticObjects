@@ -13,7 +13,7 @@ class FMOLExecutionTest: MicroObjectTest() {
     init {
         "adder 1".config(enabledOrReasonIf = fmuNeedsWindows) {
             val stmt = """
-                Cont[in Double ra, in Double rb, out Double rc] fmu1 = simulate("src/test/resources/adder.fmu", ra = 1.0, rb = 1.0);
+                FMO[in Double ra, in Double rb, out Double rc] fmu1 = simulate("src/test/resources/adder.fmu", ra = 1.0, rb = 1.0);
                 Double res = fmu1.rc;
                 breakpoint;
                 print(res);
@@ -25,7 +25,7 @@ class FMOLExecutionTest: MicroObjectTest() {
         }
         "linear 1".config(enabledOrReasonIf = fmuNeedsLinux) {
             val stmt = """
-                Cont[out Int outPort] fmu1 = simulate("src/test/resources/linear.fmu", inPort = 1);
+                FMO[out Int outPort] fmu1 = simulate("src/test/resources/linear.fmu", inPort = 1);
                 fmu1.tick(1.0);
                 Int res = fmu1.outPort;
                 breakpoint;

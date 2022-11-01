@@ -66,7 +66,7 @@
 (defconst smol-types
   ;; See end of `Types.kt'
   (regexp-opt
-   '("Int" "Boolean" "String" "Double" "Object" "Null" "Unit" "Cont")
+   '("Int" "Boolean" "String" "Double" "Object" "Null" "Unit" "FMO")
    'words)
   "List of SMOL type names.")
 

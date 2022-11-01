@@ -186,9 +186,9 @@ Commands for Querying SMOL
      - List all members of a class
      - *class*: class expression in Manchester Syntax, e.g., ``<smol:Class>``
    * - ``plot`` *role* *port* *from* *to*
-     - Plots data from the given output port of an FMO in the given interval.
+     - Plots data from the given output port of an :term:`FMO` in the given interval.
        In order to use this command, gnuplot must be installed.
-     - - *role*: The FMO to plot data from, as named by its ``role`` field.
+     - - *role*: The :term:`FMO` to plot data from, as named by its ``role`` field.
        - *port*: The output port of the FMO to be plotted
        - *from*: (optional) the starting time of the plot
        - *to*: (optional) the end time of the plot

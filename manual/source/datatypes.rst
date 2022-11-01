@@ -58,13 +58,13 @@ Classes are datatypes, objects of that class have the type defined by the class.
 FMUs
 ----
 
-FMUs, instantiated via the ``simulate`` expression, have a type ``Cont[...]``,
+FMUs, instantiated via the ``simulate`` expression, have a type ``FMO[...]``,
 with the square brackets listing the ``modelDescription.xml`` file as
 contained in the FMU.
 
 ::
 
-   Cont[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
+   FMO[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
    cont.j = 5;
 
 

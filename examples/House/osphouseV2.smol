@@ -18,7 +18,7 @@ end
 // Wrapped for wall FMUs. Whether it is an inner or outer wall is determined by the loaded FMU
 // The @id field is used to connect with the asset model.
 class Wall extends FMU_Wrapper (String id,
-  Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] fmuSim,
+  FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall] fmuSim,
   Area areaLeft, Area areaRight)
 
   override Unit propagate()
@@ -35,7 +35,7 @@ end
 Controls two adjacent rooms. Has no id because it is part of the DT and is not part of the physical asset.
 */
 class Controller extends FMU_Wrapper (
-  Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight] fmuSim,
+  FMO[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight] fmuSim,
   Room roomLeft, Room roomRight)
 
   override Unit propagate()
@@ -57,7 +57,7 @@ end
 Rooms and walls form a doubly linked list, and @nextRoom skips the walls,.
 */
 class Room extends Area (
-  Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]  fmuSim,
+  FMO[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]  fmuSim,
   Wall wallLeft, Wall wallRight,
   Controller ctrl, Boolean isFirst, Room nextRoom)
 
@@ -72,7 +72,7 @@ class Room extends Area (
   controller. MUST be called on the first room in a house with an even number of rooms.
   */
   Unit rebuildCtrl()
-      Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
+      FMO[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
         ctrl = simulate("examples/DummyFMUs/Controller.fmu");
       Controller control = new Controller(ctrl, this, this.nextRoom);
       print("built!");
@@ -127,24 +127,24 @@ class House(Room firstRoom, Room lastRoom)
   /* creates the default house with 2 rooms */
   Unit init(Outside osLeft, Outside osRight, String idLeftWall, String idMiddleWall, String idRightWall, String idLeftRoom, String idRightRoom)
   // Walls
-  Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+  FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
     w_left = simulate("examples/DummyFMUs/OuterWall.fmu");
 
-  Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+  FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
     w_middle = simulate("examples/DummyFMUs/InnerWall.fmu");
 
-  Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+  FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
     w_right = simulate("examples/DummyFMUs/OuterWall.fmu");
 
   // rooms
-  Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
+  FMO[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
     r_left = simulate("examples/DummyFMUs/Room.fmu");
 
-  Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
+  FMO[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
     r_right = simulate("examples/DummyFMUs/Room.fmu");
 
   // controller
-  Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
+  FMO[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
     ctrl = simulate("examples/DummyFMUs/Controller.fmu");
 
     Room roomLeft = new Room(idLeftRoom, r_left, null, null, null, True, null);
@@ -177,13 +177,13 @@ class House(Room firstRoom, Room lastRoom)
   *****************************/
   Unit addOneLeft(String id_wall, String id_room)
     //create new wall
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+    FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
       new_outer = simulate("examples/DummyFMUs/OuterWall.fmu");
 
     Wall new_wall  = new Wall(id_wall, new_outer, null, null);
 
     //create new room
-    Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
+    FMO[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
       new_room_fmu = simulate("examples/DummyFMUs/Room.fmu");
 
     Room new_room = new Room(id_room, new_room_fmu, null, null, null, False, null);
@@ -198,7 +198,7 @@ class House(Room firstRoom, Room lastRoom)
     this.firstRoom = new_room;
 
     //repair old outer wall
-    Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+    FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
       new_inner = simulate("examples/DummyFMUs/InnerWall.fmu");
     new_room.wallRight.fmuSim = new_inner;
   end
@@ -208,13 +208,13 @@ class House(Room firstRoom, Room lastRoom)
     *****************************/
     Unit addOneRight(String id_wall, String id_room)
       //create new wall
-      Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+      FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
         new_outer = simulate("examples/DummyFMUs/OuterWall.fmu");
 
       Wall new_wall  = new Wall(id_wall, new_outer, null, null);
 
       //create new room
-      Cont[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
+      FMO[in Double h_wallLeft, in Double h_wallRight, in Double h_powerHeater, out Double t_room]
         new_room_fmu = simulate("examples/DummyFMUs/Room.fmu");
 
       Room new_room = new Room(id_room, new_room_fmu, null, null, null, False, null);
@@ -229,7 +229,7 @@ class House(Room firstRoom, Room lastRoom)
       this.lastRoom = new_room;
 
       //repair old outer wall
-      Cont[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
+      FMO[in Double t_areaLeft, in Double t_areaRight, out Double h_wall]
         new_inner = simulate("examples/DummyFMUs/InnerWall.fmu");
       new_room.wallLeft.fmuSim = new_inner;
     end
@@ -240,7 +240,7 @@ class House(Room firstRoom, Room lastRoom)
     this.addOneLeft(id_wall2, id_room2);
 
     //repair controller structure
-    Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
+    FMO[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
       ctrl = simulate("examples/DummyFMUs/Controller.fmu");
 
     Controller control = new Controller(ctrl, this.firstRoom, this.firstRoom.nextRoom);
@@ -257,7 +257,7 @@ class House(Room firstRoom, Room lastRoom)
     this.addOneRight(id_wall2, id_room2);
 
     //repair controller structure
-    Cont[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
+    FMO[in Double t_roomLeft, in Double t_roomRight, out Double h_roomLeft, out Double h_roomRight]
       ctrl = simulate("examples/DummyFMUs/Controller.fmu");
 
     Controller control = new Controller(ctrl, this.lastRoom, nextToLast);

@@ -157,7 +157,7 @@ repository:
     types:
         patterns: [
             {
-                match: '\\b(Int|Double|Bool|String|Cont)\\b'
+                match: '\\b(Int|Double|Bool|String|FMO)\\b'
                 # we want "type" but atom defines "class" in
                 # https://github.com/atom/atom/blob/master/static/variables/syntax-variables.less
                 name: 'class.smol'

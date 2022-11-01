@@ -24,13 +24,13 @@ Types
 ^^^^^
 
 The type of an FMO contains the list of all its inputs and all its outputs.
-Syntactically, an *FMO-type* has the following form: The keyword ``Cont``,
+Syntactically, an *FMO-type* has the following form: The keyword ``FMO``,
 followed by a comma-separated list of inputs and outputs enclosed in square
 brackets.
 
 ::
 
-  TYPE ::= ... | 'Cont' '[' (FmuParam (',' FmuParam)* )? ']'
+  TYPE ::= ... | 'FMO' '[' (FmuParam (',' FmuParam)* )? ']'
   FmuParam ::= ('in' | 'out') TYPE NAME
 
 Each input of the underlying FMO that is to be written must be declared via
@@ -53,10 +53,10 @@ Integer   Int
 ========= =======
 
 The type of an FMO wrapping an FMU without any inputs and outputs is
-``Cont[]``.
+``FMO[]``.
 
 FMO-types are covariant:
-An FMO-type ``T = Cont[in Ti1 i1,... , out To1 o1...]`` is a subtype of another FMO-type ``S = Cont[in Sj1 j1,... , out Sp1 p1...]`` 
+An FMO-type ``T = FMO[in Ti1 i1,... , out To1 o1...]`` is a subtype of another FMO-type ``S = FMO[in Sj1 j1,... , out Sp1 p1...]`` 
 if
 
 1. each input ``i`` of ``T`` is also an input ``i`` of ``S``, such that the type of ``i`` in ``T`` is a subtype of the type of ``i`` in ``S``, and 
@@ -82,10 +82,10 @@ If the path is relative, then it must be relative to the directory where the SMO
 The following shows how an FMO is loaded and passed as a parameter.
 ::
 
-  class C(Cont[ out Int i] fmo) end
+  class C(FMO[ out Int i] fmo) end
 
   main 
-    Cont[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
+    FMO[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
     C c = new C(cont);
   end
 
@@ -113,7 +113,7 @@ The following shows how an FMO is loaded and manipulated.
 ::
 
   main 
-    Cont[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
+    FMO[in Int j, out Int i] cont = simulate("path/to/fmu", j=1, k=1);
     cont.role = "Example FMO";
     cont.doStep(0.1);
     Int v = cont.i;
