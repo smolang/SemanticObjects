@@ -37,9 +37,9 @@ main
             simulate("examples/Tutorial/Room.fmu");
 
 
-        Wall wall1 = new Wall(0, wFmu1, null, null);
-        Wall wall2 = new Wall(1, wFmu2, null, null);
-        Wall wall3 = new Wall(2, wFmu3, null, null);
+        Wall wall1 = new Wall(21, wFmu1, null, null);
+        Wall wall2 = new Wall(22, wFmu2, null, null);
+        Wall wall3 = new Wall(23, wFmu3, null, null);
         Room room1 = new Room(10, rFmu1, wall1, wall2);
         Room room2 = new Room(11, rFmu2, wall2, wall3);
 
@@ -53,29 +53,37 @@ main
         //breakpoint;
 
         List<RoomAsrt> newRooms =
-        construct("SELECT ?room ?wallLt ?wallRt{ ?x a asset:Room; asset:right [asset:id ?wallRt]; asset:left [asset:id ?wallLt]; asset:id ?room. FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?room} }");
-
-        print("got results");
-        print(newRooms);
+          construct("SELECT ?room ?wallLt ?wallRt { ?x a asset:Room; asset:right [asset:id ?wallRt]; asset:left [asset:id ?wallLt]; asset:id ?room. FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?room} }");
 
         if newRooms == null then print("no new rooms"); else
           RoomAsrt firstRoom = newRooms.content;
           print("repairing:");
+          print(firstRoom.wallLt);
           print(firstRoom.room);
+          print(firstRoom.wallRt);
             Cont[in Double left, in Double right, out Double val] wFmuNew =
                 simulate("examples/Tutorial/Wall.fmu");
             Cont[in Double left, in Double right, in Double target, out Double val] rFmuNew =
                 simulate("examples/Tutorial/Room.fmu");
           if firstRoom.wallLt == wall3.id then //new room is right
+          print("right");
             Wall nWall = new Wall(firstRoom.wallRt, wFmuNew, room2, null);
             Room nRoom = new Room(firstRoom.room, rFmuNew, wall3, nWall);
             nWall.toRight = nRoom;
           end
           if firstRoom.wallRt == wall1.id then //new room is left
+          print("left");
             Wall nWall2 = new Wall(firstRoom.wallLt, wFmuNew, null, room1);
             Room nRoom2 = new Room(firstRoom.room, rFmuNew, nWall2, wall1);
             nWall2.toLeft = nRoom2;
           end
           if newRooms.next != null then print("tutorial only repairs first room!"); end
         end
+
+        //Check results
+        List<Int> newNewRooms =
+          access("SELECT ?obj { ?x a asset:Room; asset:id ?obj. FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?obj} }");
+
+        print("got results");
+        print(newNewRooms);
 end

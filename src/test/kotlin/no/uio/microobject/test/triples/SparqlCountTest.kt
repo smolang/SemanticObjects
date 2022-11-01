@@ -1,5 +1,6 @@
 package no.uio.microobject.test.triples
 
+import io.kotest.core.annotation.Ignored
 import no.uio.microobject.test.MicroObjectTest
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.impl.LiteralImpl
@@ -8,6 +9,8 @@ import kotlin.test.assertNotNull
 
 // Running sparql queries with different settings to check that the correct number of triples returns.
 // XXX: this is super fragile, as every change to the lifting changes the number of lifted axioms
+
+@Ignored
 class SparqlCountTest: MicroObjectTest() {
     init {
         // Initialize interpreter and triple settings
