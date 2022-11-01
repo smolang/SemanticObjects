@@ -3,7 +3,9 @@
 /build/
 /build/classes/java/main/
 *.elc
-*.yml
+# paranoia: ignore data files that might contain API tokens
+/examples/**/*.yml
+/src/test/**/*.yml
 .DS_Store
 /bin/
 /manual/build/
