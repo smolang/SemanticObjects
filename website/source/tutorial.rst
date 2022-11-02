@@ -9,3 +9,11 @@ Tbilisi, Georgia.
 
 :download:`Slides for day two <files/tutorial_ictac2022/demo_day2.pdf>`
 
+.. toctree::
+   :maxdepth: 2
+   :caption: Contents:
+
+   Digital Twins <tutorial/digital-twins>
+   Knowledge Modelling <tutorial/knowledge-modelling>
+   Modelling Physical Systems <tutorial/modelling-physical-systems>
+   Semantic Reflection <tutorial/semantical-reflection>
