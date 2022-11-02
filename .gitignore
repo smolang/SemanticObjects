@@ -8,4 +8,4 @@
 /src/test/**/*.yml
 .DS_Store
 /bin/
-/manual/build/
+/website/build/
