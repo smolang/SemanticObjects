@@ -64,11 +64,11 @@ assemble.dependsOn shadowJar
 sphinx {
     // Documentation at
     // https://trustin.github.io/sphinx-gradle-plugin/index.html
-    sourceDirectory = "${projectDir}/manual/source"
-    configDirectory = "${projectDir}/manual/source"
-    outputDirectory = "${projectDir}/manual/build/html"
+    sourceDirectory = "${projectDir}/website/source"
+    configDirectory = "${projectDir}/website/source"
+    outputDirectory = "${projectDir}/website/build/html"
     builder = "html"
 }
 clean {
-    delete files("${projectDir}/manual/build")
+    delete files("${projectDir}/website/build")
 }

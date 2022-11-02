@@ -1,11 +1,12 @@
 # Deploying to `smolang.org`
 
-1. Build the manual: run `make html` in this directory.
+1. Build the website: run `make html` in this directory.
 2. Check out https://github.com/smolang/smolang.github.io.git
 3. Copy the contents of `build/html/` to the root of the directory created in
    Step 2
 4. Commit the changes in the checkout of `smolang.github.io` created in Step
-   2; take care to also `git add` all newly-created files.
+   2; take care to also `git add` all newly-created files and `git rm` all
+   vanished files..
 
 # Headline Structure
 
