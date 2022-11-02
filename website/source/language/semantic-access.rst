@@ -36,7 +36,7 @@ Jena reasoner <https://jena.apache.org/documentation/inference/>`_), SHACL
 <http://www.hermit-reasoner.com/>`_).  The general structure is pictured
 below:
 
-.. figure:: images/alone.png 
+.. figure:: /images/alone.png 
 
 *What is generated, what is input, some example*
 

@@ -17,11 +17,11 @@ available at https://github.com/smolang/SemanticObjects.
    :maxdepth: 2
    :caption: Contents:
 
-   lexical-structure
-   datatypes
-   expressions
-   statements
-   classes
-   semantic-access
-   fmos
+   language/lexical-structure
+   language/datatypes
+   language/expressions
+   language/statements
+   language/classes
+   language/semantic-access
+   language/fmos
    glossary
