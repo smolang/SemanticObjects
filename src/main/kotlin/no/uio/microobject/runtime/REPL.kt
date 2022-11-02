@@ -72,7 +72,7 @@ class REPL(private val settings: Settings) {
                         command.execute(param)
                     } catch (e: Exception) {
                         printRepl("Command $str $param caused an exception. Internal state may be inconsistent.")
-                        e.printStackTrace()
+                        if(settings.verbose) e.printStackTrace() else printRepl("Trace suppressed, set the verbose flag to print it.")
                         false
                     }
                 }
@@ -84,7 +84,7 @@ class REPL(private val settings: Settings) {
         }
         return result
     }
-    fun dump(file: String) {
+    private fun dump(file: String) {
         interpreter!!.dump(file)
     }
 
@@ -113,7 +113,6 @@ class REPL(private val settings: Settings) {
         tC.check()
         tC.report()
 
-        val iB = InterpreterBridge(null)
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -127,7 +126,6 @@ class REPL(private val settings: Settings) {
             pair.second,
             settings
         )
-        iB.interpreter = interpreter
     }
 
     private fun initCommands() {

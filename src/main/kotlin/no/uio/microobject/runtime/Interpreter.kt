@@ -6,22 +6,18 @@ package no.uio.microobject.runtime
 
 import com.influxdb.client.kotlin.InfluxDBClientKotlin
 import com.influxdb.client.kotlin.InfluxDBClientKotlinFactory
-import com.sksamuel.hoplite.ConfigLoader
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import no.uio.microobject.data.*
+import no.uio.microobject.data.stmt.ReturnStmt
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
-import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
-import org.apache.jena.riot.RDFDataMgr
-import org.apache.jena.shacl.ShaclValidator
-import org.apache.jena.shacl.Shapes
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
@@ -53,9 +49,10 @@ data class InfluxDBConnection(val url : String, val org : String, val token : St
         influxDBClient?.close()
     }
 }
-//There is probably something in the standard library for this pattern
-class InterpreterBridge(var interpreter: Interpreter?)
 
+data class EvalResult(val current: StackEntry?, val spawns: List<StackEntry>, val debug : Boolean = false)
+
+@Suppress("unused")
 class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     var heap: GlobalMemory,             // This is a map from objects to their heap memory
@@ -63,7 +60,6 @@ class Interpreter(
     val staticInfo: StaticTable,                // Class table etc.
     val settings : Settings                    // Settings from the user
 ) {
-    private var debug = false
 
     // TripleManager used to provide virtual triples etc.
     val tripleManager : TripleManager = TripleManager(settings, staticInfo, this)
@@ -148,7 +144,7 @@ class Interpreter(
 
     fun evalTopMost(expr: Expression) : LiteralExpr{
         if(stack.isEmpty()) return LiteralExpr("ERROR") // program terminated
-        return eval(expr, stack.peek().store, heap, simMemory, stack.peek().obj)
+        return eval(expr, stack.peek())
     }
 
     /*
@@ -161,27 +157,33 @@ class Interpreter(
         //get current frame
         val current = stack.pop()
 
-        //evaluate it
-        val res = eval(current.active, current.store, heap, current.obj, current.id)
+        if(heap[current.obj] == null)
+            throw Exception("This object is unknown: ${current.obj}")
+
+        //get own local memory
+        val heapObj: Memory = heap.getOrDefault(current.obj, mutableMapOf())
+
+        //evaluate
+        val eRes = current.active.eval(heapObj, current, this)
+
 
         //if there frame is not finished, push its modification back
-        if(res.first != null){
-            stack.push(res.first)
+        if(eRes.current != null){
+            stack.push(eRes.current)
         }
 
         //in case we spawn more frames, push them as well
-        for( se in res.second){
+        for( se in eRes.spawns){
             stack.push(se)
         }
 
-        if(debug){
-            debug = false
+        if(eRes.debug){
             return false
         }
         return true
     }
 
-    private fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")
@@ -202,354 +204,9 @@ class Interpreter(
         return str
     }
 
-    private fun eval(stmt: Statement, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, id: Int) : Pair<StackEntry?, List<StackEntry>>{
-        if(heap[obj] == null)
-            throw Exception("This object is unknown: $obj")
 
-        //get own local memory
-        val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())
-
-        when (stmt){
-            is SuperStmt -> {
-                if(obj.tag !is BaseType) throw Exception("This object is unknown: $obj")
-                val m = staticInfo.getSuperMethod(obj.tag.name, stmt.methodName) ?: throw Exception("super call impossible, no super method found.")
-                val newMemory: Memory = mutableMapOf()
-                newMemory["this"] = obj
-                for (i in m.params.indices) {
-                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
-                }
-                return Pair(
-                    StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.stmt, newMemory, obj, Names.getStackId()))
-                )
-            }
-            is AssignStmt -> {
-                val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                when (stmt.target) {
-                    is LocalVar -> stackMemory[stmt.target.name] = res
-                    is OwnVar -> {
-                        val got = staticInfo.fieldTable[(obj.tag as BaseType).name] ?: throw Exception("Cannot find class ${obj.tag.name}")
-                        if (!got.map {it.name} .contains(stmt.target.name))
-                            throw Exception("This field is unknown: ${stmt.target.name}")
-                        heapObj[stmt.target.name] = res
-                    }
-                    is OthersVar -> {
-                        val key = eval(stmt.target.expr, stackMemory, heap, simMemory, obj)
-
-                        when {
-                            heap.containsKey(key) -> {
-                                val otherHeap = heap[key]
-                                    ?: throw Exception("This object is unknown: $key")
-                                if (!(staticInfo.fieldTable[(key.tag as BaseType).name]
-                                        ?: error("")).any{ it.name == stmt.target.name}
-                                ) throw Exception("This field is unknown: $key")
-                                otherHeap[stmt.target.name] = res
-                            }
-                            simMemory.containsKey(key) -> {
-                                simMemory[key]!!.write(stmt.target.name, res)
-                            }
-                            else -> throw Exception("This object is unknown: $key")
-                        }
-                    }
-                }
-                return Pair(null, emptyList())
-            }
-            is CallStmt -> {
-                val newObj = eval(stmt.callee, stackMemory, heap, simMemory, obj)
-                val mt = staticInfo.methodTable[(newObj.tag as BaseType).name]
-                    ?: throw Exception("This class is unknown: ${newObj.tag} when executing $stmt at l. ${stmt.pos}")
-                val m = mt[stmt.method]
-                    ?: throw Exception("This method is unknown: ${stmt.method}")
-                val newMemory: Memory = mutableMapOf()
-                newMemory["this"] = newObj
-                for (i in m.params.indices) {
-                    newMemory[m.params[i]] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
-                }
-                return Pair(
-                    StackEntry(StoreReturnStmt(stmt.target), stackMemory, obj, id),
-                    listOf(StackEntry(m.stmt, newMemory, newObj, Names.getStackId()))
-                )
-            }
-            is CreateStmt -> {
-                val name = Names.getObjName(stmt.className)
-                val m =
-                    staticInfo.fieldTable[stmt.className] ?: throw Exception("This class is unknown: ${stmt.className}")
-                val newMemory: Memory = mutableMapOf()
-                if (m.size != stmt.params.size) throw Exception(
-                    "Creation of an instance of class ${stmt.className} failed, mismatched number of parameters: $stmt. Requires: ${m.size}"
-                )
-                for (i in m.indices) {
-                    if(!m[i].name.startsWith("__"))
-                    newMemory[m[i].name] = eval(stmt.params[i], stackMemory, heap, simMemory, obj)
-                }
-                if(stmt.modeling != null) {
-                    val str = eval(stmt.modeling, stackMemory, heap, simMemory, obj).literal
-                    val rdfName = Names.getNodeName()
-                    newMemory["__describe"] = LiteralExpr(rdfName + " " + str.removeSurrounding("\"") , STRINGTYPE)
-                    newMemory["__models"] = LiteralExpr(rdfName , STRINGTYPE)
-                }
-                heap[name] = newMemory
-                return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is AccessStmt -> { // should be refactored once we support more modes
-                if(stmt.mode is InfluxDBMode){
-                    val path = stmt.mode.config.removeSurrounding("\"")
-                    val config = ConfigLoader().loadConfigOrThrow<InfluxDBConnection>(File(path))
-                    val vals = config.queryOneSeries((stmt.query as LiteralExpr).literal.removeSurrounding("\""))
-                    var list = LiteralExpr("null")
-                    for(r in vals){
-                        val name = Names.getObjName("List")
-                        val newMemory: Memory = mutableMapOf()
-                        newMemory["content"] = LiteralExpr(r.toString(), DOUBLETYPE)
-                        newMemory["next"] = list
-                        heap[name] = newMemory
-                        list = name
-                    }
-                    return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
-                }
-
-                /* stmt.mode == SparqlMode */
-                val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
-                val results = query(str.removePrefix("\"").removeSuffix("\""))
-                var list = LiteralExpr("null")
-                if (results != null) {
-                    for (r in results) {
-                        val obres = r.get("?obj")
-                            ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
-                        val name = Names.getObjName("List")
-                        val newMemory: Memory = mutableMapOf()
-
-                        val found = obres.toString().removePrefix(settings.runPrefix)
-                        val objNameCand = if(found.startsWith("\\\"")) found.replace("\\\"","\"") else found
-                        for (ob in heap.keys) {
-                            if (ob.literal == objNameCand) {
-                                newMemory["content"] = LiteralExpr(objNameCand, ob.tag)
-                                break
-                            }
-                        }
-                        if (!newMemory.containsKey("content")) {
-                            if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] = LiteralExpr("\""+found+"\"", STRINGTYPE)
-                            else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDinteger)
-                                newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
-                            else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
-                                newMemory["content"] = LiteralExpr(found.split("^^").get(0), INTTYPE)
-                            else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
-                            else throw Exception("Query returned unknown object/literal: $found")
-                        }
-                        newMemory["next"] = list
-                        heap[name] = newMemory
-                        list = name
-                    }
-                }
-                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is ConstructStmt -> {
-                val str = prepareSPARQL(stmt.query, stmt.params, stackMemory, heap, obj)
-                val results = query(str.removePrefix("\"").removeSuffix("\""))
-                var list = LiteralExpr("null")
-                val targetType = stmt.target.getType()
-                if (targetType !is ComposedType || targetType.getPrimary().getNameString() != "List" || targetType.params.first() !is BaseType )
-                    throw Exception("Could not perform construction from query results: unknown type $targetType")
-                val className = (targetType.params.first() as BaseType).name
-                if (results != null) {
-                    for (r in results) {
-                        val newListName = Names.getObjName("List")
-                        val newListMemory: Memory = mutableMapOf()
-
-                        val m = staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
-                        val newObjName = Names.getObjName(className)
-                        val newObjMemory: Memory = mutableMapOf()
-                        for(f in m){
-                            if(!r.varNames().asSequence().contains(f.name))
-                                throw Exception("Could find variable for field ${f.name} in query $str")
-                            val extractedName  = r.getLiteral(f.name).toString().removePrefix(settings.runPrefix)
-                            if(!Type.isAtomic(f.type)) {
-                                val foundAny = heap.keys.any { it.literal == extractedName }
-                                if (!foundAny)
-                                    throw Exception("Query returned unknown object/literal: $extractedName")
-                            }
-                            if(r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
-                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^").get(0), INTTYPE)
-                            else if(extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
-                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^").get(0), INTTYPE)
-                            else
-                                newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
-                        }
-                        heap[newObjName] = newObjMemory
-                        newListMemory["content"] = newObjName
-                        newListMemory["next"] = list
-                        heap[newListName] = newListMemory
-                        list = newListName
-                    }
-                }
-                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is ValidateStmt -> {
-                if(stmt.query !is LiteralExpr) throw Exception("validate takes a file path in a String as a parameter")
-                val fileName = stmt.query.literal.removeSurrounding("\"")
-                val file = File(fileName)
-                if(!file.exists()) throw Exception("file $fileName does not exist")
-                val newFile = File("${settings.outdir}/shape.ttl")
-                if(!newFile.exists()) {
-                    File(settings.outdir).mkdirs()
-                    newFile.createNewFile()
-                }
-                newFile.writeText(settings.prefixes() + "\n"+ settings.getHeader() + "\n@prefix sh: <http://www.w3.org/ns/shacl#>.\n")
-                newFile.appendText(file.readText())
-                val shapesGraph = RDFDataMgr.loadGraph("${settings.outdir}/shape.ttl")
-                val dataGraph = tripleManager.getModel().graph
-
-                val shapes: Shapes = Shapes.parse(shapesGraph)
-
-                val report = ShaclValidator.get().validate(shapes, dataGraph)
-                val resLit = if(report.conforms()) TRUEEXPR else FALSEEXPR
-                return Pair(StackEntry(AssignStmt(stmt.target, resLit, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is OwlStmt -> {
-                if (!staticInfo.fieldTable.containsKey("List") ||
-                    !staticInfo.fieldTable["List"]!!.any {  it.name == "content" } ||
-                    !staticInfo.fieldTable["List"]!!.any {  it.name == "next" }) {
-                    throw Exception("Could not find List class in this model")
-                }
-                if (stmt.query !is LiteralExpr || stmt.query.tag != STRINGTYPE) {
-                    throw Exception("Please provide a string as the input to a derive statement")
-                }
-
-                val res : NodeSet<OWLNamedIndividual> = owlQuery(stmt.query.literal)
-                var list = LiteralExpr("null")
-                    for (r in res) {
-                        val name = Names.getObjName("List")
-                        val newMemory: Memory = mutableMapOf()
-                        val found = r.toString().removePrefix("Node( <").split("#")[1].removeSuffix("> )")
-
-                        val foundAny = heap.keys.firstOrNull { it.literal == found }
-                        if(foundAny != null) newMemory["content"] = LiteralExpr(found, foundAny.tag)
-                        else {
-                            if(found.startsWith("\"")) newMemory["content"] = LiteralExpr(found, STRINGTYPE)
-                            else if(found.matches("\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, INTTYPE)
-                            else if(found.matches("\\d+.\\d+".toRegex())) newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
-                            else throw Exception("Concept returned unknown object/literal: $found")
-                        }
-
-                        newMemory["next"] = list
-                        heap[name] = newMemory
-                        list = name
-                    }
-                return Pair(StackEntry(AssignStmt(stmt.target, list, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is ReturnStmt -> {
-                val over = stack.pop()
-                if (over.active is StoreReturnStmt) {
-                    val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                    return Pair(StackEntry(AssignStmt(over.active.target, res, declares = null), over.store, over.obj, over.id), listOf())
-                }
-                if (over.active is SequenceStmt && over.active.first is StoreReturnStmt) {
-                    val active = over.active.first
-                    val next = over.active.second
-                    val res = eval(stmt.value, stackMemory, heap, simMemory, obj)
-                    return Pair(
-                        StackEntry(appendStmt(AssignStmt(active.target, res, declares = null), next), over.store, over.obj, over.id),
-                        listOf()
-                    )
-                }
-                throw Exception("Malformed heap")
-            }
-            is DestroyStmt -> {
-                val res = eval(stmt.expr, stackMemory, heap, simMemory, obj)
-                if(!heap.containsKey(res) || res.literal == "null")
-                    throw Exception("Trying to destroy null or an unknown object: $res")
-                heap.remove(res)
-                //Replace name with ERROR. This is needed so the RDF dump does have dangling pointers and we cna derive weird things in the open world
-                for( mem in heap.values ){
-                    var rem :String? = null
-                    for( kv in mem ){
-                        if (kv.value == res) {
-                            rem = kv.key
-                            break
-                        }
-                    }
-                    if(rem != null) mem[rem] = LiteralExpr("null")
-                }
-                for( entry in stack ){
-                    var rem :String? = null
-                    for( kv in entry.store ){
-                        if (kv.value == res) {
-                            rem = kv.key
-                            break
-                        }
-                    }
-                    if(rem != null) entry.store[rem] = LiteralExpr("null")
-                }
-                return Pair(null, emptyList())
-            }
-            is IfStmt -> {
-                val res = eval(stmt.guard, stackMemory, heap, simMemory, obj)
-                if (res == TRUEEXPR) return Pair(
-                    StackEntry(stmt.thenBranch, stackMemory, obj, id),
-                    listOf()
-                )
-                else return Pair(
-                    StackEntry(stmt.elseBranch, stackMemory, obj, id),
-                    listOf()
-                )
-            }
-            is WhileStmt -> {
-                return Pair(
-                    StackEntry(
-                        IfStmt(
-                            stmt.guard,
-                            appendStmt(stmt.loopBody, stmt),
-                            SkipStmt()
-                        ), stackMemory, obj, id
-                    ), listOf()
-                )
-            }
-            is SkipStmt -> {
-                return Pair(null, emptyList())
-            }
-            is DebugStmt -> {
-                debug = true; return Pair(null, emptyList())
-            }
-            is PrintStmt -> {
-                println(eval(stmt.expr, stackMemory, heap, simMemory, obj))
-                return Pair(null, emptyList())
-            }
-            is SimulationStmt -> {
-                val simObj = SimulatorObject(stmt.path, stmt.params.associate {
-                    Pair(
-                        it.name, eval(
-                            it.expr,
-                            stackMemory,
-                            heap, simMemory,
-                            obj
-                        )
-                    )
-                }.toMutableMap())
-                val name = Names.getObjName("CoSimulation")
-                simMemory[name] = simObj
-                return Pair(StackEntry(AssignStmt(stmt.target, name, declares = stmt.declares), stackMemory, obj, id), listOf())
-            }
-            is TickStmt -> {
-                val target = eval(stmt.fmu, stackMemory, heap, simMemory, obj)
-                if(!simMemory.containsKey(target)) throw Exception("Object $target is no a simulation object")
-                val tickTime = eval(stmt.tick, stackMemory, heap, simMemory, obj)
-                simMemory[target]!!.tick(tickTime.literal.toDouble())
-                return Pair(null, emptyList())
-            }
-            is SequenceStmt -> {
-                if (stmt.first is ReturnStmt) return eval(stmt.first, stackMemory, heap, obj, id)
-                val res = eval(stmt.first, stackMemory, heap, obj, id)
-                if (res.first != null) {
-                    val newStmt = appendStmt(res.first!!.active, stmt.second)
-                    return Pair(StackEntry(newStmt, res.first!!.store, res.first!!.obj, id), res.second)
-                } else return Pair(StackEntry(stmt.second, stackMemory, obj, id), res.second)
-            }
-            else -> throw Exception("This kind of statement is not implemented yet: $stmt")
-        }
-    }
-
-
-    private fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr {
+    fun eval(expr: Expression, stackEntry: StackEntry) = eval(expr, stackEntry.store, this.heap, this.simMemory, stackEntry.obj)
+    fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr {
         if(heap[obj] == null) throw Exception("This object is unknown: $obj$")
         val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())
         when (expr) {

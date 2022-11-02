@@ -1,7 +1,6 @@
 package no.uio.microobject.data
 
 import com.github.owlcs.ontapi.OntManagers
-import com.github.owlcs.ontapi.Ontology
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntLoaderConfiguration
 import java.io.*
@@ -24,6 +23,8 @@ import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
 import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
+import java.util.*
+import kotlin.collections.HashMap
 
 
 // Settings controlling the TripleManager.
@@ -83,8 +84,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         val conf: OntLoaderConfiguration = manager.ontologyLoaderConfiguration
         conf.isPerformTransformation = true
 
-        val ontology: Ontology = manager.addOntology(model.graph, conf)
-        return ontology
+        return manager.addOntology(model.graph, conf)
     }
 
 
@@ -221,7 +221,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         m1.write(FileWriter("${settings.outdir}/output-naive.ttl"),"TTL")
 
         // Read into model m2
-        var m2 = ModelFactory.createDefaultModel()
+        val m2 = ModelFactory.createDefaultModel()
         val uri = File("${settings.outdir}/output-naive.ttl").toURL().toString()
         m2.read(uri, "TTL")
 
@@ -631,7 +631,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return if (target.literal == "null") NodeFactory.createURI("${smol}null")
         else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring)
         else if (target.tag == INTTYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDinteger)
-        else if (target.tag == BOOLEANTYPE) NodeFactory.createLiteral(target.literal.toLowerCase(), XSDDatatype.XSDboolean)
+        else if (target.tag == BOOLEANTYPE) NodeFactory.createLiteral(target.literal.lowercase(Locale.getDefault()), XSDDatatype.XSDboolean)
         else if (target.tag == DOUBLETYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDdouble)
         else NodeFactory.createURI("${run}${target.literal}")
     }

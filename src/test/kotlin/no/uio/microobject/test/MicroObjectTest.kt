@@ -9,7 +9,6 @@ import no.uio.microobject.data.Translate
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.GlobalMemory
 import no.uio.microobject.runtime.Interpreter
-import no.uio.microobject.runtime.InterpreterBridge
 import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
@@ -95,7 +94,6 @@ open class MicroObjectTest : StringSpec() {
 
         val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
-        val iB = InterpreterBridge(null)
         var rules = ""
 
 
@@ -110,7 +108,6 @@ open class MicroObjectTest : StringSpec() {
             pair.second,
             settings
         )
-        iB.interpreter = interpreter
         return Pair(interpreter, tC)
     }
 

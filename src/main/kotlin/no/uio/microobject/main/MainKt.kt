@@ -20,7 +20,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val extraPrefixes : HashMap<String, String>,
                     val useQueryType : Boolean = false
                     ){
-    var prefixMapCache: HashMap<String, String>? = null
+    private var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {
         if(prefixMapCache != null) return prefixMapCache as HashMap<String, String>
         prefixMapCache = hashMapOf(
@@ -43,7 +43,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
             .replace("run:", "$runPrefix:")
             .replace("smol:", "$langPrefix:")
         for( (k,v) in extraPrefixes) res = res.replace("$k:", "$v:")
-        return res;
+        return res
     }
     fun replaceKnownPrefixesNoColon(string: String) : String{ //For the HermiT parser, BEWARE: requires that the prefixes and in #
         var res= string.replace("domain:", domainPrefix)
@@ -51,7 +51,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
             .replace("run:", runPrefix)
             .replace("smol:", langPrefix)
         for( (k,v) in extraPrefixes) res = res.replace("$k:", v)
-        return res;
+        return res
     }
     fun prefixes() : String {
         var res = """@prefix smol: <${langPrefix}> .
@@ -59,7 +59,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
            @prefix domain: <${domainPrefix}>.
            @prefix run: <${runPrefix}> .""".trimIndent()
         for( (k,v) in extraPrefixes) res = "$res\n@prefix $k: <$v>."
-        return res + "\n";
+        return res + "\n"
     }
 
     fun getHeader() : String {

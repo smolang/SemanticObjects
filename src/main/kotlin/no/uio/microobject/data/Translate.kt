@@ -4,6 +4,7 @@ package no.uio.microobject.data
 
 import no.uio.microobject.antlr.WhileBaseVisitor
 import no.uio.microobject.antlr.WhileParser.*
+import no.uio.microobject.data.stmt.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
