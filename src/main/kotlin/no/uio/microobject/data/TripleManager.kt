@@ -222,7 +222,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
         // Read into model m2
         val m2 = ModelFactory.createDefaultModel()
-        val uri = File("${settings.outdir}/output-naive.ttl").toURL().toString()
+        val uri = File("${settings.outdir}/output-naive.ttl").toURI().toURL().toString()
         m2.read(uri, "TTL")
 
         return m2
