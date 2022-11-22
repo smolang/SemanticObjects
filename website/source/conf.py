@@ -17,7 +17,8 @@
 
 # -- Project information -----------------------------------------------------
 
-project = 'SMOL'
+project = 'The SMOL Language'
+html_short_title = "SMOL"
 copyright = '2022, Eduard Kamburjan, Rudolf Schlatte'
 author = 'Eduard Kamburjan, Rudolf Schlatte'
 
@@ -43,14 +44,10 @@ exclude_patterns = []
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'alabaster'
+html_theme = 'piccolo_theme'
 
 html_theme_options = {
-    'github_user': 'smolang',
-    'github_repo': 'SemanticObjects',
-    'github_button': 'true',
-    'description': 'Semantic Micro Object Language',
-    'fixed_sidebar': 'true'
+    "source_url": 'https://github.com/smolang/SemanticObjects/'
 }
 
 # Add any paths that contain custom static files (such as style sheets) here,

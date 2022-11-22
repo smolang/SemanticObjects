@@ -23,6 +23,10 @@ Use the following punctuation characters in the section titles:
 
 https://chiplicity.readthedocs.io/en/latest/Using_Sphinx/OnReStructuredText.html
 
+# Theme documentation
+
+https://piccolo-theme.readthedocs.io/en/latest/
+
 # Automatically rebuild with entr
 
 [eradman/entr: Run arbitrary commands when files change](https://github.com/eradman/entr)
