@@ -1,6 +1,16 @@
+# Building the HTML files
+
+1. (One time) install dependencies
+  - Check that Python 3 is installed
+  - Install `pipenv` (see https://pipenv.pypa.io/en/latest/)
+  - Run `pipenv install` (this install sphinx and the piccolo theme) in this
+    directory (`website/`)
+2. Run `pipenv shell`
+3. Run `make html` in this directory (`website/`)
+
 # Deploying to `smolang.org`
 
-1. Build the website: run `make html` in this directory.
+1. Build the website
 2. Check out https://github.com/smolang/smolang.github.io.git
 3. Copy the contents of `build/html/` to the root of the directory created in
    Step 2
