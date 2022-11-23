@@ -15,7 +15,7 @@ Tested only on Linux.
 To compile and run the SMOL REPL, run
 ```
 ./gradlew build
-java -jar build/libs/smol-0.2-all.jar --help
+java -jar build/libs/smol.jar --help
 ```
 
 To run the SMOL REPL pre-compiled using docker, run the following command:
@@ -44,8 +44,8 @@ Additionally, eval/ contains the files used for performance evaluation and domai
 
 To execute it, run the following.
 ```
-./gradlew shadowJar
-java -jar build/libs/smol-0.2-all.jar -i src/test/resources/overload.smol -r examples/overload.imo -b examples/overload.back 
+./gradlew assemble
+java -jar build/libs/smol.jar -i src/test/resources/overload.smol -r examples/overload.imo -b examples/overload.back 
 ```
 
 To change the interpretation of `:Overloaded` modify examples/overload.back, e.g., change the last line to `owl:equivalentClass :ThreeServer.` to consider a server as being overloaded if 2 tasks run.
@@ -54,8 +54,8 @@ The implementation is not guaranteeing that no server is overloaded afterwards, 
 ### FMUs 
 To execute an example for Hybrid SMOL, download the required FMUs as described in `examples/SimulationDemo/lv-simple.smol` and run the following
 ```
-./gradlew build
-java -jar build/libs/smol-0.2-all.jar -i examples/SimulationDemo/lv-simple.smol -e
+./gradlew assemble
+java -jar build/libs/smol.jar -i examples/SimulationDemo/lv-simple.smol -e
 ```
 ### Geometric Scene
 
@@ -64,8 +64,8 @@ java -jar build/libs/smol-0.2-all.jar -i examples/SimulationDemo/lv-simple.smol 
 
 To execute it, run the following.
 ```
-./gradlew build
-java -jar build/libs/smol-0.2-all.jar -i src/test/resources/scene.smol -r examples/scene.imo
+./gradlew assemble
+java -jar build/libs/smol.jar -i src/test/resources/scene.smol -r examples/scene.imo
 ```
 
 ### 2-3 Trees
@@ -78,7 +78,7 @@ java -jar build/libs/smol-0.2-all.jar -i src/test/resources/scene.smol -r exampl
 To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/smol-0.2-all.jar -i src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
+java -jar build/libs/smol.jar -i src/test/resources/TwoThreeTree.smol -b examples/TwoThreeTree.back -r examples/double.imo 
 ```
 
 
@@ -94,7 +94,7 @@ java -jar build/libs/smol-0.2-all.jar -i src/test/resources/TwoThreeTree.smol -b
 To execute it, run the following. 
 ```
 ./gradlew build
-java -jar build/libs/smol-0.2-all.jar -i src/test/resources/double.smol -r examples/double.imo 
+java -jar build/libs/smol.jar -i src/test/resources/double.smol -r examples/double.imo 
 ```
 
 

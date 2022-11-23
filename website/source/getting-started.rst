@@ -22,7 +22,7 @@ After obtaining the source code, change into that directory and execute the comm
 
 After a successful build, the SMOL REPL can be started in that directory via::
 
-  java -jar build/libs/smol-0.2-all.jar
+  java -jar build/libs/smol.jar
 
 Running a Simple SMOL Program
 -----------------------------

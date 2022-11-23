@@ -5,7 +5,7 @@ plugins {
     id "kr.motd.sphinx" version "2.10.0"
 }
 group = 'org.smolang'
-version = '0.2'
+version = '0.3'
 sourceCompatibility = '1.11'
 
 repositories {
@@ -22,12 +22,12 @@ sourceSets {
     }
 }
 dependencies {
-    testImplementation("io.kotest:kotest-runner-junit5:5.2.3")
+    testImplementation 'io.kotest:kotest-runner-junit5:5.2.3'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
-    testImplementation("org.apache.commons:commons-lang3:3.12.0")
-    implementation('com.github.ajalt.clikt:clikt:3.4.2')
-    implementation "org.antlr:antlr4:4.8"
-    antlr "org.antlr:antlr4:4.8"
+    testImplementation 'org.apache.commons:commons-lang3:3.12.0'
+    implementation 'com.github.ajalt.clikt:clikt:3.4.2'
+    implementation 'org.antlr:antlr4:4.8'
+    antlr 'org.antlr:antlr4:4.8'
     implementation 'net.sourceforge.owlapi:org.semanticweb.hermit:1.4.5.519'
     implementation 'org.slf4j:slf4j-simple:1.7.25'
     implementation 'org.apache.jena:apache-jena-libs:3.16.0'
@@ -36,7 +36,7 @@ dependencies {
     implementation "com.influxdb:influxdb-client-kotlin:2.3.0"
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.1'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.1'
-    implementation("com.github.owlcs:ontapi:2.1.0")
+    implementatio 'com.github.owlcs:ontapi:2.1.0'
     implementation 'org.jline:jline:3.21.0'
 }
 
@@ -51,13 +51,13 @@ compileKotlin {
 compileKotlin.dependsOn generateGrammarSource
 
 jar {
-    archiveBaseName='smol'
+    archiveName='smol.jar'
     manifest {
         attributes 'Main-Class': 'no.uio.microobject.main.MainKtKt'
     }
 }
 shadowJar {
-    archiveBaseName='smol'
+    archiveName='smol.jar'
 }
 assemble.dependsOn shadowJar
 
