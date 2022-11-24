@@ -1,13 +1,11 @@
 package no.uio.microobject.test.execution
 
-import no.uio.microobject.data.LiteralExpr
-import no.uio.microobject.data.LocalVar
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.LocalVar
 import no.uio.microobject.test.MicroObjectTest
 import no.uio.microobject.type.DOUBLETYPE
 import no.uio.microobject.type.INTTYPE
-import org.apache.commons.lang3.SystemUtils.IS_OS_MAC
 import kotlin.test.assertEquals
-import io.kotest.core.test.config.enabledOrReasonIf
 
 class FMOLExecutionTest: MicroObjectTest() {
     init {

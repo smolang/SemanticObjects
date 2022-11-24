@@ -3,7 +3,7 @@ package no.uio.microobject.test.basic
 import io.kotest.core.spec.style.StringSpec
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
-import no.uio.microobject.data.Translate
+import no.uio.microobject.ast.Translate
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.Severity
 import no.uio.microobject.type.TypeChecker

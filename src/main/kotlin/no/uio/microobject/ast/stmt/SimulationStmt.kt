@@ -1,9 +1,9 @@
-package no.uio.microobject.data.stmt
+package no.uio.microobject.ast.stmt
 
-import no.uio.microobject.data.Location
-import no.uio.microobject.data.Names
-import no.uio.microobject.data.Statement
-import no.uio.microobject.data.VarInit
+import no.uio.microobject.ast.Location
+import no.uio.microobject.ast.Names
+import no.uio.microobject.ast.Statement
+import no.uio.microobject.ast.VarInit
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.Type
 

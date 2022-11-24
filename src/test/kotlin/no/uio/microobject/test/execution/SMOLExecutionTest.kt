@@ -1,13 +1,12 @@
 package no.uio.microobject.test.execution
 
-import no.uio.microobject.data.LiteralExpr
-import no.uio.microobject.data.LocalVar
-import no.uio.microobject.data.TRUEEXPR
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.LocalVar
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.test.MicroObjectTest
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.ERRORTYPE
 import no.uio.microobject.type.INTTYPE
-import org.apache.jena.query.ResultSetFormatter
 import org.apache.jena.rdf.model.impl.LiteralImpl
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
@@ -43,13 +42,13 @@ class SMOLExecutionTest: MicroObjectTest() {
             // Checking that types are correct
             val r = res2.next()
             assertEquals("Bernie", (r["name"] as LiteralImpl).string)
-            assertEquals("http://www.w3.org/2001/XMLSchema#string", (r["name"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("http://www.w3.org/2001/XMLSchema#string", (r["name"] as LiteralImpl).datatypeURI)
             assertEquals("1952", (r["birthYear"] as LiteralImpl).string)
-            assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["birthYear"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["birthYear"] as LiteralImpl).datatypeURI)
             assertEquals("1.83", (r["height"] as LiteralImpl).string)
-            assertEquals("http://www.w3.org/2001/XMLSchema#double", (r["height"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("http://www.w3.org/2001/XMLSchema#double", (r["height"] as LiteralImpl).datatypeURI)
             assertEquals("false", (r["ownsCar"] as LiteralImpl).string)
-            assertEquals("http://www.w3.org/2001/XMLSchema#boolean", (r["ownsCar"] as LiteralImpl).getDatatypeURI() )
+            assertEquals("http://www.w3.org/2001/XMLSchema#boolean", (r["ownsCar"] as LiteralImpl).datatypeURI)
             // println("\n" + ResultSetFormatter.asText(res2))
         }
         "double"{
@@ -69,7 +68,7 @@ class SMOLExecutionTest: MicroObjectTest() {
             while(res.hasNext()){
                 val r = res.next()
                 assertEquals("10", (r["obj"] as LiteralImpl).string)
-                assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["obj"] as LiteralImpl).getDatatypeURI() )
+                assertEquals("http://www.w3.org/2001/XMLSchema#integer", (r["obj"] as LiteralImpl).datatypeURI)
                 i++
             }
             assertEquals(1, i)

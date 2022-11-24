@@ -11,8 +11,10 @@ import kotlinx.coroutines.flow.consumeAsFlow
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
-import no.uio.microobject.data.*
-import no.uio.microobject.data.stmt.ReturnStmt
+import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.stmt.ReturnStmt
+import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
 import org.apache.jena.query.QueryExecutionFactory
@@ -206,154 +208,8 @@ class Interpreter(
 
 
     fun eval(expr: Expression, stackEntry: StackEntry) = eval(expr, stackEntry.store, this.heap, this.simMemory, stackEntry.obj)
-    fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr {
-        if(heap[obj] == null) throw Exception("This object is unknown: $obj$")
-        val heapObj: Memory = heap.getOrDefault(obj, mutableMapOf())
-        when (expr) {
-            is LiteralExpr -> return expr
-            is ArithExpr -> {
-                if (expr.Op == Operator.EQ) {
-                    if (expr.params.size != 2) throw Exception("Operator.EQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first == second) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.NEQ) {
-                    if (expr.params.size != 2) throw Exception("Operator.NEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first == second) return FALSEEXPR
-                    else return TRUEEXPR
-                }
-                if (expr.Op == Operator.GEQ) {
-                    if (expr.params.size != 2) throw Exception("Operator.GEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toDouble() >= second.literal.toDouble()) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.LEQ) {
-                    if (expr.params.size != 2) throw Exception("Operator.LEQ requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toDouble() <= second.literal.toDouble()) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.GT) {
-                    if (expr.params.size != 2) throw Exception("Operator.GT requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toDouble() > second.literal.toDouble()) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.LT) {
-                    if (expr.params.size != 2) throw Exception("Operator.LT requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first.literal.toDouble() < second.literal.toDouble()) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.AND) {
-                    if (expr.params.size != 2) throw Exception("Operator.AND requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first == TRUEEXPR && second == TRUEEXPR) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.OR) {
-                    if (expr.params.size != 2) throw Exception("Operator.OR requires two parameters")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val second = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if (first == TRUEEXPR || second == TRUEEXPR) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.NOT) {
-                    if (expr.params.size != 1) throw Exception("Operator.NOT requires one parameter")
-                    val first = eval(expr.params[0], stack, heap, simMemory, obj)
-                    if (first == FALSEEXPR) return TRUEEXPR
-                    else return FALSEEXPR
-                }
-                if (expr.Op == Operator.PLUS) {
-                    val first = eval(expr.params.first(), stack, heap, simMemory, obj)
-                    if(first.tag == DOUBLETYPE)
-                        return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
-                            val enx = eval(nx, stack, heap, simMemory, obj)
-                            LiteralExpr(
-                                (acc.literal.removePrefix("urn:").toDouble() + enx.literal.removePrefix("urn:")
-                                    .toDouble()).toString(), DOUBLETYPE
-                            )
-                        }
-                    else return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
-                        val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr(
-                            (acc.literal.removePrefix("urn:").toInt() + enx.literal.removePrefix("urn:")
-                                .toInt()).toString(), INTTYPE
-                        )
-                    }
-                }
-                if (expr.Op == Operator.MULT) {
-                    val first = eval(expr.params.first(), stack, heap, simMemory, obj)
-                    if(first.tag == DOUBLETYPE)
-                        return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
-                            val enx = eval(nx, stack, heap, simMemory, obj)
-                            LiteralExpr(
-                                (acc.literal.removePrefix("urn:").toDouble() * enx.literal.removePrefix("urn:")
-                                    .toDouble()).toString(), DOUBLETYPE
-                            )
-                        }
-                    else return expr.params.subList(1, expr.params.count()).fold(first) { acc, nx ->
-                        val enx = eval(nx, stack, heap, simMemory, obj)
-                        LiteralExpr(
-                            (acc.literal.removePrefix("urn:").toInt() * enx.literal.removePrefix("urn:")
-                                .toInt()).toString(), INTTYPE
-                        )
-                    }
-                }
-                if (expr.Op == Operator.DIV) {
-                    if (expr.params.size != 2) throw Exception("Operator.DIV requires two parameters")
-                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if(enx1.tag == DOUBLETYPE)
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() / enx2.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
-                    else
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() / enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
-                }
-                if (expr.Op == Operator.MOD) {
-                    if (expr.params.size != 2) throw Exception("Operator.MOD requires two parameters")
-                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if(enx1.tag == DOUBLETYPE)
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() % enx2.literal.removePrefix("urn:").toInt()).toString(), DOUBLETYPE)
-                    else
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() % enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
-                }
-                if (expr.Op == Operator.MINUS) {
-                    if (expr.params.size != 2) throw Exception("Operator.MINUS requires two parameters")
-                    val enx1 = eval(expr.params[0], stack, heap, simMemory, obj)
-                    val enx2 = eval(expr.params[1], stack, heap, simMemory, obj)
-                    if(enx1.tag == DOUBLETYPE)
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toDouble() - enx2.literal.removePrefix("urn:").toDouble()).toString(), DOUBLETYPE)
-                    else
-                        return LiteralExpr((enx1.literal.removePrefix("urn:").toInt() - enx2.literal.removePrefix("urn:").toInt()).toString(), INTTYPE)
-                }
-                throw Exception("This kind of operator is not implemented yet")
-            }
-            is OwnVar -> {
-                return heapObj.getOrDefault(expr.name, LiteralExpr("ERROR"))
-            }
-            is OthersVar -> {
-                val oObj = eval(expr.expr, stack, heap, simMemory, obj)
-                if(heap.containsKey(oObj)) return heap[oObj]!!.getOrDefault(expr.name, LiteralExpr("ERROR"))
-                if(simMemory.containsKey(oObj)) return simMemory[oObj]!!.read(expr.name)
-                throw Exception("Unknown object $oObj stored in $expr")
-            }
-            is LocalVar -> {
-                return stack.getOrDefault(expr.name, LiteralExpr("ERROR"))
-            }
-            else -> throw Exception("This kind of expression is not implemented yet")
-        }
-    }
+    fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr
+    = expr.eval(stack, heap, simMemory, obj)
 
     override fun toString() : String =
 """

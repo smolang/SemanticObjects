@@ -1,6 +1,9 @@
-package no.uio.microobject.data.stmt
+package no.uio.microobject.ast.stmt
 
-import no.uio.microobject.data.*
+import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.FALSEEXPR
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory

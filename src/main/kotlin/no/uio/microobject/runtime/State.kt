@@ -1,8 +1,8 @@
 package no.uio.microobject.runtime
 
-import no.uio.microobject.data.Expression
-import no.uio.microobject.data.LiteralExpr
-import no.uio.microobject.data.Statement
+import no.uio.microobject.ast.Expression
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.Statement
 import no.uio.microobject.type.Type
 
 /*

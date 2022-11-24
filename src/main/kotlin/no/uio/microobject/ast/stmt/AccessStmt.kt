@@ -1,7 +1,8 @@
-package no.uio.microobject.data.stmt
+package no.uio.microobject.ast.stmt
 
 import com.sksamuel.hoplite.ConfigLoader
-import no.uio.microobject.data.*
+import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.DOUBLETYPE
 import no.uio.microobject.type.INTTYPE

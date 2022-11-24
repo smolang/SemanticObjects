@@ -1,10 +1,11 @@
 @file:Suppress("UNNECESSARY_NOT_NULL_ASSERTION")
 
-package no.uio.microobject.data
+package no.uio.microobject.ast
 
 import no.uio.microobject.antlr.WhileBaseVisitor
 import no.uio.microobject.antlr.WhileParser.*
-import no.uio.microobject.data.stmt.*
+import no.uio.microobject.ast.expr.*
+import no.uio.microobject.ast.stmt.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext

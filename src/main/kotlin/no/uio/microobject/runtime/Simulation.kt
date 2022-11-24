@@ -2,8 +2,8 @@ package no.uio.microobject.runtime
 
 import no.uio.microobject.type.BOOLEANTYPE
 import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.data.LiteralExpr
-import no.uio.microobject.data.TRUEEXPR
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.type.DOUBLETYPE
 import no.uio.microobject.type.STRINGTYPE
 import org.javafmi.modeldescription.SimpleType

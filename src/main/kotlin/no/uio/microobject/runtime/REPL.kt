@@ -8,8 +8,8 @@ import java.time.LocalTime
 import java.time.Duration
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
-import no.uio.microobject.data.Expression
-import no.uio.microobject.data.Translate
+import no.uio.microobject.ast.Expression
+import no.uio.microobject.ast.Translate
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.TypeChecker

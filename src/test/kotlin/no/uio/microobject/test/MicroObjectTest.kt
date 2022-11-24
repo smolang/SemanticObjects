@@ -5,7 +5,7 @@ import io.kotest.core.test.Enabled
 import io.kotest.core.test.TestCase
 import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
-import no.uio.microobject.data.Translate
+import no.uio.microobject.ast.Translate
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.GlobalMemory
 import no.uio.microobject.runtime.Interpreter
@@ -36,7 +36,7 @@ open class MicroObjectTest : StringSpec() {
         else Enabled.disabled("The FMU of this test needs to run on Linux.")
     }
 
-    protected var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
+    private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
     protected fun loadBackground(path : String, domainPrefix : String = ""){
         val file = File(path)
         val backgr = file.readText()
@@ -62,7 +62,7 @@ open class MicroObjectTest : StringSpec() {
 
     private fun loadClass(classString : String) : WhileParser.ProgramContext{
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
-        val program = stdLib + "$classString\n main skip; end"
+        val program = "$stdLib$classString\n main skip; end"
         val lexer = WhileLexer(CharStreams.fromString(program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
@@ -140,6 +140,7 @@ open class MicroObjectTest : StringSpec() {
     }
 
     protected fun executeUntilBreak(interpreter : Interpreter){
+        @Suppress("ControlFlowWithEmptyBody")
         while(interpreter.makeStep());
     }
 }

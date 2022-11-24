@@ -3,6 +3,8 @@ package no.uio.microobject.data
 import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntLoaderConfiguration
+import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import java.io.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
