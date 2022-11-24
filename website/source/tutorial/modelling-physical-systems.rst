@@ -54,3 +54,22 @@ explicitly defining the current inflow from the valve.
      if v then inFlow = f; else inFlow = 0.0; end if;
    end Tank;
 
+Creating an FMU for the Watertank
+---------------------------------
+
+OpenModelica can export Modelica models as FMUs.  This can be done by opening
+the model in the OMEdit application, or from the command line via the ``omc``
+program.  To generate an FMU from the command line, save the above model in a
+file ``simple_tank.mo`` and create a file ``generate_fmu.mos`` with the
+following content:
+
+.. code-block:: modelica
+
+   installPackage(Modelica);
+   loadModel(Modelica);
+   loadFile("simple_tank.mo");
+   buildModelFMU(Tank, version="2.0", fmuType="me_cs");
+   getErrorString()
+
+Then, run the command ``omc generate_fmu.mos``, which should result in a file
+``Tank.fmu``.
