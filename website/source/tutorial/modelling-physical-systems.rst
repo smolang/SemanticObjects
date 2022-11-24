@@ -73,3 +73,31 @@ following content:
 
 Then, run the command ``omc generate_fmu.mos``, which should result in a file
 ``Tank.fmu``.
+
+Controlling the Watertank from SMOL
+-----------------------------------
+
+SMOL can instantiate an FMU and control it.  Create a file ``simple_tank.smol`` with the following contents:
+
+.. code-block::
+   :linenos:
+
+   main
+       FMO[in Boolean v, out Double l] de =
+         simulate("Tank.fmu", v = False, d = 0.5, f = 1.0);
+       print(de.l);
+       while de.l > 2 do
+           de.tick(1.0);
+           print(de.l);
+       end
+       de.v = True;
+       while de.l < 5 do
+           de.tick(1.0);
+           print(de.l);
+       end
+   end
+
+This SMOL program creates an instance of the tank FMU and instantiates its
+parameters and inputs (Lines 2-3), advances time until the water level in the
+tank decreases below 2 (Lines 5-8), then turns on the valve (Line 9) and
+advances time until the water level increases above 5 (Lines 10-13).
