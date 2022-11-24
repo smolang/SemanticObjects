@@ -9,6 +9,8 @@ Tbilisi, Georgia.
 
 :download:`Slides for day two <files/tutorial_ictac2022/demo_day2.pdf>`
 
+The online version of the tutorial is under development.
+
 .. toctree::
    :maxdepth: 2
    :caption: Contents:

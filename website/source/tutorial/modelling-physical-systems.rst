@@ -13,6 +13,13 @@ We will do the following:
 Behavior of a Watertank
 -----------------------
 
+We will model a watertank with a pipe, such that turning on the pipe adds a
+constant amount of water per second to the current level of the tank.  The
+tank also has a drain hole at the bottom; the rate of outflow is dependent on
+the current water level of the tank.
+
+Mathematically, the behavior of the tank can be described by the following formula:
+
 .. math::
 
    l' = -d * l + v * f
@@ -26,3 +33,24 @@ where
 * :math:`f`: rate of inflow
 
 * :math:`v`: valve control (0: valve is closed, 1: valve is open)
+
+The Watertank in Modelica
+-------------------------
+
+The following Modelica model implements the watertank.  Note that we use a
+Boolean variable to model the valve status, and introduce a second equation
+explicitly defining the current inflow from the valve.
+
+.. code-block:: modelica
+
+   model Tank
+     parameter Real d = 0.5        "drain rate / 'size of hole'";
+     parameter Real f = 1.0        "fill rate in l/s (constant)";
+     input Boolean v(start = true) "Valve closed / open";
+     output Real l(start = 5)      "water level";
+     Real inFlow                   "Current fill rate";
+   equation
+     der(l) = inFlow - d * l;
+     if v then inFlow = f; else inFlow = 0.0; end if;
+   end Tank;
+
