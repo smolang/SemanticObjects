@@ -33,7 +33,7 @@ class OWLQueryTest: MicroObjectTest() {
         }
 
         "OWL consistency" {
-            val ontology = interpreter!!.tripleManager.getOntology()
+            val ontology = interpreter.tripleManager.getOntology()
             val reasoner : OWLReasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
             assertEquals(reasoner.isConsistent, true)
         }

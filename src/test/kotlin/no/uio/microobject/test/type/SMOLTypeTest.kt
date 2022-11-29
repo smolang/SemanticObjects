@@ -1,7 +1,6 @@
 package no.uio.microobject.test.type
 
 import no.uio.microobject.type.Severity
-import no.uio.microobject.type.TypeChecker
 import kotlin.test.assertFalse
 
 class SMOLTypeTest : MicroObjectTypeTest() {

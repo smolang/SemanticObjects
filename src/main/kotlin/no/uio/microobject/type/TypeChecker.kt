@@ -819,7 +819,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             is WhileParser.Null_expressionContext -> return NULLTYPE
             is WhileParser.Var_expressionContext -> {
                 val name = eCtx.NAME().text
-                if(!vars.containsKey(name)) log("Variable $name is not declared.", eCtx)
+                if(!vars.containsKey(name) && !fields.containsKey(name)) log("Variable $name is not declared.", eCtx)
+                if(!vars.containsKey(name) && fields.containsKey(name)) log("Variable $name is not declared. If you mean to use the field $name, use this.$name.", eCtx)
                 return vars.getOrDefault(name, ERRORTYPE)
             }
             is WhileParser.Field_expressionContext -> {

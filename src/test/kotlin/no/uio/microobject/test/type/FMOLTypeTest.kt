@@ -1,7 +1,6 @@
 package no.uio.microobject.test.type
 
 import kotlin.test.assertFalse
-import io.kotest.core.test.config.enabledOrReasonIf
 
 class FMOLTypeTest : MicroObjectTypeTest()  {
     init{
