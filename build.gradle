@@ -51,13 +51,13 @@ compileKotlin {
 compileKotlin.dependsOn generateGrammarSource
 
 jar {
-    archiveName='smol.jar'
+    archiveFileName='smol.jar'
     manifest {
         attributes 'Main-Class': 'no.uio.microobject.main.MainKtKt'
     }
 }
 shadowJar {
-    archiveName='smol.jar'
+    archiveFileName='smol.jar'
 }
 assemble.dependsOn shadowJar
 
