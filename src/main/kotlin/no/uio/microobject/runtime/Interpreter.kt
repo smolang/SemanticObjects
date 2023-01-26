@@ -149,9 +149,10 @@ class Interpreter(
         return eval(expr, stack.peek())
     }
 
-    /*
-    This executes exactly one step of the interpreter.
-    Note that rewritings are also one executing steps
+    /**
+     * Executes exactly one step of the interpreter, and returns true if
+     * another step can be executed.  Note that rewritings also count as one
+     * executing step.
      */
     fun makeStep() : Boolean {
         if(stack.isEmpty()) return false // program terminated
@@ -169,7 +170,7 @@ class Interpreter(
         val eRes = current.active.eval(heapObj, current, this)
 
 
-        //if there frame is not finished, push its modification back
+        //if the current frame is not finished, push its modification back
         if(eRes.current != null){
             stack.push(eRes.current)
         }
