@@ -52,7 +52,7 @@ Thus proposing a new Software Engineering paradigm:
 Conceptual Layers of a Digital Twin
 -----------------------------------
 
-.. figure:: images/conceptual-layers.svg
+.. figure:: /images/conceptual-layers.svg
     :align: center
     :alt: Conceptual Layers
 
@@ -69,6 +69,7 @@ Digital Twins and Formal Methods
 
 .. 
     TODO: ask about which tool is actually used (Coq, Agda...)
+
 Role of Formal Methods in DT
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
@@ -111,7 +112,6 @@ techniques.
 
 .. 
     TODO: add reference/redirect to swt/fmi/smol parts (knowledge modelling) (?) 
-::   
 
 Example: House heating
 ^^^^^^^^^^^^^^^^^^^^^^
@@ -133,7 +133,6 @@ A DT can be divided into
 
 .. 
     TODO: add house img from demo_day1 slide 35 
-::   
 
 Tool Installation
 -----------------

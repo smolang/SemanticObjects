@@ -13,7 +13,7 @@ Data in expressed using triple pattern, which consists of a *subject*, a *predic
 
 Example:
 
-.. figure:: images/rdf-example.svg
+.. figure:: /images/rdf-example.svg
    :align: center
    :alt: RDF example
 
@@ -31,12 +31,12 @@ It's a knowledge representation language used to build ontologies.
 
 Example:
 
-.. figure:: images/owl-example.svg
+.. figure:: /images/owl-example.svg
    :align: center
    :alt: OWL example
 
 .. math::
-    \forall x \exists y \exists z \dot hasChild(x, y) \and hasChild(y, z) \and Person(z) \longrightarrow GrandParent(x)
+    \forall x \exists y \exists z . hasChild(x, y) \land hasChild(y, z) \land Person(z) \implies GrandParent(x)
     
 ..
     TODO: check if formatted correctly
@@ -50,7 +50,7 @@ SPARQL (SPARQL Protocol and RDF Query Language)
 
 It's a query language for databases stored in RDF format.
 
-.. figure:: image/owl-example.svg
+.. figure:: /images/owl-example.svg
    :align: center
    :alt: OWL example
 
@@ -71,8 +71,7 @@ Asset modelling
 
     An asset model is an **organized, digital description** of the composition and properties of an **asset**.
 
-* In the engineering domain it is common practice to build
-asset models to support, e.g., maintenance, operations, design etc
+* In the engineering domain it is common practice to build asset models to support, e.g., maintenance, operations, design etc
 * There are currently several industry initiatives that endorse the use of ontologies for asset modelling, e.g., in the Industry 4.0
 
 .. admonition:: Asset model in the engineering domain
@@ -87,7 +86,7 @@ In this way there is a **formal** representation of it that can be interpreted/u
 House Asset Use Case
 ^^^^^^^^^^^^^^^^^^^^
 
-.. figure:: images/house-asset-use-case.svg
+.. figure:: /images/house-asset-use-case.svg
    :align: center
    :alt: House Asset Use Case
 
@@ -99,7 +98,8 @@ example of SPARQL in SMOL
 
 The following is an example of the usage of SPARQL in SMOL code.
 
-.. code::
+.. code-block::
+
     main
         List<Int> results = access(
             "SELECT ?obj {
@@ -113,4 +113,3 @@ The following is an example of the usage of SPARQL in SMOL code.
             println(current);
         end
     end
-

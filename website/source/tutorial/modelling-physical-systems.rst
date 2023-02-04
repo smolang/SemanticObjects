@@ -80,7 +80,6 @@ Controlling the Watertank from SMOL
 SMOL can instantiate an FMU and control it.  Create a file ``simple_tank.smol`` with the following contents:
 
 .. code-block::
-   :linenos:
 
    main
        FMO[in Boolean v, out Double l] de =

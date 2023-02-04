@@ -1,7 +1,7 @@
 Semantically Reflected Digital Twins
 ====================================
 
-Structural Self-Adaptation
+Self-Adaptation
 --------------------------
 
 * We can access the sensors of the physical system (FMI)
@@ -13,14 +13,16 @@ In other words:
 * We can compare simulations (DT) to sensors (FT)
 * On changes of the FT perceived by sensors, the system adapts to reflect such changes in the simulation
 
-**Digital Twins: Self-Adaptation**
-~~~~~~~~~~~~~~~~~~~~~~
 Self-adaptation means to automatically reestablish some property of a
 system, by reacting to outside stimuli. For Digital Twins, the “outside”
 is the physical system.
 
-Two kinds of self-adaptation to reestablish the twinning property:
-* **Behavioral self-adaptation**: Simulated (=expected) behavior of certain components does not match
+Two kinds of self-adaptation to reestablish the twinning property.
+
+Behavioral self-adaptation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Simulated (=expected) behavior of certain components does not match
 the real (=measured) behavior of the sensors.
 
 This can be caused by multiple reasons, such as:
@@ -35,8 +37,10 @@ In order to solve this unintended behavior you can:
     * Plan repair by, e.g., finding new simulation parameters
     * Exchange simulators or send signal to physical system
 
-* **Structural self-adaptation** Simulated (= lifted) structure of digital system does not match real (=
-expressed in asset model) structure.
+Structural Self-adaptation
+^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Simulated (= lifted) structure of digital system does not match real (= expressed in asset model) structure.
 
 We need to express the program structure, so we can uniformly access it
 together with the asset model. How to apply semantic web technologies
@@ -53,13 +57,13 @@ MAPE-K
 
     MAPE-K is an established conceptual framework to structure selfadaptive systems.
 
-This framework expects a structure formed by a **K**nowledge component which keeps track of information and goals for the self-adaptation loop.
+This framework expects a structure formed by a **K**\ nowledge component which keeps track of information and goals for the self-adaptation loop.
 
 In particular its tasks are to:
-* **M**onitor the situation of the system (Digital Twin (?))
-* **A**nalyze whether the situation requires adaptation
-* **P**lan the adaptation
-* **E**xecute the plan
+* **M**\ onitor the situation of the system (Digital Twin (?))
+* **A**\ nalyze whether the situation requires adaptation
+* **P**\ lan the adaptation
+* **E**\ xecute the plan
 
 ..
     TODO: add image from demo_day2 slide 27
@@ -95,7 +99,7 @@ A ``main`` in which:
     * A new object named ``c`` of type ``C`` is created
     * ``c.inc`` is executed and the return saved in a variable named ``i``
 
-.. code-block:: SMOL
+.. code-block::
 
     class C (Int i)
         Unit inc() this.i = this.i + 1; end
@@ -104,8 +108,6 @@ A ``main`` in which:
         C c = new C(5);
         Int i = c.inc();
     end
-
-.. code-block::
 
 The program state can be formalised in RDF and expressed in the form of triples. Some examples could be:
 
@@ -140,7 +142,7 @@ based on information from the current program state.
 SMOL also permits to query knowledge base by using SPARQL query language.
 In the following example the program retrieve a list of Overloaded servers from a knowledge base and use it to perform some operation. In other words it extracts some information from a set of RDF triples. 
 
-.. code-block:: SMOL
+.. code-block::
 
     class Server(List<Task> taskList) ... end
     class Scheduler(List<Platform> serverList)
@@ -156,11 +158,12 @@ is a Server which has at least 3 tasks in the ``taskList``
 
 .. code-block::
 
-:Overloaded
-	owl:equivalentClass [
-		owl:onProperty (:taskList, :length);
-	owl:minValue 3;
-].
+    :Overloaded
+        owl:equivalentClass [
+            owl:onProperty (:taskList, :length);
+        owl:minValue 3;
+    ].
+
 
 DEMO - Semantic reflection
 --------------------------
@@ -173,7 +176,7 @@ Using the SMOL language.
 
 We will use the House assets use-case
 
-.. figure:: images/house-asset-use-case_2.svg
+.. figure:: /images/house-asset-use-case_2.svg
     :align: center
     :alt: House Assets Use Case
 
@@ -181,6 +184,7 @@ Model Description
 ^^^^^^^^^^^^^^^^^
 
 .. code-block:: xml
+
     <fmiModelDescription fmiVersion="2.0" modelName="Example" ...>
         <CoSimulation needsExecutionTool="true" .../>
         <ModelVariables>
@@ -201,7 +205,8 @@ SMOL and FMI
 **Functional Mock-Up Objects (FMOs)**
 Tight integration of simulation units using FMI into programs.
 
-.. code-block:: SMOL
+.. code-block::
+
 	Cont[out Double val] shadow =
 		simulate("Sim.fmu", input=sys.val, p=1.0);
 	Cont[out Double val] sys = simulate("Realsys.fmu");
@@ -218,7 +223,8 @@ Tight integration of simulation units using FMI into programs.
 Standard for (co-)simulation units, called function mock-up units
 (FMUs). Can also serve as interface to sensors and actuators.
 
-.. code-block:: SMOL
+.. code-block::
+
 	//simplified shadow
 	class Monitor(Cont[out Double val] sys,
 		Cont[out Double val] shadow)
