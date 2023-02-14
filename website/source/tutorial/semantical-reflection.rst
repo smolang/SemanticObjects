@@ -123,52 +123,50 @@ A ``main`` in which:
 ..
     TODO: correct code into slides
 
-The program state can be formalised in RDF and expressed in the form of triples. Some examples could be:
+The program state can be **formalised in RDF** and expressed in the form of triples. Some examples could be:
 
-    * ``C`` is a class and has a field named ``i``
-        * ``prog:C a prog:class. prog:C prog:hasField prog:C_i.``
-    * ``C`` has a mehod named ``inc``
-        * ``prog:C prog:hasMethod prog:C_inc.``
-    * ``inc`` has a Body ``s`` (and it could be described in more detail) 
-        * ``prog:inc prog:hasBody prog:s;``
-    * ``obj1`` is an instance of ``C`` with ``i`` initialised to 5
-        * ``run:obj1 a prog:C. run:obj1 prog:C_i 5.``
-    * in a certain moment the stack top has a frame ``frame1`` which is the execution of the ``inc`` method
-        * ``run:stack run:top run:frame1. run:frame1 run:executes prog:inc.``
+* ``C`` is a class and has a field named ``i``
+    * ``prog:C a prog:class . prog:C prog:hasField prog:C_i .``
+* ``C`` has a mehod named ``inc``
+    * ``prog:C prog:hasMethod prog:C_inc .``
+* ``inc`` has a Body ``s`` (and it could be described in more detail) 
+    * ``prog:inc prog:hasBody prog:s ;``
+* ``obj1`` is an instance of ``C`` with ``i`` initialised to 5
+    * ``run:obj1 a prog:C . run:obj1 prog:C_i 5 .``
+* in a certain moment the stack top has a frame ``frame1`` which is the execution of the ``inc`` method
+    * ``run:stack run:top run:frame1 . run:frame1 run:executes prog:inc.``
 
 
 SMOL
 ----
 
 Semantical lifting and reflection is implemented in the Semantic Micro
-Object Language, smolang.org.
+Object Language, `smolang.org`_
 
-Given the lifted state, we can use it for multiple operations:
+.. _smolang.org: https://www.smolang.org.
+
+Given the **lifted state**, we can use it for multiple operations:
+
 * **Access it** to retrieve objects without traversing pointers
-* **Enrich it** with an ontology, perform logical reasoning and retrieve
-objects using a query using the vocabulary of the domain.
-* **Combine it** with another knowledge graph and access external data
-based on information from the current program state.
+* **Enrich it** with an ontology, perform logical reasoning and retrieve objects using a query using the vocabulary of the domain.
+* **Combine it** with another knowledge graph and access external data based on information from the current program state.
 
-..
-    TODO: check correctness of next part until end of section
 
-SMOL also permits to query knowledge base by using SPARQL query language.
+SMOL also permits to **query knowledge base** by using SPARQL query language.
 In the following example the program retrieve a list of Overloaded servers from a knowledge base and use it to perform some operation. In other words it extracts some information from a set of RDF triples. 
 
 .. code-block::
-
+    
     class Server(List<Task> taskList) ... end
-    class Scheduler(List<Platform> serverList)
-		Unit reschedule()
-			List<Server> l := access("SELECT ?x WHERE {?x a :Overloaded}");
-			this.adapt(l);
-    	end
-	end
+        class Scheduler(List<Platform> serverList)
+            Unit reschedule()
+                List<Server> l := access("SELECT ?x WHERE {?x a :Overloaded}");
+                this.adapt(l);
+            end
+        end
 
-However we need a formal definition of what an Overloaded server is.
-This can be done again using Semantic Technologies to express that an Overloaded server 
-is a Server which has at least 3 tasks in the ``taskList``
+However we need a **formal definition** of what an Overloaded server is.
+This can be done again using Semantic Technologies to express that an Overloaded server is a Server which has at least 3 tasks in the ``taskList``.
 
 .. code-block::
 
@@ -183,12 +181,12 @@ DEMO - Semantic reflection
 --------------------------
 	
 In this example we will learn how to:
-* Monitor consisten
+
+* Monitor consistency
 * Monitor twinning
 * Adapt to addition of new rooms
-Using the SMOL language.
 
-We will use the House assets use-case
+We will use the House assets use-case based on SMOL language.
 
 .. figure:: /images/house-asset-use-case_2.svg
     :align: center
@@ -216,8 +214,7 @@ Model Description
 
 SMOL and FMI
 ------------
-**Functional Mock-Up Objects (FMOs)**
-Tight integration of simulation units using FMI into programs.
+In SMOL the **Functional Mock-Up Objects (FMOs)** provide a tight integration of simulation units (FMU) using FMI into programs.
 
 .. code-block::
 
@@ -225,17 +222,18 @@ Tight integration of simulation units using FMI into programs.
 		simulate("Sim.fmu", input=sys.val, p=1.0);
 	Cont[out Double val] sys = simulate("Realsys.fmu");
 	Monitor m = new Monitor(sys,shadow); m.run(1.0);
-	
+
+In this example ``shadow`` and ``sys`` are FMOs (Cont). These allow to **map the FMU to a SMOL Object** allowing also to interact with the FMU itself. See `smolang documentation about FMOs`_  for more details.
+
+.. _smolang documentation about FMOs: https://smolang.org/language/fmos.html.
+
 **Integration of FMOs in SMOL**
 
-* Type of FMO directly checked against model description
-* Variables become fields, functions become methods
+* The type of FMO is directly checked against model description
+* Variables of FMU become fields, functions become methods
 * Causality reflected in type
 
-**Functional Mock-Up Interface (FMI)**
-
-Standard for (co-)simulation units, called function mock-up units
-(FMUs). Can also serve as interface to sensors and actuators.
+**Functional Mock-Up Interface (FMI)** is a standard for (co-)simulation units, called function mock-up units (FMUs). Can also serve as interface to sensors and actuators.
 
 .. code-block::
 
@@ -248,28 +246,30 @@ Standard for (co-)simulation units, called function mock-up units
 			if(sys.val - shadow.val >= threshold) then ... end
 		end ...
 
-This SMOL example shows a system (sys), which is twinned by a shadow object (shadow). 
-When the difference between the two objects (sys.val - shadow.val) exceeds a threshold, certain events are triggered.
+This SMOL example shows a system ``sys``, which is twinned by another FMO ``shadow``. 
+When the difference between the two objects (sys.val - shadow.val) exceeds a threshold some events are triggered (e.g. Self adaptation).
 
-**SMOL with FMO**
-
-FMOs are object oriented models that can be simulated using the FMI standard. This constructs are implemented by SMOL and can be used to create a simulation of a system.
+**FMOs are objects**, so they are **part of the knoledge graph** once the program state is **lifted**.
 
 .. code-block::
     
     class Monitor(Cont[out Double val] sys,
                     Cont[out Double val] shadow)
 
-This class Monitor takes two FMOs as parameters. The first one is the system to be monitored (sys) and the second one is the shadow object (shadow).
+This class Monitor takes two FMOs as parameters. The first one is the system to be monitored ``sys`` and the second one is its shadow ``shadow``.
+The result of the **semantical lifting** of this program is the following.
 
 ..
     TODO add image from demo_day2 slide 60
 
-**SPARQL**
-We can use SPARQL to query the program state and the knowledge base, thus checking if domain constraints are met.
+Using the Semantical Lifting
+----------------------------
+
+We can use **SPARQL** to **query** the program state and the knowledge base, thus **checking if domain constraints are met**.
 
 Taking the house assets example into consideration we could:
-* Query the program state to check if the house setup is consistent (e.g. there should be no rooms that are both left and right of a controller)
+
+* **Query** the program state to check if the house setup is consistent (e.g. there should be no rooms that are both left and right of a controller)
 
 .. code-block::
 
@@ -294,29 +294,32 @@ Taking the house assets example into consideration we could:
 
 
 Demo - Inconsistent twinning
-------------
+----------------------------
 
 **Detecting Structural Drift**
 
-The two previous SPARQL queries can detect that some mismatch between asset model
-and program state exists. How to detect where the mismatch is and how to repair it?
+The two previous **SPARQL** queries can detect that some **mismatch** between asset model and program state exists. How to detect **where** the mismatch is and how to **repair** it?
 
 Solution: MAPE-K loop
 
-* Retrieve all assets, and their connections by id (Monitor)
+* Retrieve all assets, and their connections by id (**Monitor**)
 * Remove all ids present in the digital twin
-* If any id is left, assets needs to be twinned (Analyze)
-* Find kind of defect to plan repair (Plan)
-* Execute repair according to connections (Execute)
+* If any id is left, assets needs to be twinned (**Analyze**)
+* Find kind of defect to plan repair (**Plan**)
+* Execute repair according to connections (**Execute**)
 * Monitor connections using previous query
 * (And v.v. to detect twins that must be removed)
+
+Example: Adding a New Room
+--------------------------
+
 * Get all (asset) rooms and their neighboring walls
 * Remove all (twinned) rooms with the same id
-* Use the information about walls to
+* Use the information about walls to check if there are new rooms not represented in the twin model.
 * Assumption: at least one new room is next to an existing one
 
 
-..code-block::
+.. code-block::
 
     class RoomAsrt(String room, String wallLt, String wallRt) end
     ...
@@ -329,33 +332,36 @@ Solution: MAPE-K loop
 
 
 Demo - Repair
-------------
+-------------
 
 **Assumptions**
-* We know all the possible modifications up-front E.g., how to deal with a heater getting new features?
-* We know how to always correct structural drift
-* Changes do not happen faster than we can repair
 
-Monitoring is still needed to (a) ensure that repairs work correctly, and
-(b) detect loss of twinning due to, e.g., unexpected structural drift.
+* We know all the **possible modifications up-front** E.g., how to deal with a heater getting new features?
+* We know how to always **correct structural drift**
+* Changes **do not happen faster** than we can repair
+
+Monitoring is still needed to (a) **ensure** that repairs work correctly, and (b) **detect loss** of twinning due to, e.g., unexpected structural drift.
 
 
 Summary
 -------
 
 **Digital Twins and the FMI**
-Digital twins are computer simulations of a physical system. They are used to monitor and control the physical system. The FMI standard is used to represent the various simulation components.
+
+Digital twins are computer simulations of a physical system. They are used to monitor and control the physical system. Its functioning is based on an interconnection between physical assets and digital models.
 
 **Semantic Lifting and Asset Models**
-Semantic lifting allows to represent the program state as a knowledge graph.
-The asset model can then be combined with the program state to query verify certain properties.
+
+Semantic lifting allows to represent the program state as a **knowledge graph.** The asset model can then be **combined** with the program state to query **verify** certain properties.
 
 **Structural Self-Adaptation**
-Use semantic technologies to query and monitor combined knowledge graph from asset model and program state. This allows to detect structural drift and repair it.
+
+It's based on th use of semantic technologies to **query** and **monitor** combined knowledge graph from asset model and program state. This allows to **detect** structural drift and **repair** it.
 
 What have we used to construct a self-adaptive, semantically reflected Digital Twin?
 
 **Technologies**
+
 * Semantic Web technologies
     * OWL/Protege
     * RDF, SPARQL
@@ -363,7 +369,8 @@ What have we used to construct a self-adaptive, semantically reflected Digital T
     * Modelica, FMI
 * SMOL
 
-**Concepts**
+**Main concepts we explored**
+
 * Digital Twins
 * Self-Adaptation through MAPE-K loop
 * Semantically lifted programs
@@ -374,12 +381,14 @@ Current Research Questions
 --------------------------
 
 **Digital Twins and Formal Methods**
+
 * How to use the fully formal setting for static analysis?
 * How to generate digital twins automatically?
 * How to deal with concurrency?
 
 **Digital Twins@UiO**
 If you are interested in semantic technologies for programs or digital twins, contact us under
+
 * einarj@ifi.uio.no
 * sltarifa@ifi.uio.no
 * rudi@ifi.uio.no
