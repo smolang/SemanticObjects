@@ -4,12 +4,12 @@ Modelling Knowledge using Semantic Technologies
 Semantic Technologies
 ----------------------
 
-Knowledge can be described ad hoc or in a structural manner. Semantic Technologies facilitate the description of structured knowledge, consistency checking and reasoning
+Knowledge can be described ad hoc or in a structural manner. Semantic Technologies facilitate the description of structured knowledge, consistency checking and reasoning.
 
 RDF (Resource Description Framework)
 -------------------------------------
 
-Data in expressed using triple pattern, which consists of a *subject*, a *predicate* and an *object*.
+In the semantic technology context, information is expressed by triples (facts), which consists of a *subject*, a *predicate* and an *object*.
 
 Example:
 
@@ -17,11 +17,9 @@ Example:
    :align: center
    :alt: RDF example
 
-Here 'Alice' is subject, 'a' is predicate, 'Person' is object, 'Alice' is subject,
-'id' is predicate, '111' is object, ...
+Alice (id 111) is a Person. She has a child named Bob (id 222) who is also a Person. Bob has a child named Charlie (id 333) who is also a Person.
+Here we see multiple facts, each of which is a triple. The subject is the entity that is being described (Alice id 111), the predicate is the property of the subject (having a child), and the object is the value of the property (Bob id 111).
 
-..
-    TODO: what does this mean?
 
 OWL (Web Ontology Language)
 ---------------------------
@@ -48,7 +46,7 @@ hasChild **some** (hasChild **some** Person) **subClassOf** GrandParent
 SPARQL (SPARQL Protocol and RDF Query Language)
 -----------------------------------------------
 
-It's a query language for databases stored in RDF format.
+It's a query language for databases stored in RDF format. 
 
 .. figure:: /images/owl-example.svg
    :align: center
@@ -74,7 +72,7 @@ Asset modelling
 * In the engineering domain it is common practice to build asset models to support, e.g., maintenance, operations, design etc
 * There are currently several industry initiatives that endorse the use of ontologies for asset modelling, e.g., in the Industry 4.0
 
-.. admonition:: Asset model in the engineering domain
+.. admonition:: Asset models & digital twins
     :class: note
 
     Assets models are any **object of interest** in a digital twin. They provide the twin with **knowledge** about the **static structure** that can be **used for the twin’s simulation model**

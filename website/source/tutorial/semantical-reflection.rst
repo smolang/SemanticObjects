@@ -4,26 +4,25 @@ Semantically Reflected Digital Twins
 Self-Adaptation
 --------------------------
 
-* We can access the sensors of the physical system (FMI)
-* access the structure of the physical system (SWT), and
-* simulate the digital design (FMI)
+Taking into consideration the architectures and ideas presented above we highlight that through them it is possible to:
+
+* **Access the sensors** of the physical system (FMI)
+* Access the **structure of the physical system** (SWT), and
+* **Simulate** the digital design (FMI)
 
 In other words:
 
-* We can compare simulations (DT) to sensors (FT)
-* On changes of the FT perceived by sensors, the system adapts to reflect such changes in the simulation
+* We can **compare simulations** (DT) **to data from sensors** (PT)
+* On **changes** of the PT perceived by sensors, the **system adapts** to reflect such changes in the simulation
 
-Self-adaptation means to automatically reestablish some property of a
-system, by reacting to outside stimuli. For Digital Twins, the “outside”
-is the physical system.
+Self-adaptation means to **automatically reestablish some property** of a system, by **reacting to outside stimuli**. For Digital Twins, the “outside” is the physical system.
 
-Two kinds of self-adaptation to reestablish the twinning property.
+There are two kinds of self-adaptation to reestablish the twinning property.
 
 Behavioral self-adaptation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Simulated (=expected) behavior of certain components does not match
-the real (=measured) behavior of the sensors.
+It's the case of a behavioral self-adaptation when the **simulated** (expected) **behavior** of certain components does **not match** the **real** (measured) **behavior** of the system, measured trough sensors.
 
 This can be caused by multiple reasons, such as:
     * Sensor drift
@@ -37,17 +36,26 @@ In order to solve this unintended behavior you can:
     * Plan repair by, e.g., finding new simulation parameters
     * Exchange simulators or send signal to physical system
 
-Structural Self-adaptation
+Structural self-adaptation
 ^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Simulated (= lifted) structure of digital system does not match real (= expressed in asset model) structure.
+It's the case of a structural self-adaptation when the **simulated** (represented by a knowledge graph) **structure** of the system does not match its **real** (expressed in the asset model) **structure**.
 
-We need to express the program structure, so we can uniformly access it
-together with the asset model. How to apply semantic web technologies
-on programs?
+In order to do this we need to **express the program structure** in a **formal way**, so we can **uniformly access it** together with the asset model. This could be done with the use of semantic web technologies. But how to apply them on programs?
 
-**Semantical lifting** a mechanism to automatically generate the
-knowledge graph of a program state.
+We can use **semantical lifting**, a mechanism to automatically generate the knowledge graph of a program state.
+
+To self adapt we must, first, **detect** the broken twinning and then **repair** it.
+
+#. We **access** PT structure through asset model
+    * Changes of PT are visible in asset model
+    * Asset model accessible directly to DT
+#. **Detect** changes through **combined knowledge graph** (PT + DT)
+    * From the combination of PT and DT we can extract all the information needed to repair and perform the adaptation
+
+..
+    TODO add image from demo_day2 slide 39
+
 
 MAPE-K
 ------
@@ -55,13 +63,14 @@ MAPE-K
 .. admonition:: **MAPE-K**
     :class: note
 
-    MAPE-K is an established conceptual framework to structure selfadaptive systems.
+    MAPE-K is an established conceptual framework to structure self-adaptive systems.
 
 This framework expects a structure formed by a **K**\ nowledge component which keeps track of information and goals for the self-adaptation loop.
 
 In particular its tasks are to:
-* **M**\ onitor the situation of the system (Digital Twin (?))
-* **A**\ nalyze whether the situation requires adaptation
+
+* **M**\ onitor the situation of the system
+* **A**\ nalyze whether the situation requires adaptation (structure/behavior of digital and physical twins is different)
 * **P**\ lan the adaptation
 * **E**\ xecute the plan
 
@@ -72,14 +81,14 @@ In particular its tasks are to:
 Semantically Lifted States
 --------------------------
 
-A semantically lifted program can interpret its own program state as a knowledge graph and reflect on itself through it.
+A **semantically lifted program** can interpret its own program state as a **knowledge graph** and reflect on itself through it.
 
-A specific program state ``conf`` can be *lifted* to create a *knowledge graph*.
+A specific program state ``conf`` can be **lifted** to create a **knowledge graph** representing it.
 
 ..
     TODO: add image from demo_day2 slide 42
 
-A change in the program state determines an equivalent change in the knowledge graph and so an update on the representation of the program state itself.
+A change in the **program state** determines an **equivalent change** in the **knowledge graph**. In other words determines an update of the representation of the program state itself.
 
 ..
     TODO: add image from demo_day2 slide 46
@@ -91,13 +100,15 @@ A change in the program state determines an equivalent change in the knowledge g
 Example
 ^^^^^^^
 
-In this example we can see a small SMOL (xd lol) program in which is created a class ``C`` composed by:
-    * An integer field ``i``
-    * A method (Unit) ``inc()`` that increments ``i`` by 1
+In this example we can see a SMOL program in which is created a class ``C`` composed by:
+
+* An integer field ``i``
+* A method ``inc()`` that increments ``i`` by 1
 
 A ``main`` in which:
-    * A new object named ``c`` of type ``C`` is created
-    * ``c.inc`` is executed and the return saved in a variable named ``i``
+
+* A new object named ``c`` of type ``C`` is created
+* ``c.inc`` is executed the variable named ``i`` is incremented
 
 .. code-block::
 
@@ -106,8 +117,11 @@ A ``main`` in which:
     end
     main
         C c = new C(5);
-        Int i = c.inc();
+        c.inc();
     end
+
+..
+    TODO: correct code into slides
 
 The program state can be formalised in RDF and expressed in the form of triples. Some examples could be:
 
@@ -235,4 +249,138 @@ Standard for (co-)simulation units, called function mock-up units
 		end ...
 
 This SMOL example shows a system (sys), which is twinned by a shadow object (shadow). 
-When the difference between certain valutes of two objects exceeds a threshold, SMOL reacts triggering certain events.
+When the difference between the two objects (sys.val - shadow.val) exceeds a threshold, certain events are triggered.
+
+**SMOL with FMO**
+
+FMOs are object oriented models that can be simulated using the FMI standard. This constructs are implemented by SMOL and can be used to create a simulation of a system.
+
+.. code-block::
+    
+    class Monitor(Cont[out Double val] sys,
+                    Cont[out Double val] shadow)
+
+This class Monitor takes two FMOs as parameters. The first one is the system to be monitored (sys) and the second one is the shadow object (shadow).
+
+..
+    TODO add image from demo_day2 slide 60
+
+**SPARQL**
+We can use SPARQL to query the program state and the knowledge base, thus checking if domain constraints are met.
+
+Taking the house assets example into consideration we could:
+* Query the program state to check if the house setup is consistent (e.g. there should be no rooms that are both left and right of a controller)
+
+.. code-block::
+
+    SELECT ?x WHERE { 
+        ?ctrl a prog:Controller.
+        ?ctrl prog:Controller_left ?room.
+        ?ctrl prog:Controller_right ?room 
+    }
+
+* Query to check structural consistency for heaters:
+
+.. code-block::
+
+    SELECT ?x WHERE { 
+        ?o1 prog:Room_id ?id1. ?h1 asset:id ?id1.
+        ?o2 prog:Room_id ?id2. ?h2 asset:id ?id2.
+        ?h1 htLeftOf ?h2.
+        ?c a prog:Controller.
+        ?c prog:Controller_left ?o1.
+        ?c prog:Controller_right ?o2
+    }
+
+
+Demo - Inconsistent twinning
+------------
+
+**Detecting Structural Drift**
+
+The two previous SPARQL queries can detect that some mismatch between asset model
+and program state exists. How to detect where the mismatch is and how to repair it?
+
+Solution: MAPE-K loop
+
+* Retrieve all assets, and their connections by id (Monitor)
+* Remove all ids present in the digital twin
+* If any id is left, assets needs to be twinned (Analyze)
+* Find kind of defect to plan repair (Plan)
+* Execute repair according to connections (Execute)
+* Monitor connections using previous query
+* (And v.v. to detect twins that must be removed)
+* Get all (asset) rooms and their neighboring walls
+* Remove all (twinned) rooms with the same id
+* Use the information about walls to
+* Assumption: at least one new room is next to an existing one
+
+
+..code-block::
+
+    class RoomAsrt(String room, String wallLt, String wallRt) end
+    ...
+    List<RoomAsrt> newRooms =
+        construct(" SELECT ?room ?wallLt ?wallRt WHERE
+        { ?x a asset:Room;
+            asset:right [asset:Wall_id ?wallRt];
+            asset:left [asset:Wall_id ?wallLt]; asset:Room_id ?room.
+            FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?room.} }");
+
+
+Demo - Repair
+------------
+
+**Assumptions**
+* We know all the possible modifications up-front E.g., how to deal with a heater getting new features?
+* We know how to always correct structural drift
+* Changes do not happen faster than we can repair
+
+Monitoring is still needed to (a) ensure that repairs work correctly, and
+(b) detect loss of twinning due to, e.g., unexpected structural drift.
+
+
+Summary
+-------
+
+**Digital Twins and the FMI**
+Digital twins are computer simulations of a physical system. They are used to monitor and control the physical system. The FMI standard is used to represent the various simulation components.
+
+**Semantic Lifting and Asset Models**
+Semantic lifting allows to represent the program state as a knowledge graph.
+The asset model can then be combined with the program state to query verify certain properties.
+
+**Structural Self-Adaptation**
+Use semantic technologies to query and monitor combined knowledge graph from asset model and program state. This allows to detect structural drift and repair it.
+
+What have we used to construct a self-adaptive, semantically reflected Digital Twin?
+
+**Technologies**
+* Semantic Web technologies
+    * OWL/Protege
+    * RDF, SPARQL
+* Physical modeling, interfacing
+    * Modelica, FMI
+* SMOL
+
+**Concepts**
+* Digital Twins
+* Self-Adaptation through MAPE-K loop
+* Semantically lifted programs
+* Asset models
+
+
+Current Research Questions
+--------------------------
+
+**Digital Twins and Formal Methods**
+* How to use the fully formal setting for static analysis?
+* How to generate digital twins automatically?
+* How to deal with concurrency?
+
+**Digital Twins@UiO**
+If you are interested in semantic technologies for programs or digital twins, contact us under
+* einarj@ifi.uio.no
+* sltarifa@ifi.uio.no
+* rudi@ifi.uio.no
+* eduard@ifi.uio.no
