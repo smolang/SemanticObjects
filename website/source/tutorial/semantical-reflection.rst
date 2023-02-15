@@ -93,10 +93,6 @@ A change in the **program state** determines an **equivalent change** in the **k
 ..
     TODO: add image from demo_day2 slide 46
 
-..
-    TODO: ask if correct
-
-
 Example
 ^^^^^^^
 
@@ -180,7 +176,7 @@ This can be done again using Semantic Technologies to express that an Overloaded
 DEMO - Semantic reflection
 --------------------------
 	
-In this example we will learn how to:
+In this example we see how to:
 
 * Monitor consistency
 * Monitor twinning
@@ -269,7 +265,7 @@ We can use **SPARQL** to **query** the program state and the knowledge base, thu
 
 Taking the house assets example into consideration we could:
 
-* **Query** the program state to check if the house setup is consistent (e.g. there should be no rooms that are both left and right of a controller)
+* **Query** the program state to check if the **house setup is consistent** (e.g. there should be no rooms that are both left and right of a controller)
 
 .. code-block::
 
@@ -279,7 +275,7 @@ Taking the house assets example into consideration we could:
         ?ctrl prog:Controller_right ?room 
     }
 
-* Query to check structural consistency for heaters:
+* **Query** to check **structural consistency** for heaters:
 
 .. code-block::
 
@@ -315,9 +311,11 @@ Example: Adding a New Room
 
 * Get all (asset) rooms and their neighboring walls
 * Remove all (twinned) rooms with the same id
-* Use the information about walls to check if there are new rooms not represented in the twin model.
+* Use the information obtained from the query to check if there are rooms in the asset model not represented in the twin model (so we can add them)
 * Assumption: at least one new room is next to an existing one
 
+..
+    missing part in previous point 3 in demo_day2 slide 65, check if correct
 
 .. code-block::
 
@@ -327,7 +325,8 @@ Example: Adding a New Room
         construct(" SELECT ?room ?wallLt ?wallRt WHERE
         { ?x a asset:Room;
             asset:right [asset:Wall_id ?wallRt];
-            asset:left [asset:Wall_id ?wallLt]; asset:Room_id ?room.
+            asset:left [asset:Wall_id ?wallLt];
+            asset:Room_id ?room.
             FILTER NOT EXISTS {?y a prog:Room; prog:Room_id ?room.} }");
 
 
@@ -387,6 +386,7 @@ Current Research Questions
 * How to deal with concurrency?
 
 **Digital Twins@UiO**
+
 If you are interested in semantic technologies for programs or digital twins, contact us under
 
 * einarj@ifi.uio.no
