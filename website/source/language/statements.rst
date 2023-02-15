@@ -202,6 +202,8 @@ the terminal.
 The Destroy Statement
 ---------------------
 
+The destroy statement destroys the given object and frees its memory.
+
 ::
 
    DestroyStatement ::= 'destroy' '(' SimpleExpression ')' ';'
