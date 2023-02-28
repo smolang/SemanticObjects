@@ -78,7 +78,7 @@ class Main : CliktCommand() {
         "--load" to "repl",       "-l" to "repl",
     ).default("repl")
 
-    private val back         by option("--back",      "-b",  help="path to a .ttl file that contains OWL class definitions as background knowledge.").path()
+    private val back         by option("--back",      "-b",  help="path to a file containing OWL class definitions as background knowledge.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
     private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of REPL commands.").path()

@@ -87,9 +87,10 @@ SMOL Command-Line Parameters
 
    Options:
      -e, -l, --execute, --load
-     -b, --back PATH            path to a .ttl file that contains OWL class
+     -b, --back PATH            path to a file containing OWL class
                                 definitions as background knowledge.
-     -d, --domain TEXT          prefix for domain:.
+     -d, --domain TEXT          prefix for domain:. (default
+                                https://github.com/Edkamb/SemanticObjects/ontologies/default#)
      -i, --input PATH           path to a .smol file which is loaded on startup.
      -r, --replay PATH          path to a file containing a series of shell
                                 commands.
