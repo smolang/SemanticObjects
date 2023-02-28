@@ -122,7 +122,7 @@ The lifting of the created object is as follows.
    run:obj1 a prog:C.
    run:obj1 prog:C_i 5.
    run:obj1 domain:models domain:obj1.
-   domain:obj1 domain:C_i 4.
+   domain:obj1 domain:C_j 4.
 
 Ignoring Fields
 """""""""""""""
@@ -164,7 +164,7 @@ The used property has the name ``prog:<class>_<method>_builtin_res``.
 .. code-block:: Java
 
   class C(Int i) 
-        rule Int double() return this.i*this.i;
+        rule Int squared() return this.i*this.i;
   end
   main
     C c = new C(5);
@@ -176,15 +176,15 @@ The lifting will generate the following axioms.
 .. code-block:: none
 
    prog:C a smol:Class.
-   prog:double a smol:Method.
-   prog:C smol:hasMethod prog:double.
-   prog:C_double_builtin_res a owl:ObjectProperty;
+   prog:squared a smol:Method.
+   prog:C smol:hasMethod prog:squared.
+   prog:C_squared_builtin_res a owl:ObjectProperty;
                              rdfs:domain prog:C;
                              rdfs:range xsd:integer.
 
    run:obj1 a prog:C.
    run:obj1 prog:C_i 5.
-   run:obj1 prog:C_double_builtin_res 25.
+   run:obj1 prog:C_squared_builtin_res 25.
 
 A ``rule`` method is not allowed to have side-effects (except exceptions), the following restrictions are statically checked:
 
