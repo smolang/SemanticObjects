@@ -127,7 +127,7 @@ General Commands
    * - ``verbose`` *enabled*
      - Sets verbose output to on or off
      - *enabled*: ``true`` or ``false``
-   * - ``outpath`` *path*
+   * - ``outdir`` *path*
      - Sets or prints the directory where SMOL write data files
      - *path*: a directory name; if omitted, print the current value
 
@@ -194,7 +194,7 @@ Commands for Querying SMOL
        - *from*: (optional) the starting time of the plot
        - *to*: (optional) the end time of the plot
    * - ``dump`` *file*
-     - Create file in ``outpath`` containing the current heap state in TRTL
+     - Create file in ``outdir`` containing the current heap state in TRTL
        format
      - *file* (optional): the file to create; default ``output.ttl``
 
