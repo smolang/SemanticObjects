@@ -123,6 +123,7 @@ class REPL(private val settings: Settings) {
             initStack,
             initGlobalStore,
             mutableMapOf(),
+            mutableMapOf(),
             pair.second,
             settings
         )

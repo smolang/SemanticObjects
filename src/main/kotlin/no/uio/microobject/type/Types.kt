@@ -30,6 +30,13 @@ abstract class SimpleType : Type() {
     override fun getPrimary(): SimpleType = this
 }
 
+object ScenarioType : SimpleType(){
+    override fun getNameString(): String = "Scen"
+    override fun isFullyConcrete(): Boolean = true
+    override fun containsUnknown(types: Set<String>): Boolean = false
+
+}
+
 data class SimulatorType(val inVar : List<Pair<String, Type>>, val outVar : List<Pair<String, Type>>) : SimpleType() {
     override fun toString() : String  = "FMO[ ${inVar.joinToString(", ") { "in " + it.second + " " + it.first}}, ${outVar.joinToString(", ") { "out " + it.second + " " + it.first}}]"
     override fun getNameString() : String  = "FMO"

@@ -28,6 +28,7 @@ ACCESS : 'access';
 CONSTRUCT : 'construct';
 MEMBER : 'member';
 SIMULATE : 'simulate';
+MONITOR : 'monitor';
 VALIDATE : 'validate';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
@@ -81,6 +82,7 @@ FMU : 'FMO';
 PORT : 'port';
 SPARQLMODE : 'SPARQL';
 INFLUXMODE : 'INFLUXDB';
+SCENARIO : 'Scenario';
 // Note that the IN, OUT constants are also used in
 // TypeChecker.kt:translateType in the FMU branch; adapt strings there if
 // changing the syntax here
@@ -130,6 +132,7 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS MEMBER OPARAN query=expression CPARAN SEMI                                                       # owl_statement
 			| (declType = type)? target=expression ASS VALIDATE OPARAN query=expression CPARAN SEMI                                                     # validate_statement
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
+			| (declType = type)? target=expression ASS MONITOR OPARAN path=STRING CPARAN SEMI                                                          # scenario_statement
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                            # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
             | statement statement                                                                                                                       # sequence_statement
@@ -171,6 +174,7 @@ expression :      THIS                           # this_expression
 type : NAME                                                    #simple_type
      | NAME LT typelist GT                                     #nested_type
      | FMU OBRACK fmuParamList? CBRACK                         #fmu_type
+     | SCENARIO OBRACK namelist? CBRACK                        #scenario_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;

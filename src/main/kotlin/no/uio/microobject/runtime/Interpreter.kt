@@ -59,6 +59,7 @@ class Interpreter(
     val stack: Stack<StackEntry>,               // This is the process stack
     var heap: GlobalMemory,             // This is a map from objects to their heap memory
     var simMemory: SimulationMemory,    // This is a map from simulation objects to their handler
+    var scenMemory: ScenarioMemory,    // This is a map from scenario objects to their handler
     val staticInfo: StaticTable,                // Class table etc.
     val settings : Settings                    // Settings from the user
 ) {

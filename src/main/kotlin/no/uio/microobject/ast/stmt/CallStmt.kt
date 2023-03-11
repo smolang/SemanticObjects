@@ -1,6 +1,7 @@
 package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
@@ -30,6 +31,12 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
 
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val newObj = interpreter.eval(callee, stackFrame)
+        if(interpreter.scenMemory.containsKey(newObj)){
+            return evalScen(newObj, heapObj, stackFrame, interpreter)
+        }
+        if(interpreter.simMemory.containsKey(newObj)){
+            return evalSim(newObj, heapObj, stackFrame, interpreter)
+        }
         val mt = interpreter.staticInfo.methodTable[(newObj.tag as BaseType).name]
             ?: throw Exception("This class is unknown: ${newObj.tag} when executing $this at l. pos")
         val m = mt[method]
@@ -44,4 +51,28 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
             listOf(StackEntry(m.stmt, newMemory, newObj, Names.getStackId()))
         )
     }
+
+    fun evalScen(newObj: LiteralExpr, heapObj: MutableMap<String, LiteralExpr>, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
+        val scen = interpreter.scenMemory[newObj]!!
+        when (method) {
+            "assign" -> {
+                val par = interpreter.eval(params[0], stackFrame)
+                if (!interpreter.simMemory.containsKey(par)) throw Exception("Cannot find FMO for assignment to scenario: $par")
+                scen.assign(interpreter.simMemory[par]!!)
+                return EvalResult(null, emptyList())
+            }
+            else -> {
+                throw Exception("This method is unknown for scenarios: $method")
+            }
+        }
+    }
+    fun evalSim(newObj: LiteralExpr, heapObj: MutableMap<String, LiteralExpr>, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
+        val sim = interpreter.simMemory[newObj]
+        when (method) {
+            else -> {
+                throw Exception("This method is unknown for FMOs: $method")
+            }
+        }
+    }
+
 }

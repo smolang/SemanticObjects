@@ -285,6 +285,16 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return SimulationStmt(target, path,  res, ctx!!.start.line, declares)
     }
 
+    override fun visitScenario_statement(ctx: Scenario_statementContext?): ProgramElement {
+        val path = ctx!!.path.text.removeSurrounding("\"")
+        val target = visit(ctx!!.target) as Location
+
+        val def = getClassDecl(ctx as RuleContext)
+        val declares = if(ctx!!.declType == null) null else
+            TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
+        return ScenarioStmt(target, path, ctx!!.start.line, declares)
+    }
+
     override fun visitTick_statement(ctx: Tick_statementContext?): ProgramElement {
         return TickStmt(visit(ctx!!.fmu) as Expression, visit(ctx!!.time) as Expression )
     }

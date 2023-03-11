@@ -105,6 +105,7 @@ open class MicroObjectTest : StringSpec() {
             initStack,
             initGlobalStore,
             mutableMapOf(),
+            mutableMapOf(),
             pair.second,
             settings
         )

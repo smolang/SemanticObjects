@@ -1,0 +1,38 @@
+main
+
+    FMO[in Double y, out Double x] prey = simulate("examples/Scen/Prey.fmu", y = 10);
+    prey.role = "prey";
+    FMO[in Double x, out Double y] predator = simulate("examples/Scen/Predator.fmu", x = 10);
+    predator.role = "predator";
+
+    Scenario[prey, predator] scenario = monitor("examples/Scen/PreyPredator.conf");
+    scenario.assign(prey);
+    scenario.assign(predator);
+
+    Int i = 0;
+    while (i <= 2000) do
+        prey.tick(0.1);
+        predator.tick(0.1);
+        prey.y = predator.y;
+        predator.x = prey.x;
+        print(predator.y);
+        i = i+1;
+    end
+
+    //Boolean c = scenario.correct();
+    //print(c);
+    /*
+
+    Int i = 0;
+    while (i <= 2000) do
+        Boolean r = prey.tickSafe(0.1);
+        r = predator.tickSafe(0.1);
+        Option<Double> res = predator.get_y();
+        r = prey.set_y(res.unpack());
+        Option<Double> res = prey.get_x();
+        r = predator.set_x(res.unpack());
+        print(predator.y);
+        i = i+1;
+    end
+    */
+end

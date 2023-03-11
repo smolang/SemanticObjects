@@ -60,6 +60,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     else emptyList()
                     SimulatorType(ins,outs)
                 }
+                is WhileParser.Scenario_typeContext -> ScenarioType
                 else -> throw Exception("Unknown type context: $ctx") // making the type checker happy
             }
         }
@@ -512,12 +513,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
                 val calleeIndex = if(ctx.target == null) 0 else 1
                 val rhsType = getType(ctx.expression(calleeIndex), inner, vars, thisType, inRule, inRule)
-                if(rhsType.getPrimary() !is BaseType || !methods.containsKey(rhsType.getPrimary().getNameString())){
-                    log("Call on type $rhsType not possible: type $rhsType is not a class.", ctx)
+                if(rhsType != ScenarioType && (rhsType.getPrimary() !is BaseType || !methods.containsKey(rhsType.getPrimary().getNameString()))){
+                    log("Call on type $rhsType not possible: type $rhsType is not a class and not a scenario.", ctx)
                 } else {
                   val calledMet = ctx.NAME().text
                   val nName = rhsType.getPrimary().getNameString()
                   if(!methods.getOrDefault(nName, listOf()).map { it.NAME().text }.contains(calledMet)){
+                      if(rhsType == ScenarioType && calledMet != "assign")
                       log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
                   } else {
                       val otherClassName = rhsType.getPrimary().getNameString()
@@ -727,11 +729,34 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Skip_statmentContext -> { }
             is WhileParser.Debug_statementContext -> { }
+            is WhileParser.Scenario_statementContext -> {
+                val path = ctx.path.text.removeSurrounding("\"")
+                if (!Files.exists(Paths.get(path))) {
+                    log("Could not find file for simulation scenario $path", ctx, Severity.WARNING)
+                }
+
+                if(ctx.type() != null) {
+                    val declType = translateType(ctx.type(), className, generics)
+                    if(declType != ScenarioType)
+                        log("Scenarios require the Scenario type, got $declType", ctx)
+                    if (ctx.target !is WhileParser.Var_expressionContext) {
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = ((ctx.target) as WhileParser.Var_expressionContext).NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else vars[name] = declType
+                    }
+                }else{
+                    val declType = getType(ctx.target, inner, vars, thisType, false, read = false)
+                    if(declType != ScenarioType)
+                        log("Type $ScenarioType is not assignable to $declType", ctx)
+                }
+            }
             is WhileParser.Simulate_statementContext -> {
                 val path = ctx.path.text.removeSurrounding("\"")
                 if (!Files.exists(Paths.get(path))) {
                     log("Could not find file for FMU $path, statement cannot be type checked", ctx)
-                } else{
+                } else {
                     val sim = Simulation(path)
                     val inits = if(ctx.varInitList() != null)
                         ctx.varInitList().varInit()

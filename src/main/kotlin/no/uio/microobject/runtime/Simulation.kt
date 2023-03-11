@@ -1,8 +1,6 @@
 package no.uio.microobject.runtime
 
-import core.FmuConfig
-import core.InputPortConfig
-import core.OutputPortConfig
+import core.*
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.type.BOOLEANTYPE
@@ -14,7 +12,8 @@ import org.javafmi.modeldescription.v2.ModelDescription
 import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
 import scala.collection.JavaConverters
-import scala.collection.immutable.HashMap
+import scala.collection.immutable.Map
+import kotlin.collections.HashMap
 
 data class Snapshot( val time : Double, val values : List<Pair<String, Double>>, val role : String?)
 
@@ -29,10 +28,10 @@ class SimulatorObject(val path : String, memory : Memory){
     private var time : Double = 0.0
 
     //representation for monitor
-    private lateinit var scen : FmuConfig;
+    var scen : FmuConfig;
 
     //additional fields
-    private var role : String = ""
+    var role : String = ""
     private var pseudoOffset : Double = 0.0
 
     fun read(name: String): LiteralExpr {
@@ -99,40 +98,6 @@ class SimulatorObject(val path : String, memory : Memory){
         sim.terminate()
     }
 
-    /* kept for easier lookup */
-    /*
-    fun dump(obj: String): String {
-        var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
-        for(mVar in sim.modelDescription.modelVariables) {
-            if(mVar.causality == "input") {
-                res += "${obj}_${mVar.name} a smol:InPort.\n"
-                res += "$obj smol:hasInPort ${obj}_${mVar.name}.\n"
-            }
-            if(mVar.causality == "output"){
-                res += "${obj}_${mVar.name} a smol:OutPort.\n"
-                res += "$obj smol:hasOutPort ${obj}_${mVar.name}.\n"
-                res += "$obj ${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
-                res += "${obj}_${mVar.name} smol:withName '${mVar.name}'.\n"
-            }
-            if(mVar.causality == "parameter"){
-                res += "$obj smol:hasStatePort prog:${mVar.name}.\n"
-                res += "$obj ${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
-                mVar.type
-            }
-        }
-        for((mCounter, snap) in series.withIndex()){
-            val name = "measure_${obj.split(":")[1]}_$mCounter"
-            res += "run:$name a smol:Measurement.\n"
-            if(snap.role != null) res += "run:$name smol:roleName '${snap.role.removeSurrounding("\"")}'.\n"
-            res += "run:$name smol:atTime ${snap.time + pseudoOffset}.\n"
-            for( data in snap.values) {
-                res += "run:$name smol:ofPort ${obj}_${data.first} .\n"
-                res += "run:$name smol:withValue ${data.second}.\n"
-            }
-        }
-        return res
-    }
-*/
     init {
         val inputScenMap = mutableMapOf<String, InputPortConfig>()
         val outputTempScenMap = mutableMapOf<String, scala.collection.immutable.List<String>>()
@@ -183,17 +148,13 @@ class SimulatorObject(val path : String, memory : Memory){
         }
 
 
-        val outputScenMap = HashMap(outputTempScenMap.map { Pair(it.key, OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value))}.toMap())
+        val outputScenMap = outputTempScenMap.mapValues { OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value)}.toMutableMap()
         scen = FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" )
 
         sim.init(0.0)
         addSnapshot()
     }
 
-    private fun <K,V> toScalaMap(inp : MutableMap<K, V>): HashMap<K, V>? {
-        val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
-        return scala.collection.immutable.HashMap<K, V>().concat(ins1)
-    }
 
     private fun dumpSingle(read : SingleRead, type : SimpleType) : String{
         return when(type){
@@ -207,5 +168,53 @@ class SimulatorObject(val path : String, memory : Memory){
             is org.javafmi.modeldescription.v1.RealType -> "'"+read.asDouble().toString()+"'"
             else -> throw Exception("Unknown Type")
         }
+    }
+
+    fun <K,V> toScalaMap(inp : MutableMap<K, V>): scala.collection.immutable.HashMap<K, V>? {
+        val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
+        return scala.collection.immutable.HashMap<K, V>().concat(ins1)
+    }
+}
+
+
+
+
+
+class SimulationScenario(path : String){
+    val assignedFmus = mutableMapOf<String, SimulatorObject>()
+    var config : MasterModel
+
+    init{
+        config = ScenarioLoader.load(path)
+    }
+
+    fun assign(fmo : SimulatorObject){
+        assignedFmus.put(fmo.role, fmo)
+        config.scenario().fmus()
+    }
+
+    fun check() : Boolean{
+        val fmus = assignedFmus.mapValues {  it.value.scen }.toMutableMap()
+        config = config.copy(
+            config.name(),
+            config.scenario().copy(
+                toScalaMap(fmus) as Map<String, FmuModel>,
+                config.scenario().config(),
+                config.scenario().connections(),
+                config.scenario().maxPossibleStepSize()
+            ),
+            config.instantiation(),
+            config.initialization(),
+            config.cosimStep(),
+            config.terminate()
+        )
+
+        return config != null
+    }
+
+
+    fun <K,V> toScalaMap(inp : MutableMap<K, V>): scala.collection.immutable.HashMap<K, V>? {
+        val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
+        return scala.collection.immutable.HashMap<K, V>().concat(ins1)
     }
 }
