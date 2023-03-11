@@ -3,6 +3,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
+    id 'scala'
 }
 group = 'org.smolang'
 version = '0.3'

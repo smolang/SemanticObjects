@@ -1,14 +1,20 @@
 package no.uio.microobject.runtime
 
-import no.uio.microobject.type.BOOLEANTYPE
-import no.uio.microobject.type.INTTYPE
+import core.FmuConfig
+import core.InputPortConfig
+import core.OutputPortConfig
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.TRUEEXPR
+import no.uio.microobject.type.BOOLEANTYPE
 import no.uio.microobject.type.DOUBLETYPE
+import no.uio.microobject.type.INTTYPE
 import no.uio.microobject.type.STRINGTYPE
 import org.javafmi.modeldescription.SimpleType
+import org.javafmi.modeldescription.v2.ModelDescription
 import org.javafmi.wrapper.Simulation
 import org.javafmi.wrapper.variables.SingleRead
+import scala.collection.JavaConverters
+import scala.collection.immutable.HashMap
 
 data class Snapshot( val time : Double, val values : List<Pair<String, Double>>, val role : String?)
 
@@ -21,6 +27,9 @@ class SimulatorObject(val path : String, memory : Memory){
     private val series = mutableListOf<Snapshot>()
     private var sim : Simulation = Simulation(path)
     private var time : Double = 0.0
+
+    //representation for monitor
+    private lateinit var scen : FmuConfig;
 
     //additional fields
     private var role : String = ""
@@ -125,8 +134,11 @@ class SimulatorObject(val path : String, memory : Memory){
     }
 */
     init {
+        val inputScenMap = mutableMapOf<String, InputPortConfig>()
+        val outputTempScenMap = mutableMapOf<String, scala.collection.immutable.List<String>>()
         for(mVar in sim.modelDescription.modelVariables){
             if(mVar.causality == "input" || mVar.causality == "parameter"){
+                inputScenMap.put(mVar.name, InputPortConfig("delayed")) //todo: check what the reactivity models
                 if(!mVar.hasStartValue() && !memory.containsKey(mVar.name))
                     throw Exception("Failed to initialize variable ${mVar.name}: no initial value given")
                 if(memory.containsKey(mVar.name)) {
@@ -149,6 +161,7 @@ class SimulatorObject(val path : String, memory : Memory){
             }
             if(mVar.causality == "output" && mVar.hasStartValue() && !memory.containsKey(mVar.name)){
                 val anyStart = mVar.start
+                outputTempScenMap.put(mVar.name, JavaConverters.asScala(listOf<String>()).toList()) //otherwise we miss the outputs without dependencies
                 when (mVar.typeName) {
                     "Integer" -> sim.write(mVar.name).with(anyStart as Int)
                     "Boolean" -> sim.write(mVar.name).with(anyStart as Boolean)
@@ -160,8 +173,26 @@ class SimulatorObject(val path : String, memory : Memory){
                 throw Exception("Cannot initialize output or/and calculated variable ${mVar.name}")
             }
         }
+
+        for (dep in (sim.modelDescription as ModelDescription).modelStructure.outputs){
+            val ind = dep.index
+            val deps = dep.dependencies.split(" ").map { it.toInt() }
+            val name = sim.modelDescription.getModelVariable(ind).name //-1?
+            val depVars = deps.map { sim.modelDescription.getModelVariable(it).name }
+            outputTempScenMap.put(name, JavaConverters.asScala(depVars).toList())
+        }
+
+
+        val outputScenMap = HashMap(outputTempScenMap.map { Pair(it.key, OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value))}.toMap())
+        scen = FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" )
+
         sim.init(0.0)
         addSnapshot()
+    }
+
+    private fun <K,V> toScalaMap(inp : MutableMap<K, V>): HashMap<K, V>? {
+        val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
+        return scala.collection.immutable.HashMap<K, V>().concat(ins1)
     }
 
     private fun dumpSingle(read : SingleRead, type : SimpleType) : String{
