@@ -8,7 +8,7 @@ A SMOL controller software, connected to the sensors of the plants through Influ
 correct watering of the plants.
 
 This page will be updated as the laboratory grows, and the setup will be openly available once development of the software has reached a stable state.
-We are currently extending the laboratory with a `mirte robot <https://mirte.org>`_, a fermentation station and an `incubator <https://arxiv.org/abs/2102.10390`_
+We are currently extending the laboratory with a `mirte robot <https://mirte.org>`_, a fermentation station and an `incubator <https://arxiv.org/abs/2102.10390>`_
 
 
 For questions, contact the lab managing team
