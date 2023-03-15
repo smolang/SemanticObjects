@@ -513,14 +513,59 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
                 val calleeIndex = if(ctx.target == null) 0 else 1
                 val rhsType = getType(ctx.expression(calleeIndex), inner, vars, thisType, inRule, inRule)
-                if(rhsType != ScenarioType && (rhsType.getPrimary() !is BaseType || !methods.containsKey(rhsType.getPrimary().getNameString()))){
+                if(rhsType != ScenarioType && rhsType !is SimulatorType && (rhsType.getPrimary() !is BaseType || !methods.containsKey(rhsType.getPrimary().getNameString()))){
                     log("Call on type $rhsType not possible: type $rhsType is not a class and not a scenario.", ctx)
                 } else {
                   val calledMet = ctx.NAME().text
                   val nName = rhsType.getPrimary().getNameString()
                   if(!methods.getOrDefault(nName, listOf()).map { it.NAME().text }.contains(calledMet)){
-                      if(rhsType == ScenarioType && calledMet != "assign")
-                      log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
+                      if(rhsType == ScenarioType){
+                          if(calledMet == "check"){
+                              if(ctx.expression().size - 1 - calleeIndex != 0)
+                                  log("The scenario.check method takes no parameter.", ctx)
+                              if(lhsType != null && lhsType != BOOLEANTYPE)
+                                  log("Type Boolean is not assignable to $lhsType.", ctx)
+                          } else if (calledMet == "assign"){
+                              if(lhsType != null)
+                                  log("The scenario.assign method returns no value.", ctx)
+                              if(ctx.expression().size - 1 - calleeIndex != 1)
+                                  log("The scenario.assign method requires one parameter.", ctx)
+                              else{
+                                  val callType = getType(ctx.expression(1), inner, vars, thisType, inRule)
+                                  if(callType !is SimulatorType)
+                                      log("The scenario.assign method requires a FMO[...] parameter, got $callType.", ctx)
+                              }
+                          } else {
+                              log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
+                          }
+                      } else if (rhsType is SimulatorType) {
+                          if(calledMet == "canTick"){
+                              if(ctx.expression().size - 1 - calleeIndex != 0)
+                                  log("The FMO.$calledMet method takes no parameter.", ctx)
+                              if(lhsType != null && lhsType != BOOLEANTYPE)
+                                  log("Type Boolean is not assignable to $lhsType.", ctx)
+                          } else if(calledMet.startsWith("canSet_")) {
+                              if(ctx.expression().size - 1 - calleeIndex != 0)
+                                  log("The FMO.$calledMet method takes no parameter.", ctx)
+                              if(lhsType != null && lhsType != BOOLEANTYPE)
+                                  log("Type Boolean is not assignable to $lhsType.", ctx)
+                              val field = calledMet.substring(7)
+                              if(rhsType.inVar.none { it.first == field })
+                                  log("Field $field is not an input variable of $rhsType, cannot call $calledMet.", ctx)
+                          } else if(calledMet.startsWith("canGet_")) {
+                              if(ctx.expression().size - 1 - calleeIndex != 0)
+                                  log("The FMO.$calledMet method takes no parameter.", ctx)
+                              if(lhsType != null && lhsType != BOOLEANTYPE)
+                                  log("Type Boolean is not assignable to $lhsType.", ctx)
+                              val field = calledMet.substring(7)
+                              if(rhsType.outVar.none { it.first == field })
+                                  log("Field $field is not an output variable of $rhsType, cannot call $calledMet.", ctx)
+                          } else {
+                              log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
+                          }
+                      } else {
+                          log("Call on type $rhsType not possible: method $calledMet not found.", ctx)
+                      }
                   } else {
                       val otherClassName = rhsType.getPrimary().getNameString()
                       val met = methods.getOrDefault(otherClassName, listOf()).first { it.NAME().text == calledMet }

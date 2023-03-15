@@ -1,7 +1,9 @@
 package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.FALSEEXPR
 import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
@@ -61,15 +63,32 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
                 scen.assign(interpreter.simMemory[par]!!)
                 return EvalResult(null, emptyList())
             }
+            "check" -> {
+                val res = if(scen.check()) TRUEEXPR else FALSEEXPR
+                return replaceStmt(AssignStmt(target, res, declares = declares), stackFrame)
+            }
             else -> {
                 throw Exception("This method is unknown for scenarios: $method")
             }
         }
     }
     fun evalSim(newObj: LiteralExpr, heapObj: MutableMap<String, LiteralExpr>, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-        val sim = interpreter.simMemory[newObj]
+        val sim = interpreter.simMemory[newObj]!!
         when (method) {
+            "canTick" -> {
+                val res = if(sim.canTick()) TRUEEXPR else FALSEEXPR
+                return replaceStmt(AssignStmt(target, res, declares = declares), stackFrame)
+            }
             else -> {
+                if(method.startsWith("canGet_")){
+                    val f = method.substring(7)
+                    val res = if(sim.canGet(f)) TRUEEXPR else FALSEEXPR
+                    return replaceStmt(AssignStmt(target, res, declares = declares), stackFrame)
+                } else if(method.startsWith("canSet_")){
+                    val f = method.substring(7)
+                    val res = if(sim.canGet(f)) TRUEEXPR else FALSEEXPR
+                    return replaceStmt(AssignStmt(target, res, declares = declares), stackFrame)
+                }
                 throw Exception("This method is unknown for FMOs: $method")
             }
         }

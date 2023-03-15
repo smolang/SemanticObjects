@@ -31,7 +31,8 @@ abstract class SimpleType : Type() {
 }
 
 object ScenarioType : SimpleType(){
-    override fun getNameString(): String = "Scen"
+    override fun getNameString(): String = "Scenario"
+    override fun toString(): String = "Scenario"
     override fun isFullyConcrete(): Boolean = true
     override fun containsUnknown(types: Set<String>): Boolean = false
 

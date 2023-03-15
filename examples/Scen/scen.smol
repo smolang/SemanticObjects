@@ -9,18 +9,31 @@ main
     scenario.assign(prey);
     scenario.assign(predator);
 
+    Boolean c = scenario.check();
+    print(c);
+
     Int i = 0;
-    while (i <= 2000) do
-        prey.tick(0.1);
-        predator.tick(0.1);
-        prey.y = predator.y;
-        predator.x = prey.x;
+    while (i <= 5) do
+        Boolean b = prey.canTick();
+        if(b) then prey.tick(0.1); end
+        b = predator.canTick();
+        if(b) then  predator.tick(0.1); end
+
+        Double d = 0.0;
+        b = predator.canGet_y();
+        if(b) then  d = predator.y; end
+        b = prey.canSet_y();
+        if(b) then  prey.y = d; end
+
+        b = prey.canGet_x();
+        if(b) then  d = prey.x; end
+        b = predator.canSet_x();
+        if(b) then predator.x = d; end
+
         print(predator.y);
         i = i+1;
     end
 
-    //Boolean c = scenario.correct();
-    //print(c);
     /*
 
     Int i = 0;

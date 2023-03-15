@@ -1,6 +1,8 @@
 package no.uio.microobject.runtime
 
+import api.VerificationAPI
 import core.*
+import core.Set
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.type.BOOLEANTYPE
@@ -28,7 +30,8 @@ class SimulatorObject(val path : String, memory : Memory){
     private var time : Double = 0.0
 
     //representation for monitor
-    var scen : FmuConfig;
+    var scen : FmuConfig
+    var assignedScen = mutableListOf<SimulationScenario>()
 
     //additional fields
     var role : String = ""
@@ -39,6 +42,9 @@ class SimulatorObject(val path : String, memory : Memory){
         if(name == PSEUDOOFFSETFIELDNAME) return LiteralExpr(pseudoOffset.toString(), DOUBLETYPE)
         if(name == TIMEFIELDNAME) return LiteralExpr(time.toString(), DOUBLETYPE)
         val v = sim.modelDescription.getModelVariable(name)
+
+        assignedScen.forEach { it.set(role, v.name) }
+
         if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
         if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE)
         if(v.typeName == "Real") return LiteralExpr(sim.read(name).asDouble().toString(), DOUBLETYPE)
@@ -47,6 +53,7 @@ class SimulatorObject(val path : String, memory : Memory){
     fun tick(i : Double){
         sim.doStep(i)
         time += i
+        assignedScen.forEach { it.tick(role) }
         addSnapshot()
     }
 
@@ -78,15 +85,19 @@ class SimulatorObject(val path : String, memory : Memory){
             if(mVar.name == name){
                 if(mVar.causality == "input" && mVar.typeName == "Integer"){
                     sim.write(name).with(res.literal.toInt())
+                    assignedScen.forEach { it.set(role, mVar.name) }
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "Boolean"){
                     sim.write(name).with(res == TRUEEXPR)
+                    assignedScen.forEach { it.set(role, mVar.name) }
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "Real"){
                     sim.write(name).with(res.literal.toDouble())
+                    assignedScen.forEach { it.set(role, mVar.name) }
                     break
                 } else if(mVar.causality == "input" && mVar.typeName == "String"){
                     sim.write(name).with(res.literal )
+                    assignedScen.forEach { it.set(role, mVar.name) }
                     break
                 }
             }
@@ -174,6 +185,20 @@ class SimulatorObject(val path : String, memory : Memory){
         val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
         return scala.collection.immutable.HashMap<K, V>().concat(ins1)
     }
+
+    fun assignedTo(simulationScenario: SimulationScenario) {
+        assignedScen.add(simulationScenario)
+    }
+
+    fun canGet(f: String): Boolean {
+        return assignedScen.all { it.canGet(role, f) }
+    }
+    fun canSet(f: String): Boolean {
+        return assignedScen.all { it.canSet(role, f) }
+    }
+    fun canTick(): Boolean {
+        return assignedScen.all { it.canTick(role) }
+    }
 }
 
 
@@ -183,6 +208,9 @@ class SimulatorObject(val path : String, memory : Memory){
 class SimulationScenario(path : String){
     val assignedFmus = mutableMapOf<String, SimulatorObject>()
     var config : MasterModel
+    var closed = false //closed <=> check succeeded and no FMU has been re-assigned
+
+    val steps = mutableListOf<CosimStepInstruction>()
 
     init{
         config = ScenarioLoader.load(path)
@@ -190,10 +218,20 @@ class SimulationScenario(path : String){
 
     fun assign(fmo : SimulatorObject){
         assignedFmus.put(fmo.role, fmo)
+        fmo.assignedTo(this)
         config.scenario().fmus()
+        closed = false
     }
 
     fun check() : Boolean{
+        //check whether all FMUs are assigned
+        val assignedAllInScenario = assignedFmus.keys.any { !config.scenario().fmus().contains(it) }
+        val scenarioAllAssigned = config.scenario().fmus().keys().filter { assignedFmus.containsKey(it) }.isEmpty
+
+        if(!(assignedAllInScenario && scenarioAllAssigned))
+            return false
+
+        //create new mastermodel
         val fmus = assignedFmus.mapValues {  it.value.scen }.toMutableMap()
         config = config.copy(
             config.name(),
@@ -208,13 +246,38 @@ class SimulationScenario(path : String){
             config.cosimStep(),
             config.terminate()
         )
+        closed = true
 
-        return config != null
+
+        return VerificationAPI.verifyAlgorithm(config)
     }
 
 
     fun <K,V> toScalaMap(inp : MutableMap<K, V>): scala.collection.immutable.HashMap<K, V>? {
         val ins1  = JavaConverters.mapAsScalaMapConverter(inp).asScala()
         return scala.collection.immutable.HashMap<K, V>().concat(ins1)
+    }
+
+    fun set(role: String, name: String) {
+        if(!canSet(role, name)) throw Exception("Invalid action tick on $role")
+        steps.add(Set(PortRef(role, name)))
+    }
+    fun get(role: String, name: String) {
+        if(!canGet(role, name)) throw Exception("Invalid action tick on $role")
+        steps.add(Get(PortRef(role, name)))
+    }
+    fun tick(role: String) {
+        if(!canTick(role)) throw Exception("Invalid action tick on $role")
+        steps.add(Step(role, DefaultStepSize()))
+    }
+
+    fun canGet(role: String, name: String) : Boolean {
+        return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Get(PortRef(role, name))).correct()
+    }
+    fun canSet(role: String, name: String) : Boolean {
+        return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Set(PortRef(role, name))).correct()
+    }
+    fun canTick(role: String) : Boolean {
+        return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Step(role, DefaultStepSize())).correct()
     }
 }
