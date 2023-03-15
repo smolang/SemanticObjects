@@ -30,7 +30,7 @@ class SimulatorObject(val path : String, memory : Memory){
     private var time : Double = 0.0
 
     //representation for monitor
-    var scen : FmuConfig
+    var scen : FmuModel
     var assignedScen = mutableListOf<SimulationScenario>()
 
     //additional fields
@@ -160,7 +160,8 @@ class SimulatorObject(val path : String, memory : Memory){
 
 
         val outputScenMap = outputTempScenMap.mapValues { OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value)}.toMutableMap()
-        scen = FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" )
+        scen = ScenarioLoader.parse("", FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" ))
+
 
         sim.init(0.0)
         addSnapshot()
@@ -232,7 +233,7 @@ class SimulationScenario(path : String){
             return false
 
         //create new mastermodel
-        val fmus = assignedFmus.mapValues {  it.value.scen }.toMutableMap()
+        val fmus = assignedFmus.mapValues { it.value.scen }.toMutableMap()
         config = config.copy(
             config.name(),
             config.scenario().copy(
