@@ -38,12 +38,13 @@ class SimulatorObject(val path : String, memory : Memory){
     private var pseudoOffset : Double = 0.0
 
     fun read(name: String): LiteralExpr {
+        val v = sim.modelDescription.getModelVariable(name)
+        assignedScen.forEach { it.get(role, v.name) }
+
         if(name == ROLEFIELDNAME) return LiteralExpr(role, STRINGTYPE)
         if(name == PSEUDOOFFSETFIELDNAME) return LiteralExpr(pseudoOffset.toString(), DOUBLETYPE)
         if(name == TIMEFIELDNAME) return LiteralExpr(time.toString(), DOUBLETYPE)
-        val v = sim.modelDescription.getModelVariable(name)
 
-        assignedScen.forEach { it.set(role, v.name) }
 
         if(v.typeName == "Integer") return LiteralExpr(sim.read(name).asInteger().toString(), INTTYPE)
         if(v.typeName == "Boolean") return LiteralExpr(sim.read(name).asBoolean().toString(), BOOLEANTYPE)
@@ -71,7 +72,7 @@ class SimulatorObject(val path : String, memory : Memory){
 
     fun write(name: String, res: LiteralExpr) {
         if(name == ROLEFIELDNAME) {
-            role = res.literal
+            role = res.literal.removeSurrounding("\"","\"")
             return
         }
         if(name == PSEUDOOFFSETFIELDNAME) {

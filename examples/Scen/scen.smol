@@ -14,13 +14,9 @@ main
 
     Int i = 0;
     while (i <= 5) do
-        Boolean b = prey.canTick();
-        if(b) then prey.tick(0.1); end
-        b = predator.canTick();
-        if(b) then  predator.tick(0.1); end
 
         Double d = 0.0;
-        b = predator.canGet_y();
+        Boolean b = predator.canGet_y();
         if(b) then  d = predator.y; end
         b = prey.canSet_y();
         if(b) then  prey.y = d; end
@@ -30,7 +26,13 @@ main
         b = predator.canSet_x();
         if(b) then predator.x = d; end
 
-        print(predator.y);
+
+        b = prey.canTick();
+        if(b) then prey.tick(0.1); end
+        b = predator.canTick();
+        if(b) then  predator.tick(0.1); end
+
+        print("tick");
         i = i+1;
     end
 
