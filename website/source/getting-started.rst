@@ -24,6 +24,23 @@ After a successful build, the SMOL REPL can be started in that directory via::
 
   java -jar build/libs/smol.jar
 
+Editor Support
+^^^^^^^^^^^^^^
+
+There is basic support for SMOL for the following editors:
+
+- `Atom <https://github.com/atom/atom>`_
+
+  Supports syntax highlighting. Source, installation instructions at https://github.com/smolang/SemanticObjects/tree/master/editor-support/atom
+
+- `Emacs <https://www.gnu.org/software/emacs/>`_
+
+  Adds support for syntax highlighting and for running a SMOL REPL inside Emacs. Source, installation instructions at https://github.com/smolang/SemanticObjects/tree/master/editor-support/emacs
+
+- `Visual Studio Code <https://code.visualstudio.com>`_
+
+  Supports syntax highlighting. Source, installation instructions at https://github.com/smolang/smol-vs-code. Latest release at https://github.com/smolang/smol-vs-code/releases/latest.
+
 Running a Simple SMOL Program
 -----------------------------
 
