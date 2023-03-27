@@ -1,0 +1,126 @@
+@prefix : <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix run: <https://github.com/Edkamb/SemanticObjects/Run#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix prog: <https://github.com/Edkamb/SemanticObjects/Program#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix smol: <https://github.com/Edkamb/SemanticObjects#> .
+@prefix domain: <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#> .
+@base <http://www.w3.org/2002/07/owl#> .
+
+[ rdf:type owl:Ontology
+ ] .
+
+#################################################################
+#    Object Properties
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#above
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#above> rdf:type owl:ObjectProperty ;
+                                                 rdfs:subPropertyOf owl:topObjectProperty ;
+                                                 owl:inverseOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#below> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#behind
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#behind> rdf:type owl:ObjectProperty ;
+                                                  rdfs:subPropertyOf owl:topObjectProperty ;
+                                                  owl:inverseOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#front> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#below
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#below> rdf:type owl:ObjectProperty ;
+                                                 rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituted_by
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituted_by> rdf:type owl:ObjectProperty ;
+                                                          rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#front
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#front> rdf:type owl:ObjectProperty ;
+                                                 rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#has_quality
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#has_quality> rdf:type owl:ObjectProperty ;
+                                                       rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#left
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#left> rdf:type owl:ObjectProperty ;
+                                                rdfs:subPropertyOf owl:topObjectProperty ;
+                                                owl:inverseOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#right> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#location_of
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#location_of> rdf:type owl:ObjectProperty ;
+                                                       rdfs:subPropertyOf owl:topObjectProperty .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#right
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#right> rdf:type owl:ObjectProperty ;
+                                                 rdfs:subPropertyOf owl:topObjectProperty .
+
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#name
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#name> rdf:type owl:DatatypeProperty ;
+                                                rdfs:subPropertyOf owl:topDataProperty .
+
+
+###  http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#datavalue
+<http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#datavalue> rdf:type owl:DatatypeProperty ;
+                                                                                  rdfs:subPropertyOf owl:topDataProperty .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#chalk
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#chalk> rdf:type owl:Class ;
+                                                 rdfs:subClassOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituent> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituent
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituent> rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#fault
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#fault> rdf:type owl:Class ;
+                                                 rdfs:subClassOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#object> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#object
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#object> rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#oil
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#oil> rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#rock
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#rock> rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#shale
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#shale> rdf:type owl:Class ;
+                                                 rdfs:subClassOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#constituent> .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#temperature
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#temperature> rdf:type owl:Class .
+
+
+###  https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#unit
+<https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#unit> rdf:type owl:Class ;
+                                                rdfs:subClassOf <https://github.com/Edkamb/SemanticObjects/GeoSimulatorDomain#object> .
+
+
+###  Generated by the OWL API (version 4.5.9.2019-02-01T07:24:44Z) https://github.com/owlcs/owlapi

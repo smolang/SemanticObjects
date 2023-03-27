@@ -1,0 +1,24 @@
+abstract class GeoObject (GeoObject above,
+                          GeoObject below,
+                          GeoObject left,
+                          GeoObject right,
+                          GeoObject behind,
+                          GeoObject front) end
+abstract class GeoUnit(nonsemantic Double temp) extends GeoObject end
+    models "domain:has_quality [a domain:temperature; domain:datavalue %temp]";
+abstract class ChalkUnit() extends GeoUnit end
+    models "domain:constituted_by [a domain:chalk]."
+abstract class ShaleUnit(nonsemantic Boolean contains)
+    models(this.contains) "domain:constituted_by [a domain:shale]; domain:location_of [a domain:oil].";
+    models "domain:constituted_by [a domain:shale]."
+extends GeoUnit end
+abstract class Fault() extends GeoObject end
+
+
+main
+    ChalkUnit ch = new ChalkUnit(null, null, null, null, null, null, 0.0) models "domain:name \"Ekofisk\".";
+    ShaleUnit sh = new ShaleUnit(null, null, null, null, null, null, 100.0, true) models "domain:name \"Mandal\".";
+    sh.above = ch;
+    ch.below = sh;
+    print(ch.below);
+end
