@@ -207,10 +207,15 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val def = getClassDecl(ctx)
         val targetType =
             TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
-        val modeling =
-            if(ctx.owldescription != null) visit(ctx.owldescription) as Expression else
-            if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
+        val myModeling = if(ctx.owldescription != null) visit(ctx.owldescription) as LiteralExpr else null
+        val classModeling = if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+
+        val modeling = if(myModeling == null && classModeling == null) null
+        else if ( myModeling == null ) classModeling
+        else if ( classModeling == null ) myModeling
+        else LiteralExpr("\"${myModeling.literal.removeSurrounding("\"")} ${classModeling.literal.removeSurrounding("\"")}\"", STRINGTYPE)
+        if(modeling != null) println(modeling.literal);
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),
                           ll,

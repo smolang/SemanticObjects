@@ -114,7 +114,7 @@ class Interpreter(
         queryWithPrefixes += str
 
         val model = tripleManager.getModel()
-
+        queryWithPrefixes = queryWithPrefixes.replace("\\\"", "\"")
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
         val qexec = QueryExecutionFactory.create(query, model)

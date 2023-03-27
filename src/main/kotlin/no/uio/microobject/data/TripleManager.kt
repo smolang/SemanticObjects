@@ -468,7 +468,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         // Returns an iterator of all triples in the heap that matches searchTriple
         // graphBaseFind only constructs/fetches the triples that match searchTriple.
         public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
-            val useGuardClauses = tripleSettings.guards.getOrDefault("heap", true)
+            val useGuardClauses = false //tripleSettings.guards.getOrDefault("heap", true)
             val settings: Settings = interpreter.settings
             val heap: GlobalMemory = interpreter.heap
 
@@ -562,7 +562,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
                 // Generating triples for all fields values
                 for(store in heap[obj]!!.keys) {
-
                     if (store == "__models") {
                         // Connect object to a model
                         val modelString = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
@@ -599,25 +598,57 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                         }
 
                         for ((key, value) in interpreter.settings.prefixMap()) extendedDescription += "@prefix $key: <$value> .\n"
+                        description = description.replace("\\\"","\"")
+                        for(fd in heap[obj]!!.keys.filter { !it.startsWith("__") }){
+                            description = description.replace("%$fd","${heap[obj]!![fd]}")
+                        }
                         extendedDescription += description
                         val m: Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
                         // Consider each triple and add it if it matches the search triple.
                         for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
                     }
                     else {
-                        // Generate triples for each of the fields of the object.
-                        val predicateString = "${prog}${obj.tag}_${store}"
+                        //get the declaration
+                        val fDeclare = interpreter.staticInfo.fieldTable[obj.tag.name]!!.first { it.name == store }
 
-                        // Guard on the predicate. If the current predicate does not match the predicate of the search triple, then continue to the next store
-                        if (useGuardClauses) {
-                            if (searchTriple.predicate is Node_URI){
-                                if (searchTriple.predicate.uri != predicateString) continue
+
+                        if(fDeclare.isDomain) {
+                            // Generate triples for each of the fields of the object.
+                            val predicateString = "${domain}${obj.tag}_${store}"
+                            val target = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
+                            val value: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
+
+                            if (useGuardClauses) {
+                                if (searchTriple.predicate is Node_URI) {
+                                    if (searchTriple.predicate.uri != predicateString) continue
+                                }
                             }
-                        }
 
-                        val target: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                        val candidateTriple = Triple(NodeFactory.createURI(subjectString), NodeFactory.createURI(predicateString), getLiteralNode(target, settings))
-                        addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
+                            val candidateTriple = Triple(
+                                NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(target)),
+                                NodeFactory.createURI(predicateString),
+                                getLiteralNode(value, settings)
+                            )
+                            addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
+                        } else {
+                            // Generate triples for each of the fields of the object.
+                            val predicateString = "${prog}${obj.tag}_${store}"
+
+                            // Guard on the predicate. If the current predicate does not match the predicate of the search triple, then continue to the next store
+                            if (useGuardClauses) {
+                                if (searchTriple.predicate is Node_URI) {
+                                    if (searchTriple.predicate.uri != predicateString) continue
+                                }
+                            }
+
+                            val target: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
+                            val candidateTriple = Triple(
+                                NodeFactory.createURI(subjectString),
+                                NodeFactory.createURI(predicateString),
+                                getLiteralNode(target, settings)
+                            )
+                            addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
+                        }
                     }
                 }
             }
