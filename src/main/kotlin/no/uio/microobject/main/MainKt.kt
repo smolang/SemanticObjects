@@ -20,7 +20,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val extraPrefixes : HashMap<String, String>,
                     val useQueryType : Boolean = false
                     ){
-    private var prefixMapCache: HashMap<String, String>? = null
+    var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {
         if(prefixMapCache != null) return prefixMapCache as HashMap<String, String>
         prefixMapCache = hashMapOf(

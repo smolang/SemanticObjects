@@ -11,13 +11,13 @@ abstract class GeoUnit
     end
 
 class ChalkUnit extends GeoUnit ()
-    models "domain:constituted_by [a domain:chalk].";
+    models "domain:constituted_by _:fr1. _:fr1 a domain:chalk.";
     end
 
 class ShaleUnit
     extends GeoUnit (hidden Boolean contains)
-    models(this.contains) "domain:has_quality [domain:datavalue %temp]; domain:constituted_by [a domain:shale]; domain:location_of [a domain:oil].";
-    models "domain:has_quality [domain:datavalue %temp]; domain:constituted_by [a domain:shale].";
+    models(this.contains) "domain:has_quality _:fr1; domain:constituted_by _:fr2; domain:location_of _:fr3. _:fr1 domain:datavalue %temp. _:fr2 a domain:shale. _:fr3 a domain:oil.";
+    models "domain:has_quality _:fr1; domain:constituted_by _:fr2. _:fr1 domain:datavalue %temp. _:fr2 a domain:shale. ";
     end
 
 class Fault extends GeoObject () end
