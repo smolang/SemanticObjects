@@ -1,0 +1,7 @@
+# -*- mode: snippet; -*-
+# name: class
+# key: class
+# --
+${1:abstract }class ${2:ClassName} ${3:<${4:ClassParam}> }${5:extends ${6:Superclass} }(${7:type fieldname})
+    $0
+end
