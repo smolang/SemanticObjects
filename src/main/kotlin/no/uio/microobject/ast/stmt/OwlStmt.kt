@@ -14,7 +14,7 @@ import org.semanticweb.owlapi.model.OWLNamedIndividual
 import org.semanticweb.owlapi.reasoner.NodeSet
 
 data class OwlStmt(val target : Location, val query: Expression, val pos : Int = -1, val declares: Type?) : Statement {
-    override fun toString(): String = "$target := derive($query)"
+    override fun toString(): String = "$target := member($query)"
     override fun getRDF(): String {
         return """
             prog:stmt${this.hashCode()} rdf:type smol:OwlStatement.

@@ -29,6 +29,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.File
 import java.io.FileWriter
 import java.util.*
+import kotlin.streams.toList
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
     private var influxDBClient : InfluxDBClientKotlin? = null
@@ -131,7 +132,9 @@ class Interpreter(
         val ontology = tripleManager.getOntology()
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+        println("ontology: ${ontology.dataPropertiesInSignature().toList().joinToString("\n")}")
         parser.setDefaultOntology(ontology)
+        println("here we go: $out")
         val expr = parser.parseClassExpression(out)
         return reasoner.getInstances(expr)
     }

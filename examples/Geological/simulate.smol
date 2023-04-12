@@ -6,7 +6,7 @@ abstract class GeoObject (GeoObject above,
                           GeoObject front) end
 
 abstract class GeoUnit
-    extends GeoObject (domain Double temp)
+    extends GeoObject (hidden Double temp)
     models "";
     end
 

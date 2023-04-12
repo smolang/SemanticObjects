@@ -1,0 +1,26 @@
+abstract class GeoObject (GeoObject above,
+                          GeoObject below,
+                          GeoObject left,
+                          GeoObject right,
+                          GeoObject behind,
+                          GeoObject front) end
+
+
+
+class Fault extends GeoObject () end
+
+
+abstract class GeoUnit extends GeoObject (hidden Double temp) end
+
+class ChalkUnit extends GeoUnit (hidden Double tensile_strength)
+    models "UFRGS1:GeoCoreOntology_constituted_by _:fr1; domain:tensile_strength _:fr2. _:fr1 a domain:chalk. _:fr2 domain:datavalue %tensile_strength.";
+    end
+
+main
+    Fault f = new Fault(null, null, null, null, null, null);
+    ChalkUnit c = new ChalkUnit(null, null, null, null, null, null, 100.0, 0.5);
+    List<ChalkUnit> fs = /*access("SELECT ?obj {?obj domain:models [UFRGS1:GeoCoreOntology_constituted_by [a domain:chalk]]}");
+   print(fs);
+     fs = */ member("obo:RO_0000056 some owl:Thing");
+   print(fs);
+end
