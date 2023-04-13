@@ -86,7 +86,7 @@ class Main : CliktCommand() {
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
     private val materialize  by option("--materialize", "-m",  help="Materialize triples and dump to file.").flag()
     private val queryType    by option("--useQueryType", "-q",  help="Activates the type checker for access").flag()
-    private val extra        by option("--prefixes", "-p", help="Extra prefixes, given as a list PREFIX=URI").associate()
+    private val extra        by option("--prefixes", "-p", help="Extra prefixes, given as a list -p PREFIX1=URI1 -p PREFIX2=URI2").associate()
 
     override fun run() {
         org.apache.jena.query.ARQ.init()
@@ -104,7 +104,7 @@ class Main : CliktCommand() {
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
         }
-
+        println(extra.keys)
         val repl = REPL( Settings(verbose, materialize, outdir.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra), useQueryType = queryType))
         if(input != null){
             repl.command("read", input.toString())

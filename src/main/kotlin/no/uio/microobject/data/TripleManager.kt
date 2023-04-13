@@ -81,6 +81,11 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     // Return an OWL ontology corresponding to the requested sources.
     private fun getOntologyFromModel(tripleSettings: TripleSettings): OWLOntology {
         val model = getModelUnion(tripleSettings)
+        if (settings.materialize) {
+            File(settings.outdir).mkdirs()
+            File("${settings.outdir}/output.ttl").createNewFile()
+            model.write(FileWriter("${settings.outdir}/output.ttl"),"TTL")
+        }
         val manager: OntologyManager = OntManagers.createManager()
 
         // Settings related to how model is loaded into an ontology.

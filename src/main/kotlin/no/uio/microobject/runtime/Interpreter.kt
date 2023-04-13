@@ -132,9 +132,7 @@ class Interpreter(
         val ontology = tripleManager.getOntology()
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-        println("ontology: ${ontology.dataPropertiesInSignature().toList().joinToString("\n")}")
         parser.setDefaultOntology(ontology)
-        println("here we go: $out")
         val expr = parser.parseClassExpression(out)
         return reasoner.getInstances(expr)
     }
