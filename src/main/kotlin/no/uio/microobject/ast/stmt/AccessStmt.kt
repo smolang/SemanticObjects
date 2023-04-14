@@ -36,7 +36,7 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
         val path = (mode as InfluxDBMode).config.removeSurrounding("\"")
         val config = ConfigLoader().loadConfigOrThrow<InfluxDBConnection>(File(path))
 
-        val str = interpreter.prepareQuery(query, params, stackFrame.store, interpreter.heap, stackFrame.obj)
+        val str = interpreter.prepareQuery(query, params, stackFrame.store, interpreter.heap, stackFrame.obj,false)
         val vals = config.queryOneSeries(str.removeSurrounding("\""))
         var list = LiteralExpr("null")
         for(r in vals){

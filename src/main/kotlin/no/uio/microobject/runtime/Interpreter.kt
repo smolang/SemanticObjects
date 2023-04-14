@@ -189,7 +189,7 @@ class Interpreter(
     /**
      * This implements the substitution of meta-variables %i
      */
-    fun prepareQuery(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    fun prepareQuery(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")
@@ -198,8 +198,8 @@ class Interpreter(
         for (expr in params) {
             val p = eval(expr, stackMemory, heap, simMemory, obj)
             str = when (p.tag) {
-                INTTYPE     -> str.replace("%${i++}", "\"${p.literal}\"^^xsd:integer");
-                DOUBLETYPE  -> str.replace("%${i++}", "\"${p.literal}\"^^xsd:double");
+                INTTYPE     -> str.replace("%${i++}", if(SPARQL) "\"${p.literal}\"^^xsd:integer" else p.literal);
+                DOUBLETYPE  -> str.replace("%${i++}", if(SPARQL)"\"${p.literal}\"^^xsd:double" else p.literal);
                 STRINGTYPE  -> str.replace("%${i++}", p.literal);
                 else        -> str.replace("%${i++}", "run:${p.literal}")
             }
