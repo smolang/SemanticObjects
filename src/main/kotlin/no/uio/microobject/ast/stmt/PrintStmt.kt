@@ -6,6 +6,7 @@ import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
+import no.uio.microobject.type.STRINGTYPE
 
 //for output
 data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
@@ -20,7 +21,9 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
     }
 
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-        println(interpreter.eval(expr, stackFrame))
+        val res = interpreter.eval(expr, stackFrame)
+        if(res.tag == STRINGTYPE) println(res.literal.removeSurrounding("\""))
+        else print(res)
         return EvalResult(null, emptyList())
     }
 
