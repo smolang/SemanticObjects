@@ -186,7 +186,10 @@ class Interpreter(
         return true
     }
 
-    fun prepareSPARQL(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
+    /**
+     * This implements the substitution of meta-variables %i
+     */
+    fun prepareQuery(queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr) : String{
         val query = eval(queryExpr, stackMemory, heap, simMemory, obj)
         if (query.tag != STRINGTYPE)
             throw Exception("Query is not a string: $query")
