@@ -76,6 +76,10 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
                         LiteralExpr("\"" + found + "\"", STRINGTYPE)
                     else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDinteger)
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], INTTYPE)
+                    else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDdouble)
+                        newMemory["content"] = LiteralExpr(found.split("^^")[0], DOUBLETYPE)
+                    else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDfloat)
+                        newMemory["content"] = LiteralExpr(found.split("^^")[0], DOUBLETYPE)
                     else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], INTTYPE)
                     else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] =
