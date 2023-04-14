@@ -581,19 +581,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Cannot instantiate abstract class $createClass", ctx)
                 val newType : Type = newTypeFound
 
-                /*if(ctx.namelist() != null)
-                    newType = ComposedType(newType, ctx.namelist().NAME().map {
-                        stringToType(it.text, className, generics)
-                    })
-
-                if(createDecl?.namelist() != null){
-                    if(ctx.namelist() == null ){
-                        log("Generic parameters for $createClass missing.", ctx)
-                    }else if(createDecl.namelist().NAME().size != ctx.namelist().NAME().size){
-                        log("Number of generic parameters for $createClass is wrong.", ctx)
-                    }
-                }*/
-
                 val creationParameters = getParameterTypes(createClass)
                 if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
                     for(i in 1 until creationParameters.size+1){
@@ -621,6 +608,19 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
+                    if (ctx.declType != null) {
+                        val lhs = ctx.expression(0)
+                        if (lhs !is WhileParser.Var_expressionContext) {
+                            log("Variable declaration must declare a variable.", ctx)
+                        } else {
+                            val name = lhs.NAME().text
+                            if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                            else {
+                                val expType = translateType(ctx.type(), className, generics)
+                                vars[name] = expType
+                            }
+                        }
+                    }
                     log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
                 }else {
                     var expType: Type? = null
