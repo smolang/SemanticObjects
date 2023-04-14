@@ -194,11 +194,12 @@ class Interpreter(
         var i = 1
         for (expr in params) {
             val p = eval(expr, stackMemory, heap, simMemory, obj)
-            //todo: check is this truly a run:literal
-            if(p.tag == INTTYPE)
-                str = str.replace("%${i++}", "\"${p.literal}\"^^xsd:integer")
-            else
-                str = str.replace("%${i++}", "run:${p.literal}")
+            str = when (p.tag) {
+                INTTYPE     -> str.replace("%${i++}", "\"${p.literal}\"^^xsd:integer");
+                DOUBLETYPE  -> str.replace("%${i++}", "\"${p.literal}\"^^xsd:double");
+                STRINGTYPE  -> str.replace("%${i++}", p.literal);
+                else        -> str.replace("%${i++}", "run:${p.literal}")
+            }
         }
         if (!staticInfo.fieldTable.containsKey("List") || !staticInfo.fieldTable["List"]!!.any { it.name == "content" } || !staticInfo.fieldTable["List"]!!.any { it.name == "next" }
         ) {

@@ -58,6 +58,11 @@ class SMOLExecutionTest: MicroObjectTest() {
             assertEquals(1, a.stack.size)
             assertEquals(TRUEEXPR, a.evalTopMost(LocalVar("val", BaseType("List"))))
         }
+        "literalQuery"{
+            val (a, _) = initInterpreter("literalQuery", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(0, a.stack.size) // tests that no exception is thrown
+        }
         "scene"{
             val (a, _) = initInterpreter("scene", StringLoad.RES)
             executeUntilBreak(a)
