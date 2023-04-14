@@ -198,6 +198,20 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         }
     }
 
+    override fun visitConversion_expression(ctx: Conversion_expressionContext?): ProgramElement {
+        val conv = visitConversion(ctx!!.conversion())
+        val inner = visit(ctx.expression()) as Expression
+        return ConversionExpr(conv, inner)
+    }
+
+    override fun visitConversion(ctx: ConversionContext?): Conversion {
+        if(ctx!!.text == "intToString") return Conversion.INTTOSTRING
+        if(ctx!!.text == "intToDouble") return Conversion.INTTODOUBLE
+        if(ctx!!.text == "doubleToInt") return Conversion.DOUBLETOINT
+        if(ctx!!.text == "doubleToString") return Conversion.DOUBLETOSTRING
+        return Conversion.DOUBLETOSTRING
+    }
+
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {
         val ll = emptyList<Expression>().toMutableList()
         for(i in 1 until ctx!!.expression().size) {

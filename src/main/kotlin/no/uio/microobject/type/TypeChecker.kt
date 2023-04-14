@@ -1,6 +1,7 @@
 package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
+import no.uio.microobject.ast.expr.Conversion
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.FieldInfo
@@ -988,6 +989,34 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.DEFAULT, thisType, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
+            }
+            is WhileParser.Conversion_expressionContext -> {
+                if(eCtx!!.conversion().text == "intToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == INTTYPE) return STRINGTYPE
+                    log("Expression intToString expects an integer as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
+                if(eCtx!!.conversion().text == "intToDouble") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == INTTYPE) return DOUBLETYPE
+                    log("Expression intToDouble expects an integer as a parameter.",eCtx)
+                    return DOUBLETYPE
+                }
+                if(eCtx!!.conversion().text == "doubleToInt") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == DOUBLETYPE) return INTTYPE
+                    log("Expression doubleToInt expects a double as a parameter.",eCtx)
+                    return INTTYPE
+                }
+                if(eCtx!!.conversion().text == "doubleToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == DOUBLETYPE) return STRINGTYPE
+                    log("Expression intToString expects a double as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
+                log("Unknown conversion.",eCtx)
+                return ERRORTYPE
             }
             else -> {
                 log("Expression $eCtx cannot be type checked.",eCtx)

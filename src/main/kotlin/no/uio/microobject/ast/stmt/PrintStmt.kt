@@ -23,7 +23,7 @@ data class PrintStmt(val expr: Expression, val pos : Int = -1): Statement {
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val res = interpreter.eval(expr, stackFrame)
         if(res.tag == STRINGTYPE) println(res.literal.removeSurrounding("\""))
-        else print(res)
+        else println(res)
         return EvalResult(null, emptyList())
     }
 

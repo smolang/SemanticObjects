@@ -69,6 +69,12 @@ AND : '&';
 OR : '|';
 NOT : '!';
 
+//Keywords: conversions
+INTTOSTRING :    'intToString';
+DOUBLETOSTRING : 'doubleToString';
+INTTODOUBLE : 'intToDouble';
+DOUBLETOINT : 'doubleToInt';
+
 //Keywords: others
 DOT : '.';
 SEMI : ';';
@@ -149,6 +155,7 @@ expression :      THIS                           # this_expression
                 | FLOAT                          # double_expression
                 | NULL                           # null_expression
                 | UNIT                           # unit_expression
+                | conversion OPARAN expression CPARAN # conversion_expression
                 | expression DOT PORT OPARAN STRING CPARAN	# fmu_field_expression
                 | expression DOT NAME			 # external_field_expression
                 | expression DIV expression      # div_expression
@@ -181,3 +188,4 @@ fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
+conversion: INTTOSTRING | DOUBLETOSTRING | INTTODOUBLE | DOUBLETOINT;

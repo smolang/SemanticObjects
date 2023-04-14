@@ -1,0 +1,39 @@
+
+
+
+class Conv()
+  Unit success()
+    Int i = 5;
+    Double d = 0.2;
+    Int i2 = doubleToInt(d);
+    Int i3 = doubleToInt(0.4);
+    Double d2 = intToDouble(i);
+    Double d3 = intToDouble(3);
+    String s1 = intToString(i);
+    String s2 = intToString(12);
+    String s3 = doubleToString(d);
+    String s4 = doubleToString(0.6);
+    String s5 = intToString(doubleToInt(0.6) + doubleToInt(intToDouble(i)));
+    print(i);
+    print(i2);
+    print(i3);
+    print(d);
+    print(d2);
+    print(d3);
+    print(s1);
+    print(s2);
+    print(s3);
+    print(s4);
+    print(s5);
+  end
+    Unit fail()
+      Int i = 5;
+      Double d = 0.2;
+      Int i2 = doubleToInt(i);
+      String s2 = doubleToString(12);
+      Int s3 = doubleToString(d);
+      String s4 = doubleToString(0.6);
+      String s5 = intToString(doubleToInt(0.6) + intToDouble(doubleToInt(i)));
+    end
+end
+main skip; end
