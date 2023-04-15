@@ -122,7 +122,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, owldescr)
                    )
     }
 

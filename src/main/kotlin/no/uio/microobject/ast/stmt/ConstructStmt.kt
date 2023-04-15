@@ -6,10 +6,7 @@ import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
-import no.uio.microobject.type.BaseType
-import no.uio.microobject.type.ComposedType
-import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 
 // For ontology-based reflexion
@@ -64,6 +61,15 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                         newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
                     else
                         newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
+                }
+                val rdfName = Names.getNodeName()
+
+                if(interpreter.staticInfo.owldescr[className] != null) {
+                    newObjMemory["__describe"] = LiteralExpr(
+                        "$rdfName ${interpreter.staticInfo.owldescr[className]!!.removeSurrounding("\"")}",
+                        STRINGTYPE
+                    )
+                    newObjMemory["__models"] = LiteralExpr(rdfName, STRINGTYPE)
                 }
                 interpreter.heap[newObjName] = newObjMemory
                 newListMemory["content"] = newObjName
