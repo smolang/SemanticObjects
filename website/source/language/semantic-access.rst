@@ -279,6 +279,30 @@ In this case, the result is always a ``List`` of ``Double`` values.
 
 .. NOTE::
    Currently, only InfluxQL queries with a single return variable are supported. Influx-mode ``access`` statements are not type-checked.
+   
+
+The access statement can additionally contain variables of the form ``%i`` for some strictly positive number ``i``. 
+The set of numbers for the non-answer variables must form an interval [1,n] for some n.
+
+In this case, the query is executed with the values of the variables ``name`` and ``sensor tag`` substituted for the corresponding parameters ``%1`` and ``%2``.
+::
+
+  main
+    String name = "faarikaal1";
+    Integer sensorTag = 1;
+
+    List<Double> list := access(
+    "from(bucket: \"petwin\")
+      |> range(start: -1h, stop: -1m)
+      |> filter(fn: (r) => r[\"_measurement\"] == \"chili\")
+      |> filter(fn: (r) => r[\"_field\"] == \"temperature\")
+      |> filter(fn: (r) => r[\"name\"] == %1)
+      |> filter(fn: (r) => r[\"sensorTag\"] == %2)
+      |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+      |> yield(name: \"mean\")",
+    INFLUXDB("petwin.yml"), name, sensorTag);
+    print(list.content);
+  end
 
 
 
