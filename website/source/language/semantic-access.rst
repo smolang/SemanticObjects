@@ -73,14 +73,14 @@ Example
 .. code-block:: Java
 
   class C (Int i) 
-    models (this.i > 0) "a :containsPositive";
-    models "a :containsNonPositive";
+    models (this.i > 0) "a :containsPositive .";
+    models "a :containsNonPositive .";
   end
 
   main
     C c = new C(5);
     C d = new C(0);
-    C e = new C(4) models "a :special";
+    C e = new C(4) models "a :special .";
   end
 
 The lifting will contain the following axioms:
