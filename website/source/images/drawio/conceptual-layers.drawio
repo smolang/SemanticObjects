@@ -1,0 +1,31 @@
+<mxfile host="65bd71144e">
+    <diagram id="lXdoRajmaMa5AJOiqRl4" name="Page-1">
+        <mxGraphModel dx="392" dy="294" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="850" pageHeight="1100" math="0" shadow="0">
+            <root>
+                <mxCell id="0"/>
+                <mxCell id="1" parent="0"/>
+                <mxCell id="2" value="&lt;b&gt;Insight:&lt;/b&gt;&lt;br&gt;&lt;br&gt;visualisation, dashboards, analyses" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="100" width="230" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="3" value="" style="endArrow=classic;startArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1" source="2">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="180" y="160" as="sourcePoint"/>
+                        <mxPoint x="165" y="230" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="4" value="&lt;b&gt;Information:&lt;/b&gt;&lt;br&gt;&lt;br&gt;domain knoledge, structured data" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="230" width="230" height="60" as="geometry"/>
+                </mxCell>
+                <mxCell id="6" value="" style="endArrow=classic;startArrow=classic;html=1;exitX=0.5;exitY=1;exitDx=0;exitDy=0;" edge="1" parent="1">
+                    <mxGeometry width="50" height="50" relative="1" as="geometry">
+                        <mxPoint x="164.5" y="290" as="sourcePoint"/>
+                        <mxPoint x="164.5" y="360" as="targetPoint"/>
+                    </mxGeometry>
+                </mxCell>
+                <mxCell id="7" value="&lt;b&gt;Data:&lt;/b&gt;&lt;br&gt;&lt;br&gt;observations, parameters, domain model" style="rounded=0;whiteSpace=wrap;html=1;fillColor=none;" vertex="1" parent="1">
+                    <mxGeometry x="50" y="360" width="230" height="60" as="geometry"/>
+                </mxCell>
+            </root>
+        </mxGraphModel>
+    </diagram>
+</mxfile>

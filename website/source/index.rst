@@ -24,6 +24,7 @@ available at https://github.com/smolang/SemanticObjects.
    Tutorial <tutorial>
    Internals <internals>
    Publications <publications>
+   Digital Twin Lab <lab>
 
 ..
    Indices and tables

@@ -19,5 +19,5 @@ To run a SMOL REPL inside Emacs, set the variable `smol-jar-file` to the path
 of the SMOL jar file, e.g. via
 
 ```elisp
-(setq smol-jar-file "/path/to/SemanticObjects/build/libs/smol-0.2-all.jar")
+(setq smol-jar-file "/path/to/SemanticObjects/build/libs/smol.jar")
 ```

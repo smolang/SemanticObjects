@@ -122,7 +122,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, owldescr)
                    )
     }
 
@@ -196,6 +196,20 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 declares
             )
         }
+    }
+
+    override fun visitConversion_expression(ctx: Conversion_expressionContext?): ProgramElement {
+        val conv = visitConversion(ctx!!.conversion())
+        val inner = visit(ctx.expression()) as Expression
+        return ConversionExpr(conv, inner)
+    }
+
+    override fun visitConversion(ctx: ConversionContext?): Conversion {
+        if(ctx!!.text == "intToString") return Conversion.INTTOSTRING
+        if(ctx!!.text == "intToDouble") return Conversion.INTTODOUBLE
+        if(ctx!!.text == "doubleToInt") return Conversion.DOUBLETOINT
+        if(ctx!!.text == "doubleToString") return Conversion.DOUBLETOSTRING
+        return Conversion.DOUBLETOSTRING
     }
 
     override fun visitCreate_statement(ctx: Create_statementContext?): ProgramElement {

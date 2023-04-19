@@ -4,7 +4,7 @@
 ;; Author: Rudi Schlatte <rudi@constantly.at>
 ;; URL: https://github.com/Edkamb/SemanticObjects/tree/master/emacs
 ;; Version: 1.0
-;; Package-Requires: ((emacs "27.1"))
+;; Package-Requires: ((emacs "27.1") (yasnippet "0.14.0"))
 ;; Keywords: languages
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -24,18 +24,46 @@
 ;; A major mode for editing files for the SMOL language.
 ;;
 
+(require 'yasnippet nil t)              ; ignore if not installed
+
 ;;; Customization
 (defgroup smol nil
   "Major mode for editing files in the SMOL language."
   :group 'languages)
 
-(defcustom smol-jar-file "build/libs/smol-0.2-all.jar"
+(defcustom smol-jar-file "build/libs/smol.jar"
   "The jar file containing the SMOL interpreter."
   :type '(file :must-match t)
   :group 'smol
   :risky t)
 
+(defcustom smol-mode-hook (list 'imenu-add-menubar-index 'smol-maybe-yasnippet-mode-on)
+  "Hook run after entering SMOL mode."
+  :type 'hook
+  :options (list 'imenu-add-menubar-index 'smol-maybe-yasnippet-mode-on)
+  :group 'abs)
 
+;;; Snippets
+(defvar smol--yas-snippets-dir
+  (expand-file-name
+   "snippets"
+   (file-name-directory
+    (cond
+     (load-in-progress
+      load-file-name)
+     ((and (boundp 'byte-compile-current-file)
+           byte-compile-current-file)
+      byte-compile-current-file)
+     (t
+      (buffer-file-name)))))
+  "Directory containing yasnippet snippets for SMOL.")
+
+(defun smol-maybe-yasnippet-mode-on ()
+  "Activate yasnippet-minor-mode in current buffer if available."
+  (when (featurep 'yasnippet)
+    (yas-minor-mode-on)))
+
+;;;  Syntax table
 (defvar smol-mode-syntax-table (copy-syntax-table)
   "Syntax table for `smol-mode'.")
 (modify-syntax-entry ?/   ". 124" smol-mode-syntax-table)
@@ -77,6 +105,17 @@
    (cons smol-types font-lock-type-face))
   "Font lock information for SMOL.")
 
+;;; Imenu
+(defvar smol-imenu-generic-expression
+  `(("Classes"
+     ,(rx bol (* whitespace) (? "abstract" (+ whitespace)) "class" (+ whitespace)
+          (group (+ (syntax word))))
+     1)
+    (nil
+     ,(rx bol (* whitespace) (group "main") (* whitespace) eol)
+     1))
+  "Imenu expression for `smol-mode'.  See `imenu-generic-expression'.")
+
 (define-derived-mode smol-mode prog-mode "SMOL"
   "Major mode for editing SMOL files."
   :group 'smol
@@ -86,7 +125,18 @@
               comment-start-skip "//+\\s-*")
   (setq font-lock-defaults (list 'smol-font-lock-defaults))
   (define-key smol-mode-map (kbd "C-c C-c")
-    'smol-eval-current-file))
+    'smol-eval-current-file)
+  ;; imenu
+  (setq imenu-generic-expression smol-imenu-generic-expression)
+  ;; Snippet support
+  (when (featurep 'yasnippet)
+    ;; don't let our missing indentation support mess up the snippets
+    (setq-local yas-indent-line 'fixed)
+    (unless (member abs--yas-snippets-dir yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs abs--yas-snippets-dir t)
+      ;; we use an internal function here, but the `yasnippet-snippets' package
+      ;; does the same; let's assume this is a de facto public API for now.
+      (yas--load-snippet-dirs))))
 
 ;;;###autoload
 (add-to-list 'auto-mode-alist '("\\.smol\\'" . smol-mode))

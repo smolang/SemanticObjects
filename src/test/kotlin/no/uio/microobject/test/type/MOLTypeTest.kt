@@ -17,6 +17,12 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
         "OP Test Success"{
             assert(checkMet("Test", "opsuccess", "test_assign" ).report(false))
         }
+        "conversion success"{
+            assert(checkMet("Conv", "success", "conversion" ).report(false))
+        }
+        "conversion fail"{
+            assertFalse(checkMet("Conv", "fail", "conversion" ).report(false))
+        }
         "OP Test Fail"{
             assertFalse(checkMet("Test", "opfail", "test_assign" ).report(false))
         }

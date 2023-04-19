@@ -29,6 +29,13 @@ Use the following punctuation characters in the section titles:
 - `^` for subsubsections (“Heading 3”)
 - `"` for paragraphs (“Heading 4”)
 
+# Static files
+
+Static files, such as pdfs of presentations, are placed below `source/files/`,
+and linked with a sphinx `:download:` link, for example:
+
+    :download:`Slides for day one <files/tutorial_ictac2022/demo_day1.pdf>`
+
 # Basic rst info
 
 https://chiplicity.readthedocs.io/en/latest/Using_Sphinx/OnReStructuredText.html

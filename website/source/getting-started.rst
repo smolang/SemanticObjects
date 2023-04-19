@@ -24,6 +24,23 @@ After a successful build, the SMOL REPL can be started in that directory via::
 
   java -jar build/libs/smol.jar
 
+Editor Support
+^^^^^^^^^^^^^^
+
+There is basic support for SMOL for the following editors:
+
+- `Atom <https://github.com/atom/atom>`_
+
+  Supports syntax highlighting. Source, installation instructions at https://github.com/smolang/SemanticObjects/tree/master/editor-support/atom
+
+- `Emacs <https://www.gnu.org/software/emacs/>`_
+
+  Adds support for syntax highlighting and for running a SMOL REPL inside Emacs. Source, installation instructions at https://github.com/smolang/SemanticObjects/tree/master/editor-support/emacs
+
+- `Visual Studio Code <https://code.visualstudio.com>`_
+
+  Supports syntax highlighting. Source, installation instructions at https://github.com/smolang/smol-vs-code. Latest release at https://github.com/smolang/smol-vs-code/releases/latest.
+
 Running a Simple SMOL Program
 -----------------------------
 
@@ -87,9 +104,10 @@ SMOL Command-Line Parameters
 
    Options:
      -e, -l, --execute, --load
-     -b, --back PATH            path to a .ttl file that contains OWL class
+     -b, --back PATH            path to a file containing OWL class
                                 definitions as background knowledge.
-     -d, --domain TEXT          prefix for domain:.
+     -d, --domain TEXT          prefix for domain:. (default
+                                https://github.com/Edkamb/SemanticObjects/ontologies/default#)
      -i, --input PATH           path to a .smol file which is loaded on startup.
      -r, --replay PATH          path to a file containing a series of shell
                                 commands.
@@ -126,7 +144,7 @@ General Commands
    * - ``verbose`` *enabled*
      - Sets verbose output to on or off
      - *enabled*: ``true`` or ``false``
-   * - ``outpath`` *path*
+   * - ``outdir`` *path*
      - Sets or prints the directory where SMOL write data files
      - *path*: a directory name; if omitted, print the current value
 
@@ -193,7 +211,7 @@ Commands for Querying SMOL
        - *from*: (optional) the starting time of the plot
        - *to*: (optional) the end time of the plot
    * - ``dump`` *file*
-     - Create file in ``outpath`` containing the current heap state in TRTL
+     - Create file in ``outdir`` containing the current heap state in TRTL
        format
      - *file* (optional): the file to create; default ``output.ttl``
 

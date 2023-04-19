@@ -1,0 +1,8 @@
+main
+    Int i = 5;
+    Double d = 0.2;
+    String s = "str";
+
+    List<Int> l = access("SELECT ?obj { ?obj domain:sthI %1; domain:sthD %2; domain:sthS %3.}",i, d, s);
+    print(l);
+end

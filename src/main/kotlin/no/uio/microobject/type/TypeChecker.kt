@@ -1,6 +1,7 @@
 package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
+import no.uio.microobject.ast.expr.Conversion
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.FieldInfo
@@ -580,19 +581,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Cannot instantiate abstract class $createClass", ctx)
                 val newType : Type = newTypeFound
 
-                /*if(ctx.namelist() != null)
-                    newType = ComposedType(newType, ctx.namelist().NAME().map {
-                        stringToType(it.text, className, generics)
-                    })
-
-                if(createDecl?.namelist() != null){
-                    if(ctx.namelist() == null ){
-                        log("Generic parameters for $createClass missing.", ctx)
-                    }else if(createDecl.namelist().NAME().size != ctx.namelist().NAME().size){
-                        log("Number of generic parameters for $createClass is wrong.", ctx)
-                    }
-                }*/
-
                 val creationParameters = getParameterTypes(createClass)
                 if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
                     for(i in 1 until creationParameters.size+1){
@@ -620,6 +608,19 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
+                    if (ctx.declType != null) {
+                        val lhs = ctx.expression(0)
+                        if (lhs !is WhileParser.Var_expressionContext) {
+                            log("Variable declaration must declare a variable.", ctx)
+                        } else {
+                            val name = lhs.NAME().text
+                            if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                            else {
+                                val expType = translateType(ctx.type(), className, generics)
+                                vars[name] = expType
+                            }
+                        }
+                    }
                     log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
                 }else {
                     var expType: Type? = null
@@ -988,6 +989,34 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.DEFAULT, thisType, false)
                 )
                 return instantiateGenerics(fieldType.type, t1, primName, generics.getOrDefault(thisType.getPrimary().getNameString(), listOf()))
+            }
+            is WhileParser.Conversion_expressionContext -> {
+                if(eCtx!!.conversion().text == "intToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == INTTYPE) return STRINGTYPE
+                    log("Expression intToString expects an integer as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
+                if(eCtx!!.conversion().text == "intToDouble") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == INTTYPE) return DOUBLETYPE
+                    log("Expression intToDouble expects an integer as a parameter.",eCtx)
+                    return DOUBLETYPE
+                }
+                if(eCtx!!.conversion().text == "doubleToInt") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == DOUBLETYPE) return INTTYPE
+                    log("Expression doubleToInt expects a double as a parameter.",eCtx)
+                    return INTTYPE
+                }
+                if(eCtx!!.conversion().text == "doubleToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == DOUBLETYPE) return STRINGTYPE
+                    log("Expression intToString expects a double as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
+                log("Unknown conversion.",eCtx)
+                return ERRORTYPE
             }
             else -> {
                 log("Expression $eCtx cannot be type checked.",eCtx)

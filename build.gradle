@@ -50,6 +50,8 @@ compileKotlin {
 }
 compileKotlin.dependsOn generateGrammarSource
 
+compileTestKotlin.dependsOn generateTestGrammarSource
+
 jar {
     archiveFileName='smol.jar'
     manifest {

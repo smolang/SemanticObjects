@@ -22,9 +22,10 @@ data class MethodInfo(val stmt: Statement, val params: List<String>, val isRule 
 data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields
     val methodTable: Map<String, Map<String, MethodInfo>>, // This maps class names to a map that maps method names to their definition
-    val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(),
-    val modelsTable: Map<String, List<ModelsEntry>>                // This maps class names to models blocks
-) { // DOWNWARDS class hierarchy
+    val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(), // DOWNWARDS class hierarchy
+    val modelsTable: Map<String, List<ModelsEntry>>,                // This maps class names to complex models blocks
+    val owldescr: MutableMap<String, String>                // This maps class names to the default models block
+) {
     override fun toString(): String =
 """
 Class Hierarchy : $hierarchy 
