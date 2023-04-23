@@ -1,26 +1,98 @@
-abstract class GeoObject (GeoObject above,
-                          GeoObject below,
-                          GeoObject left,
-                          GeoObject right,
-                          GeoObject behind,
-                          GeoObject front) end
+abstract class GeoObject (hidden GeoObject above,
+                          hidden GeoObject below,
+                          hidden GeoObject left,
+                          hidden GeoObject right,
+                          hidden GeoObject behind,
+                          hidden GeoObject front,
+                          hidden Double size)
+    Double getSizeAbove()
+        if(this.above == null) then return 0.0;
+        else
+            Double a = this.above.size;
+            Double b = this.above.getSizeAbove();
+            return a+b;
+        end
+    end
+    abstract Unit update()
+    Unit updateAll()
+        this.update();
+        if(this.above != null) then
+            this.above.updateAll();
+        end
+    end
+end
 
 
 
-class Fault extends GeoObject () end
+class Fault extends GeoObject ()
+    override Unit update()
+        skip;
+    end
+end
 
 
-abstract class GeoUnit extends GeoObject (hidden Double temp) end
+abstract class GeoUnit extends GeoObject ()
+end
 
 class ChalkUnit extends GeoUnit (hidden Double tensile_strength)
     models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:chalk; obo:RO_0000086 _:fr2. _:fr2 domain:datavalue %tensile_strength; a domain:tensile_strength.";
+
+    override Unit update()
+        skip;
     end
+end
+
+class SandstoneUnit extends GeoUnit ()
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:sandstone. ";
+
+    override Unit update()
+        skip;
+    end
+end
+class ShaleUnit extends GeoUnit (hidden Double temperature)
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
+
+    override Unit update()
+        Double under = this.getSizeAbove();
+        this.temperature = (under/1000) * 25;
+    end
+end
+
+class Deposition(GeoUnit un, Double duration) end
+
+class Driver(GeoUnit top, GeoUnit bottom)
+
+   Unit sim(List<Deposition> actions, Double startPast, GeoUnit init)
+        print("Starting simulation with t=-");
+        print(startPast);
+        this.top = init;
+        this.bottom = init;
+        Double now = -1.0 * startPast;
+        List<Deposition> work = actions;
+        while work != null do
+            Deposition d = work.content;
+            d.un.below = this.top;
+            this.top.above = d.un;
+            this.top = d.un;
+            now = now + d.duration;
+            this.bottom.updateAll();
+            print("Updating simulation with t =-");
+            print(now);
+            work = work.next;
+        end
+        print("Ending simulation with t =-");
+        print(now);
+   end
+
+end
 
 main
-    Fault f = new Fault(null, null, null, null, null, null);
-    ChalkUnit c = new ChalkUnit(null, null, null, null, null, null, 100.0, 0.6);
-    List<ChalkUnit> fs = /*access("SELECT ?obj {?obj domain:models [UFRGS1:GeoCoreOntology_constituted_by [a domain:chalk]]}");
-   print(fs);
-     fs = */ member("<domain:models> some (<obo:RO_0000056> some <domain:chalk_unit_fracturing_trigger>)");
+    SandstoneUnit s1 = new SandstoneUnit(null, null, null, null, null, null, 2500.0);
+    ShaleUnit c = new ShaleUnit(null, null, null, null, null, null, 40.0, 0.0);
+    Deposition d1 = new Deposition(s1, 10.0);
+    List<Deposition> dl = new List<Deposition>(d1, null);
+    Driver driver = new Driver(null,null);
+    driver.sim(dl, 10.0, c);
+    List<ChalkUnit> fs = member("<domain:models> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
    print(fs);
 end

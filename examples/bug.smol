@@ -1,0 +1,42 @@
+main
+    Int lengthPots = 0;
+    Int i = 0;
+
+    AssetModel assetModel = new AssetModel();
+    print("--------------------------------------------------- Pots from asset model");
+    List<Pot> pots = assetModel.getPots(config);
+    lengthPots = pots.length();
+    while i < lengthPots do
+        Pot pot = pots.get(i);
+        print("shelfFloor: ");
+        print(pot.shelfFloor);
+        print(" groupPosition: ");
+        print(pot.groupPosition);
+        print(" potPosition: ");
+        print(pot.potPosition);
+        i = i+1;
+    end
+
+    assetModel.getPots(config);
+    print("l");
+end
+
+class Pot(Int shelfFloor, String groupPosition, String potPosition)
+    models "rdf:type domain:Pot.";
+end
+
+class AssetModel()
+    // get pot instances from the asset model
+    List<Pot> getPots()
+        List<Pot> pots = construct("
+        PREFIX ast: <http://www.semanticweb.org/gianl/ontologies/2023/1/sirius-greenhouse#>
+        SELECT ?shelfFloor ?groupPosition ?potPosition
+        WHERE {
+            ?pot rdf:type ast:Pot ;
+                ast:hasShelfFloor ?shelfFloor ;
+                ast:hasGroupPosition ?groupPosition ;
+                ast:hasPotPosition ?potPosition .
+        }");
+        return pots;
+    end
+end
