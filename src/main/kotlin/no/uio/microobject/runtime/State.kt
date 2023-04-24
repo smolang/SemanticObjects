@@ -23,7 +23,8 @@ data class StaticTable(
     val fieldTable: Map<String, FieldEntry>,                // This maps class names to their fields
     val methodTable: Map<String, Map<String, MethodInfo>>, // This maps class names to a map that maps method names to their definition
     val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(),
-    val modelsTable: Map<String, List<ModelsEntry>>                // This maps class names to models blocks
+    val modelsTable: Map<String, List<ModelsEntry>>,                // This maps class names to models blocks
+    val hiddenSet: Set<String>                              //This set of classes is skipped by the lifting
 ) { // DOWNWARDS class hierarchy
     override fun toString(): String =
 """

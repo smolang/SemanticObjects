@@ -1,4 +1,4 @@
-class List<LISTT>(LISTT content, List<LISTT> next)
+hidden class List<LISTT>(LISTT content, List<LISTT> next)
 
     Int length()
         if this.next == null then return 1;
@@ -56,3 +56,5 @@ class List<LISTT>(LISTT content, List<LISTT> next)
         end
     end
 end
+
+hidden class Pair<PAIRTONE,PAIRTTWO>(PAIRTONE first, PAIRTTWO second) end

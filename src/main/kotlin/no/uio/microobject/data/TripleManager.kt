@@ -499,6 +499,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             val matchingTriples: MutableList<Triple> = mutableListOf()
 
             for(obj in heap.keys){
+                if(staticTable.hiddenSet.contains(obj.tag.getPrimary().getNameString())) continue;
+
                 val subjectString = "${run}${obj.literal}"
 
                 // Guard clause. If this obj does not match to the subject of the search triple, then continue to the next obj
