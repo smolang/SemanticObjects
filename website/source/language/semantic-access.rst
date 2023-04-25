@@ -73,14 +73,14 @@ Example
 .. code-block:: Java
 
   class C (Int i) 
-    models (this.i > 0) "a :containsPositive";
-    models "a :containsNonPositive";
+    models (this.i > 0) "a :containsPositive .";
+    models "a :containsNonPositive .";
   end
 
   main
     C c = new C(5);
     C d = new C(0);
-    C e = new C(4) models "a :special";
+    C e = new C(4) models "a :special .";
   end
 
 The lifting will contain the following axioms:
@@ -200,7 +200,9 @@ Query Access
 Query access retrieves data from the lifted knowledge graph using queries.
 
 Retrieving a list of literals or lifted objects is done via the ``access`` top-level expression.
-It takes as its first parameter a ``String``-literal containing an extended `SPARQL <https://www.w3.org/TR/sparql11-overview/>`_ query, which additionally may contain non-answer variables of the form ``%i`` for some strictly positive number ``i``. The set of numbers for the non-answer variables must form an interval [1,n] for some n.
+It takes as its first parameter a ``String``-literal containing an extended `SPARQL <https://www.w3.org/TR/sparql11-overview/>`_ query, 
+which additionally may contain non-answer variables of the form ``%i`` for some strictly positive number ``i``. 
+The set of numbers for the non-answer variables must form an interval [1,n] for some n.
 Additionally, the top-level expression takes a list of expressions of the length n.
 
 At runtime, these expressions are evaluated and the result is syntactically substituted for the corresponding non-answer variable.
@@ -208,7 +210,9 @@ The SPARQL query is then executed and the results of the ``?obj`` variable are t
 For example, the following retrieves all objects ``o`` of type ``C`` with ``o.aCB.aB.sealing = x``.
 ::
 
-   List<C> l = access("SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing %1 }", this.x);
+   List<C> l = access(
+    "SELECT ?obj WHERE {?obj prog:C_aCB ?b. ?b prog:B_aB ?a. ?a prog:A_sealing %1 }",
+     this.x); # %1 is substituted by this.x at runtime
 
 The execution fails if any answer variable than ``?obj`` is used for retrieval, the elements are not literals or IRIs of lifted objects,
 or mixes literals of lifted objects. The compiler outputs a warning if the SPARQL query cannot be shown to always return a list of elements of the type of the target variable.
@@ -279,6 +283,33 @@ In this case, the result is always a ``List`` of ``Double`` values.
 
 .. NOTE::
    Currently, only InfluxQL queries with a single return variable are supported. Influx-mode ``access`` statements are not type-checked.
+   
+
+The access statement can additionally contain variables of the form ``%i`` for some strictly positive number ``i``. 
+The values of these variables are assigned as parameters of the ``access`` statement, **starting from the third parameter**.
+
+E.g. In the following code snippet, the query is executed with the values of the variables ``name`` and ``sensor tag`` substituted for the corresponding parameters ``%1`` and ``%2``.
+The variable ``name`` is passed as the third parameter of the access statement, the variable ``sensorTag`` is passed as the fourth parameter.
+::
+
+  main
+    String name = "faarikaal1";
+    Integer sensorTag = 1;
+
+    List<Double> list := access(
+    "from(bucket: \"petwin\")
+      |> range(start: -1h, stop: -1m)
+      |> filter(fn: (r) => r[\"_measurement\"] == \"chili\")
+      |> filter(fn: (r) => r[\"_field\"] == \"temperature\")
+      |> filter(fn: (r) => r[\"name\"] == %1)
+      |> filter(fn: (r) => r[\"sensorTag\"] == %2)
+      |> aggregateWindow(every: 5m, fn: mean, createEmpty: false)
+      |> yield(name: \"mean\")",
+    INFLUXDB("petwin.yml"), 
+    name, # substitute %1 with the value of name (third parameter)
+    sensorTag); # substitute %2 with the value of sensorTag (fourth parameter)
+    print(list.content);
+  end
 
 
 
