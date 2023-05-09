@@ -1,0 +1,161 @@
+main
+    FMO[in Double input_u_1,
+        in Double input_u_2,
+        in Double input_u_3,
+        in Double input_u_4,
+        in Double input_PM,
+        out Double output_P_e,
+        out Double output_dy1,
+        out Double output_dy2] p1 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
+    p1.role = "powersystem1";
+
+    FMO[in Double input_u_1,
+        in Double input_u_2,
+        in Double input_u_3,
+        in Double input_u_4,
+        in Double input_PM,
+        out Double output_P_e,
+        out Double output_dy1,
+        out Double output_dy2] p2 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
+    p2.role = "powersystem2";
+
+    FMO[in Double input_u_1,
+        in Double input_u_2,
+        in Double input_u_3,
+        in Double input_u_4,
+        in Double input_PM,
+        out Double output_P_e,
+        out Double output_dy1,
+        out Double output_dy2] p3 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
+    p3.role = "powersystem3";
+
+    FMO[in Double input_u_1,
+        in Double input_u_2,
+        in Double input_u_3,
+        in Double input_u_4,
+        in Double input_PM,
+        out Double output_P_e,
+        out Double output_dy1,
+        out Double output_dy2] p4 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
+    p4.role = "powersystem4";
+
+
+    FMO[in Double input_estimated_angle_FMU_1,
+        in Double input_estimated_angle_FMU_2,
+        in Double input_estimated_angle_FMU_3,
+        in Double input_estimated_angle_FMU_4,
+        in Double input_estimated_angle_FMU_5,
+        in Double input_estimated_omega_FMU_1,
+        in Double input_estimated_omega_FMU_2,
+        in Double input_estimated_omega_FMU_3,
+        in Double input_estimated_omega_FMU_4,
+        in Double input_estimated_omega_FMU_5,
+        out Double output_pm1,
+        out Double output_pm2,
+        out Double output_pm3,
+        out Double output_pm4,
+        out Double output_pm5,
+        out Double output_p_e_1,
+        out Double output_p_e_2,
+        out Double output_p_e_3,
+        out Double output_p_e_4,
+        out Double output_p_e_5
+       ] ctrl = simulate("examples/Electro/fmus/controller.fmu", input_states = 8);
+    ctrl.role = "controller";
+
+    FMO[in Double input_pm1,
+        in Double input_pm2,
+        in Double input_pm3,
+        in Double input_pm4,
+        in Double input_pe1,
+        in Double input_pe2,
+        in Double input_pe3,
+        in Double input_pe4,
+        in Double output_states_1,
+        in Double output_states_2,
+        in Double output_states_3,
+        in Double output_states_4,
+        in Double output_states_5,
+        in Double output_states_6,
+        in Double output_states_7,
+        in Double output_states_8] e = simulate("examples/Electro/fmus/estimator_scen2.fmu");
+    e.role = "estimator";
+
+
+    print("finished loading");
+
+    Scenario[controller, powersystem1, powersystem2, powersystem3, powersystem4, powersystem5, estimator]
+       scenario = monitor("examples/Electro/scenario1.conf");
+
+    scenario.assign(p1);
+    scenario.assign(p2);
+    scenario.assign(p3);
+    scenario.assign(p4);
+    scenario.assign(ctrl);
+    scenario.assign(e);
+
+    print("finished scenario assignment");
+
+    Int count = 0;
+    Int ticks = 100;
+    while count < ticks do
+        // ctrl to ps
+        p1.input_PM = ctrl.output_pm1;
+        p2.input_PM = ctrl.output_pm2;
+        p3.input_PM = ctrl.output_pm3;
+        p4.input_PM = ctrl.output_pm4;
+
+        // p 1 to Other ps
+        p2.input_u_1 = p1.output_dy1;
+        p3.input_u_1 = p1.output_dy1;
+        p4.input_u_1 = p1.output_dy1;
+
+        // p 2 to Other ps
+        p1.input_u_2 = p2.output_dy1;
+        p3.input_u_2 = p2.output_dy1;
+        p4.input_u_2 = p2.output_dy1;
+
+        // p 3 to Other ps
+        p1.input_u_3 = p3.output_dy1;
+        p2.input_u_3 = p3.output_dy1;
+        p4.input_u_3 = p3.output_dy1;
+
+        // p 4 to Other ps
+        p1.input_u_4 = p4.output_dy1;
+        p2.input_u_4 = p4.output_dy1;
+        p3.input_u_4 = p4.output_dy1;
+
+        // ps to e
+        e.input_pe1 = p1.output_P_e;
+        e.input_pe2 = p2.output_P_e;
+        e.input_pe3 = p3.output_P_e;
+        e.input_pe4 = p4.output_P_e;
+
+        // ctrl to the e
+        e.input_pm1 = ctrl.output_pm1;
+        e.input_pm2 = ctrl.output_pm2;
+        e.input_pm3 = ctrl.output_pm3;
+        e.input_pm4 = ctrl.output_pm4;
+
+        // e to ctrl
+       ctrl.input_estimated_angle_FMU_1 = e.output_states_1;
+       ctrl.input_estimated_angle_FMU_2 = e.output_states_2;
+       ctrl.input_estimated_angle_FMU_3 = e.output_states_3;
+       ctrl.input_estimated_angle_FMU_4 = e.output_states_4;
+       ctrl.input_estimated_omega_FMU_1 = e.output_states_5;
+       ctrl.input_estimated_omega_FMU_2 = e.output_states_6;
+       ctrl.input_estimated_omega_FMU_1 = e.output_states_7;
+       ctrl.input_estimated_omega_FMU_2 = e.output_states_8;
+
+        p1.tick(1.0);
+        p2.tick(1.0);
+        p3.tick(1.0);
+        p4.tick(1.0);
+        p5.tick(1.0);
+        ctrl.tick(1.0);
+        e.tick(1.0);
+
+        count = count + 1;
+    end
+    print("finished execution");
+end
