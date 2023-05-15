@@ -153,18 +153,23 @@ class SimulatorObject(val path : String, memory : Memory){
 
         for (dep in (sim.modelDescription as ModelDescription).modelStructure.outputs){
             val ind = dep.index
-            val deps = dep.dependencies.split(" ").map { it.toInt() }
-            val name = sim.modelDescription.getModelVariable(ind).name //-1?
-            val depVars = deps.map { sim.modelDescription.getModelVariable(it).name }
-            outputTempScenMap.put(name, JavaConverters.asScala(depVars).toList())
+            if(dep.dependencies.isNotBlank()) {
+                val deps = dep.dependencies.split(" ").map { it.toInt() }
+                val name = sim.modelDescription.getModelVariable(ind).name //-1?
+                val depVars = deps.map { sim.modelDescription.getModelVariable(it).name }
+                outputTempScenMap.put(name, JavaConverters.asScala(depVars).toList())
+            }
         }
 
+        println("<><-><><-><><-><><-><><-><><-><> dingens")
 
         val outputScenMap = outputTempScenMap.mapValues { OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value)}.toMutableMap()
         scen = ScenarioLoader.parse("", FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" ))
 
-
+        println("<><-><><-><><-><><-><><-><><-><> dingens2")
         sim.init(0.0)
+
+        println("<><-><><-><><-><><-><><-><><-><> dingens3")
         addSnapshot()
     }
 
@@ -261,10 +266,12 @@ class SimulationScenario(path : String){
     }
 
     fun set(role: String, name: String) {
+        println("check set");
         if(!canSet(role, name)) throw Exception("Invalid action tick on $role")
         steps.add(Set(PortRef(role, name)))
     }
     fun get(role: String, name: String) {
+        println("check get");
         if(!canGet(role, name)) throw Exception("Invalid action tick on $role")
         steps.add(Get(PortRef(role, name)))
     }
@@ -277,7 +284,14 @@ class SimulationScenario(path : String){
         return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Get(PortRef(role, name))).correct()
     }
     fun canSet(role: String, name: String) : Boolean {
-        return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Set(PortRef(role, name))).correct()
+        val a = System.currentTimeMillis()
+        val hue = JavaConverters.iterableAsScalaIterable(steps).toList()
+        val scen = config.scenario()
+        val b = System.currentTimeMillis()
+        val res= VerificationAPI.dynamicVerification(scen, hue , Set(PortRef(role, name))).correct()
+        val c = System.currentTimeMillis()
+        println("translate : ${b-a}ms \t verify : ${c-b}ms")
+        return res;
     }
     fun canTick(role: String) : Boolean {
         return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Step(role, DefaultStepSize())).correct()

@@ -802,7 +802,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if (!Files.exists(Paths.get(path))) {
                     log("Could not find file for FMU $path, statement cannot be type checked", ctx)
                 } else {
-                    val sim = Simulation(path)
+                        val sim = Simulation(path)
                     val inits = if(ctx.varInitList() != null)
                         ctx.varInitList().varInit()
                             .associate { Pair(it.NAME().text, getType(it.expression(), inner, vars, thisType, inRule)) }

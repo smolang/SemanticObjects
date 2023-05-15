@@ -10,3 +10,5 @@
 .DS_Store
 /bin/
 /website/build/
+/.idea/kotlinc.xml
+/.idea/.name
