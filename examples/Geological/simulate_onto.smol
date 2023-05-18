@@ -50,6 +50,7 @@ abstract class GeoUnit extends GeoObject (hidden Int mergeId)
     Unit mergeWith(GeoUnit other)
         this.size = this.size + other.size;
     end
+    abstract Unit printState()
 end
 
 /*class ChalkUnit extends GeoUnit (hidden Double tensile_strength)
@@ -100,6 +101,9 @@ class SandstoneUnit extends GeoUnit (List<Double> kerogenUnits)
     end
     override Boolean caps() return False; end
     override Unit addUnit() this.kerogenUnits = new List<Double>(0.0, this.kerogenUnits); end
+    override Unit printState()
+        print(this.size);
+    end
 end
 class ShaleUnit extends GeoUnit (hidden Double temperature, hidden Boolean hasKerogenSource, hidden Int maturedUnits)
     models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
@@ -140,6 +144,9 @@ class ShaleUnit extends GeoUnit (hidden Double temperature, hidden Boolean hasKe
     end
     override Boolean caps() return True; end
     override Unit addUnit() skip; end
+    override Unit printState()
+        print(this.size);
+    end
 end
 
 
@@ -155,8 +162,8 @@ end
 hidden class Driver(GeoUnit top, GeoUnit bottom)
 
    Unit sim(List<DepositionGenerator> actions, Double startPast, GeoUnit init, Double checkStart)
-        print("> Starting simulation with t=-");
-        print(startPast);
+        //print("> Starting simulation with t=-");
+        //print(startPast);
         this.top = init;
         this.bottom = init;
         Double now = -1.0 * startPast;
@@ -178,6 +185,7 @@ hidden class Driver(GeoUnit top, GeoUnit bottom)
                 this.bottom.updateAll();
                 print("> Updating simulation with t =");
                 print(now);
+                this.printState(this.bottom);
                 if now > checkStart  then
                     List<ShaleUnit> fs = member("<domain:models> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
                     print("reasoning finished");
@@ -197,6 +205,13 @@ hidden class Driver(GeoUnit top, GeoUnit bottom)
         end
         print("> Ending simulation with t =-");
         print(now);
+   end
+
+   Unit printState(GeoUnit fromBelow)
+        if fromBelow != null then
+            fromBelow.printState();
+            this.printState(fromBelow.above);
+        end
    end
 end
 
@@ -230,7 +245,7 @@ main
     dl = dl.reverse();
 
     Driver driver = new Driver(null,null);
-    driver.sim(dl, 136.0, mandal, (-60.0));
+    driver.sim(dl, 136.0, mandal, (-66.0));
 end
 /*
     SandstoneUnit s1 = new SandstoneUnit(null, null, null, null, null, null, 2500.0);

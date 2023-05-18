@@ -3,6 +3,7 @@ plugins {
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
+    id 'scala'
 }
 group = 'org.smolang'
 version = '0.3'
@@ -10,7 +11,9 @@ sourceCompatibility = '1.11'
 
 repositories {
     mavenCentral()
+    maven { url "https://overture.au.dk/artifactory/libs-release/" }
 }
+
 test {
     useJUnitPlatform()
 }
@@ -38,7 +41,9 @@ dependencies {
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.1'
     implementation 'com.github.owlcs:ontapi:2.1.0'
     implementation 'org.jline:jline:3.21.0'
+    implementation "into-cps:scenario_verifier_2.13:0.2.14"
 }
+
 
 generateGrammarSource {
     outputDirectory = file("build/generated-src/main/no/uio/microobject/antlr")
