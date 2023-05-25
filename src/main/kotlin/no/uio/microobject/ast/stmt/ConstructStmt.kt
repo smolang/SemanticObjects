@@ -63,9 +63,9 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                             if (!foundAny)
                                 throw Exception("Query returned unknown object/literal: $extractedName")
                         }
-                        if (r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                        if (f.type == INTTYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
                             newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
-                        else if (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                        else if (f.type == INTTYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())))
                             newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
                         else
                             newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
