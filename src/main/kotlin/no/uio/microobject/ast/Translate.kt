@@ -246,7 +246,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val ll = emptyList<Expression>().toMutableList()
         for(i in 2 until ctx!!.expression().size)
             ll += visit(ctx.expression(i)) as Expression
-        val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode else InfluxDBMode((ctx.modeexpression() as Influx_modeContext).STRING().text)
+        val mode = if(ctx.modeexpression() == null || ctx.modeexpression() is Sparql_modeContext) SparqlMode
+                              else InfluxDBMode(visit((ctx!!.modeexpression() as Influx_modeContext).expression()) as Expression)
         return AccessStmt(target, query, ll, ctx!!.start.line, mode, target.getType())
     }
 

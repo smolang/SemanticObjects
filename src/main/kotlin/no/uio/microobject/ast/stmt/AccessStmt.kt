@@ -33,7 +33,7 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
     }
 
     private fun evalInflux(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-        val path = (mode as InfluxDBMode).config.removeSurrounding("\"")
+        val path = interpreter.eval((mode as InfluxDBMode).expr, stackFrame).literal.removeSurrounding("\"")
         val config = ConfigLoader().loadConfigOrThrow<InfluxDBConnection>(File(path))
 
         val str = interpreter.prepareQuery(query, params, stackFrame.store, interpreter.heap, stackFrame.obj,false)

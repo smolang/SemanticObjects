@@ -141,8 +141,8 @@ statement :   SKIP_S SEMI                                                       
             | statement statement                                                                                                                       # sequence_statement
             ;
 
-modeexpression : SPARQLMODE                         #sparql_mode
-               | INFLUXMODE OPARAN STRING CPARAN    #influx_mode
+modeexpression : SPARQLMODE                             #sparql_mode
+               | INFLUXMODE OPARAN expression CPARAN    #influx_mode
                ;
 //Expressions
 expression :      THIS                           # this_expression

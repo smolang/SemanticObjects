@@ -48,7 +48,7 @@ data class VarInit(val name : String, val expr: Expression) : ProgramElement {
 
 /* Access modes for different backends for `access`. May be refactored into their own statements. */
 abstract class AccessMode
-data class InfluxDBMode(val config : String) : AccessMode()
+data class InfluxDBMode(val expr: Expression) : AccessMode()
 object SparqlMode : AccessMode()
 
 

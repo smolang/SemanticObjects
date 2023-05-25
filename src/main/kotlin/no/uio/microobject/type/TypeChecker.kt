@@ -621,6 +621,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             }
                         }
                     }
+                    val t = getType((ctx.lang as WhileParser.Influx_modeContext).expression(),
+                                          inner, vars, thisType, inRule)
+                    if(t != STRINGTYPE)
+                        log("Parameter of an influx DB access must be a String, which contains a path to the connection configuration.", ctx)
                     log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
                 }else {
                     var expType: Type? = null
