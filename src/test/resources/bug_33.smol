@@ -1,0 +1,14 @@
+class Plant(String str, String str2, Int i, Int i2, Double d, Double d2, Boolean b, Boolean b2, Object o) end
+
+
+
+main
+    List<Plant> pl = construct("SELECT ?str ?i ?d ?b {?x domain:str ?str; domain:i ?i; domain:d ?d; domain:b ?b.}");
+    Int l = 0;
+    if pl != null then
+        l = pl.length();
+    end
+    print(l);
+    breakpoint;
+    breakpoint;
+end

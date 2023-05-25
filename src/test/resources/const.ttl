@@ -1,0 +1,7 @@
+@prefix  domain: <http://www.semanticweb.org/gianl/ontologies/2023/1/sirius-greenhouse#>.
+
+domain:p1 rdf:type domain:Pot ;
+          domain:str "asd" ;
+          domain:i 1 ;
+          domain:b "true"^^xsd:boolean ;
+          domain:d 1.0 .

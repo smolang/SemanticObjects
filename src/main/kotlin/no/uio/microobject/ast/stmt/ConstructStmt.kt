@@ -2,6 +2,7 @@ package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
 import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
@@ -46,21 +47,29 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                 val m = interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
                 val newObjName = Names.getObjName(className)
                 val newObjMemory: Memory = mutableMapOf()
-                for(f in m){
-                    if(!r.varNames().asSequence().contains(f.name))
-                        throw Exception("Could find variable for field ${f.name} in query $str")
-                    val extractedName  = r.getLiteral(f.name).toString().removePrefix(interpreter.settings.runPrefix)
-                    if(!Type.isAtomic(f.type)) {
-                        val foundAny = interpreter.heap.keys.any { it.literal == extractedName }
-                        if (!foundAny)
-                            throw Exception("Query returned unknown object/literal: $extractedName")
+                for(f in m) {
+                    if (!r.varNames().asSequence().contains(f.name)) {
+                        when (f.type) {
+                            STRINGTYPE -> newObjMemory[f.name] = LiteralExpr("", f.type)
+                            BOOLEANTYPE -> newObjMemory[f.name] = LiteralExpr(TRUEEXPR.literal, f.type)
+                            DOUBLETYPE -> newObjMemory[f.name] = LiteralExpr("0.0", f.type)
+                            INTTYPE -> newObjMemory[f.name] = LiteralExpr("0", f.type)
+                            else -> newObjMemory[f.name] = LiteralExpr("null", f.type)
+                        }
+                    } else {
+                        val extractedName = r.getLiteral(f.name).toString().removePrefix(interpreter.settings.runPrefix)
+                        if (!Type.isAtomic(f.type)) {
+                            val foundAny = interpreter.heap.keys.any { it.literal == extractedName }
+                            if (!foundAny)
+                                throw Exception("Query returned unknown object/literal: $extractedName")
+                        }
+                        if (r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
+                        else if (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
+                        else
+                            newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
                     }
-                    if(r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
-                        newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
-                    else if(extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
-                        newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
-                    else
-                        newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
                 }
                 val rdfName = Names.getNodeName()
 

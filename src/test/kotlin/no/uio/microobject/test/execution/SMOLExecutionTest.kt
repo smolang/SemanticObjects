@@ -78,5 +78,12 @@ class SMOLExecutionTest: MicroObjectTest() {
             }
             assertEquals(1, i)
         }
+        "constr_bug"{
+            loadBackground("src/test/resources/const.ttl","http://www.semanticweb.org/gianl/ontologies/2023/1/sirius-greenhouse#")
+            val (a, _) = initInterpreter("bug_33", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertEquals(LiteralExpr("1", INTTYPE), a.evalTopMost(LocalVar("l", BaseType("List"))))
+        }
     }
 }
