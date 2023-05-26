@@ -200,7 +200,7 @@ class Interpreter(
             str = when (p.tag) {
                 INTTYPE     -> str.replace("%${i++}", if(SPARQL) "\"${p.literal}\"^^xsd:integer" else p.literal);
                 DOUBLETYPE  -> str.replace("%${i++}", if(SPARQL)"\"${p.literal}\"^^xsd:double" else p.literal);
-                STRINGTYPE  -> str.replace("%${i++}", if(SPARQL) p.literal else "\"${p.literal}\"");
+                STRINGTYPE  -> str.replace("%${i++}", p.literal);
                 else        -> str.replace("%${i++}", "run:${p.literal}")
             }
         }
@@ -214,15 +214,15 @@ class Interpreter(
 
     fun eval(expr: Expression, stackEntry: StackEntry) = eval(expr, stackEntry.store, this.heap, this.simMemory, stackEntry.obj)
     fun eval(expr: Expression, stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr) : LiteralExpr
-    = expr.eval(stack, heap, simMemory, obj)
+            = expr.eval(stack, heap, simMemory, obj)
 
     override fun toString() : String =
-"""
+        """
 Global store : $heap
 Stack:
 ${stack.joinToString(
-    separator = "",
-    transform = { "Prc${it.id}@${it.obj}:\n\t" + it.store.toString() + "\nStatement:\n\t" + it.active.toString() + "\n" })}
+            separator = "",
+            transform = { "Prc${it.id}@${it.obj}:\n\t" + it.store.toString() + "\nStatement:\n\t" + it.active.toString() + "\n" })}
 """.trimIndent()
 
     fun terminate() {
