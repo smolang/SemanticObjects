@@ -146,6 +146,7 @@ main
     e2.role = "estimator_2";
 
     print("finished loading");
+    breakpoint; //outputs System.currentTimeMillis() as side-effect
 
 
     Scenario[controller, powersystem1, powersystem2, powersystem3, powersystem4, powersystem5, estimator_1, estimator_2]
@@ -160,9 +161,9 @@ main
     scenario.assign(e1);
     scenario.assign(e2);
 
-    print("finished scenario assignment");
-    /*Boolean c = scenario.check();
-    print(c);*/
+    Boolean c = scenario.check();
+    print(c);
+    breakpoint; //outputs System.currentTimeMillis() as side-effect
     print("finished scenario check");
 
     Double stepSize = 0.001;
@@ -189,7 +190,6 @@ main
     Double v5 = e2.output_states_1;
     ctrl.input_estimated_angle_FMU_1 = v5;
     e1.input_states_1 = v5;
-    print("finished init0");
 
     Double v6 = e1.output_states_2;
     ctrl.input_estimated_angle_FMU_5 = v6;
@@ -203,7 +203,6 @@ main
     Double v9 = e2.output_states_5;
     ctrl.input_estimated_omega_FMU_2 = v9;
     e1.input_states_5 = v9;
-    print("finished init1");
 
     Double v10 = e2.output_states_3;
     e1.input_states_3 = v10;
@@ -269,122 +268,9 @@ main
     ctrl.input_estimated_omega_FMU_4 = v25;
     e2.input_states_3 = v25;
 
+    breakpoint; //outputs System.currentTimeMillis() as side-effect
+    print("finished init total");
     while count < stop do
-    /*
-p3.tick(stepSize);
-Double x31 = p3.output_P_e;
-p2.tick(stepSize);
-Double x30 = p2.output_P_e;
-Double x29 = p2.output_dy1;
-p3.input_u_2 = x29;
-Double x28 = p3.output_dy1;
-p2.input_u_3 = x28;
-p1.tick(stepSize);
-Double x27 = p1.output_P_e;
-p1.input_u_2 = x27;
-p1.input_u_3 = x27;
-Double x26 = p1.output_dy1;
-p2.input_u_1 = x26;
-p3.input_u_1 = x26;
-p4.tick(stepSize);
-Double x25 = p4.output_P_e;
-p4.input_u_1 = x25;
-Double x24 = p4.output_dy1;
-p1.input_u_4 = x24;
-p3.input_u_4 = x24;
-p2.input_u_4 = x24;
-p4.input_u_2 = x24;
-p4.input_u_3 = x24;
-ctrl.tick(stepSize);
-Double x23 = ctrl.output_pm4;
-p4.input_PM = x23;
-Double x22 = ctrl.output_pm5;
-Double x21 = ctrl.output_pm2;
-p2.input_PM = x21;
-Double x20 = ctrl.output_pm3;
-p3.input_PM = x20;
-Double x19 = ctrl.output_pm1;
-p1.input_PM = x19;
-e1.tick(stepSize);
-Double x18 = e1.output_states_1;
-ctrl.input_estimated_angle_FMU_4 = x18;
-e1.input_pm3 = x18;
-Double x17 = e1.output_k3_1;
-e2.input_k3_1 = x17;
-Double x16 = e1.output_k2_1;
-e1.input_pe1 = x16;
-e1.input_pm4 = x16;
-Double x15 = e1.output_k3_2;
-e2.input_k3_2 = x15;
-Double x14 = e1.output_k2_2;
-e1.input_pe2 = x14;
-e1.input_pm2 = x14;
-Double x13 = e1.output_k4_1;
-e1.input_pe3 = x13;
-e1.input_pe4 = x13;
-Double x12 = e1.output_states_4;
-ctrl.input_estimated_omega_FMU_5 = x12;
-Double x11 = e1.output_k4_2;
-e1.input_pm1 = x11;
-e1.input_pm5 = x11;
-Double x10 = e1.output_states_2;
-ctrl.input_estimated_angle_FMU_5 = x10;
-p5.tick(stepSize);
-p5.input_u_4 = x10;
-Double x9 = p5.output_P_e;
-e1.input_pe5 = x9;
-p5.input_u_3 = x9;
-p5.input_PM = x9;
-Double x8 = p5.output_dy1;
-p3.input_u_5 = x8;
-p4.input_u_5 = x8;
-p2.input_u_5 = x8;
-p1.input_u_5 = x8;
-p5.input_u_1 = x8;
-p5.input_u_2 = x8;
-e2.tick(stepSize);
-e2.input_k2_1 = x8;
-e2.input_pm5 = x8;
-e2.input_k3_1 = x8;
-e2.input_k4_2 = x8;
-Double x7 = e2.output_states_4;
-ctrl.input_estimated_omega_FMU_1 = x7;
-e1.input_states_4 = x7;
-e2.input_pe4 = x7;
-e2.input_states_4 = x7;
-e2.input_pm3 = x7;
-e2.input_states_2 = x7;
-e2.input_pe5 = x7;
-e2.input_k2_2 = x7;
-Double x6 = e2.output_states_5;
-ctrl.input_estimated_omega_FMU_2 = x6;
-e1.input_states_5 = x6;
-e2.input_pm4 = x6;
-e2.input_pe2 = x6;
-Double x5 = e2.output_states_2;
-ctrl.input_estimated_angle_FMU_2 = x5;
-e1.input_states_2 = x5;
-Double x4 = e2.output_states_3;
-e1.input_states_3 = x4;
-ctrl.input_estimated_angle_FMU_3 = x4;
-e2.input_k3_2 = x4;
-e2.input_k4_1 = x4;
-e2.input_pe3 = x4;
-Double x3 = e2.output_states_1;
-ctrl.input_estimated_angle_FMU_1 = x3;
-e1.input_states_1 = x3;
-e2.input_pe1 = x3;
-e2.input_states_1 = x3;
-e2.input_pm1 = x3;
-Double x2 = e2.output_states_6;
-e1.input_states_6 = x2;
-ctrl.input_estimated_omega_FMU_3 = x2;
-e2.input_pm2 = x2;
-Double x1 = e1.output_states_3;
-ctrl.input_estimated_omega_FMU_4 = x1;
-e2.input_states_3 = x1;
-*/
-
         p1.tick(stepSize);
         p2.tick(stepSize);
         p3.tick(stepSize);
@@ -493,9 +379,8 @@ e2.input_states_3 = x1;
         ctrl.input_estimated_omega_FMU_2 = e2.output_states_5;
         ctrl.input_estimated_omega_FMU_3 = e2.output_states_6;
 
-        print(ctrl.input_estimated_angle_FMU_4);
-
         count = count + stepSize;
+        breakpoint; //outputs System.currentTimeMillis() as side-effect
     end
     print("finished execution");
 end

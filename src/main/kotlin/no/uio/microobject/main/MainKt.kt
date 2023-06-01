@@ -129,7 +129,7 @@ class Main : CliktCommand() {
                 val left = if(splits.size == 1) "" else splits[1].trim()
             } while (!repl.command(splits.first(), left))
         }else if(replay == null){
-            repl.runAndTerminate() //command("auto", "");
+            repl.runAndTerminate(true) //command("auto", "");
         }
         repl.terminate()
     }

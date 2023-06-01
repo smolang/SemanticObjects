@@ -161,15 +161,11 @@ class SimulatorObject(val path : String, memory : Memory){
             }
         }
 
-        println("<><-><><-><><-><><-><><-><><-><> dingens")
-
         val outputScenMap = outputTempScenMap.mapValues { OutputPortConfig(JavaConverters.asScala(listOf<String>()).toList(), it.value)}.toMutableMap()
         scen = ScenarioLoader.parse("", FmuConfig(toScalaMap(inputScenMap), toScalaMap(outputScenMap), false, "" ))
 
-        println("<><-><><-><><-><><-><><-><><-><> dingens2")
         sim.init(0.0)
 
-        println("<><-><><-><><-><><-><><-><><-><> dingens3")
         addSnapshot()
     }
 
@@ -266,12 +262,10 @@ class SimulationScenario(path : String){
     }
 
     fun set(role: String, name: String) {
-        println("check set");
         if(!canSet(role, name)) throw Exception("Invalid action tick on $role")
         steps.add(Set(PortRef(role, name)))
     }
     fun get(role: String, name: String) {
-        println("check get");
         if(!canGet(role, name)) throw Exception("Invalid action tick on $role")
         steps.add(Get(PortRef(role, name)))
     }
@@ -284,13 +278,13 @@ class SimulationScenario(path : String){
         return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Get(PortRef(role, name))).correct()
     }
     fun canSet(role: String, name: String) : Boolean {
-        val a = System.currentTimeMillis()
+    //    val a = System.currentTimeMillis()
         val hue = JavaConverters.iterableAsScalaIterable(steps).toList()
         val scen = config.scenario()
-        val b = System.currentTimeMillis()
+    //    val b = System.currentTimeMillis()
         val res= VerificationAPI.dynamicVerification(scen, hue , Set(PortRef(role, name))).correct()
-        val c = System.currentTimeMillis()
-        println("translate : ${b-a}ms \t verify : ${c-b}ms")
+    //    val c = System.currentTimeMillis()
+    //    println("translate : ${b-a}ms \t verify : ${c-b}ms")
         return res;
     }
     fun canTick(role: String) : Boolean {

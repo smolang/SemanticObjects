@@ -12,6 +12,7 @@ data class DebugStmt(val pos : Int = -1) : Statement {
     override fun getRDF(): String = "prog:stmt${this.hashCode()} rdf:type smol:DebugStatement.\nprog:stmt${this.hashCode()} smol:Line '$pos'^^xsd:integer.\n"
 
     override fun eval(heapObj: Memory, stackFrame : StackEntry, interpreter: Interpreter) : EvalResult {
+        println(System.currentTimeMillis())
         return EvalResult(null, emptyList(), true)
     }
 }

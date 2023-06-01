@@ -7,7 +7,7 @@ main
         out Double output_P_e,
         out Double output_dy1,
         out Double output_dy2] p1 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
-    p1.role = "powersystem1";
+    p1.role = "p1";
 
     FMO[in Double input_u_1,
         in Double input_u_2,
@@ -17,7 +17,7 @@ main
         out Double output_P_e,
         out Double output_dy1,
         out Double output_dy2] p2 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
-    p2.role = "powersystem2";
+    p2.role = "p2";
 
     FMO[in Double input_u_1,
         in Double input_u_2,
@@ -27,7 +27,7 @@ main
         out Double output_P_e,
         out Double output_dy1,
         out Double output_dy2] p3 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
-    p3.role = "powersystem3";
+    p3.role = "p3";
 
     FMO[in Double input_u_1,
         in Double input_u_2,
@@ -37,7 +37,7 @@ main
         out Double output_P_e,
         out Double output_dy1,
         out Double output_dy2] p4 = simulate("examples/Electro/fmus/powersystem.fmu", input_NSG = 4);
-    p4.role = "powersystem4";
+    p4.role = "p4";
 
 
     FMO[in Double input_estimated_angle_FMU_1,
@@ -61,7 +61,7 @@ main
         out Double output_p_e_4,
         out Double output_p_e_5
        ] ctrl = simulate("examples/Electro/fmus/controller.fmu", input_states = 8);
-    ctrl.role = "controller";
+    ctrl.role = "ctrl";
 
     FMO[in Double input_pm1,
         in Double input_pm2,
@@ -79,13 +79,13 @@ main
         in Double output_states_6,
         in Double output_states_7,
         in Double output_states_8] e = simulate("examples/Electro/fmus/estimator_scen2.fmu");
-    e.role = "estimator";
+    e.role = "e";
 
 
     print("finished loading");
 
-    Scenario[controller, powersystem1, powersystem2, powersystem3, powersystem4, powersystem5, estimator]
-       scenario = monitor("examples/Electro/scenario1.conf");
+    Scenario[ctrl, p1, p2, p3, p4, p5, e]
+       scenario = monitor("examples/Electro/scenario2.conf");
 
     scenario.assign(p1);
     scenario.assign(p2);
@@ -94,11 +94,61 @@ main
     scenario.assign(ctrl);
     scenario.assign(e);
 
-    print("finished scenario assignment");
+    Boolean c = scenario.check();
+    print(c);
+    breakpoint; //outputs System.currentTimeMillis() as side-effect
+    print("finished scenario check");
 
-    Int count = 0;
-    Int ticks = 100;
-    while count < ticks do
+    Double stepSize = 0.001;
+    Double count = 0.0;
+    Double stop = 4.0;
+
+    /* init here */
+
+    e.input_pe3 = p3.output_P_e;
+    e.input_pe4 = p4.output_P_e;
+    ctrl.input_estimated_angle_FMU_1 = e.output_states_1;
+    Double x1 = ctrl.output_pm1;
+    p1.input_PM = x1;
+    e.input_pm1 = x1;
+    ctrl.input_estimated_angle_FMU_4 = e.output_states_4;
+    ctrl.input_estimated_angle_FMU_2 = e.output_states_2;
+    Double x2 = e.output_states_6;
+    Double x3 = e.output_states_7;
+    Double x4 = p1.output_dy1;
+    p4.input_u_1 = x4;
+    p3.input_u_1 = x4;
+    p2.input_u_1 = x4;
+    e.input_pe1 = ctrl.output_pm3;
+    Double x5 = ctrl.output_pm3;
+    p3.input_PM = x5;
+    e.input_pm3 = x5;
+    ctrl.input_estimated_omega_FMU_2 = e.output_states_8;
+    e.input_pe2 = p2.output_P_e;
+    Double x6 = ctrl.output_pm4;
+    e.input_pm4 = x6;
+    p4.input_PM = x6;
+    Double x7 = p3.output_dy1;
+    p1.input_u_3 = x7;
+    p2.input_u_3 = x7;
+    p4.input_u_3 = x7;
+    Double x8 = ctrl.output_pm2;
+    e.input_pm2 = x8;
+    p2.input_PM = x8;
+    ctrl.input_estimated_omega_FMU_1 = e.output_states_5;
+    Double x9 = p2.output_dy1;
+    p3.input_u_2 = x9;
+    p1.input_u_2 = x9;
+    p4.input_u_2 = x9;
+    Double x10 = p4.output_dy1;
+    p1.input_u_2 = x10;
+    p3.input_u_2 = x10;
+    p2.input_u_2 = x10;
+    ctrl.input_estimated_angle_FMU_3 = e.output_states_3;
+
+    breakpoint; //outputs System.currentTimeMillis() as side-effect
+    print("finished init total");
+    while count < stop do
         // ctrl to ps
         p1.input_PM = ctrl.output_pm1;
         p2.input_PM = ctrl.output_pm2;
@@ -155,7 +205,8 @@ main
         ctrl.tick(1.0);
         e.tick(1.0);
 
-        count = count + 1;
+        count = count + stepSize;
+        breakpoint; //outputs System.currentTimeMillis() as side-effect
     end
     print("finished execution");
 end

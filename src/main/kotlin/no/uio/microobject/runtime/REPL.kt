@@ -88,8 +88,9 @@ class REPL(private val settings: Settings) {
         interpreter!!.dump(file)
     }
 
-    fun runAndTerminate(){
-        while (!interpreter!!.stack.empty() && interpreter!!.makeStep());
+    fun runAndTerminate(ignoreBreak : Boolean = false){
+        if(ignoreBreak) while (!interpreter!!.stack.empty()) interpreter!!.makeStep();
+        else            while (!interpreter!!.stack.empty() && interpreter!!.makeStep());
     }
 
     fun printRepl(str: String) {
