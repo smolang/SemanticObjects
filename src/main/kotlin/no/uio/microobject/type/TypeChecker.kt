@@ -525,6 +525,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                                   log("The scenario.check method takes no parameter.", ctx)
                               if(lhsType != null && lhsType != BOOLEANTYPE)
                                   log("Type Boolean is not assignable to $lhsType.", ctx)
+                          } else if(calledMet == "disable"){
+                              if(ctx.expression().size - 1 - calleeIndex != 0)
+                                  log("The scenario.check method takes no parameter.", ctx)
+                              if(lhsType != null && lhsType != UNITTYPE)
+                                  log("Type Unit is not assignable to $lhsType.", ctx)
                           } else if (calledMet == "assign"){
                               if(lhsType != null)
                                   log("The scenario.assign method returns no value.", ctx)

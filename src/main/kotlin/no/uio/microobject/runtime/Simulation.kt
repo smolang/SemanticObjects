@@ -30,12 +30,13 @@ class SimulatorObject(val path : String, memory : Memory){
     private var time : Double = 0.0
 
     //representation for monitor
-    var scen : FmuModel
+    var scen : FmuModel?
     var assignedScen = mutableListOf<SimulationScenario>()
 
     //additional fields
     var role : String = ""
     private var pseudoOffset : Double = 0.0
+
 
     fun read(name: String): LiteralExpr {
         val v = sim.modelDescription.getModelVariable(name)
@@ -59,6 +60,7 @@ class SimulatorObject(val path : String, memory : Memory){
     }
 
     private fun addSnapshot( ){
+        /*
         var list = emptyList<Pair<String, Double>>()
         for(mVar in sim.modelDescription.modelVariables){
             if(mVar.causality == "output" && mVar.typeName == "Real"){
@@ -68,6 +70,7 @@ class SimulatorObject(val path : String, memory : Memory){
         }
         val roleName = if(role == "") null else role
         series.add(Snapshot(time, list, roleName))
+         */
     }
 
     fun write(name: String, res: LiteralExpr) {
@@ -289,5 +292,10 @@ class SimulationScenario(path : String){
     }
     fun canTick(role: String) : Boolean {
         return VerificationAPI.dynamicVerification(config.scenario(), JavaConverters.iterableAsScalaIterable(steps).toList(), Step(role, DefaultStepSize())).correct()
+    }
+
+    fun disable() {
+        assignedFmus.forEach { s, simulatorObject -> simulatorObject.assignedScen.remove(this)  }
+        assignedFmus.clear()
     }
 }

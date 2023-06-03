@@ -67,6 +67,10 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
                 val res = if(scen.check()) TRUEEXPR else FALSEEXPR
                 return replaceStmt(AssignStmt(target, res, declares = declares), stackFrame)
             }
+            "disable" -> {
+                scen.disable()
+                return EvalResult(null, emptyList())
+            }
             else -> {
                 throw Exception("This method is unknown for scenarios: $method")
             }

@@ -1,5 +1,6 @@
 main
-
+    Int i = 0;
+    while i < 2 do
     breakpoint; //outputs System.currentTimeMillis() as side-effect
     FMO[in Double input_u_1,
         in Double input_u_2,
@@ -149,7 +150,7 @@ main
     print("finished loading");
     breakpoint; //outputs System.currentTimeMillis() as side-effect
 
-
+/*
     Scenario[controller, powersystem1, powersystem2, powersystem3, powersystem4, powersystem5, estimator_1, estimator_2]
        scenario = monitor("examples/Electro/scenario1.conf");
 
@@ -164,12 +165,11 @@ main
 
     Boolean c = scenario.check();
     print(c);
-    breakpoint; //outputs System.currentTimeMillis() as side-effect
-    print("finished scenario check");
+    print("finished scenario check");*/
 
     Double stepSize = 0.001;
     Double count = 0.0;
-    Double stop = 4.0;
+    Double stop = 1.0;
     e2.input_k4_2 = e1.output_k4_2;
     e2.input_k3_1 = e1.output_k3_1;
     e2.input_k4_1 = e1.output_k4_1;
@@ -381,7 +381,11 @@ main
         ctrl.input_estimated_omega_FMU_3 = e2.output_states_6;
 
         count = count + stepSize;
+        print(count);
         breakpoint; //outputs System.currentTimeMillis() as side-effect
     end
     print("finished execution");
+
+    i = i+1;
+    end
 end
