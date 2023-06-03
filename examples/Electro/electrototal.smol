@@ -367,7 +367,6 @@ main
         count = count + stepSize;
         print(count);
         breakpoint; //outputs System.currentTimeMillis() as side-effect
-        scenario.disable(); //first iteration is good enough, all others have same algorithm
     end
     print("<< Reconfigure >>");
 
@@ -519,7 +518,6 @@ main
 
       count = count + stepSize;
       breakpoint; //outputs System.currentTimeMillis() as side-effect
-      sscenario.disable(); //first iteration is good enough, all others have same algorithm
   end
   print("finished execution");
 end
