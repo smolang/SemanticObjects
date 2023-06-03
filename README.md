@@ -1,3 +1,24 @@
+# Online Monitoring
+
+This repository contains the branch of **SMOL** that implements the online verification of reconfigurable digital twin scenarios,
+including the experiments for the performance. General description follows below. To run one experiment, run the following commands (tested with bash and Ubuntu 20.04).
+
+```
+./gradlew build
+java -jar build/libs/smol.jar -e -v -i examples/Electro/electrotwice.smol | tee examples/Electro/eval/output
+```
+
+If the command does not terminate, Ctrl+Z after `"finished execution"` has been printed.
+To get the numbers per iteration, execute
+
+```
+cd examples/Electro/eval/
+./execute.sh
+```
+
+
+
+
 # Semantic Micro Object Language
 
 This repository contains an interactive interpreter for **SMOL**, a
