@@ -156,7 +156,7 @@ class SimulatorObject(val path : String, memory : Memory){
 
         for (dep in (sim.modelDescription as ModelDescription).modelStructure.outputs){
             val ind = dep.index
-            if(dep.dependencies.isNotBlank()) {
+            if(dep.dependencies.isNotBlank() && sim.modelDescription.getModelVariable(ind) != null) {
                 val deps = dep.dependencies.split(" ").map { it.toInt() }
                 val name = sim.modelDescription.getModelVariable(ind).name //-1?
                 val depVars = deps.map { sim.modelDescription.getModelVariable(it).name }
@@ -231,8 +231,8 @@ class SimulationScenario(path : String){
 
     fun check() : Boolean{
         //check whether all FMUs are assigned
-        val assignedAllInScenario = assignedFmus.keys.any { !config.scenario().fmus().contains(it) }
-        val scenarioAllAssigned = config.scenario().fmus().keys().filter { assignedFmus.containsKey(it) }.isEmpty
+        val assignedAllInScenario = assignedFmus.keys.all { config.scenario().fmus().keySet().contains(it) }
+        val scenarioAllAssigned = config.scenario().fmus().keys().size() ==  assignedFmus.size
 
         if(!(assignedAllInScenario && scenarioAllAssigned))
             return false

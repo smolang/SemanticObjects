@@ -161,7 +161,6 @@ main
     scenario.assign(e1);
     scenario.assign(e2);
 
-    scenario.check();
 
     Double stepSize = 0.001;
     Double count = 0.0;
@@ -479,53 +478,9 @@ main
   sscenario.assign(cctrl);
   sscenario.assign(ee);
 
-  sscenario.check();
-
   count = 0.0;
 
   /* init here */
-/*
-  ee.input_pe3 = pp3.output_P_e;
-  ee.input_pe4 = pp4.output_P_e;
-  cctrl.input_estimated_angle_FMU_1 = ee.output_states_1;
-  Double x1 = cctrl.output_pm1;
-  pp1.input_PM = x1;
-  ee.input_pm1 = x1;
-  cctrl.input_estimated_angle_FMU_4 = ee.output_states_4;
-  cctrl.input_estimated_angle_FMU_2 = ee.output_states_2;
-  Double x2 = ee.output_states_6;
-  Double x3 = ee.output_states_7;
-  Double x4 = pp1.output_dy1;
-  pp4.input_u_1 = x4;
-  pp3.input_u_1 = x4;
-  pp2.input_u_1 = x4;
-  ee.input_pe1 = cctrl.output_pm3;
-  Double x5 = cctrl.output_pm3;
-  pp3.input_PM = x5;
-  ee.input_pm3 = x5;
-  cctrl.input_estimated_omega_FMU_2 = ee.output_states_8;
-  ee.input_pe2 = pp2.output_P_e;
-  Double x6 = cctrl.output_pm4;
-  ee.input_pm4 = x6;
-  pp4.input_PM = x6;
-  Double x7 = pp3.output_dy1;
-  pp1.input_u_3 = x7;
-  pp2.input_u_3 = x7;
-  pp4.input_u_3 = x7;
-  Double x8 = cctrl.output_pm2;
-  ee.input_pm2 = x8;
-  pp2.input_PM = x8;
-  cctrl.input_estimated_omega_FMU_1 = ee.output_states_5;
-  Double x9 = pp2.output_dy1;
-  pp3.input_u_2 = x9;
-  pp1.input_u_2 = x9;
-  pp4.input_u_2 = x9;
-  Double x10 = pp4.output_dy1;
-  pp1.input_u_2 = x10;
-  pp3.input_u_2 = x10;
-  pp2.input_u_2 = x10;
-  cctrl.input_estimated_angle_FMU_3 = ee.output_states_3;
-*/
   breakpoint; //outputs System.currentTimeMillis() as side-effect
   print("finished init total");
   while count < stop do
