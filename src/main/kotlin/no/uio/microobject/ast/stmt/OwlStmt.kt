@@ -29,7 +29,7 @@ data class OwlStmt(val target : Location, val query: Expression, val pos : Int =
         if (query !is LiteralExpr || query.tag != STRINGTYPE) {
             throw Exception("Please provide a string as the input to a derive statement")
         }
-        println(query.literal)
+
         val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query.literal)
         var list = LiteralExpr("null")
         for (r in res) {

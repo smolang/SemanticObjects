@@ -213,13 +213,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val classModeling = if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
 
-        var modeling = if(myModeling == null && classModeling == null) null
+        val modeling = if(myModeling == null && classModeling == null) null
         else if ( myModeling == null ) classModeling
         else if ( classModeling == null ) myModeling
         else LiteralExpr("\"${myModeling.literal.removeSurrounding("\"")} ${classModeling.literal.removeSurrounding("\"")}\"", STRINGTYPE)
-        if(modeling != null) {
-            println("replacing ${modeling.literal}")
-        }
+
 
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),

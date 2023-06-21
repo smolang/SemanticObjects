@@ -104,7 +104,7 @@ class Main : CliktCommand() {
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
         }
-        println(extra.keys)
+
         val repl = REPL( Settings(verbose, materialize, outdir.toString(), backgr, domainPrefix, extraPrefixes=HashMap(extra), useQueryType = queryType))
         if(input != null){
             repl.command("read", input.toString())
