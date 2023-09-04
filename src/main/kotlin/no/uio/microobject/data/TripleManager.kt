@@ -23,6 +23,8 @@ import org.apache.jena.reasoner.Reasoner
 import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
+import org.javafmi.wrapper.Simulation
+import org.javafmi.framework.ModelDescription
 import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
 import java.util.*
@@ -183,6 +185,14 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return Triple(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
     }
 
+    // Helper method to crate triple with URIs in two first positions and a literal in object position
+    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): Triple {
+        return Triple(
+            NodeFactory.createURI(s),
+            NodeFactory.createURI(p),
+            getLiteralNode(LiteralExpr((o ?: "null").toString() , type), settings) // Check if o is null
+        )
+    }
     // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
     private fun addIfMatch(candidateTriple: Triple, searchTriple: Triple, matchList: MutableList<Triple>, pseudo: Boolean)  {
         // This is just a quick fix to resolve the problem with > and < in the uris. They appear for example when the stdlib.smol is used, since it has List<LISTT>.
@@ -249,17 +259,36 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
             for( fmo in interpreter.simMemory ){
                 val name = fmo.key.literal
-                val value = fmo.value.path
-                val valueNode = getLiteralNode(LiteralExpr(value, STRINGTYPE), settings)
+                val simulationObject = fmo.value
+                var simulationURI = "${run}${name}"
 
-                val resTriple =
-                    Triple(
-                        NodeFactory.createURI("${run}${name}"),
-                        NodeFactory.createURI("${smol}loads"),
-                        valueNode
-                    )
-                addIfMatch(resTriple, searchTriple, matchingTriples, false)
-                addIfMatch(uriTriple("${run}${name}", "${rdf}type", "${smol}Simulation"), searchTriple, matchingTriples, false)
+                addIfMatch(uriTriple(simulationURI, "${rdf}type", "${smol}Simulation"), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}loads", simulationObject.path, STRINGTYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}time", simulationObject.time, DOUBLETYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}pseudoOffset", simulationObject.pseudoOffset, DOUBLETYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}role", simulationObject.role, STRINGTYPE), searchTriple, matchingTriples, false)
+
+                var simulator : Simulation = simulationObject.sim
+                var modelDescription = simulator.modelDescription
+                var simulatorURI = "${simulationURI}_simulator"
+                var modelDescriptionURI = "${run}${name}_modelDescription"
+
+                addIfMatch(uriTriple(simulationURI, "${smol}simulator", simulatorURI), searchTriple, matchingTriples, false)
+                addIfMatch(uriTriple(simulatorURI, "${smol}modelDescription", modelDescriptionURI), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(modelDescriptionURI, "${smol}generatorTool", modelDescription.generationTool, STRINGTYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(modelDescriptionURI, "${smol}modelName", modelDescription.modelName, STRINGTYPE), searchTriple, matchingTriples, false)
+
+                for (v in modelDescription.getModelVariables()) {
+                    var variableURI = "${run}${name}_var_${v.name}"
+
+                    addIfMatch(uriTriple(modelDescriptionURI, "${smol}variable", variableURI), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}variableName", v.name, STRINGTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}typeName", v.typeName, STRINGTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}causality", v.causality, STRINGTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}variability", v.variability, STRINGTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}valueReference", v.valueReference, INTTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}description", v.description, STRINGTYPE), searchTriple, matchingTriples, false)
+                }
             }
 
             return TripleListIterator(matchingTriples)

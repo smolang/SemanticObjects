@@ -19,12 +19,12 @@ class SimulatorObject(val path : String, memory : Memory){
         const val TIMEFIELDNAME = "time"
     }
     private val series = mutableListOf<Snapshot>()
-    private var sim : Simulation = Simulation(path)
-    private var time : Double = 0.0
+    var sim : Simulation = Simulation(path)
+    var time : Double = 0.0
 
     //additional fields
-    private var role : String = ""
-    private var pseudoOffset : Double = 0.0
+    var role : String = ""
+    var pseudoOffset : Double = 0.0
 
     fun read(name: String): LiteralExpr {
         if(name == ROLEFIELDNAME) return LiteralExpr(role, STRINGTYPE)

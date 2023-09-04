@@ -248,7 +248,7 @@ class REPL(private val settings: Settings) {
             "source",
             this,
             { str ->
-                val p1 = listOf("heap", "staticTable", "vocabularyFile", "externalOntology")
+                val p1 = listOf("heap", "staticTable", "vocabularyFile", "externalOntology", "fmos")
                 val p2 = listOf("true", "false")
                 val p: List<String> = str.replace("\\s+".toRegex(), " ").trim().split(" ")
                 if (p.size != 2) { printRepl("\n" + "This command requires exactly two parameters.") }
@@ -263,7 +263,7 @@ class REPL(private val settings: Settings) {
                 false
             },
             "Set which sources to include (true) or exclude (false) when querying",
-            parameterHelp = "[heap|staticTable|vocabularyFile|externalOntology] [true|false]",
+            parameterHelp = "[heap|staticTable|vocabularyFile|externalOntology|fmos] [true|false]",
             requiresParameter = true
         )
 
