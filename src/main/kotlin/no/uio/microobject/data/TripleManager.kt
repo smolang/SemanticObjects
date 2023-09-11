@@ -24,11 +24,9 @@ import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
 import org.javafmi.wrapper.Simulation
-import org.javafmi.framework.ModelDescription
 import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.collections.HashMap
 
 
@@ -186,15 +184,18 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     }
 
     // Helper method to crate triple with URIs in two first positions and a literal in object position
-    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): Triple {
+    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): Triple? {
+        if (o == null) return null
         return Triple(
             NodeFactory.createURI(s),
             NodeFactory.createURI(p),
-            getLiteralNode(LiteralExpr((o ?: "null").toString() , type), settings) // Check if o is null
+            getLiteralNode(LiteralExpr(o.toString(), type), settings)
         )
     }
     // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
-    private fun addIfMatch(candidateTriple: Triple, searchTriple: Triple, matchList: MutableList<Triple>, pseudo: Boolean)  {
+    private fun addIfMatch(candidateTriple: Triple?, searchTriple: Triple?, matchList: MutableList<Triple>, pseudo: Boolean)  {
+        if (searchTriple == null) return
+        if (candidateTriple == null) return
         // This is just a quick fix to resolve the problem with > and < in the uris. They appear for example when the stdlib.smol is used, since it has List<LISTT>.
         if (candidateTriple.subject.toString().contains(">")) return
         if (candidateTriple.subject.toString().contains("<")) return
