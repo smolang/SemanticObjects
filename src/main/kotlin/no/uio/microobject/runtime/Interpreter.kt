@@ -106,6 +106,15 @@ class Interpreter(
         return eval(expr, mutableMapOf(), heap, simMemory, obj)
     }
 
+    /**
+     * Retrieve the list of ObjectNames of a given class from the heap
+     * @param className the name of the class
+     * @return the list of object names
+     */
+    fun getObjectNames(className: String): List<String> {
+        return heap.keys.filter { it.tag.toString() == className }.map { it.literal }
+    }
+
     // Run SPARQL query (str)
     fun query(str: String): ResultSet? {
         // Adding prefixes to the query
