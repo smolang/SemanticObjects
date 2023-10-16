@@ -67,6 +67,10 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                             newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
                         else if (f.type == INTTYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())))
                             newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
+                        else if (f.type == DOUBLETYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDdouble)
+                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
+                        else if (f.type == DOUBLETYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#double".toRegex())))
+                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
                         else if(f.type == STRINGTYPE)
                             newObjMemory[f.name] = LiteralExpr("\""+extractedName+"\"", f.type)
                         else
