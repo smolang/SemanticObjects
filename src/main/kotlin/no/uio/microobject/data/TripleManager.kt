@@ -10,6 +10,7 @@ import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.apache.commons.io.IOUtils
+import org.apache.jena.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.impl.GraphBase
@@ -18,7 +19,13 @@ import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
 import org.apache.jena.graph.compose.MultiUnion
+import org.apache.jena.query.Query
+import org.apache.jena.query.QueryExecution
+import org.apache.jena.query.*
 import org.apache.jena.rdf.model.*
+import org.apache.jena.rdfconnection.RDFConnectionRemote
+import org.apache.jena.rdfconnection.RDFConnectionFactory
+import org.apache.jena.rdfconnection.RDFConnection
 import org.apache.jena.reasoner.Reasoner
 import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.util.iterator.ExtendedIterator
@@ -28,6 +35,7 @@ import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
 import java.util.*
 import kotlin.collections.HashMap
+import kotlin.system.exitProcess
 
 
 // Settings controlling the TripleManager.
@@ -35,7 +43,7 @@ data class TripleSettings(
     val sources: HashMap<String,Boolean>, // Which sources to include
     val guards: HashMap<String,Boolean>, // If true, then guard clauses are used.
     var virtualization: HashMap<String,Boolean>, // If true, virtualization is used. Otherwise, naive method is used.
-    var jenaReasoner: String, // Must be either off, rdfs or owl
+    var jenaReasoner: ReasonerMode, // Must be either off, rdfs or owl
 )
 
 // Class managing triples from all the different sources, how to reason over them, and how to query them using SPARQL or DL queries.
@@ -44,10 +52,11 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
     // Default settings. These can be changed with REPL commands.
     var currentTripleSettings = TripleSettings(
-        sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "fmos" to true, "externalOntology" to (settings.background != "")),
+        sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "fmos" to true, "externalOntology" to (settings.background != ""), "urlOntology" to (settings.tripleStore != "")),
         guards = hashMapOf("heap" to true, "staticTable" to true),
         virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
-        jenaReasoner = "owl"
+//        jenaReasoner = ReasonerMode.owl
+        jenaReasoner = settings.reasoner
     )
 
 
@@ -127,6 +136,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         if (tripleSettings.sources.getOrDefault("externalOntology", false)) {
             includedGraphs.add(getExternalOntologyAsModel().graph)
         }
+        if (tripleSettings.sources.getOrDefault("urlOntology", false)) {
+            includedGraphs.add(getTripleStoreOntologyAsModel().graph)
+        }
         val model = ModelFactory.createModelForGraph(MultiUnion(includedGraphs.toTypedArray()))
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)  // Adding prefixes
         return model
@@ -146,6 +158,12 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return model
     }
 
+    private fun getTripleStoreOntologyAsModel(): Model {
+//        return writeToFileAndReadToModel(FusekiGraph())
+        return ModelFactory.createModelForGraph(FusekiGraph())
+//        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
+    }
+
     // Returns the Jena model containing statements from vocab.owl
     private fun getVocabularyModel(): Model {
         val vocabularyModel = ModelFactory.createDefaultModel()
@@ -157,15 +175,14 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return vocabularyModel.read(iStream, null, "TTL")
     }
 
-
     // Get the requested Jena reasoner
     private fun getJenaReasoner(tripleSettings: TripleSettings): Reasoner? {
         when (tripleSettings.jenaReasoner) {
-            "off" -> { return null }
-            "owl" -> { return ReasonerRegistry.getOWLReasoner() }
-            "rdfs" -> { return ReasonerRegistry.getRDFSReasoner() }
+            ReasonerMode.off -> { return null }
+            ReasonerMode.owl -> { return ReasonerRegistry.getOWLReasoner() }
+            ReasonerMode.rdfs -> { return ReasonerRegistry.getRDFSReasoner() }
         }
-        return null
+        // return null -> Unreachable, not necessary
     }
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.
@@ -245,6 +262,42 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         m2.read(uri, "TTL")
 
         return m2
+    }
+
+    // Class to handle the connection to the Fuseki triple store to retrieve the model
+    private inner class FusekiGraph : GraphBase() {
+        override fun graphBaseFind(triplePattern: Triple): ExtendedIterator<Triple> {
+            if(interpreter == null || settings.tripleStore == "")
+                return TripleListIterator(mutableListOf())
+
+            val uri = settings.tripleStore + "/query"
+            val connection = RDFConnectionFactory.connect(uri)
+
+            val query: String = "SELECT * WHERE { ?s ?p ?o }"
+
+            try {
+                val queryFactory = QueryFactory.create(query)
+                val qexec = connection.query(queryFactory)
+                val resultSet = qexec.execSelect()
+
+                val matchingTriples: MutableList<Triple> = mutableListOf()
+                while (resultSet.hasNext()) {
+                    val solution = resultSet.nextSolution()
+                    val s = solution.get("s").toString()
+                    val p = solution.get("p").toString()
+                    val o = solution.get("o").toString()
+
+                    addIfMatch(uriTriple(s, p, o), triplePattern, matchingTriples, false)
+                }
+
+                connection.close()
+
+                return TripleListIterator(matchingTriples)
+            } catch (e: Exception) {
+                println("Error: could not connect to the triple store.")
+                exitProcess(-1)
+            }
+        }
     }
 
     private inner class FMOGraph : GraphBase() {
