@@ -12,6 +12,7 @@ import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.Translate
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
+import no.uio.microobject.type.ReasonerMode
 import no.uio.microobject.type.TypeChecker
 import org.antlr.v4.runtime.CharStreams
 import org.antlr.v4.runtime.CommonTokenStream
@@ -277,7 +278,7 @@ class REPL(private val settings: Settings) {
                 else {
                     if  (!allowedParameters.contains(p[0])) { printRepl("\nParameter must one of: $allowedParameters") }
                     else {
-                        interpreter!!.tripleManager.currentTripleSettings.jenaReasoner = p[0]
+                        interpreter!!.tripleManager.currentTripleSettings.jenaReasoner = ReasonerMode.valueOf(p[0])
                         printRepl("Reasoner changed to: ${p[0]}")
                     }
                 }
