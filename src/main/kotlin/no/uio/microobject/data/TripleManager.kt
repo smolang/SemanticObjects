@@ -10,7 +10,6 @@ import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.apache.commons.io.IOUtils
-import org.apache.jena.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.impl.GraphBase
@@ -19,13 +18,9 @@ import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
 import org.apache.jena.graph.compose.MultiUnion
-import org.apache.jena.query.Query
-import org.apache.jena.query.QueryExecution
 import org.apache.jena.query.*
 import org.apache.jena.rdf.model.*
-import org.apache.jena.rdfconnection.RDFConnectionRemote
 import org.apache.jena.rdfconnection.RDFConnectionFactory
-import org.apache.jena.rdfconnection.RDFConnection
 import org.apache.jena.reasoner.Reasoner
 import org.apache.jena.reasoner.ReasonerRegistry
 import org.apache.jena.util.iterator.ExtendedIterator
@@ -44,6 +39,7 @@ data class TripleSettings(
     val guards: HashMap<String,Boolean>, // If true, then guard clauses are used.
     var virtualization: HashMap<String,Boolean>, // If true, virtualization is used. Otherwise, naive method is used.
     var jenaReasoner: ReasonerMode, // Must be either off, rdfs or owl
+    var fusekiModel: Model? = null // If given, then this model is used instead of the FusekiGraph
 )
 
 // Class managing triples from all the different sources, how to reason over them, and how to query them using SPARQL or DL queries.
@@ -137,7 +133,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             includedGraphs.add(getExternalOntologyAsModel().graph)
         }
         if (tripleSettings.sources.getOrDefault("urlOntology", false)) {
-            includedGraphs.add(getTripleStoreOntologyAsModel().graph)
+            if (tripleSettings.fusekiModel == null)
+                tripleSettings.fusekiModel = getTripleStoreOntologyAsModel()
+            includedGraphs.add(tripleSettings.fusekiModel!!.graph)
         }
         val model = ModelFactory.createModelForGraph(MultiUnion(includedGraphs.toTypedArray()))
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)  // Adding prefixes
@@ -160,8 +158,18 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
     private fun getTripleStoreOntologyAsModel(): Model {
 //        return writeToFileAndReadToModel(FusekiGraph())
-        return ModelFactory.createModelForGraph(FusekiGraph())
-//        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
+//        return ModelFactory.createModelForGraph(FusekiGraph())
+        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
+    }
+
+    /**
+     * Regenerate the triple store model. We'll do so by fetching again the data
+     * This will be called when the triple store is updated, and we want to update the model.
+     *
+     * @return the regenerated model
+     */
+    fun regenerateTripleStoreModel(): Model {
+        return getTripleStoreOntologyAsModel()
     }
 
     // Returns the Jena model containing statements from vocab.owl
@@ -182,7 +190,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             ReasonerMode.owl -> { return ReasonerRegistry.getOWLReasoner() }
             ReasonerMode.rdfs -> { return ReasonerRegistry.getRDFSReasoner() }
         }
-        // return null -> Unreachable, not necessary
+        // return null -> Unreachable, not necessar
     }
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.
