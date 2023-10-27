@@ -6,11 +6,8 @@ import com.github.ajalt.clikt.parameters.types.path
 import org.jline.reader.LineReaderBuilder
 import no.uio.microobject.runtime.REPL
 import no.uio.microobject.type.ReasonerMode
-import org.apache.jena.query.QueryExecution
-import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
-import org.apache.jena.rdfconnection.RDFConnection
 import org.apache.jena.rdfconnection.RDFConnectionFactory
 import java.io.File
 import java.nio.file.Paths
@@ -123,14 +120,6 @@ class Main : CliktCommand() {
             val conn = RDFConnectionFactory.connect(url)
 
             val query = QueryFactory.create("SELECT * WHERE { ?s ?p ?o } LIMIT 1")
-//            val query = QueryFactory.create("PREFIX ast: <http://www.semanticweb.org/gianl/ontologies/2023/1/sirius-greenhouse#>\n" +
-//                    "            PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#>\n" +
-//                    "            SELECT ?shelfFloor ?groupPosition\n" +
-//                    "            WHERE {\n" +
-//                    "                ?x rdf:type ast:Pump ;\n" +
-//                    "                    ast:hasShelfFloor ?shelfFloor ;\n" +
-//                    "                    ast:hasGroupPosition ?groupPosition .\n" +
-//                    "            }")
             val qexec = conn.query(query)
             val result: ResultSet = qexec.execSelect()
 
