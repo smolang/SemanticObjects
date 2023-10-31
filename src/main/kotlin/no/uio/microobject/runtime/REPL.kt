@@ -40,7 +40,7 @@ class Command(
 
 @Suppress("DEPRECATION") // ReasonerFactory is deprecated by HermiT but I keep it like this to make a change easier
 class REPL(private val settings: Settings) {
-    private var interpreter: Interpreter? = null
+    public var interpreter: Interpreter? = null
     private val commands: MutableMap<String, Command> = mutableMapOf()
 
     init{

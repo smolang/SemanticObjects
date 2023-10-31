@@ -4,9 +4,15 @@ plugins {
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
 }
+
 group = 'org.smolang'
 version = '0.3'
-sourceCompatibility = '1.11'
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(11))
+    }
+}
 
 repositories {
     mavenCentral()
