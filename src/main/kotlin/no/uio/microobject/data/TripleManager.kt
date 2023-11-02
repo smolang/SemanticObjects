@@ -7,6 +7,7 @@ import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.TRUEEXPR
 import java.io.*
 import no.uio.microobject.main.Settings
+import no.uio.microobject.main.testModel
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.apache.commons.io.IOUtils
@@ -51,7 +52,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "fmos" to true, "externalOntology" to (settings.background != ""), "urlOntology" to (settings.tripleStore != "")),
         guards = hashMapOf("heap" to true, "staticTable" to true),
         virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
-//        jenaReasoner = ReasonerMode.owl
         jenaReasoner = settings.reasoner
     )
 
@@ -157,8 +157,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     }
 
     private fun getTripleStoreOntologyAsModel(): Model {
-//        return writeToFileAndReadToModel(FusekiGraph())
-//        return ModelFactory.createModelForGraph(FusekiGraph())
+        // Test case only
+        if (testModel != null) return testModel as Model
+        // Normal behaviour with a Fuseki environment
         return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
     }
 
@@ -270,42 +271,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         m2.read(uri, "TTL")
 
         return m2
-    }
-
-    // Class to handle the connection to the Fuseki triple store to retrieve the model
-    private inner class FusekiGraph : GraphBase() {
-        override fun graphBaseFind(triplePattern: Triple): ExtendedIterator<Triple> {
-            if(interpreter == null || settings.tripleStore == "")
-                return TripleListIterator(mutableListOf())
-
-            val uri = settings.tripleStore + "/query"
-            val connection = RDFConnectionFactory.connect(uri)
-
-            val query: String = "SELECT * WHERE { ?s ?p ?o }"
-
-            try {
-                val queryFactory = QueryFactory.create(query)
-                val qexec = connection.query(queryFactory)
-                val resultSet = qexec.execSelect()
-
-                val matchingTriples: MutableList<Triple> = mutableListOf()
-                while (resultSet.hasNext()) {
-                    val solution = resultSet.nextSolution()
-                    val s = solution.get("s").toString()
-                    val p = solution.get("p").toString()
-                    val o = solution.get("o").toString()
-
-                    addIfMatch(uriTriple(s, p, o), triplePattern, matchingTriples, false)
-                }
-
-                connection.close()
-
-                return TripleListIterator(matchingTriples)
-            } catch (e: Exception) {
-                println("Error: could not connect to the triple store.")
-                exitProcess(-1)
-            }
-        }
     }
 
     private inner class FMOGraph : GraphBase() {
