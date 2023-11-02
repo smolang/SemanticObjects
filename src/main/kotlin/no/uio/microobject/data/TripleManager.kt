@@ -52,7 +52,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         sources = hashMapOf("heap" to true, "staticTable" to true, "vocabularyFile" to true, "fmos" to true, "externalOntology" to (settings.background != ""), "urlOntology" to (settings.tripleStore != "")),
         guards = hashMapOf("heap" to true, "staticTable" to true),
         virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
-        jenaReasoner = settings.reasoner
+        jenaReasoner = settings.reasoner,
+        fusekiModel = null
     )
 
 
@@ -166,11 +167,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     /**
      * Regenerate the triple store model. We'll do so by fetching again the data
      * This will be called when the triple store is updated, and we want to update the model.
-     *
-     * @return the regenerated model
      */
-    fun regenerateTripleStoreModel(): Model {
-        return getTripleStoreOntologyAsModel()
+    fun regenerateTripleStoreModel(): Unit {
+        currentTripleSettings.fusekiModel = getTripleStoreOntologyAsModel()
     }
 
     // Returns the Jena model containing statements from vocab.owl
