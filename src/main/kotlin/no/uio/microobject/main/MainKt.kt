@@ -8,10 +8,14 @@ import no.uio.microobject.runtime.REPL
 import no.uio.microobject.type.ReasonerMode
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
+import org.apache.jena.rdf.model.Model
 import org.apache.jena.rdfconnection.RDFConnectionFactory
 import java.io.File
 import java.nio.file.Paths
 import kotlin.system.exitProcess
+
+// test cases only
+var testModel : Model? = null
 
 data class Settings(var verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
