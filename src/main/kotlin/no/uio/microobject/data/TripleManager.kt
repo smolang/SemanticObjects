@@ -191,7 +191,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             ReasonerMode.owl -> { return ReasonerRegistry.getOWLReasoner() }
             ReasonerMode.rdfs -> { return ReasonerRegistry.getRDFSReasoner() }
         }
-        // return null -> Unreachable, not necessar
     }
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.
