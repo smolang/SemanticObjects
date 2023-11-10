@@ -5,7 +5,6 @@ import com.github.ajalt.clikt.parameters.options.*
 import com.github.ajalt.clikt.parameters.types.path
 import org.jline.reader.LineReaderBuilder
 import no.uio.microobject.runtime.REPL
-import no.uio.microobject.type.ReasonerMode
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.Model
@@ -16,6 +15,10 @@ import kotlin.system.exitProcess
 
 // test cases only
 var testModel : Model? = null
+
+enum class ReasonerMode {
+    off, rdfs, owl
+}
 
 data class Settings(var verbose : Boolean,      //Verbosity
                     val materialize : Boolean,  //Materialize
