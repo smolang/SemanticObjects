@@ -31,6 +31,7 @@ dependencies {
     testImplementation 'io.kotest:kotest-runner-junit5:5.2.3'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
+    testImplementation 'org.apache.jena:jena-fuseki-main:3.16.0'
     implementation 'com.github.ajalt.clikt:clikt:3.4.2'
     implementation 'org.antlr:antlr4:4.8'
     antlr 'org.antlr:antlr4:4.8'
