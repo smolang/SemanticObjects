@@ -1,8 +1,8 @@
 package no.uio.microobject.test.triples
 
 import io.kotest.core.annotation.Ignored
+import no.uio.microobject.main.ReasonerMode
 import no.uio.microobject.test.MicroObjectTest
-import no.uio.microobject.type.ReasonerMode
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.impl.LiteralImpl
 import kotlin.test.assertEquals
