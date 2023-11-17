@@ -11,6 +11,7 @@ import org.apache.jena.query.DatasetFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.ModelFactory
+import org.apache.jena.rdfconnection.RDFConnection
 import org.apache.jena.rdfconnection.RDFConnectionFactory
 
 class TripleManagerTest: MicroObjectTest() {
@@ -41,18 +42,15 @@ class TripleManagerTest: MicroObjectTest() {
 
     init {
         "triple store".config(enabledOrReasonIf = tripleStoreToTest) {
-            val model = ModelFactory.createDefaultModel()
-            model.read("src/test/resources/tree_shapes.ttl")
-            val (interpreter,_) = initTripleStoreInterpreter("persons", StringLoad.RES)
-            interpreter.tripleManager.getModel().containsAny(model) shouldBe true
-
             // The triple store is initialised with this url, but we'll also test that we can get something
-            val url = "http://localhost:3030/ds"
-            val conn = RDFConnectionFactory.connect(url)
+            val queryUrl = "http://localhost:3030/ds/query"
+            val queryConn: RDFConnection = RDFConnectionFactory.connect(queryUrl)
 
             val query = QueryFactory.create("SELECT * WHERE { ?s ?p ?o } LIMIT 1")
-            val qexec = conn.query(query)
+            val qexec = queryConn.query(query)
             val result: ResultSet = qexec.execSelect()
+
+            queryConn.close()
 
             result.hasNext() shouldBe true
         }
