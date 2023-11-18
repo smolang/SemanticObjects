@@ -91,7 +91,7 @@ class Main : CliktCommand() {
         "--load" to "repl",       "-l" to "repl",
     ).default("repl")
 
-    private val reasoner by option("--jenaReasoner", "-j", help="Set value of the internally used reasoner to 'off', 'rdfs', or 'owl' (defaut -> 'owl')").default("owl")
+    private val reasoner by option("--jenaReasoner", "-j", help="Set value of the internally used reasoner to 'off', 'rdfs', or 'owl' (default -> 'owl')").default("owl")
     private val tripleStore by option("--sparqlEndpoint", "-s",  help="url for SPARQL endpoint")
     private val back         by option("--back",      "-b",  help="path to a file containing OWL class definitions as background knowledge.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
