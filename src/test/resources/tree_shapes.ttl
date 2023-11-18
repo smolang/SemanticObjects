@@ -1,0 +1,11 @@
+@prefix schema: <http://schema.org/> .
+@prefix sh: <http://www.w3.org/ns/shacl#> .
+
+schema:TestShape
+    a sh:NodeShape ;
+    sh:targetClass schema:Object ;
+    sh:property [
+        sh:path schema:instanceOf ;
+        sh:class schema:Class ;
+        sh:name "Every smol-object states its smol-class" ;
+    ].

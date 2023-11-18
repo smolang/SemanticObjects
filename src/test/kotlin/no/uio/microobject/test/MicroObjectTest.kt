@@ -22,6 +22,7 @@ import org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS
 
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
+    private val IS_FUSEKI_DOCKER = System.getenv("FUSEKI_DOCKER") == "true"
 
     val fmuNeedsWindows: (TestCase) -> Enabled = {
         if (IS_OS_WINDOWS) Enabled.enabled
@@ -35,12 +36,17 @@ open class MicroObjectTest : StringSpec() {
         if (IS_OS_LINUX) Enabled.enabled
         else Enabled.disabled("The FMU of this test needs to run on Linux.")
     }
+    val tripleStoreToTest: (TestCase) -> Enabled = {
+        if (IS_FUSEKI_DOCKER) Enabled.enabled
+        else Enabled.disabled("The triple store needs to be running on a docker container for this test.")
+    }
 
     private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
+    private var tripleStoreSettings = Settings(false, false,  "/tmp/mo","http://localhost:3030/ds","","urn:", extraPrefixes = hashMapOf())
     protected fun loadBackground(path : String, domainPrefix : String = ""){
         val file = File(path)
         val backgr = file.readText()
-        settings = Settings(false, false,  "/tmp/mo",backgr,domainPrefix,"urn:", extraPrefixes = hashMapOf())
+        settings = Settings(false, false,  "/tmp/mo","",backgr,domainPrefix,"urn:", extraPrefixes = hashMapOf())
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
@@ -107,6 +113,38 @@ open class MicroObjectTest : StringSpec() {
             mutableMapOf(),
             pair.second,
             settings
+        )
+        return Pair(interpreter, tC)
+    }
+
+    protected fun initTripleStoreInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH) : Pair<Interpreter, TypeChecker> {
+        val ast = when(loadAs){
+            StringLoad.STMT -> loadStatement(str)
+            StringLoad.PRG -> loadString(str)
+            StringLoad.CLASS -> loadClass(str)
+            StringLoad.PATH -> loadPath(str)
+            StringLoad.RES -> loadPath(this::class.java.classLoader.getResource("$str.smol").file)
+        }
+        val visitor = Translate()
+        val pair = visitor.generateStatic(ast)
+
+        val tripleManager = TripleManager(tripleStoreSettings, pair.second, null)
+
+        val tC = TypeChecker(ast, tripleStoreSettings, tripleManager)
+        tC.collect()
+        var rules = ""
+
+
+        val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
+
+        val initStack = Stack<StackEntry>()
+        initStack.push(pair.first)
+        val interpreter = Interpreter(
+            initStack,
+            initGlobalStore,
+            mutableMapOf(),
+            pair.second,
+            tripleStoreSettings
         )
         return Pair(interpreter, tC)
     }

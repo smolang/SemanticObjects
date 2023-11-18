@@ -30,7 +30,7 @@ class BasicTest : StringSpec() {
         val pair = visitor.generateStatic(tree)
 
 
-        val settings = Settings(false,false,  "/tmp/mo","","urn:", "", extraPrefixes = hashMapOf())
+        val settings = Settings(false,false,  "/tmp/mo", "","","urn:", "", extraPrefixes = hashMapOf())
         val tripleManager = TripleManager(settings, pair.second, null)
 
         val tC = TypeChecker(tree, settings, tripleManager)

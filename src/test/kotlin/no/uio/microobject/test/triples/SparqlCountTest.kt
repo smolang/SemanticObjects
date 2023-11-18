@@ -1,6 +1,7 @@
 package no.uio.microobject.test.triples
 
 import io.kotest.core.annotation.Ignored
+import no.uio.microobject.main.ReasonerMode
 import no.uio.microobject.test.MicroObjectTest
 import org.apache.jena.query.ResultSet
 import org.apache.jena.rdf.model.impl.LiteralImpl
@@ -47,7 +48,7 @@ class SparqlCountTest: MicroObjectTest() {
                     tripleSettings.sources["staticTable"] = (key[1] as Int == 1)
                     tripleSettings.sources["vocabularyFile"] = (key[2] as Int == 1)
                     tripleSettings.sources["externalOntology"] = (key[3] == 1)
-                    tripleSettings.jenaReasoner = key[4].toString()
+                    tripleSettings.jenaReasoner = ReasonerMode.valueOf(key[4].toString())
                     // Make sure that we get the same result when guards are turned off
                     for (guards in arrayListOf(true, false)) {
                         // Make sure that we get the same result when virtualization is turned off
