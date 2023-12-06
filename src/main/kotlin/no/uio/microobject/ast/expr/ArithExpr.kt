@@ -4,10 +4,7 @@ import no.uio.microobject.ast.*
 import no.uio.microobject.runtime.GlobalMemory
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.SimulationMemory
-import no.uio.microobject.type.DOUBLETYPE
-import no.uio.microobject.type.ERRORTYPE
-import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
 
 data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : Type = ERRORTYPE) : Expression {
     override fun toString(): String = "($Op ${params.joinToString(" ")})"
@@ -144,7 +141,14 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : 
                 if (params.size != 1 || first == null ) throw Exception("Operator.NOT requires one parameter")
                 if (first.eval(stack, heap, simMemory, obj) == FALSEEXPR) return TRUEEXPR
                 else return FALSEEXPR
-
+            }
+            Operator.CONCAT -> {
+                if (params.size != 2 || first == null || second == null) throw Exception("Operator.CONCAT requires two parameters")
+                val enx1 = first.eval(stack, heap, simMemory, obj)
+                val enx2 = second.eval(stack, heap, simMemory, obj)
+                return LiteralExpr(
+                        enx1.literal.removeSurrounding("\"") + enx2.literal.removeSurrounding("\"") , STRINGTYPE
+                    )
             }
         }
     }
@@ -165,7 +169,7 @@ data class ArithExpr(val Op : Operator, val params: List<Expression>, val tag : 
 }
 
 enum class Operator {
-    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD;
+    PLUS, MINUS, MULT, DIV, NEQ, GEQ, EQ, LEQ, LT, GT, AND, OR, NOT, MOD, CONCAT;
     companion object{
         fun toJava(op : Operator) : String {
             return when(op){
@@ -183,6 +187,7 @@ enum class Operator {
                 OR    -> "||"
                 NOT   -> "!"
                 MOD   -> "%"
+                CONCAT -> "+"
             }
         }
     }

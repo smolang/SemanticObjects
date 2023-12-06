@@ -139,5 +139,12 @@ open class MOLTypeTest  : MicroObjectTypeTest() {
             val tC = checkClass("G", "test_generic" )
             assert(tC.report(false))
         }
+        "String concat"{
+            assert(checkMet("C", "success", "strings" ).report(false))
+            assertFalse(checkMet("C", "fail1", "strings" ).report(false))
+            assertFalse(checkMet("C", "fail2", "strings" ).report(false))
+            assertFalse(checkMet("C", "fail3", "strings" ).report(false))
+            assertFalse(checkMet("C", "fail4", "strings" ).report(false))
+        }
     }
 }

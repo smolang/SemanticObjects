@@ -61,6 +61,7 @@ LEQ : '<=';
 GEQ : '>=';
 ASS : '=';
 PLUS : '+';
+PLUSPLUS : '++';
 MULT : '*';
 MINUS : '-';
 DIV : '/';
@@ -163,6 +164,7 @@ expression :      THIS                           # this_expression
                 | expression MULT expression     # mult_expression
                 | expression PLUS expression     # plus_expression
                 | expression MINUS expression    # minus_expression
+                | expression PLUSPLUS expression # concat_expression
                 | expression EQ expression       # eq_expression
                 | expression NEQ expression      # neq_expression
                 | expression GEQ expression      # geq_expression

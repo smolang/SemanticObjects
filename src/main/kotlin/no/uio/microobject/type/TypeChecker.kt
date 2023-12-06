@@ -943,6 +943,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     inVar?.second ?: ERRORTYPE
                 }
             }
+            is WhileParser.Concat_expressionContext -> {
+                val t1 = getType(eCtx.expression(0), fields, vars, thisType, inRule)
+                val t2 = getType(eCtx.expression(1), fields, vars, thisType, inRule)
+                if(t1 != STRINGTYPE || t2 != STRINGTYPE)
+                    log("Operator ++ expects two strings as parameters, got: $t1 and $t2", eCtx)
+                return STRINGTYPE
+            }
             is WhileParser.External_field_expressionContext -> { // This must resolve the generics
                 val t1 = getType(eCtx.expression(), fields, vars, thisType, inRule)
                 if(t1 == ERRORTYPE) return ERRORTYPE

@@ -451,6 +451,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     override fun visitThis_expression(ctx: This_expressionContext?): ProgramElement {
         return LocalVar("this")
     }
+    override fun visitConcat_expression(ctx: Concat_expressionContext?): ProgramElement {
+        return ArithExpr(Operator.CONCAT, listOf(visit(ctx!!.expression(0)) as Expression, visit(ctx.expression(1)) as Expression))
+    }
 
     override fun visitVarInit(ctx: VarInitContext?): ProgramElement {
         return VarInit(ctx!!.NAME().text, visit(ctx.expression()) as Expression)

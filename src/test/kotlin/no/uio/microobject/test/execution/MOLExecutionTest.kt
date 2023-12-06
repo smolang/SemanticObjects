@@ -5,10 +5,7 @@ import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.LocalVar
 import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.test.MicroObjectTest
-import no.uio.microobject.type.BaseType
-import no.uio.microobject.type.DOUBLETYPE
-import no.uio.microobject.type.ERRORTYPE
-import no.uio.microobject.type.INTTYPE
+import no.uio.microobject.type.*
 import kotlin.test.assertEquals
 import kotlin.test.assertNotEquals
 
@@ -93,6 +90,12 @@ class MOLExecutionTest : MicroObjectTest() {
             assertEquals(1, a.stack.size)
             assertNotEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("list", BaseType("List"))))
             assertEquals(LiteralExpr("null", ERRORTYPE), a.evalTopMost(LocalVar("list2", BaseType("List"))))
+        }
+        "concat"{
+            val (a, _) = initInterpreter("strings", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertEquals(LiteralExpr("True", BOOLEANTYPE), a.evalTopMost(LocalVar("res", BOOLEANTYPE)))
         }
     }
 }

@@ -1,0 +1,35 @@
+class C()
+   Boolean success()
+       String s = "foo";
+       String v = "bar";
+       String x1 = s ++ v;
+       String x2 = s ++ "bar";
+       String x3 = "foo" ++ "bar";
+       String x4 = "foo" ++ v;
+       return x1 == x2 & x2 == x3 & x3 == x4;
+   end
+   Unit fail1()
+       String s = "foo";
+       Int v = 1;
+       String x1 = s ++ v;
+   end
+   Unit fail2()
+       String s = "foo";
+       String x1 = s ++ 1;
+   end
+   Unit fail3()
+       String s = "foo";
+       String x1 = 1 ++ s;
+   end
+   Unit fail4()
+       String x1 = 1 ++ "foo";
+   end
+end
+
+
+main
+ C c = new C();
+ Boolean res = c.success();
+   breakpoint;
+   breakpoint;
+end
