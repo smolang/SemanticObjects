@@ -4,6 +4,7 @@ import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.LocalVar
 import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.test.MicroObjectTest
+import no.uio.microobject.type.BOOLEANTYPE
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.ERRORTYPE
 import no.uio.microobject.type.INTTYPE
@@ -84,6 +85,12 @@ class SMOLExecutionTest: MicroObjectTest() {
             executeUntilBreak(a)
             assertEquals(1, a.stack.size)
             assertEquals(LiteralExpr("1", INTTYPE), a.evalTopMost(LocalVar("l", BaseType("List"))))
+        }
+        "constr_bug2"{
+            val (a, _) = initInterpreter("test_construct", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertEquals(LiteralExpr("True", BOOLEANTYPE), a.evalTopMost(LocalVar("found", BaseType("List"))))
         }
     }
 }

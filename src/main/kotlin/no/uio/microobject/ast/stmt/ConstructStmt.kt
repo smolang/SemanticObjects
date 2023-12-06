@@ -48,7 +48,7 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                 val newObjName = Names.getObjName(className)
                 val newObjMemory: Memory = mutableMapOf()
                 for(f in m) {
-                    if (!r.varNames().asSequence().contains(f.name)) {
+                    if (!r.varNames().asSequence().contains(f.name)) { //default values
                         when (f.type) {
                             STRINGTYPE -> newObjMemory[f.name] = LiteralExpr("", f.type)
                             BOOLEANTYPE -> newObjMemory[f.name] = LiteralExpr(TRUEEXPR.literal, f.type)
@@ -57,24 +57,32 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                             else -> newObjMemory[f.name] = LiteralExpr("null", f.type)
                         }
                     } else {
-                        val extractedName = r.getLiteral(f.name).toString().removePrefix(interpreter.settings.runPrefix)
-                        if (!Type.isAtomic(f.type)) {
-                            val foundAny = interpreter.heap.keys.any { it.literal == extractedName }
-                            if (!foundAny)
-                                throw Exception("Query returned unknown object/literal: $extractedName")
+                        if(r.get(f.name).isLiteral){
+                            val extractedName = r.getLiteral(f.name).toString().removePrefix(interpreter.settings.runPrefix)
+                            if (f.type == INTTYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
+                            else if (f.type == INTTYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())))
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
+                            else if (f.type == DOUBLETYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDdouble)
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
+                            else if (f.type == DOUBLETYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#double".toRegex())))
+                                newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
+                            else if(f.type == STRINGTYPE)
+                                newObjMemory[f.name] = LiteralExpr("\""+extractedName+"\"", f.type)
+                            else
+                                newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
+                        } else {
+
+                            val obres = r.get(f.name)
+                            val found = obres.toString().removePrefix(interpreter.settings.runPrefix)
+                            val objNameCand = if(found.startsWith("\\\"")) found.replace("\\\"","\"") else found
+                            for (ob in interpreter.heap.keys) {
+                                if (ob.literal == objNameCand) {
+                                    newObjMemory[f.name] = LiteralExpr(objNameCand, ob.tag)
+                                    break
+                                }
+                            }
                         }
-                        if (f.type == INTTYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDinteger)
-                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
-                        else if (f.type == INTTYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex())))
-                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], INTTYPE)
-                        else if (f.type == DOUBLETYPE && r.getLiteral(f.name).asNode().literalDatatype == XSDDatatype.XSDdouble)
-                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
-                        else if (f.type == DOUBLETYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#double".toRegex())))
-                            newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
-                        else if(f.type == STRINGTYPE)
-                            newObjMemory[f.name] = LiteralExpr("\""+extractedName+"\"", f.type)
-                        else
-                            newObjMemory[f.name] = LiteralExpr(extractedName, f.type)
                     }
                 }
                 val rdfName = Names.getNodeName()

@@ -1,0 +1,10 @@
+class C(Int i) end
+class R(C c, Int j) end
+
+main
+  C c = new C(5);
+  List<R> res = construct("SELECT ?c ?j {?c a prog:C. ?c prog:C_i ?j}");
+  Boolean found = res != null;
+  breakpoint;
+  breakpoint;
+end
