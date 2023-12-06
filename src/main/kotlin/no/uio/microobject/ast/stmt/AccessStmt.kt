@@ -58,8 +58,8 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
         var list = LiteralExpr("null")
         if (results != null) {
             for (r in results) {
-                val obres = r.get("?obj")
-                    ?: throw Exception("Could not select ?obj variable from results, please select using only ?obj")
+                val obres = r.get(r.varNames().next())
+                    ?: throw Exception("Could not select a results variable from results, please add one")
                 val name = Names.getObjName("List")
                 val newMemory: Memory = mutableMapOf()
 
