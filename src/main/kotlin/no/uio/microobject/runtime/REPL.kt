@@ -99,6 +99,10 @@ class REPL(private val settings: Settings) {
 
     private fun initInterpreter(paths: List<String>) {
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText()
+        if(paths.any { !File(it).exists() }) {
+            println("The following files: ${paths.filter { !File(it).exists() }.joinToString(", ")}")
+            throw Exception("input .smol file not found")
+        }
         val programs =  paths.map { File(it).readText(Charsets.UTF_8) }
         val program = programs.joinToString ( "\n" )
         val lexer = WhileLexer(CharStreams.fromString(program + "\n\n" + stdLib ))

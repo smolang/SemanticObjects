@@ -577,31 +577,47 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     translateType(ctx.newType, className, generics)
                 val createClass = newTypeFound.getPrimary().getNameString()
                 val createDecl = recoverDef[createClass]
-                if(createDecl!!.abs != null)
-                    log("Cannot instantiate abstract class $createClass", ctx)
-                val newType : Type = newTypeFound
+                if(createDecl == null)
+                    log("Cannot find class $createClass", ctx)
+                else {
+                    if (createDecl!!.abs != null)
+                        log("Cannot instantiate abstract class $createClass", ctx)
+                    val newType: Type = newTypeFound
 
-                val creationParameters = getParameterTypes(createClass)
-                if (creationParameters.size == (ctx.expression().size - (if(ctx.owldescription == null) 1 else 2))){
-                    for(i in 1 until creationParameters.size+1){
-                        if(ctx.expression() == ctx.owldescription) continue
-                        val targetType = creationParameters[i-1]
-                        val finalType = instantiateGenerics(targetType, newType, createClass, generics.getOrDefault(className, listOf()))
-                        val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)
-                        if(targetType != ERRORTYPE && realType != ERRORTYPE && !finalType.isAssignable(realType, extends)) {
-                            log("Type $realType is not assignable to $finalType", ctx)
+                    val creationParameters = getParameterTypes(createClass)
+                    if (creationParameters.size == (ctx.expression().size - (if (ctx.owldescription == null) 1 else 2))) {
+                        for (i in 1 until creationParameters.size + 1) {
+                            if (ctx.expression() == ctx.owldescription) continue
+                            val targetType = creationParameters[i - 1]
+                            val finalType = instantiateGenerics(
+                                targetType,
+                                newType,
+                                createClass,
+                                generics.getOrDefault(className, listOf())
+                            )
+                            val realType = getType(ctx.expression(i), inner, vars, thisType, inRule)
+                            if (targetType != ERRORTYPE && realType != ERRORTYPE && !finalType.isAssignable(
+                                    realType,
+                                    extends
+                                )
+                            ) {
+                                log("Type $realType is not assignable to $finalType", ctx)
+                            }
                         }
+                    } else {
+                        log(
+                            "Mismatching number of parameters when creating an $createClass instance. Expected ${creationParameters.size}, got ${ctx.expression().size - 1}",
+                            ctx
+                        )
                     }
-                } else {
-                    log("Mismatching number of parameters when creating an $createClass instance. Expected ${creationParameters.size}, got ${ctx.expression().size-1}", ctx)
-                }
 
-                if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
-                    log("Type $newType is not assignable to $lhsType", ctx)
-                }
+                    if(lhsType != ERRORTYPE && !lhsType.isAssignable(newType, extends) ) {
+                        log("Type $newType is not assignable to $lhsType", ctx)
+                    }
 
-                if(ctx.owldescription != null && getType(ctx.owldescription, inner, vars, thisType, false) != STRINGTYPE){
-                    log("Models clause must be a String: ${ctx.owldescription}", ctx)
+                    if(ctx.owldescription != null && getType(ctx.owldescription, inner, vars, thisType, false) != STRINGTYPE){
+                        log("Models clause must be a String: ${ctx.owldescription}", ctx)
+                    }
                 }
 
                 if(inRule) log("Non-local access in rule method.", ctx)
@@ -627,7 +643,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Parameter of an influx DB access must be a String, which contains a path to the connection configuration.", ctx)
                     log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
                 } else {
-                    if(!ctx.query.text.matches("^SELECT\\s*\\?\\w*\\s*(WHERE)?\\s*\\{.*".toRegex()))
+                    if(settings.verbose && !ctx.query.text.matches("^SELECT\\s*\\?\\w*\\s*(WHERE)?\\s*\\{.*".toRegex()))
                         log("Access statements assume that only a single result variable is used, this statement is possibly malformed", ctx, Severity.WARNING)
                     var expType: Type? = null
                     if (ctx.declType != null) {
@@ -721,7 +737,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Destroy_statementContext -> {
                 val innerType = getType(ctx.expression(), inner, vars, thisType, inRule)
-                if(innerType != ERRORTYPE && !OBJECTTYPE.isAssignable(innerType, extends))
+                if(innerType != ERRORTYPE && !OBJECTTYPE.isAssignable(innerType, extends) && innerType.getPrimary().getNameString() != "List")
                     log("Type $innerType of destroy statement is not an object type.",ctx)
 
                 if(inRule) log("Non-local access in rule method.", ctx)
