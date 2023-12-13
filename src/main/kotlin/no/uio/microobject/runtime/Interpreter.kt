@@ -35,8 +35,9 @@ data class InfluxDBConnection(val url : String, val org : String, val token : St
     private fun connect(){
         influxDBClient = InfluxDBClientKotlinFactory.create(url, token.toCharArray(), org)
     }
-    fun queryOneSeries(flux : String) : List<Double>{
+    fun queryOneSeries(flux : String, settings: Settings) : List<Double>{
         connect()
+        if(settings.verbose) println("RAN QUERY: $flux")
         val results = influxDBClient!!.getQueryKotlinApi().query(flux.replace("\\\"","\""))
         var next = emptyList<Double>()
         runBlocking {
@@ -189,10 +190,7 @@ class Interpreter(
             stack.push(se)
         }
 
-        if(eRes.debug){
-            return false
-        }
-        return true
+        return !eRes.debug
     }
 
     /**
