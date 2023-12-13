@@ -95,7 +95,7 @@ class Main : CliktCommand() {
     private val tripleStore by option("--sparqlEndpoint", "-s",  help="url for SPARQL endpoint")
     private val back         by option("--back",      "-b",  help="path to a file containing OWL class definitions as background knowledge.").path()
     private val domainPrefix by option("--domain",    "-d",  help="prefix for domain:.").default("https://github.com/Edkamb/SemanticObjects/ontologies/default#")
-    private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path()
+    private val input        by option("--input",     "-i",  help="path to a .smol file which is loaded on startup.").path().multiple()
     private val replay       by option("--replay",    "-r",  help="path to a file containing a series of REPL commands.").path()
     private val outdir       by option("--outdir",    "-o",   help="path to a directory used to create data files.").path().default(Paths.get("").toAbsolutePath())
     private val verbose      by option("--verbose",   "-v",  help="Verbose output.").flag()
@@ -150,14 +150,15 @@ class Main : CliktCommand() {
             }
         }
 
-        if (input == null && mainMode != "repl"){
+        if (input.isEmpty() && mainMode != "repl"){
             println("Error: please specify an input .smol file using \"--input\".")
             exitProcess(-1)
         }
 
         val repl = REPL( Settings(verbose, materialize, outdir.toString(), tripleStoreUrl, backgr, domainPrefix, extraPrefixes=HashMap(extra), useQueryType = queryType, reasoner = reasonerMode))
-        if(input != null){
-            repl.command("read", input.toString())
+        if(input.isNotEmpty()){
+            if(input.size == 1) repl.command("read", input[0].toString())
+            if(input.size > 1) repl.command("multiread", input.joinToString(";"))
         }
         if(replay != null){
             val str = replay.toString()

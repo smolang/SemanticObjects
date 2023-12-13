@@ -97,9 +97,9 @@ class REPL(private val settings: Settings) {
         println("MO-out> $str \n")
     }
 
-    private fun initInterpreter(path: String) {
+    private fun initInterpreter(paths: List<String>) {
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText()
-        val program =  File(path).readText(Charsets.UTF_8)
+        val program =  paths.map { File(it).readText(Charsets.UTF_8) }.joinToString { "\n" }
         val lexer = WhileLexer(CharStreams.fromString(program + "\n\n" + stdLib ))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)
@@ -134,16 +134,27 @@ class REPL(private val settings: Settings) {
         commands["read"] = Command(
             "read",
             this,
-            { str -> initInterpreter(str); false },
+            { str -> initInterpreter(listOf(str)); false },
             "reads a file",
             requiresFile=false,
             parameterHelp = "Path to a .smol file",
             requiresParameter = true
         )
+        commands["multiread"] = Command(
+            "multiread",
+            this,
+            {
+                str -> initInterpreter(str.split(";")); false
+            },
+            "reads a list of files, separated by \";\"",
+            requiresFile=false,
+            parameterHelp = "List of paths, separated by \";\" to .smol files",
+            requiresParameter = true
+        )
         commands["reada"] = Command(
             "reada",
             this,
-            { str -> initInterpreter(str); while (interpreter!!.makeStep()); false },
+            { str -> initInterpreter(listOf(str)); while (interpreter!!.makeStep()); false },
             "reads a file and runs auto",
             parameterHelp = "Path to a .smol file",
             requiresParameter = true,
