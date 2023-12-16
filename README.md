@@ -5,7 +5,7 @@ minimal object-oriented language with integrated semantic state
 access.  The interpreter can be used to examine the state with SPARQL,
 SHACL and OWL queries.
 
-The language is in development, for a general description, examples and tutorial to SMOL, we refer to [its webpage](https://www.smolang.org).
+The language is in development, for a general description, examples and tutorial to SMOL, we refer to [its webpage](https://smolang.org).
 
 
 To compile and run the SMOL REPL, run
