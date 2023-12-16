@@ -17,7 +17,7 @@ class OWLQueryTest: MicroObjectTest() {
 
         "OWL query 1" {
             val s = interpreter.owlQuery(q1)
-            assertEquals(s.count(), 5)
+            assertEquals(s.count(), 8)
         }
         "OWL query 2" {
             val s = interpreter.owlQuery(q2)

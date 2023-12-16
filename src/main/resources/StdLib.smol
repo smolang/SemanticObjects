@@ -55,6 +55,76 @@ hidden class List<LISTT>(LISTT content, List<LISTT> next)
             return last;
         end
     end
+
+    ExplList<LISTT> makeVisible()
+        ExplList<LISTT> nx = null;
+        if this.next != null then
+           nx = this.next.makeVisible();
+        end
+        ExplList<LISTT> ret = new ExplList<LISTT>(this.content, nx);
+        return ret;
+    end
 end
 
 hidden class Pair<PAIRTONE,PAIRTTWO>(PAIRTONE first, PAIRTTWO second) end
+
+class ExplList<LISTTT>(LISTTT content, ExplList<LISTTT> next)
+
+    Int length()
+        if this.next == null then return 1;
+        else Int n = this.next.length(); return n + 1;
+        end
+    end
+
+    Int append(ExplList<LISTTT> last)
+        if this.next == null then
+            this.next = last;
+        else
+            this.next.append(last);
+        end
+        return 0;
+    end
+
+    LISTTT get(Int i)
+        LISTTT res = this.content;
+        if i >= 1 then
+            res = this.next.get(i - 1);
+        end
+        return res;
+    end
+
+    Boolean contains(LISTTT element)
+        if this.content == element then
+            return True;
+        else
+            if this.next == null then
+                return False;
+            else
+                Boolean res = this.next.contains(element);
+                return res;
+            end
+        end
+    end
+
+    ExplList<LISTTT> reverse()
+        if(this.next == null) then
+            return this;
+        else
+            ExplList<LISTTT> ret = this.next.reverse();
+            this.next.next = this;
+            this.next = null;
+            return ret;
+        end
+    end
+
+    LISTTT last()
+        if(this.next == null) then
+            return this.content;
+        else
+            LISTTT last = this.next.last();
+            return last;
+        end
+    end
+end
+
+class ExplPair<PAIRTONET,PAIRTTWOT>(PAIRTONET first, PAIRTTWOT second) end

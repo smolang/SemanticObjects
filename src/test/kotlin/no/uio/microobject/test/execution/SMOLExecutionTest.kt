@@ -19,7 +19,7 @@ class SMOLExecutionTest: MicroObjectTest() {
             val (a,_) = initInterpreter("models", StringLoad.RES)
             executeUntilBreak(a)
             assertEquals(1, a.stack.size)
-            assertEquals(LiteralExpr("2", INTTYPE), a.evalTopMost(LocalVar("l2", INTTYPE)))
+            assertEquals(LiteralExpr("3", INTTYPE), a.evalTopMost(LocalVar("l2", INTTYPE)))
             assertEquals(LiteralExpr("1", INTTYPE), a.evalTopMost(LocalVar("l1", INTTYPE)))
         }
         "overload"{
