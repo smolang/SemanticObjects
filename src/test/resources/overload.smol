@@ -2,14 +2,14 @@
 
 class Task(String name) end
 
-class Server(List<Task> taskList)
+class Server(ExplList<Task> taskList)
     Task excessive()
         Task ret = this.taskList.content;
         this.taskList = this.taskList.next;
         return ret;
     end
     Int add(Task task)
-        this.taskList = new List<Task>(task, this.taskList);
+        this.taskList = new ExplList<Task>(task, this.taskList);
         return 0;
     end
 end
@@ -22,7 +22,7 @@ class Scheduler(List<Server> serverList)
         tasks = this.rescheduleTasks(tasks, over);
         //breakpoint;
         while tasks != null do
-            List<Task> l = new List<Task>(tasks.content, null);
+            ExplList<Task> l = new ExplList<Task>(tasks.content, null);
             Server n = new Server(l);
             this.serverList = new List<Server>(n, this.serverList);
             tasks = tasks.next;
@@ -70,12 +70,12 @@ main
     Task task5 = new Task("t5");
     Task task6 = new Task("t6");
 
-    List<Task> l1 = new List<Task>(task1, null);
-    List<Task> l2 = new List<Task>(task2, null);
-    List<Task> l3 = new List<Task>(task3, l2);
-    List<Task> l4 = new List<Task>(task4, null);
-    List<Task> l5 = new List<Task>(task5, l4);
-    List<Task> l6 = new List<Task>(task6, l5);
+    ExplList<Task> l1 = new ExplList<Task>(task1, null);
+    ExplList<Task> l2 = new ExplList<Task>(task2, null);
+    ExplList<Task> l3 = new ExplList<Task>(task3, l2);
+    ExplList<Task> l4 = new ExplList<Task>(task4, null);
+    ExplList<Task> l5 = new ExplList<Task>(task5, l4);
+    ExplList<Task> l6 = new ExplList<Task>(task6, l5);
 
     Server dummy = new Server(null);
     Server server1 = new Server(l1);

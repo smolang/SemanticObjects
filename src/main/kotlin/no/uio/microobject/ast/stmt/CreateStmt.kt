@@ -10,7 +10,7 @@ import no.uio.microobject.type.STRINGTYPE
 import no.uio.microobject.type.Type
 
 // Object creation. There is no constructor, but we
-data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1, val declares: Type?, val modeling : Expression? = null) :
+data class CreateStmt(val target : Location, val className: String, val params : List<Expression>, val pos : Int = -1, val declares: Type?, val modeling : List<Expression>) :
     Statement {
     override fun toString(): String = "$target := new $className(${params.joinToString(",")})"
     override fun getRDF(): String {
@@ -40,11 +40,11 @@ data class CreateStmt(val target : Location, val className: String, val params :
             if(!m[i].name.startsWith("__"))
                 newMemory[m[i].name] = interpreter.eval(params[i], stackFrame)
         }
-        if(modeling != null) {
-            val str = interpreter.eval(modeling, stackFrame).literal
+        if(modeling.isNotEmpty()) {
             val rdfName = Names.getNodeName()
-            newMemory["__describe"] = LiteralExpr(rdfName + " " + str.removeSurrounding("\""), STRINGTYPE)
             newMemory["__models"] = LiteralExpr(rdfName, STRINGTYPE)
+            val evals = modeling.map { rdfName + " " + interpreter.eval(it, stackFrame).literal.removeSurrounding("\"") }
+            newMemory["__describe"] = LiteralExpr(evals.joinToString(" "), STRINGTYPE)
         }
         interpreter.heap[name] = newMemory
         return replaceStmt(AssignStmt(target, name, declares = declares), stackFrame)

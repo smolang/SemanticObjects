@@ -25,12 +25,14 @@ import org.apache.jena.rdf.model.*
 import org.apache.jena.rdfconnection.RDFConnectionFactory
 import org.apache.jena.reasoner.Reasoner
 import org.apache.jena.reasoner.ReasonerRegistry
+import org.apache.jena.riot.RiotException
 import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
 import org.javafmi.wrapper.Simulation
 import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
 import java.util.*
+import java.util.regex.Pattern
 import kotlin.collections.HashMap
 import kotlin.system.exitProcess
 
@@ -554,6 +556,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             val matchingTriples: MutableList<Triple> = mutableListOf()
 
             for(obj in heap.keys){
+                if(staticTable.hiddenSet.contains(obj.tag.getPrimary().getNameString())) continue;
+
                 val subjectString = "${run}${obj.literal}"
 
                 // Guard clause. If this obj does not match to the subject of the search triple, then continue to the next obj
@@ -667,6 +671,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             else
                                 description = description.replace("%$fd",ll.toString())
                         }
+
                         //this instantiates blank nodes so they are stable over subqueries, should probably be moved into the translation
                         val matches = Regex("_:[a-zA-Z0-9]*").findAll(description)
                         for(m in matches) {
@@ -675,9 +680,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             description = description.replace(m.value, newName)
                         }
                         extendedDescription += description
-                        val m: Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
-                        // Consider each triple and add it if it matches the search triple.
-                        for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
+                        try {
+                            val m: Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
+                            // Consider each triple and add it if it matches the search triple.
+                            for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
+                        } catch (r: RiotException){
+                            println("Parsing error during lifting of the extended model description.")
+                        }
                     }
                     else {
                         //get the declaration

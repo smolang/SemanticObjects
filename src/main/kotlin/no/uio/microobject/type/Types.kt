@@ -54,7 +54,7 @@ data class BaseType(val name : String) : SimpleType(){
     override fun toString() : String  = name
     override fun containsUnknown(types: Set<String>): Boolean = false //contract
     override fun isAssignable(rhs : Type, extends : MutableMap<String, Type>) : Boolean =
-        super.isAssignable(rhs, extends) || (rhs is BaseType && rhs.isBelow(this, extends))
+        super.isAssignable(rhs, extends) || (rhs is BaseType && rhs.isBelow(this, extends)) || (rhs is ComposedType && this == OBJECTTYPE)
 }
 
 data class ComposedType(val name : Type, val params : List<Type>) : Type() {

@@ -29,6 +29,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.File
 import java.io.FileWriter
 import java.util.*
+import kotlin.streams.toList
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
     private var influxDBClient : InfluxDBClientKotlin? = null
@@ -124,7 +125,7 @@ class Interpreter(
         queryWithPrefixes += str
 
         val model = tripleManager.getModel()
-
+        queryWithPrefixes = queryWithPrefixes.replace("\\\"", "\"")
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
         val qexec = QueryExecutionFactory.create(query, model)

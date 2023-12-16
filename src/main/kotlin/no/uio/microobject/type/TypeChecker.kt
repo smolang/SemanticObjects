@@ -204,7 +204,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val paramType = translateType(param.type(), name, generics)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
-                if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE )
+                if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE && paramType != DOUBLETYPE )
                     log("Domain fields must be literal types, but $paramType found", param)
             }
         }

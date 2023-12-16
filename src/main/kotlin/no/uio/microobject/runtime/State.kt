@@ -24,7 +24,9 @@ data class StaticTable(
     val methodTable: Map<String, Map<String, MethodInfo>>, // This maps class names to a map that maps method names to their definition
     val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(), // DOWNWARDS class hierarchy
     val modelsTable: Map<String, List<ModelsEntry>>,                // This maps class names to complex models blocks
-    val owldescr: MutableMap<String, String>                // This maps class names to the default models block
+    val hiddenSet: Set<String>,//This set of classes is skipped by the lifting
+    val owldescr: MutableMap<String, String> // This maps class names to the default models block
+
 ) {
     override fun toString(): String =
 """

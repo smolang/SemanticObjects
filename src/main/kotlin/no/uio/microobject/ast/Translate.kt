@@ -37,6 +37,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val roots : MutableSet<String> = mutableSetOf()
         val hierarchy : MutableMap<String, MutableSet<String>> = mutableMapOf()
         var modelsTable : Map<String, List<ModelsEntry>> = emptyMap()
+        var hidden : Set<String> = setOf()
         for(cl in ctx!!.class_def()){
             val modelsList =
             if(cl.models_block() != null){
@@ -45,8 +46,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 models.first
             } else emptyList()
             modelsTable = modelsTable + Pair(cl.className.text, modelsList)
+            if(cl.hidden != null) hidden = hidden + cl.className.text
 
-            if(cl.superType != null){
+                    if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
                 var maps = hierarchy[superType.getPrimary().getNameString()]
@@ -122,7 +124,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, owldescr)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr)
                    )
     }
 
@@ -221,10 +223,14 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val def = getClassDecl(ctx)
         val targetType =
             TypeChecker.translateType(ctx.newType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
-        val modeling =
-            if(ctx.owldescription != null) visit(ctx.owldescription) as Expression else
-            if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
+        val myModeling = if(ctx.owldescription != null) visit(ctx.owldescription) as LiteralExpr else null
+        val classModeling = if(owldescr.containsKey(targetType.getPrimary().getNameString())) owldescr!![targetType.getPrimary().getNameString()]
             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+
+        var modeling = listOf<Expression>()
+        if(myModeling != null) modeling = modeling + myModeling
+        if(classModeling != null) modeling = modeling + classModeling
+
         return CreateStmt(visit(ctx.target) as Location,
                           targetType.getPrimary().getNameString(),
                           ll,
