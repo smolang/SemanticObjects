@@ -1,7 +1,6 @@
 package no.uio.microobject.type
 
 import no.uio.microobject.antlr.WhileParser
-import no.uio.microobject.ast.expr.Conversion
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.runtime.FieldInfo
@@ -30,7 +29,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         Handling type data structures
          ***********************************************************************/
         //translates a string text to a type, even accessed within class createClass (needed to determine generics)
-        private fun stringToType(text: String, createClass: String, generics : MutableMap<String, List<String>>) : Type {
+        private fun stringToType(text: String, generics : MutableMap<String, List<String>>) : Type {
             return when {
                 //generics.getOrDefault(createClass, listOf()).contains(text) -> GenericType(text)
                 generics.values.flatten().contains(text) -> GenericType(text)
@@ -46,9 +45,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         //translates a type AST text to a type, even accessed within class createClass (needed to determine generics)
         fun translateType(ctx : WhileParser.TypeContext, className : String, generics : MutableMap<String, List<String>>) : Type {
             return when(ctx){
-                is WhileParser.Simple_typeContext -> stringToType(ctx.text, className, generics)
+                is WhileParser.Simple_typeContext -> stringToType(ctx.text, generics)
                 is WhileParser.Nested_typeContext -> {
-                    val lead = stringToType(ctx.NAME().text, className, generics)
+                    val lead = stringToType(ctx.NAME().text, generics)
                     ComposedType(lead, ctx.typelist().type().map { translateType(it, className, generics) })
                 }
                 is WhileParser.Fmu_typeContext -> {

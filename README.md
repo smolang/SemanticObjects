@@ -5,13 +5,22 @@ minimal object-oriented language with integrated semantic state
 access.  The interpreter can be used to examine the state with SPARQL,
 SHACL and OWL queries.
 
+The language is in development, for a general description, examples and tutorial to SMOL, we refer to [its webpage](https://www.smolang.org).
 
-This branch in particular contains the case study for modeling geological processes.
 
-To run the experiment contained in the article _"Semantically Triggered Qualitative Simulation of a Geological Process"_, run the following commands (tested on a Linux machine)
+To compile and run the SMOL REPL, run
 ```
-chmod +x ./execute_case.sh
-./execute_case.sh
+./gradlew build
+java -jar build/libs/smol.jar --help
 ```
 
-For a general description and tutorial to SMOL, we refer to [its webpage](www.smolang.org).
+To run the SMOL REPL pre-compiled using docker, run the following command:
+```
+docker run -it --rm -v "$PWD":/root/smol ghcr.io/smolang/smol:latest
+```
+
+To compile and run the SMOL REPL inside docker, run the following commands:
+```
+docker build -t smol .
+docker run -it --rm -v "$PWD":/root/smol smol
+```
