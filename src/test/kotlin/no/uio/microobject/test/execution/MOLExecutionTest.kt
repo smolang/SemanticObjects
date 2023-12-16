@@ -97,5 +97,11 @@ class MOLExecutionTest : MicroObjectTest() {
             assertEquals(1, a.stack.size)
             assertEquals(LiteralExpr("True", BOOLEANTYPE), a.evalTopMost(LocalVar("res", BOOLEANTYPE)))
         }
+        "innerfields"{
+            val (a, _) = initInterpreter("innerField1", StringLoad.RES)
+            executeUntilBreak(a)
+            assertEquals(1, a.stack.size)
+            assertEquals(LiteralExpr("7", INTTYPE), a.evalTopMost(LocalVar("k", BOOLEANTYPE)))
+        }
     }
 }

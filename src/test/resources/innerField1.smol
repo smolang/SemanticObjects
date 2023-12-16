@@ -1,0 +1,10 @@
+class C (Int i)
+    Int j = this.i + 2;
+end
+
+main
+  C c = new C(5);
+  Int k = c.j;
+  breakpoint;
+  breakpoint;
+end

@@ -111,7 +111,8 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END (class_def)*;
 
 //classes
-class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN fieldDeclList? CPARAN
+class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
+            (internal = fieldDeclInitList)?
             (models_block)?
             method_def*
             END;
@@ -188,6 +189,8 @@ fmuparam : direction=(IN | OUT) param;
 fmuParamList : fmuparam (COMMA fmuparam)*;
 fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
+fieldDeclInit : (hidden=HIDE | domain=DOMAIN)? type NAME ASS expression SEMI;
+fieldDeclInitList : fieldDeclInit fieldDeclInit*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
 conversion: INTTOSTRING | DOUBLETOSTRING | INTTODOUBLE | DOUBLETOINT;

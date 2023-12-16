@@ -3,6 +3,7 @@ package no.uio.microobject.type
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
+import no.uio.microobject.runtime.FieldEntry
 import no.uio.microobject.runtime.FieldInfo
 import no.uio.microobject.runtime.SimulatorObject
 import no.uio.microobject.runtime.Visibility
@@ -74,8 +75,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     //List of declared generic type names per class
     private val generics : MutableMap<String, List<String>> = mutableMapOf()
 
-    //List of declared fields (with type and visibility) per class
+    //List of declared parameters (with type and visibility) per class
     private val fields : MutableMap<String, Map<String, FieldInfo>> = mutableMapOf()
+
+
+    //List of declared internel fields (with type and visibility) per class
+    //Note: internalInit cannot be set here because we are *before* translation, so we need a second map
+    private val innerFields : MutableMap<String, Map<String, FieldInfo>> = mutableMapOf()
 
 
     //List of declared methods per class
@@ -130,6 +136,20 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     )
                 )
             }
+            innerFields[name] = computeInternalFields(name).associate {
+                val cVisibility =
+                    if (it.HIDE() == null) Visibility.HIDE else Visibility.DEFAULT
+                Pair(
+                    it.NAME().text,
+                    FieldInfo(
+                        it.NAME().text,
+                        translateType(it.type(), name, generics),
+                        cVisibility,
+                        BaseType(name),
+                        it.domain != null
+                    )
+                )
+            }
         }
     }
 
@@ -143,7 +163,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     private fun computeFields(className: String) : List<WhileParser.FieldDeclContext>{
         val current = ctx.class_def().firstOrNull { it.className.text == className } ?: return emptyList()
         val above = if(current.superType != null) computeFields(current.superType.text) else emptyList()
-        val own = if(current.fieldDeclList() != null) current.fieldDeclList().fieldDecl() else emptyList()
+        val own = if(current.external != null) current.external.fieldDecl() else emptyList()
+        return above + own
+    }
+    private fun computeInternalFields(className: String) : List<WhileParser.FieldDeclInitContext>{
+        val current = ctx.class_def().firstOrNull { it.className.text == className } ?: return emptyList()
+        val above = if(current.superType != null) computeInternalFields(current.superType.text) else emptyList()
+        val own = if(current.internal != null) current.internal.fieldDeclInit() else emptyList()
         return above + own
     }
 
@@ -196,15 +222,36 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 log("Class $name has type parameter ${col.text} that shadows another type parameter (type parameters share a global namespace).", clCtx)
         }
 
-        //Check fields
-        if(clCtx.fieldDeclList() != null){
-            for( param in clCtx.fieldDeclList().fieldDecl()){
+        val inner = mutableMapOf<String, FieldInfo>()
+
+        //Check parameter fields
+        if(clCtx.external != null){
+            for( param in clCtx.external.fieldDecl()){
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
                 if(containsUnknown(paramType, classes))
                     log("Class $name has unknown type $paramType for field $paramName.", param)
                 if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE && paramType != DOUBLETYPE )
                     log("Domain fields must be literal types, but $paramType found", param)
+                inner[paramName] = FieldInfo(paramName, paramType, Visibility.DEFAULT, BaseType(name), false)
+            }
+        }
+
+        //Check internal fields
+        if(clCtx.internal != null){
+            for( param in clCtx.internal.fieldDeclInit()){
+                val paramName = param.NAME().text
+                val paramType = translateType(param.type(), name, generics)
+                if(containsUnknown(paramType, classes))
+                    log("Class $name has unknown type $paramType for field $paramName.", param)
+                if(param.domain != null && paramType != INTTYPE && paramType != BOOLEANTYPE && paramType != STRINGTYPE && paramType != DOUBLETYPE )
+                    log("Domain fields must be literal types, but $paramType found", param)
+
+                val innerType = getType(param.expression(), mapOf(), mapOf(), BaseType(name), inRule = false, read = false,  onlyExternal = true)
+                if(innerType == ERRORTYPE)
+                    log("Initialization of field $paramName failed because the expression is ill-typed", param)
+                if(innerType != ERRORTYPE && !paramType.isAssignable(innerType, extends))
+                    log("Initialization of field $paramName failed because type $paramType cannot be assigned to declared type $innerType", param)
             }
         }
 
@@ -222,7 +269,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 )
         }
         //Only booleans in model block
-        if(clCtx.models_block() != null) checkModels(clCtx.models_block(), fields[name]!!, BaseType(name))
+        if(clCtx.models_block() != null) checkModels(clCtx.models_block(), fields[name]!! + innerFields[name]!!, BaseType(name))
 
     }
 
@@ -336,7 +383,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(containsUnknown(paramType, classes))
                     log("Method $className.$name has unknown parameter type $paramType for parameter $paramName.", mtCtx.type())
 
-                if(fields[className]!!.containsKey(paramName))
+                if((fields+innerFields)[className]!!.containsKey(paramName))
                     log("Method $className.$name has parameter $paramName that shadows a field.", mtCtx)
             }
         }
@@ -685,8 +732,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }else{
                     expType = getType(ctx.target, inner, vars, thisType, false)
                 }
-                if(expType != null && fields.containsKey(expType.getPrimary().toString())) {
-                    val fieldName = fields[expType.getPrimary().toString()]
+                if(expType != null && (fields+innerFields).containsKey(expType.getPrimary().toString())) {
+                    val fieldName = (fields+innerFields)[expType.getPrimary().toString()]
                     for(f in fieldName!!.entries) {
                         val qc = QueryChecker(settings, ctx.query.text.removeSurrounding("\""), f.value.type, ctx, f.key)
                         queryCheckers.add(qc)
@@ -831,6 +878,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         thisType : Type,
                         inRule : Boolean,
                         read: Boolean = true,
+                        onlyExternal: Boolean = true,
     ) : Type {
         when(eCtx){
             is WhileParser.Integer_expressionContext -> return INTTYPE
@@ -847,8 +895,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             is WhileParser.Field_expressionContext -> {
                 val name = eCtx.NAME().text
-                if(!fields.containsKey(name))
-                    log("Field $name is not declared for $thisType.", eCtx)
+                if(onlyExternal){
+                    if (fields.containsKey(name))
+                        log("Field $name is not declared for $thisType.", eCtx)
+                } else {
+                    if (!(fields + innerFields).containsKey(name))
+                        log("Field $name is not declared for $thisType.", eCtx)
+                }
                 return fields.getOrDefault(name, FieldInfo(eCtx.NAME().text, ERRORTYPE, Visibility.DEFAULT, thisType, false)).type
             }
             is WhileParser.Nested_expressionContext -> {
@@ -999,11 +1052,18 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
                 val primary = t1.getPrimary()
                 val primName = primary.getNameString()
-                if(!this.fields.containsKey(primName)){
-                    log("Cannot access fields of $primary.", eCtx)
-                    return ERRORTYPE
+                if(onlyExternal){
+                    if(fields.containsKey(primName)){
+                        log("Cannot access fields of $primary.", eCtx)
+                        return ERRORTYPE
+                    }
+                } else {
+                    if (!(fields + innerFields).containsKey(primName)) {
+                        log("Cannot access fields of $primary.", eCtx)
+                        return ERRORTYPE
+                    }
                 }
-                val otherFields = getFields(primName)
+                val otherFields = getFields(primName, onlyExternal)
                 if(!otherFields.containsKey(eCtx.NAME().text)){
                     log("Field ${eCtx.NAME().text} is not declared for $primary.", eCtx)
                     return ERRORTYPE
@@ -1109,8 +1169,8 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         }
     }
 
-    private fun getFields(className: String): Map<String, FieldInfo> {
-        val f = fields.getOrDefault(className, mapOf())
+    private fun getFields(className: String, externalOnly : Boolean = false): Map<String, FieldInfo> {
+        val f = fields.getOrDefault(className, mapOf()) + if(externalOnly) mapOf() else  innerFields.getOrDefault(className, mapOf())
         if(extends.containsKey(className)){
             val supertype = extends.getOrDefault(className, ERRORTYPE).getPrimary().getNameString()
             val moreFields = getFields(supertype)

@@ -1,0 +1,12 @@
+class C (Int i)
+    Int j = this.i + 2;
+    Int k = this.j + 2;
+end
+
+class D (Int i2)
+    Int j2 = this.i2 + 2;
+end
+
+main
+  skip;
+end

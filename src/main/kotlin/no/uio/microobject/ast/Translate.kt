@@ -58,10 +58,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.className.text
             }
-            val fields = if(cl.fieldDeclList() != null) {
+            val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
-                if(cl.fieldDeclList().fieldDecl() != null) {
-                    for (nm in cl.fieldDeclList().fieldDecl()) {
+                if(cl.external.fieldDecl() != null) {
+                    for (nm in cl.external.fieldDecl()) {
                         val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
                         res = res + FieldInfo(
                             nm.NAME().text,
@@ -76,6 +76,28 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 listOf()
             }
+            val exFields = if(cl.internal != null) {
+                var res = listOf<FieldInfo>()
+
+                if(cl.internal.fieldDeclInit()!= null) {
+                    for (nm in cl.internal.fieldDeclInit()) {
+                        val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
+                        res = res + FieldInfo(
+                            nm.NAME().text,
+                            TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
+                            cVisibility,
+                            BaseType(cl!!.className.text),
+                            nm.domain != null,
+                            visit(nm.expression()) as Expression
+                        )
+                    }
+                }
+                res
+            } else {
+                listOf()
+            }
+
+            val fields = (inFields + exFields)
 
             val res = mutableMapOf<String, MethodInfo>()
             for(nm in cl.method_def()){ //Pair<Statement, List<String>>
