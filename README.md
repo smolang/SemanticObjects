@@ -1,4 +1,6 @@
-# Semantic Micro Object Language
+<p align="center" width="100%">
+    <img width="60%" src="https://github.com/smolang/SemanticObjects/blob/master/SMOL_Logo_transparent.png">
+</p>
 
 This repository contains an interactive interpreter for **SMOL**, a
 minimal object-oriented language with integrated semantic state
