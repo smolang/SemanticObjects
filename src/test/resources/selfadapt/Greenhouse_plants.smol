@@ -1,0 +1,104 @@
+class PlantModel extends KindModel()
+
+    override Unit adaptAddition()
+        List<Plant> newPlants = construct("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT ?plantId ?idealMoisture {
+                ?x a ast:Plant ;
+                    ast:plantId ?plantId ;
+                    ast:idealMoisture ?idealMoisture .
+                FILTER NOT EXISTS {
+                    ?y a prog:Plant ;
+                        prog:Plant_plantId ?plantId .
+                }
+            }");
+
+
+        if newPlants != null then
+            print("RECONFIG> New Plant(s) detected: repairing the model");
+
+            while newPlants != null do
+                Plant newPlant = newPlants.content;
+                List<Plant> lx = newPlants;
+                newPlants = newPlants.next;
+                print("RECONFIG> New plant detected: ");
+                print("          Plant Id: " ++ newPlant.plantId);
+                print("          Ideal Moisture: " ++ doubleToString(newPlant.idealMoisture));
+
+                destroy(lx);
+            end
+
+            print("RECONFIG> Plant(s) added");
+        end
+    end
+
+
+
+    override Unit adaptRemoval()
+        List<Plant> wrongPlants = access("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT DISTINCT ?obj {
+                ?obj a prog:Plant ;
+                     prog:Plant_plantId ?plantId.
+                FILTER NOT EXISTS {
+                    ?y a ast:Plant ;
+                       ast:plantId ?plantId.
+                }
+            }");
+
+        if wrongPlants != null then
+            print("RECONFIG> Misconfigured Plant(s) detected: repairing the model");
+            while wrongPlants != null do
+                Plant wrongPlant = wrongPlants.content;
+                List<Plant> lx = wrongPlants;
+                wrongPlants = wrongPlants.next;
+                destroy(lx);
+
+                print("RECONFIG> Misconfigured plant to remove: ");
+                print("          Plant Id: " ++ wrongPlant.plantId);
+                print("          Ideal Moisture: " ++ doubleToString(wrongPlant.idealMoisture));
+
+                destroy(wrongPlant);
+            end
+
+
+            print("RECONFIG> Plant(s) removed");
+        end
+    end
+
+
+
+    override Unit adaptDefect()
+        List<PlantDefect> changedPlants = construct("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT ?obj ?idealMoistureNew {
+                ?obj a prog:Plant ;
+                    prog:Plant_plantId ?plantId ;
+                    prog:Plant_idealMoisture ?idealMoisture.
+                ?y a ast:Plant ;
+                    ast:plantId ?plantId ;
+                    ast:idealMoisture ?idealMoistureNew.
+                FILTER(?idealMoisture != ?idealMoistureNew)
+            }");
+
+        if changedPlants != null then
+            print("RECONFIG> Changed Plant(s) detected: repairing the model");
+
+            while changedPlants != null do
+                PlantDefect moist = changedPlants.content;
+                List<PlantDefect> lx = changedPlants;
+                changedPlants = changedPlants.next;
+                destroy(lx);
+
+                print("RECONFIG> Changed plant to adjust: " ++ moist.obj.plantId);
+                print("          Old ideal moisture: " ++ doubleToString(moist.obj.idealMoisture));
+                print("          New ideal moisture: " ++ doubleToString(moist.idealMoistureNew));
+
+                moist.obj.idealMoisture = moist.idealMoistureNew;
+                destroy(moist);
+            end
+
+            print("RECONFIG> Plant(s) changed");
+        end
+    end
+end

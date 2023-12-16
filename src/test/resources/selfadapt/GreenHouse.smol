@@ -1,0 +1,75 @@
+abstract class KindModel (String name)
+    Unit adapt()
+        print("RECONFIG> Reconfiguring the "++ this.name);
+        this.adaptDefect();
+        this.adaptAddition();
+        this.adaptRemoval();
+    end
+
+    abstract Unit adaptAddition()
+    abstract Unit adaptRemoval()
+    abstract Unit adaptDefect()
+end
+
+/*
+ *  This class implements the twinning logic and is responsible to implement decision making
+ *  and the adaptation cycle. The connections between assets remain implicit as they are not used explicitly,
+ *  but twinning is still established w.r.t. having the right assets.
+ *
+ *  Field this.decisions contains the control decision made by the last cycle.
+ */
+class AssetModel extends Twin (List<Decision> decisions, List<KindModel> mods)
+
+    Unit register(KindModel m)
+        this.mods = new List<KindModel>(m, this.mods);
+    end
+
+    Unit reconfigure()
+        print("RECONFIG> Reconfiguring the asset model...");
+
+        List<KindModel> ms = this.mods;
+        while ms != null do
+            ms.content.adapt();
+            ms = ms.next;
+        end
+
+        print("RECONFIG> Reconfiguring DONE...");
+    end
+end
+
+main
+//MBC Start
+// to enable MBC, uncomment the following lines and comment out the line marked with NON-MBC
+/*
+    ModelControl dc = new ModelControl(0.0, null);
+    dc.reconfigureModel(60.0); //this actually instantiated the FMU
+*/
+//MBC End
+    AssetModel assetModel = new AssetModel(null, null);
+
+    PotModel m1 = new PotModel("pots");
+    PlantModel m2 = new PlantModel("plants");
+    PumpModel m3 = new PumpModel("pumps");
+
+    assetModel.register(m1);
+    assetModel.register(m2);
+    assetModel.register(m3);
+
+    //NDVI START
+    HealthModel m4 = new HealthModel("health states");
+    assetModel.register(m4);
+    //NDVI STOP
+
+
+    assetModel.reconfigure();
+    List<HealthState> ll1 = access("SELECT ?x {?x a prog:HealthState}");
+    List<HealthState> ll2 = access("SELECT ?x {?x a prog:Pot}");
+    List<HealthState> ll3 = access("SELECT ?x {?x a prog:Plant}");
+    List<HealthState> ll4 = access("SELECT ?x {?x a prog:Pump}");
+    Int l1 = ll1.length();
+    Int l2 = ll2.length();
+    Int l3 = ll3.length();
+    Int l4 = ll4.length();
+    breakpoint;
+    breakpoint;
+end

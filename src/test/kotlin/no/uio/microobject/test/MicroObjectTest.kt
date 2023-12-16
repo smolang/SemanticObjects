@@ -83,6 +83,37 @@ open class MicroObjectTest : StringSpec() {
         val parser = WhileParser(tokens)
         return parser.program()
     }
+    protected fun initInterpreter(str : List<String>) : Pair<Interpreter, TypeChecker> {
+        val path = str.map { this::class.java.classLoader.getResource("$it.smol").file }
+        val localPath = if(IS_OS_WINDOWS) path.map { it.removePrefix("/")} else path
+        val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
+        val program =  localPath.map { File(it).readText(Charsets.UTF_8)}.joinToString("\n")
+        val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
+        val tokens = CommonTokenStream(lexer)
+        val parser = WhileParser(tokens)
+        val ast = parser.program()
+        val visitor = Translate()
+        val pair = visitor.generateStatic(ast)
+
+        val tripleManager = TripleManager(settings, pair.second, null)
+
+        val tC = TypeChecker(ast, settings, tripleManager)
+        tC.collect()
+
+
+        val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
+
+        val initStack = Stack<StackEntry>()
+        initStack.push(pair.first)
+        val interpreter = Interpreter(
+            initStack,
+            initGlobalStore,
+            mutableMapOf(),
+            pair.second,
+            settings
+        )
+        return Pair(interpreter, tC)
+    }
 
     protected fun initInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH) : Pair<Interpreter, TypeChecker> {
         val ast = when(loadAs){
@@ -100,7 +131,6 @@ open class MicroObjectTest : StringSpec() {
 
         val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
-        var rules = ""
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))

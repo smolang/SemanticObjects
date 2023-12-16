@@ -1,0 +1,107 @@
+class PumpModel extends KindModel()
+
+    /* Add pumps that are not in the program model */
+    override Unit adaptAddition()
+
+        List<Pump> newPumps = construct("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT ?pumpGpioPin ?pumpId ?plantId {
+                ?pump a ast:Pump ;
+                      ast:pumpGpioPin ?pumpGpioPin ;
+                      ast:pumpId ?pumpId .
+                FILTER NOT EXISTS {
+                    ?y a prog:Pump ;
+                       prog:Pump_pumpId ?pumpId .
+                }
+            }");
+
+        if newPumps != null then
+            print("RECONFIG> New Pump(s) detected: repairing the model");
+
+            while newPumps != null do
+                Pump newPump = newPumps.content;
+                List<Pump> lx = newPumps;
+                newPumps = newPumps.next;
+
+                print("RECONFIG> New pump detected: ");
+                print("          Pump Id: " ++ newPump.pumpId);
+                print("          Pump Gpio Pin: " ++ intToString(newPump.pumpGpioPin));
+
+                destroy(lx);
+            end
+
+            print("RECONFIG> Pump(s) added");
+        end
+    end
+
+
+
+
+    /* Add pumps that are not in the asset model */
+    override Unit adaptRemoval()
+        List<Pump> wrongPumps = access("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT DISTINCT ?obj {
+                ?obj a prog:Pump;
+                     prog:Pump_pumpId ?pumpId .
+                FILTER NOT EXISTS {
+                    ?x a ast:Pump;
+                       ast:pumpId ?pumpId .
+                }
+            }");
+
+        if wrongPumps != null then
+            print("RECONFIG> Misconfigured Pump(s) detected: repairing the model");
+
+            while wrongPumps != null do
+                Pump wrongPump = wrongPumps.content;
+                List<Pump> lx = wrongPumps;
+                wrongPumps = wrongPumps.next;
+
+                print("RECONFIG> Misconfigured pump to remove: " ++ wrongPump.pumpId);
+                destroy(wrongPump);
+                destroy(lx);
+            end
+
+            destroy(wrongPumps);
+
+            print("RECONFIG> Pump(s) removed");
+        end
+    end
+
+
+    /* Check for defects in the pumps. */
+    override Unit adaptDefect()
+        List<PumpDefect> changedPumps = construct("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT ?obj ?pumpGpioPinNew {
+                ?obj a prog:Pump ;
+                    prog:Pump_pumpId ?pumpId ;
+                    prog:Pump_pumpGpioPin ?pumpGpioPin .
+                ?y a ast:Pump ;
+                    ast:pumpId ?pumpId ;
+                    ast:pumpGpioPin ?pumpGpioPinNew .
+                FILTER(?pumpGpioPin != ?pumpGpioPinNew)
+            }");
+
+        if changedPumps != null then
+            print("RECONFIG> Changed Pump(s) detected: repairing the model");
+
+            while changedPumps != null do
+                PumpDefect rpump = changedPumps.content;
+                List<PumpDefect> lx = changedPumps;
+                changedPumps = changedPumps.next;
+
+                print("RECONFIG> Changed pump to adjust: " ++ rpump.obj.pumpId);
+                print("          Old GPIO pin: " ++ intToString(rpump.obj.pumpGpioPin));
+                print("          New GPIO pin: " ++ intToString(rpump.pumpGpioPinNew));
+
+                rpump.obj.pumpGpioPin = rpump.pumpGpioPinNew;
+                destroy(lx);
+            end
+
+            print("RECONFIG> Pump(s) changed");
+        end
+    end
+
+end

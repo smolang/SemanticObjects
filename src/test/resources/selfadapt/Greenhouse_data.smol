@@ -1,0 +1,84 @@
+abstract class Twin() end
+
+/**
+ *  Models a physical plant. It is initially retrieved by
+ *  the asset model, but it can be reconfigured by the program model.
+ *  Each plant is associated with a pot.
+ */
+class Plant extends Twin (String plantId, Double idealMoisture, String healthState)
+
+    Double getPotMoisture()
+        Double moisture = 100.0;
+        List<Double> influxReturn = access(
+            "from(bucket: \"GreenHouseDemo\")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r[\"_measurement\"] == \"ast:pot\")
+                |> filter(fn: (r) => r[\"_field\"] == \"moisture\")
+                |> filter(fn: (r) => r[\"plant_id\"] == %1)
+                |> keep(columns: [\"_value\"])
+                |> last()",
+            INFLUXDB("config_local.yml"),
+            this.plantId);
+
+        if influxReturn != null then
+            moisture = influxReturn.content;
+        end
+
+        return moisture;
+    end
+
+
+// NDVI START
+    Double getNdvi()
+        Double healthState = 0.0;
+        List<Double> influxReturn = access(
+            "from(bucket: \"GreenHouseDemo\")
+                |> range(start: -30d)
+                |> filter(fn: (r) => r[\"_measurement\"] == \"ast:plant\")
+                |> filter(fn: (r) => r[\"_field\"] == \"ndvi\")
+                |> filter(fn: (r) => r[\"plant_id\"] == %1)
+                |> keep(columns: [\"_value\"])
+                |> last()",
+        INFLUXDB("config_local.yml"),
+        this.plantId);
+
+        if influxReturn != null then
+            healthState = influxReturn.content;
+        end
+
+        return healthState;
+    end
+// NDVI END
+end
+
+
+/* Models a physical pot. It is initially retrieved by the asset model. Each pot is associated with a moisture sensor. */
+class Pot extends Twin (String shelfFloor, String potPosition, String pumpId, String plantId) end
+
+
+/** The following classes represent instances of assets that we currently not using directly but that are twinned for possible extensions */
+/* Models a physical shelf. It is initially retrieved by the asset model. */
+class Shelf extends Twin (String shelfFloor) end
+
+/*  Models a physical pump. It is initially retrieved by the asset model. */
+class Pump extends Twin (Int pumpGpioPin, String pumpId) end
+
+
+// NDVI START
+/* Models the health state of a plant via NDVI */
+class HealthState extends Twin (String name, Double minNdvi, Double maxNdvi) end
+// NDVI END
+
+/* The following classes are used to store results of CONSTRUCT queries */
+class PumpDefect (Pump obj, Int pumpGpioPinNew) end
+class PlantDefect (Plant obj, Double idealMoistureNew) end
+class PotDefectShelf (Pot obj, String shelfFloorNew) end
+class PotDefectPosition (Pot obj, String potPositionNew) end
+class PotDefectPump (Pot obj, String pumpIdNew) end
+class PotDefectPlant (Pot obj, String plantIdNew) end
+
+/*
+ *  The follow class is used to store results that are read from the simulation driver.
+ *  Every instance is representing on decision to water a specific plant and pump.
+ */
+class Decision (String plantId, Int pumpGpioPin, String pumpId) end

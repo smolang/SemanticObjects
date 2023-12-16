@@ -1,0 +1,69 @@
+//NDVI START
+class HealthModel extends KindModel()
+    override Unit adaptAddition()
+            List<HealthState> newHealthStates = construct("
+                PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+                SELECT ?name ?maxNdvi ?minNdvi {
+                    ?healthState a ast:HealthState ;
+                        ast:name ?name ;
+                        ast:maxNdvi ?maxNdvi ;
+                        ast:minNdvi ?minNdvi .
+                        FILTER NOT EXISTS {
+                            ?y a prog:HealthState; prog:HealthState_name ?name.
+                        }
+                }");
+
+            if newHealthStates != null then
+                print("RECONFIG> New Health State(s) detected: repairing the model");
+
+                while newHealthStates != null do
+                    HealthState newHealthState = newHealthStates.content;
+                    List<HealthState> lx = newHealthStates;
+                    newHealthStates = newHealthStates.next;
+                    destroy(lx);
+
+                    print("RECONFIG> New Health State detected: ");
+                    print("          Name: " ++ newHealthState.name);
+                    print("          Max Ndvi: " ++ doubleToString(newHealthState.maxNdvi));
+                    print("          Min Ndvi: " ++ doubleToString(newHealthState.minNdvi));
+
+                end
+
+                print("RECONFIG> Health State(s) added");
+            else print("RECONFIG> No Health State(s) added"); end
+    end
+
+
+    override Unit adaptRemoval()
+        List<HealthState> wrongHealthStates = access("
+            PREFIX ast: <http://www.smolang.org/greenhouseDT#>
+            SELECT DISTINCT ?obj {
+                ?obj a prog:HealthState; prog:HealthState_name ?name.
+                FILTER NOT EXISTS {
+                    ?y a ast:HealthState; ast:name ?name.
+                }
+            }");
+
+        if wrongHealthStates != null then
+            print("RECONFIG> Misconfigured Health State(s) detected: repairing the model");
+
+            while wrongHealthStates != null do
+                HealthState wrongHealthState = wrongHealthStates.content;
+                List<HealthState> lx = wrongHealthStates;
+                wrongHealthStates = wrongHealthStates.next;
+                destroy(lx);
+
+                print("RECONFIG> Misconfigured plant to remove: ");
+                print("          Name: " ++ wrongHealthState.name);
+                print("          Max Ndvi: " ++ doubleToString(wrongHealthState.maxNdvi));
+                print("          Min Ndvi: " ++ doubleToString(wrongHealthState.minNdvi));
+
+                destroy(wrongHealthState);
+            end
+        end
+    end
+
+
+    override Unit adaptDefect() skip; end
+end
+//NDVI STOP
