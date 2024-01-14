@@ -9,7 +9,7 @@ the language elements that can occur on the right hand side of an assignment (ev
 Expressions are divided syntactially into two categories: *Simple
 Expressions*, which can be nested, and *Top Level Expressions*, which cannot
 be sub-expressions of other expressions.  This slight notational inconvenience
-makes it easier to develop static analysis techniques and tools for SMOL.
+makes it easier to develop tools for SMOL.
 
 ::
 
@@ -54,11 +54,15 @@ Unary and Binary Operator Expressions
 -------------------------------------
 
 SMOL has a range of unary and binary operators working on pre-defined
-datatypes.
+datatypes. Additionally, there are conversion operators between strings, integers, and doubles.
 
 ::
 
-   OperatorExpression ::= UnaryOperatorExpression | BinaryOperatorExpression
+   OperatorExpression ::= UnaryOperatorExpression | ConversionExpression | BinaryOperatorExpression
+
+   ConversionExpression ::= Conversion '(' Expression ')'
+
+   Conversion ::= 'intToString' | 'doubleToString' | 'intToDouble' | 'doubleToInt'
 
    UnaryOperatorExpression ::= UnaryOperator Expression
 
@@ -66,7 +70,7 @@ datatypes.
 
    BinaryOperatorExpression ::= Expression BinaryOperator Expression
 
-   BinaryOperator ::= '/' | '%' | '*' | '+' | '-' | '==' | '!=' | '>=' | '<=' | '>' | '<' | '&&' | '||'
+   BinaryOperator ::= '/' | '%' | '*' | '+' | '-' | '==' | '!=' | '>=' | '<=' | '>' | '<' | '&&' | '||' | '++'
 
 *Example:*
 
@@ -144,6 +148,10 @@ to high precedence.
      - division
      - numeric
      - numeric
+   * - ``e1 ++ e2``
+     - concatenation
+     - String
+     - String
 
 Semantics of Comparison Operators
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -212,7 +220,7 @@ The Field Expression
 --------------------
 
 Field expressions evaluate to the current content of the named field in the
-given object.  The object can be ``this`` or another object.
+given object.  The object can be ``this``, another object, or an FMO.
 
 Note that fields of the current object cannot be accessed without the ``this.`` prefix.
 
@@ -229,22 +237,6 @@ Note that fields of the current object cannot be accessed without the ``this.`` 
    this.x
    an_object.a_long_field_name
 
-The FMU Field Expression
-------------------------
-
-This expression reads the current value of the named out port of the given
-:term:`FMU`.
-
-::
-
-   FmuFieldExpression ::= SimpleExpression '.' 'port' '(' StringLiteral ')'
-
-*Example:*
-
-.. code-block:: java
-
-   my_fmu.port("outport")
-
 The New Expression
 ------------------
 
@@ -252,7 +244,7 @@ The New expression creates a new object of the given class.  Values for the
 class's constructor parameters are given as simple expressions inside
 parentheses. All generic type parameters of a class must be instantiated.
 
-The optional ``models`` clause overrides any ``domain`` modifier or ``models``
+The optional ``models`` clause adds to an eventual ``models``
 clause of the new object's class declarations (see
 :ref:`class_declaration_ref`).
 
@@ -264,7 +256,7 @@ clause of the new object's class declarations (see
 
 .. code-block:: java
 
-   new Person("Name", 35) models "a :person"
+   new Person("Name", 35) models "a :person."
 
 The New FMU Expression
 -----------------------

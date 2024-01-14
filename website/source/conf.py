@@ -19,7 +19,7 @@
 
 project = 'The SMOL Language'
 html_short_title = "SMOL"
-copyright = '2022, Eduard Kamburjan, Rudolf Schlatte'
+copyright = '2022-2024, Eduard Kamburjan, Rudolf Schlatte'
 author = 'Eduard Kamburjan, Rudolf Schlatte'
 
 
@@ -50,6 +50,7 @@ html_theme = 'piccolo_theme'
 html_theme_options = {
     "source_url": 'https://github.com/smolang/SemanticObjects/'
 }
+
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,

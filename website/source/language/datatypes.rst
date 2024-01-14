@@ -80,3 +80,5 @@ built incrementally.
    List<Int> l1 = new List(5, null);
    List<Int> l2 = new List(3, l1);
 
+.. NOTE::
+   Lists are ``hidden`` by default and not lifted. If you need to lift a list, use ``ExplList``.

@@ -102,22 +102,24 @@ SMOL Command-Line Parameters
 
 ::
 
-   Options:
-     -e, -l, --execute, --load
-     -b, --back PATH            path to a file containing OWL class
-                                definitions as background knowledge.
-     -d, --domain TEXT          prefix for domain:. (default
-                                https://github.com/Edkamb/SemanticObjects/ontologies/default#)
-     -i, --input PATH           path to a .smol file which is loaded on startup.
-     -r, --replay PATH          path to a file containing a series of shell
-                                commands.
-     -o, --outdir PATH          path to a directory used to create data
-                                files.
-     -v, --verbose              Verbose output.
-     -m, --materialize          Materialize triples and dump to file.
-     -p, --prefixes VALUE       Extra prefixes, given as a list PREFIX=URI
-     -h, --help                 Show this message and exit
-
+    Options:
+      -e, -l, --execute, --load
+      -j, --jenaReasoner TEXT    Set value of the internally used reasoner to
+                                 'off', 'rdfs', or 'owl' (default -> 'owl')
+      -s, --sparqlEndpoint TEXT  url for SPARQL endpoint
+      -b, --back PATH            path to a file containing OWL class definitions
+                                 as background knowledge.
+      -d, --domain TEXT          prefix for domain:.
+      -i, --input PATH           path to a .smol file which is loaded on startup.
+      -r, --replay PATH          path to a file containing a series of REPL
+                                 commands.
+      -o, --outdir PATH          path to a directory used to create data files.
+      -v, --verbose              Verbose output.
+      -m, --materialize          Materialize triples and dump to file.
+      -q, --useQueryType         Activates the type checker for access
+      -p, --prefixes VALUE       Extra prefixes, given as a list -p PREFIX1=URI1
+                                 -p PREFIX2=URI2
+      -h, --help                 Show this message and exit
 
 .. _repl:
 
