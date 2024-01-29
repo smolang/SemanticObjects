@@ -9,7 +9,7 @@ domain:ZeroServer rdf:type owl:Class ;
 domain:OneList rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty prog:List_next ;
+                owl:onProperty prog:ExplList_next ;
                 owl:hasValue smol:null
            ].
 
@@ -23,7 +23,7 @@ domain:OneServer rdf:type owl:Class ;
 domain:TwoList rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty prog:List_next ;
+                owl:onProperty prog:ExplList_next ;
                 owl:someValuesFrom domain:OneList
            ].
 
@@ -41,7 +41,7 @@ domain:TwoServer rdf:type owl:Class ;
 domain:ThreeList rdf:type owl:Class ;
            owl:equivalentClass [
                 rdf:type owl:Restriction ;
-                owl:onProperty prog:List_next ;
+                owl:onProperty prog:ExplList_next ;
                 owl:someValuesFrom domain:TwoList
            ].
 
