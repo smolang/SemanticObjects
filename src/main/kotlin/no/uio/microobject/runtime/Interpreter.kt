@@ -123,9 +123,9 @@ class Interpreter(
      * @param oldObject the object to reclassify
      * @param newClass the name of the new class
      */
-    fun reclassify(oldObject: LiteralExpr, newClass: Type) {
+    fun reclassify(oldObject: LiteralExpr, newClass: String) {
         // Create a new object of the new class
-        val newObject = LiteralExpr(oldObject.literal, newClass)
+        val newObject = LiteralExpr(newClass, BaseType(newClass))
 
         // Copy the state of the old object to the new one
         val oldState = heap[oldObject]
