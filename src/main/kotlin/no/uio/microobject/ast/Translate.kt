@@ -9,6 +9,7 @@ import no.uio.microobject.ast.stmt.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
+import org.apache.jena.sparql.util.QueryExecUtils.executeQuery
 
 /**
  * This class handles multiple tasks related to translating ANTLR structures to the internal representation
@@ -19,7 +20,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
-
+    private val classifiesTable: MutableMap<String, String> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -32,6 +33,32 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         }
         throw Exception("Unknown models clause: $ctx") //making the type checker happy
     }
+
+    /**
+     * Reclassify an object based on the classifiesTable
+     *
+     * @param arg1 contains the object that will go under reclassification
+     * @param arg2 contains the object that will be used to reclassify arg1
+     * @return the object corresponding to the result of the query
+     */
+//    override fun visitReclassify_expression(ctx: Reclassify_expressionContext): ProgramElement {
+//        // Extract the arguments of the reclassify function
+//        val arg1 = visit(ctx.expression(0)) as LiteralExpr
+//        val arg2 = visit(ctx.expression(1)) as LiteralExpr
+//
+//        // for each element in classifiesTable, execute the query and return the class name if the query is true
+//        for ((className, query) in classifiesTable) {
+//            // Execute the query. This is a placeholder - replace it with your actual query execution code.
+//            val queryResult = executeQuery(query, arg1, arg2)
+//
+//            // If the query executed successfully, return the class name
+//            if (queryResult) {
+//                return LiteralExpr(className, STRINGTYPE)
+//            }
+//        }
+//
+//        return null
+//    }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()
@@ -57,6 +84,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 hierarchy[superType.getPrimary().getNameString()] = maps
             } else {
                 roots += cl!!.className.text
+            }
+            // Check if there's a "classifies" block and store the query
+            if(cl.classifies_block() != null){
+                classifiesTable[cl.className.text] = cl.classifies_block().text
             }
             val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
