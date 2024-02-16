@@ -29,6 +29,7 @@ CONSTRUCT : 'construct';
 MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
+RECLASSIFY : 'reclassify';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
@@ -43,6 +44,7 @@ OVERRIDE : 'override';
 MAIN : 'main';
 HIDE : 'hidden';
 MODELS : 'models';
+CLASSIFIES: 'classifies';
 DOMAIN : 'domain';
 
 //Keywords: constants
@@ -114,12 +116,16 @@ program : (class_def)* MAIN statement END (class_def)*;
 class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
             (internal = fieldDeclInitList)?
             (models_block)?
+            (classifies_block)?
             method_def*
             END;
 method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
 
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
+             ;
+classifies_block : CLASSIFIES owldescription=STRING SEMI                                                    # simple_classifies_block
+             | CLASSIFIES OPARAN guard=expression CPARAN owldescription=STRING SEMI classifies_block        # complex_classifies_block
              ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
@@ -129,7 +135,7 @@ statement :   SKIP_S SEMI                                                       
 			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
         // TODO: allow new statements without assignment
-			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                          # create_statement
+			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                         # create_statement
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
@@ -140,6 +146,7 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                            # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
+            | RECLASSIFY OPARAN expression COMMA expression CPARAN SEMI                                                                                 # reclassify_statement
             | statement statement                                                                                                                       # sequence_statement
             ;
 
@@ -176,6 +183,7 @@ expression :      THIS                           # this_expression
                 | expression OR expression       # or_expression
                 | NOT expression                 # not_expression
                 | OPARAN expression CPARAN       # nested_expression
+                | RECLASSIFY OPARAN expression COMMA expression CPARAN # reclassify_expression
                 ;
 
 type : NAME                                                    #simple_type
