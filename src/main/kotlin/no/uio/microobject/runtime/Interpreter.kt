@@ -117,6 +117,65 @@ class Interpreter(
         return heap.keys.filter { it.tag.toString() == className }.map { it.literal }
     }
 
+    /**
+     * Change the class of an object
+     *
+     * @param oldObject the object to reclassify
+     * @param newClass the name of the new class
+     */
+    fun reclassify(oldObject: LiteralExpr, newClass: Type) {
+        // Create a new object of the new class
+        val newObject = LiteralExpr(oldObject.literal, newClass)
+
+        // Copy the state of the old object to the new one
+        val oldState = heap[oldObject]
+        val newState = mutableMapOf<String, LiteralExpr>()
+        for ((field, value) in oldState!!) {
+            newState[field] = value
+        }
+
+        // Replace the old object in the heap with the new one
+        heap.remove(oldObject)
+        heap[newObject] = newState
+
+        // Update references to the old object to point to the new one
+        for ((_, state) in heap) {
+            for ((field, value) in state) {
+                if (value == oldObject) {
+                    state[field] = newObject
+                }
+            }
+        }
+    }
+
+    /**
+     * Change the class of an object from the two LiteralExprs
+     *
+     * @param oldObject the object to reclassify
+     * @param newObject the new object
+     */
+    fun reclassify(oldObject: LiteralExpr, newObject: LiteralExpr) {
+        // Copy the state of the old object to the new one
+        val oldState = heap[oldObject]
+        val newState = mutableMapOf<String, LiteralExpr>()
+        for ((field, value) in oldState!!) {
+            newState[field] = value
+        }
+
+        // Replace the old object in the heap with the new one
+        heap.remove(oldObject)
+        heap[newObject] = newState
+
+        // Update references to the old object to point to the new one
+        for ((_, state) in heap) {
+            for ((field, value) in state) {
+                if (value == oldObject) {
+                    state[field] = newObject
+                }
+            }
+        }
+    }
+
     // Run SPARQL query (str)
     fun query(str: String): ResultSet? {
         // Adding prefixes to the query
