@@ -340,6 +340,21 @@ class REPL(private val settings: Settings) {
         commands["query"] = query
         commands["q"] = query
 
+        val ask = Command(
+            "ask",
+            this,
+            { str ->
+                val results = interpreter!!.ask(str)
+                printRepl("\n" + results)
+                false
+            },
+            "executes a SPARQL ask query",
+            parameterHelp = "SPARQL ask query",
+            requiresParameter = true
+        )
+        commands["ask"] = ask
+        commands["a"] = ask
+
         commands["plot"] = Command(
             "plot",
             this,
