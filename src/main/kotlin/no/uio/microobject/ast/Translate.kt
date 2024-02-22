@@ -280,7 +280,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      */
     override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
         println("rec")
-        val oldObject = visit(ctx.expression(0)) as Expression
+        val oldObject = visit(ctx.expression(1)) as Expression
         val className = ctx.NAME().text
         val targetType = BaseType(className)
 
