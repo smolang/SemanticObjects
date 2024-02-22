@@ -3,12 +3,14 @@
 package no.uio.microobject.ast
 
 import no.uio.microobject.antlr.WhileBaseVisitor
+import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.antlr.WhileParser.*
 import no.uio.microobject.ast.expr.*
 import no.uio.microobject.ast.stmt.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
+import org.antlr.v4.runtime.Token
 import org.apache.jena.sparql.util.QueryExecUtils.executeQuery
 
 /**
@@ -34,31 +36,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         throw Exception("Unknown models clause: $ctx") //making the type checker happy
     }
 
-    /**
-     * Reclassify an object based on the classifiesTable
-     *
-     * @param arg1 contains the object that will go under reclassification
-     * @param arg2 contains the object that will be used to reclassify arg1
-     * @return the object corresponding to the result of the query
-     */
-//    override fun visitReclassify_expression(ctx: Reclassify_expressionContext): ProgramElement {
-//        // Extract the arguments of the reclassify function
-//        val arg1 = visit(ctx.expression(0)) as LiteralExpr
-//        val arg2 = visit(ctx.expression(1)) as LiteralExpr
-//
-//        // for each element in classifiesTable, execute the query and return the class name if the query is true
-//        for ((className, query) in classifiesTable) {
-//            // Execute the query. This is a placeholder - replace it with your actual query execution code.
-//            val queryResult = executeQuery(query, arg1, arg2)
-//
-//            // If the query executed successfully, return the class name
-//            if (queryResult) {
-//                return LiteralExpr(className, STRINGTYPE)
-//            }
-//        }
-//
-//        return null
-//    }
+    private fun addClassifyQuery(className: String, ctx: Classifies_blockContext) {
+        classifiesTable[className] = ctx.getToken(WhileParser.STRING, 0).text
+    }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
         val roots : MutableSet<String> = mutableSetOf()
@@ -87,7 +67,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             }
             // Check if there's a "classifies" block and store the query
             if(cl.classifies_block() != null){
-                classifiesTable[cl.className.text] = cl.classifies_block().text
+                addClassifyQuery(cl.className.text, cl.classifies_block())
             }
             val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
@@ -290,6 +270,25 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                           ctx!!.start.line,
                           targetType,
                           modeling )
+    }
+
+    /**
+     * Reclassify an object based on the classifiesTable
+     *
+     * @param ctx the reclassify statement
+     * @return the object corresponding to the result of the query
+     */
+    override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
+        println("rec")
+        val oldObject = visit(ctx.expression(0)) as Expression
+        val className = ctx.NAME().text
+        val targetType = BaseType(className)
+
+        return ReclassifyStmt(visit(ctx.target) as Location,
+            oldObject,
+            className,
+            staticTable = classifiesTable,
+            targetType) //TODO properlz add target tyze
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
