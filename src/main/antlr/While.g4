@@ -125,10 +125,10 @@ models_block : MODELS owldescription=STRING SEMI                                
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
              ;
 classifies_block : CLASSIFIES owldescription=STRING SEMI                                                    # simple_classifies_block
-             | CLASSIFIES OPARAN guard=expression CPARAN owldescription=STRING SEMI classifies_block        # complex_classifies_block
              ;
 //Statements
-statement :   SKIP_S SEMI                                                                                                                               # skip_statment
+statement :   SKIP_S SEMI                                                                                                                               # skip_statment			| (declType = type)? target=expression ASS RECLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                              # reclassify_statement
+			| (declType = type)? target=expression ASS RECLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                              # reclassify_statement
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
@@ -146,7 +146,6 @@ statement :   SKIP_S SEMI                                                       
 			| (declType = type)? target=expression ASS SIMULATE OPARAN path=STRING (COMMA varInitList)? CPARAN SEMI                                     # simulate_statement
 			| IF expression THEN thenS=statement (ELSE elseE=statement)? END next=statement?                                                            # if_statement
             | WHILE expression DO statement END next=statement?                                                                                         # while_statement
-            | RECLASSIFY OPARAN expression COMMA expression CPARAN SEMI                                                                                 # reclassify_statement
             | statement statement                                                                                                                       # sequence_statement
             ;
 
