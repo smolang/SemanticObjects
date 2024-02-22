@@ -17,6 +17,7 @@ import no.uio.microobject.ast.stmt.ReturnStmt
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
+import org.apache.jena.query.QueryExecution
 import org.apache.jena.query.QueryExecutionFactory
 import org.apache.jena.query.QueryFactory
 import org.apache.jena.query.ResultSet
@@ -176,8 +177,7 @@ class Interpreter(
         }
     }
 
-    // Run SPARQL query (str)
-    fun query(str: String): ResultSet? {
+    private fun createQuery(str: String): QueryExecution {
         // Adding prefixes to the query
         var queryWithPrefixes = ""
         for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
@@ -185,10 +185,22 @@ class Interpreter(
 
         val model = tripleManager.getModel()
         queryWithPrefixes = queryWithPrefixes.replace("\\\"", "\"")
+
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
         val qexec = QueryExecutionFactory.create(query, model)
 
+        return qexec
+    }
+
+    fun ask(str: String): Boolean {
+        val qexec = createQuery(str)
+        return qexec.execAsk()
+    }
+
+    // Run SPARQL query (str)
+    fun query(str: String): ResultSet? {
+        val qexec = createQuery(str)
         return qexec.execSelect()
     }
 
