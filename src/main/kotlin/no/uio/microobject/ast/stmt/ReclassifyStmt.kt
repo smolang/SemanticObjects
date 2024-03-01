@@ -88,7 +88,17 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                     val queryResult = interpreter.query(query)
 
                     if (queryResult != null && queryResult.hasNext()) {
-                        return replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = listOf()), stackFrame)
+                        val result = queryResult.next()
+
+                        // Transform the result to a List<Expression>
+                        val params = mutableListOf<Expression>()
+
+                        // Add the parameters to the list
+                        result.varNames().forEachRemaining { name ->
+                            params.add(LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString())))
+                        }
+
+                        return replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = listOf()), stackFrame)
                     }
                 } else {
                     throw Exception("Invalid query type: use ASK or SELECT")
