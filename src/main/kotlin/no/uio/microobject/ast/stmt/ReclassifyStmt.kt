@@ -54,6 +54,8 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
         val n =
             interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
 
+//        println(interpreter.staticInfo)
+
         val newMemory: Memory = mutableMapOf()
 
         val t = interpreter.eval(target, stackFrame)
@@ -61,7 +63,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
         for ((key, value) in staticTable) {
             // Check if key is a subclass of className
-            if (isSubclassOf(key, className.toString())) {
+            if (isSubclassOf(key, className.toString(), interpreter)) {
                 val id: LiteralExpr = LiteralExpr(t.literal, BaseType(t.literal))
                 val superId: LiteralExpr = LiteralExpr(e.literal, BaseType(e.literal))
 
@@ -100,8 +102,20 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 //        return replaceStmt(AssignStmt(target, name, declares = declares), stackFrame)
     }
 
+    /**
+     * Checks if a class is a subclass of another class
+     *
+     * The information
+     *
+     * @param subclass The subclass
+     * @param superclass The superclass
+     * @param interpreter The interpreter
+     * @return True if subclass is a subclass of superclass, false otherwise
+     */
+    private fun isSubclassOf(subclass: String, superclass: String, interpreter: Interpreter): Boolean {
+        if (interpreter.staticInfo.hierarchy.containsKey(superclass))
+            return interpreter.staticInfo.hierarchy[superclass]!!.contains(subclass)
 
-    private fun isSubclassOf(subclass: String, superclass: String): Boolean {
-        return true
+        return false
     }
 }
