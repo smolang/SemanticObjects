@@ -21,7 +21,7 @@ import no.uio.microobject.type.Type
  * If the query returns some useful data (either true or a result), the object is reclassified to the new class.
  *
  * @property target The target location to reclassify
- * @property oldState The old state of the object
+ * @property containerObject The class that contains the object. It can be the same as the target or a superclass
  * @property className The superclass name. This is needed to check that the reclassification is valid for subclasses
  * @property staticTable The static table containing the class name and the query to check which state is the new one
  * @property declares The type of the object
