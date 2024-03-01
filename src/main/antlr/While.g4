@@ -29,6 +29,7 @@ CONSTRUCT : 'construct';
 MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
+CLASSIFY : 'classify';
 RECLASSIFY : 'reclassify';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
@@ -127,8 +128,9 @@ models_block : MODELS owldescription=STRING SEMI                                
 classifies_block : CLASSIFIES owldescription=STRING SEMI                                                    # simple_classifies_block
              ;
 //Statements
-statement :   SKIP_S SEMI                                                                                                                               # skip_statment			| (declType = type)? target=expression ASS RECLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                              # reclassify_statement
-			| (declType = type)? target=expression ASS RECLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                              # reclassify_statement
+statement :   SKIP_S SEMI                                                                                                                               # skip_statment
+            | (declType = type)? target=expression ASS CLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                                # classify_statement
+			| RECLASSIFY OPARAN expression COMMA expression COMMA NAME CPARAN SEMI                                                                      # reclassify_statement
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
@@ -182,7 +184,6 @@ expression :      THIS                           # this_expression
                 | expression OR expression       # or_expression
                 | NOT expression                 # not_expression
                 | OPARAN expression CPARAN       # nested_expression
-                | RECLASSIFY OPARAN expression COMMA expression CPARAN # reclassify_expression
                 ;
 
 type : NAME                                                    #simple_type

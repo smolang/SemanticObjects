@@ -280,15 +280,36 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      */
     override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
         println("rec")
+        val target = visit(ctx.expression(0)) as Location
         val oldObject = visit(ctx.expression(1)) as Expression
         val className = ctx.NAME().text
         val targetType = BaseType(className)
 
-        return ReclassifyStmt(visit(ctx.target) as Location,
+        return ReclassifyStmt(target,
             oldObject,
             className,
             staticTable = classifiesTable,
-            targetType) //TODO properlz add target tyze
+            targetType) //TODO properly add target type
+    }
+
+    /**
+     * Classify an object based on the classifiesTable
+     *
+     * @param ctx the reclassify statement
+     * @return the object corresponding to the result of the query
+     */
+    override fun visitClassify_statement(ctx: Classify_statementContext): ProgramElement {
+        println("rec")
+        val target = visit(ctx.target) as Location
+        val oldObject = visit(ctx.expression(1)) as Expression
+        val className = ctx.NAME().text
+        val targetType = BaseType(className)
+
+        return ReclassifyStmt(target,
+            oldObject,
+            className,
+            staticTable = classifiesTable,
+            targetType) //TODO properly add target type
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
