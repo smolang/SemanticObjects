@@ -125,7 +125,7 @@ method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overridi
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
              ;
-classifies_block : CLASSIFIES owldescription=STRING SEMI                                                    # simple_classifies_block
+classifies_block : CLASSIFIES owldescription=STRING SEMI                                              # simple_classifies_block
              ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment

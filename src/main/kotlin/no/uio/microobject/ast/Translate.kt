@@ -55,7 +55,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             modelsTable = modelsTable + Pair(cl.className.text, modelsList)
             if(cl.hidden != null) hidden = hidden + cl.className.text
 
-                    if(cl.superType != null){
+            if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
                 var maps = hierarchy[superType.getPrimary().getNameString()]
