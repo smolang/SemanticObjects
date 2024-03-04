@@ -9,9 +9,8 @@ import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
-import no.uio.microobject.type.BaseType
-import no.uio.microobject.type.STRINGTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
+import org.apache.jena.datatypes.xsd.XSDDatatype
 
 /**
  * ReclassifyStmt is a statement that reclassifies an object to a new class
@@ -99,7 +98,37 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                         // Add the parameters to the list
                         result.varNames().forEachRemaining { name ->
-                            params.add(LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString())))
+                            val variable = if (result.get(name).isLiteral) {
+                                val found = result.get(name).toString().removePrefix(interpreter.settings.runPrefix)
+                                val objNameCand = if (found.startsWith("\\\"")) found.replace("\\\"", "\"") else found
+                                for (ob in interpreter.heap.keys) {
+                                    if (ob.literal == objNameCand) {
+                                        LiteralExpr(objNameCand, ob.tag)
+                                        break
+                                    }
+                                }
+                                if (!newMemory.containsKey("content")) {
+                                    if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDstring)
+                                        LiteralExpr("\"" + found + "\"", STRINGTYPE)
+                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDdouble)
+                                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
+                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDfloat)
+                                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
+                                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#int".toRegex()))
+                                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                                    else if (objNameCand.matches("\\d+.\\d+".toRegex())) LiteralExpr(found, DOUBLETYPE)
+                                    else throw Exception("Query returned unknown object/literal: $found")
+                                } else {
+                                    LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString()))
+                                }
+                            } else {
+                                LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString()))
+                            }
+                            params.add(variable)
                         }
 
                         val models = if(modelsTable.containsKey(key)) modelsTable!![key]
