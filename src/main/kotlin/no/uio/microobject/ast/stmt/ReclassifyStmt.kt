@@ -54,8 +54,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
         val n =
             interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
 
-//        println(interpreter.staticInfo)
-
         val newMemory: Memory = mutableMapOf()
 
         val t = interpreter.eval(target, stackFrame)
@@ -115,7 +113,8 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
     /**
      * Checks if a class is a subclass of another class
      *
-     * The information
+     * The information is present in the static info hierarchy. If the superclass is present in the hierarchy, the
+     * function checks if the subclass is a subclass of the superclass.
      *
      * @param subclass The subclass
      * @param superclass The superclass
