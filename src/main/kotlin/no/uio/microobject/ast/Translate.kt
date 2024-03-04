@@ -2,6 +2,7 @@
 
 package no.uio.microobject.ast
 
+import com.fasterxml.jackson.databind.ser.Serializers.Base
 import no.uio.microobject.antlr.WhileBaseVisitor
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.antlr.WhileParser.*
@@ -279,17 +280,17 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      * @return the object corresponding to the result of the query
      */
     override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
-        println("rec")
         val target = visit(ctx.expression(0)) as Location
-        val oldObject = visit(ctx.expression(1)) as Expression
+        val containerObject = visit(ctx.expression(1)) as Expression
         val className = ctx.NAME().text
-        val targetType = BaseType(className)
+        val classType = BaseType(className)
 
         return ReclassifyStmt(target,
-            oldObject,
+            containerObject,
             className,
             staticTable = classifiesTable,
-            targetType) //TODO properly add target type
+            modelsTable = owldescr,
+            classType)
     }
 
     /**
@@ -299,17 +300,17 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      * @return the object corresponding to the result of the query
      */
     override fun visitClassify_statement(ctx: Classify_statementContext): ProgramElement {
-        println("rec")
         val target = visit(ctx.target) as Location
-        val oldObject = visit(ctx.expression(1)) as Expression
+        val containerObject = visit(ctx.expression(1)) as Expression
         val className = ctx.NAME().text
-        val targetType = BaseType(className)
+        val classType = BaseType(className)
 
         return ReclassifyStmt(target,
-            oldObject,
+            containerObject,
             className,
             staticTable = classifiesTable,
-            targetType) //TODO properly add target type
+            modelsTable = owldescr,
+            classType)
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
