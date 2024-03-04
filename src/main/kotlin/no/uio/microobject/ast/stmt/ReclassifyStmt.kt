@@ -10,6 +10,7 @@ import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.BaseType
+import no.uio.microobject.type.STRINGTYPE
 import no.uio.microobject.type.Type
 
 /**
@@ -26,7 +27,7 @@ import no.uio.microobject.type.Type
  * @property staticTable The static table containing the class name and the query to check which state is the new one
  * @property declares The type of the object
  */
-data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, String>, val declares: Type?) : Statement {
+data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, String>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
     override fun toString(): String = "Reclassify to a $className"
 
     override fun getRDF(): String {
@@ -80,7 +81,11 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                     val queryResult = interpreter.ask(query)
 
                     if (queryResult) {
-                        return replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = listOf()), stackFrame)
+                        val models = if(modelsTable.containsKey(key)) modelsTable!![key]
+                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                        val modeling = if(models != null) listOf(models) else listOf()
+
+                        return replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select")) {
                     val queryResult = interpreter.query(query)
@@ -96,7 +101,11 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             params.add(LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString())))
                         }
 
-                        return replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = listOf()), stackFrame)
+                        val models = if(modelsTable.containsKey(key)) modelsTable!![key]
+                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                        val modeling = if(models != null) listOf(models) else listOf()
+
+                        return replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
                     }
                 } else {
                     throw Exception("Invalid query type: use ASK or SELECT")
@@ -105,9 +114,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
         }
 
         throw Exception("No valid subclass found for $className")
-
-//        return replaceStmt(CreateStmt(target, className, listOf(), declares = declares, modeling = listOf()), stackFrame)
-//        return replaceStmt(AssignStmt(target, name, declares = declares), stackFrame)
     }
 
     /**
