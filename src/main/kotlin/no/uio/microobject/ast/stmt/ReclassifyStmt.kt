@@ -25,6 +25,7 @@ import no.uio.microobject.type.Type
  * @property containerObject The class that contains the object. It can be the same as the target or a superclass
  * @property className The superclass name. This is needed to check that the reclassification is valid for subclasses
  * @property staticTable The static table containing the class name and the query to check which state is the new one
+ * @property modelsTable The models table containing the class name and the models for that class
  * @property declares The type of the object
  */
 data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, String>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
@@ -113,7 +114,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             }
         }
 
-        throw Exception("No valid subclass found for $className")
+        throw Exception("No valid state found for $className")
     }
 
     /**
