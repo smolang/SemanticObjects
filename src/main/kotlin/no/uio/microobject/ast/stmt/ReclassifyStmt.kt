@@ -102,9 +102,10 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         val params = mutableListOf<Expression>()
 
                         // Add the parameters to the list
-                        result.varNames().forEachRemaining { name ->
-                            val variable = if (result.get(name).isLiteral) {
-                                val found = result.get(name).toString().removePrefix(interpreter.settings.runPrefix)
+                        result.varNames().forEachRemaining { variableName ->
+                            val varObj = result.get(variableName)
+                            val variable = if (varObj.isLiteral) {
+                                val found = varObj.toString().removePrefix(interpreter.settings.runPrefix)
                                 val objNameCand = if (found.startsWith("\\\"")) found.replace("\\\"", "\"") else found
                                 for (ob in interpreter.heap.keys) {
                                     if (ob.literal == objNameCand) {
@@ -113,13 +114,13 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                                     }
                                 }
                                 if (!newMemory.containsKey("content")) {
-                                    if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDstring)
+                                    if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDstring)
                                         LiteralExpr("\"" + found + "\"", STRINGTYPE)
-                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDinteger)
+                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDinteger)
                                         LiteralExpr(found.split("^^")[0], INTTYPE)
-                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDdouble)
+                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDdouble)
                                         LiteralExpr(found.split("^^")[0], DOUBLETYPE)
-                                    else if (result.get(name).isLiteral && result.get(name).asNode().literalDatatype == XSDDatatype.XSDfloat)
+                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDfloat)
                                         LiteralExpr(found.split("^^")[0], DOUBLETYPE)
                                     else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
                                         LiteralExpr(found.split("^^")[0], INTTYPE)
@@ -128,10 +129,10 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                                     else if (objNameCand.matches("\\d+.\\d+".toRegex())) LiteralExpr(found, DOUBLETYPE)
                                     else throw Exception("Query returned unknown object/literal: $found")
                                 } else {
-                                    LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString()))
+                                    LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
                                 }
                             } else {
-                                LiteralExpr(result.get(name).toString(), BaseType(result.get(name).toString()))
+                                LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
                             }
                             params.add(variable)
                         }
