@@ -85,7 +85,11 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
                         val modeling = if(models != null) listOf(models) else listOf()
 
-                        return replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                        val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                        // Remove the old object from the heap
+                        interpreter.heap.remove(id)
+
+                        return stmt
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select")) {
                     val queryResult = interpreter.query(query)
@@ -135,7 +139,12 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
                         val modeling = if(models != null) listOf(models) else listOf()
 
-                        return replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
+                        val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
+
+                        // Remove the old object from the heap
+                        interpreter.heap.remove(id)
+
+                        return stmt
                     }
                 } else {
                     throw Exception("Invalid query type: use ASK or SELECT")
