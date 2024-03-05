@@ -81,7 +81,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                     val queryResult = interpreter.ask(query)
 
                     if (queryResult) {
-                        val models = if(modelsTable.containsKey(key)) modelsTable!![key]
+                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
                             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
                         val modeling = if(models != null) listOf(models) else listOf()
 
@@ -136,7 +136,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             params.add(variable)
                         }
 
-                        val models = if(modelsTable.containsKey(key)) modelsTable!![key]
+                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
                             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
                         val modeling = if(models != null) listOf(models) else listOf()
 
