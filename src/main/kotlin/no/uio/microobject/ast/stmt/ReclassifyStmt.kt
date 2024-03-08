@@ -88,7 +88,9 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
 
                         // Remove the old object from the heap
-                        interpreter.heap.remove(id)
+                        if (interpreter.heap.containsKey(id)) {
+                            interpreter.heap.remove(id)
+                        }
 
                         return stmt
                     }
@@ -144,7 +146,9 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
 
                         // Remove the old object from the heap
-                        interpreter.heap.remove(id)
+                        if (interpreter.heap.containsKey(id)) {
+                            interpreter.heap.remove(id)
+                        }
 
                         return stmt
                     }
