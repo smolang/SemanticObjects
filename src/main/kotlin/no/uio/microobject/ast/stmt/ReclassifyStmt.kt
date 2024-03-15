@@ -28,6 +28,7 @@ import org.apache.jena.datatypes.xsd.XSDDatatype
  * @property declares The type of the object
  */
 data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, String>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+
     override fun toString(): String = "Reclassify to a $className"
 
     override fun getRDF(): String {
@@ -74,7 +75,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                     .removePrefix("\"")
                     .removeSuffix("\"")
                     .replace("%this", "run:${id.literal}")
-                    .replace("%super", "run:${superId.literal}")
+                    .replace("%context", "run:${superId.literal}")
                     .replace("%parent", "prog:${className.toString()}")
 
                 if (query.startsWith("ASK") || query.startsWith("ask")){
