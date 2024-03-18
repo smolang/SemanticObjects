@@ -55,10 +55,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @throws Exception If no valid subclass is found for className
      */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-//        val name = Names.getObjName(target.toString())
-//        val n =
-//            interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
-
         val newMemory: Memory = mutableMapOf()
 
         val t = interpreter.eval(target, stackFrame)
@@ -97,25 +93,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            val newQuery = modifyQuery(pair.second, id, contextId, className)
-
-                            val queryRes = interpreter.query(newQuery)
-                            if (queryRes != null && queryRes.hasNext()) {
-                                val res = queryRes.next()
-
-                                // Transform the result to a List<Expression>
-                                val params = mutableListOf<Expression>()
-                                processQueryResult(res, interpreter, newMemory, params)
-
-                                val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
-
-                                // Remove the old object from the heap
-                                if (interpreter.heap.containsKey(id)) {
-                                    interpreter.heap.remove(id)
-                                }
-
-                                return stmt
-                            }
+                            processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
                         }
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select") || query.startsWith("Select")) {
@@ -138,25 +116,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            val newQuery = modifyQuery(pair.second, id, contextId, className)
-
-                            val queryRes = interpreter.query(newQuery)
-                            if (queryRes != null && queryRes.hasNext()) {
-                                val res = queryRes.next()
-
-                                // Transform the result to a List<Expression>
-                                val params = mutableListOf<Expression>()
-                                processQueryResult(res, interpreter, newMemory, params)
-
-                                val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
-
-                                // Remove the old object from the heap
-                                if (interpreter.heap.containsKey(id)) {
-                                    interpreter.heap.remove(id)
-                                }
-
-                                return stmt
-                            }
+                            processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
                         }
                     }
                 } else {
@@ -179,24 +139,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                         return stmt
                     } else {
-                        val newQuery = modifyQuery(pair.second, id, contextId, className)
-                        val queryRes = interpreter.query(newQuery)
-                        if (queryRes != null && queryRes.hasNext()) {
-                            val result = queryRes.next()
-
-                            // Transform the result to a List<Expression>
-                            val params = mutableListOf<Expression>()
-                            processQueryResult(result, interpreter, newMemory, params)
-
-                            val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
-
-                            // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(id)) {
-                                interpreter.heap.remove(id)
-                            }
-
-                            return stmt
-                        }
+                        processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
                     }
                 }
             }
@@ -253,7 +196,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @param newMemory The new memory
      * @param params The list of parameters that will be used to create the new object
      */
-    fun processQueryResult(result: QuerySolution, interpreter: Interpreter, newMemory: Memory, params: MutableList<Expression>) {
+    private fun processQueryResult(result: QuerySolution, interpreter: Interpreter, newMemory: Memory, params: MutableList<Expression>) {
         result.varNames().forEachRemaining { variableName ->
             val varObj = result.get(variableName)
             val variable = if (varObj.isLiteral) {
@@ -288,5 +231,59 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             }
             params.add(variable)
         }
+    }
+
+    /**
+     * Creates a new statement and frees the old object from the heap
+     *
+     * @param target The target location
+     * @param key The key of the new object
+     * @param params The parameters to create the new object
+     * @param declares The type of the object
+     * @param modeling The modeling of the object
+     * @param id The id of the object
+     * @param interpreter The interpreter
+     * @param stackFrame The current stack frame
+     * @return The result of the evaluation
+     */
+    private fun createStmtAndFreeMemory(target: Location, key: String, params: MutableList<Expression>, declares: Type?, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, stackFrame: StackEntry): EvalResult {
+        val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
+
+        // Remove the old object from the heap
+        if (interpreter.heap.containsKey(id)) {
+            interpreter.heap.remove(id)
+        }
+
+        return stmt
+    }
+
+    /**
+     * Processes the query and creates a statement
+     *
+     * @param query The query to process
+     * @param id The id of the object
+     * @param contextId The id of the context
+     * @param className The name of the class
+     * @param target The target location
+     * @param key The key of the new object
+     * @param declares The type of the object
+     * @param modeling The modeling of the object
+     * @param interpreter The interpreter
+     * @param newMemory The new memory
+     * @return The result of the evaluation
+     */
+    private fun processQueryAndCreateStmt(query: String, id: LiteralExpr, contextId: LiteralExpr, className: String, target: Location, key: String, declares: Type?, modeling: List<Expression>, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): EvalResult? {
+        val newQuery = modifyQuery(query, id, contextId, className)
+        val queryRes = interpreter.query(newQuery)
+        if (queryRes != null && queryRes.hasNext()) {
+            val result = queryRes.next()
+
+            // Transform the result to a List<Expression>
+            val params = mutableListOf<Expression>()
+            processQueryResult(result, interpreter, newMemory, params)
+
+            return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
+        }
+        return null
     }
 }
