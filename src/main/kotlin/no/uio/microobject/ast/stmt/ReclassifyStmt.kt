@@ -93,7 +93,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
                         }
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select") || query.startsWith("Select")) {
@@ -116,7 +116,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
                         }
                     }
                 } else {
@@ -139,7 +139,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                         return stmt
                     } else {
-                        processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                        return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
                     }
                 }
             }
@@ -284,6 +284,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
             return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
         }
-        return null
+        throw Exception("No valid state found for $className")
     }
 }
