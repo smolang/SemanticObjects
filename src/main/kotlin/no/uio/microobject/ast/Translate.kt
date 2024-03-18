@@ -23,7 +23,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
-    private val classifiesTable: MutableMap<String, String> = mutableMapOf()
+    private val classifiesTable: MutableMap<String, Pair<String, String>> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -38,7 +38,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     private fun addClassifyQuery(className: String, ctx: Classifies_blockContext) {
-        classifiesTable[className] = ctx.getToken(WhileParser.STRING, 0).text
+        classifiesTable[className] = Pair(
+            ctx.getToken(WhileParser.STRING, 0).text,
+            ctx.getToken(WhileParser.STRING, 1)?.text ?: "")
     }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
