@@ -12,7 +12,7 @@ import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.Type
 
-data class ClassifyStmt(val target: Location, val oldState: Expression, val className: String, val staticTable: MutableMap<String, String>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+data class ClassifyStmt(val target: Location, val oldState: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
     override fun toString(): String = "Reclassify to a $className"
 
     override fun getRDF(): String {
