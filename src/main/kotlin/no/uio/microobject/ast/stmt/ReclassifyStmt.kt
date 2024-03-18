@@ -11,6 +11,9 @@ import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
+import org.apache.jena.query.QuerySolution
+import org.semanticweb.owlapi.model.OWLNamedIndividual
+import org.semanticweb.owlapi.reasoner.NodeSet
 
 /**
  * ReclassifyStmt is a statement that reclassifies an object to a new class
@@ -27,7 +30,7 @@ import org.apache.jena.datatypes.xsd.XSDDatatype
  * @property modelsTable The models table containing the class name and the models for that class
  * @property declares The type of the object
  */
-data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, String>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
 
     override fun toString(): String = "Reclassify to a $className"
 
@@ -52,33 +55,30 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @throws Exception If no valid subclass is found for className
      */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-        val name = Names.getObjName(target.toString())
-        val n =
-            interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
+//        val name = Names.getObjName(target.toString())
+//        val n =
+//            interpreter.staticInfo.fieldTable[className] ?: throw Exception("This class is unknown: $className")
 
         val newMemory: Memory = mutableMapOf()
 
         val t = interpreter.eval(target, stackFrame)
         val e = interpreter.eval(containerObject, stackFrame)
 
-        for ((key, value) in staticTable) {
+        for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
             if (isSubclassOf(key, className.toString(), interpreter)) {
                 val id: LiteralExpr = LiteralExpr(t.literal, BaseType(t.literal))
-                val superId: LiteralExpr = LiteralExpr(e.literal, BaseType(e.literal))
+                val contextId: LiteralExpr = LiteralExpr(e.literal, BaseType(e.literal))
+
+                val value: String = pair.first
 
                 /*
                  * Change the %this to the actual literal mapped into the memory
                  * Also, allow for the usage of rdfs:subClassOf* with %parent mapping it to prog
                  */
-                val query = value
-                    .removePrefix("\"")
-                    .removeSuffix("\"")
-                    .replace("%this", "run:${id.literal}")
-                    .replace("%context", "run:${superId.literal}")
-                    .replace("%parent", "prog:${className.toString()}")
+                val query = modifyQuery(value, id, contextId, className)
 
-                if (query.startsWith("ASK") || query.startsWith("ask")){
+                if (query.startsWith("ASK") || query.startsWith("ask") || query.startsWith("Ask")){
                     val queryResult = interpreter.ask(query)
 
                     if (queryResult) {
@@ -86,6 +86,90 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             ?.let { LiteralExpr(it, STRINGTYPE) } else  null
                         val modeling = if(models != null) listOf(models) else listOf()
 
+                        // check if pair.second is not an empty string
+                        if (pair.second == "") {
+                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+
+                            // Remove the old object from the heap
+                            if (interpreter.heap.containsKey(id)) {
+                                interpreter.heap.remove(id)
+                            }
+
+                            return stmt
+                        } else {
+                            val newQuery = modifyQuery(pair.second, id, contextId, className)
+
+                            val queryRes = interpreter.query(newQuery)
+                            if (queryRes != null && queryRes.hasNext()) {
+                                val res = queryRes.next()
+
+                                // Transform the result to a List<Expression>
+                                val params = mutableListOf<Expression>()
+                                processQueryResult(res, interpreter, newMemory, params)
+
+                                val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
+
+                                // Remove the old object from the heap
+                                if (interpreter.heap.containsKey(id)) {
+                                    interpreter.heap.remove(id)
+                                }
+
+                                return stmt
+                            }
+                        }
+                    }
+                } else if (query.startsWith("SELECT") || query.startsWith("select") || query.startsWith("Select")) {
+                    val queryResult = interpreter.query(query)
+
+                    if (queryResult != null && queryResult.hasNext()) {
+                        val result = queryResult.next()
+
+                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
+                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                        val modeling = if(models != null) listOf(models) else listOf()
+
+                        if (pair.second == "") {
+                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+
+                            // Remove the old object from the heap
+                            if (interpreter.heap.containsKey(id)) {
+                                interpreter.heap.remove(id)
+                            }
+
+                            return stmt
+                        } else {
+                            val newQuery = modifyQuery(pair.second, id, contextId, className)
+
+                            val queryRes = interpreter.query(newQuery)
+                            if (queryRes != null && queryRes.hasNext()) {
+                                val res = queryRes.next()
+
+                                // Transform the result to a List<Expression>
+                                val params = mutableListOf<Expression>()
+                                processQueryResult(res, interpreter, newMemory, params)
+
+                                val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
+
+                                // Remove the old object from the heap
+                                if (interpreter.heap.containsKey(id)) {
+                                    interpreter.heap.remove(id)
+                                }
+
+                                return stmt
+                            }
+                        }
+                    }
+                } else {
+                    val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
+                    if (res.isEmpty) {
+                        throw Exception("No results returned from the query.")
+                    }
+
+                    val models = if(modelsTable.containsKey(key)) modelsTable[key]
+                        ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                    val modeling = if(models != null) listOf(models) else listOf()
+
+                    if (pair.second == "") {
                         val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
 
                         // Remove the old object from the heap
@@ -94,67 +178,26 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         }
 
                         return stmt
-                    }
-                } else if (query.startsWith("SELECT") || query.startsWith("select")) {
-                    val queryResult = interpreter.query(query)
+                    } else {
+                        val newQuery = modifyQuery(pair.second, id, contextId, className)
+                        val queryRes = interpreter.query(newQuery)
+                        if (queryRes != null && queryRes.hasNext()) {
+                            val result = queryRes.next()
 
-                    if (queryResult != null && queryResult.hasNext()) {
-                        val result = queryResult.next()
+                            // Transform the result to a List<Expression>
+                            val params = mutableListOf<Expression>()
+                            processQueryResult(result, interpreter, newMemory, params)
 
-                        // Transform the result to a List<Expression>
-                        val params = mutableListOf<Expression>()
+                            val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
 
-                        // Add the parameters to the list
-                        result.varNames().forEachRemaining { variableName ->
-                            val varObj = result.get(variableName)
-                            val variable = if (varObj.isLiteral) {
-                                val found = varObj.toString().removePrefix(interpreter.settings.runPrefix)
-                                val objNameCand = if (found.startsWith("\\\"")) found.replace("\\\"", "\"") else found
-                                for (ob in interpreter.heap.keys) {
-                                    if (ob.literal == objNameCand) {
-                                        LiteralExpr(objNameCand, ob.tag)
-                                        break
-                                    }
-                                }
-                                if (!newMemory.containsKey("content")) {
-                                    if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDstring)
-                                        LiteralExpr("\"" + found + "\"", STRINGTYPE)
-                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDinteger)
-                                        LiteralExpr(found.split("^^")[0], INTTYPE)
-                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDdouble)
-                                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
-                                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDfloat)
-                                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
-                                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
-                                        LiteralExpr(found.split("^^")[0], INTTYPE)
-                                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#int".toRegex()))
-                                        LiteralExpr(found.split("^^")[0], INTTYPE)
-                                    else if (objNameCand.matches("\\d+.\\d+".toRegex())) LiteralExpr(found, DOUBLETYPE)
-                                    else throw Exception("Query returned unknown object/literal: $found")
-                                } else {
-                                    LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
-                                }
-                            } else {
-                                LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
+                            // Remove the old object from the heap
+                            if (interpreter.heap.containsKey(id)) {
+                                interpreter.heap.remove(id)
                             }
-                            params.add(variable)
+
+                            return stmt
                         }
-
-                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
-                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
-                        val modeling = if(models != null) listOf(models) else listOf()
-
-                        val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
-
-                        // Remove the old object from the heap
-                        if (interpreter.heap.containsKey(id)) {
-                            interpreter.heap.remove(id)
-                        }
-
-                        return stmt
                     }
-                } else {
-                    throw Exception("Invalid query type: use ASK or SELECT")
                 }
             }
         }
@@ -178,5 +221,72 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             return interpreter.staticInfo.hierarchy[superclass]!!.contains(subclass)
 
         return false
+    }
+
+    /**
+     * Modifies the query to replace the %this and %context with the actual literals
+     *
+     * @param query The query to modify
+     * @param id The id of the object
+     * @param superId The id of the superclass
+     * @param className The name of the class
+     * @return The modified query
+     */
+    private fun modifyQuery(query: String, id: LiteralExpr, contextId: LiteralExpr, className: String): String {
+        return query
+            .removePrefix("\"")
+            .removeSuffix("\"")
+            .replace("%this", "run:${id.literal}")
+            .replace("%context", "run:${contextId.literal}")
+            .replace("%parent", "prog:${className}")
+    }
+
+    /**
+     * Processes the query result and adds the variables to the params list
+     *
+     * For each variable in the result, the function adds the variable to the params list after modifying the variable
+     * to the correct type. The function will remove the ^^XMLSchema#datatype from the variable and add the variable to
+     * the params list.
+     *
+     * @param result The query result
+     * @param interpreter The interpreter
+     * @param newMemory The new memory
+     * @param params The list of parameters that will be used to create the new object
+     */
+    fun processQueryResult(result: QuerySolution, interpreter: Interpreter, newMemory: Memory, params: MutableList<Expression>) {
+        result.varNames().forEachRemaining { variableName ->
+            val varObj = result.get(variableName)
+            val variable = if (varObj.isLiteral) {
+                val found = varObj.toString().removePrefix(interpreter.settings.runPrefix)
+                val objNameCand = if (found.startsWith("\\\"")) found.replace("\\\"", "\"") else found
+                for (ob in interpreter.heap.keys) {
+                    if (ob.literal == objNameCand) {
+                        LiteralExpr(objNameCand, ob.tag)
+                        break
+                    }
+                }
+                if (!newMemory.containsKey("content")) {
+                    if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDstring)
+                        LiteralExpr("\"" + found + "\"", STRINGTYPE)
+                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDinteger)
+                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDdouble)
+                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
+                    else if (varObj.isLiteral && varObj.asNode().literalDatatype == XSDDatatype.XSDfloat)
+                        LiteralExpr(found.split("^^")[0], DOUBLETYPE)
+                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
+                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#int".toRegex()))
+                        LiteralExpr(found.split("^^")[0], INTTYPE)
+                    else if (objNameCand.matches("\\d+.\\d+".toRegex())) LiteralExpr(found, DOUBLETYPE)
+                    else throw Exception("Query returned unknown object/literal: $found")
+                } else {
+                    LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
+                }
+            } else {
+                LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
+            }
+            params.add(variable)
+        }
     }
 }
