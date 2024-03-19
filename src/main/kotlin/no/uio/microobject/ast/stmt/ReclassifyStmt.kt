@@ -128,7 +128,8 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         }
                     }
                 } else {
-                    println(query)
+                    if(interpreter.settings.verbose) println("execute ISSA\n: $query")
+
                     val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
                     if (!res.isEmpty) {
                         val models = if(modelsTable.containsKey(key)) modelsTable[key]

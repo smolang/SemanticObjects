@@ -216,25 +216,6 @@ class REPL(private val settings: Settings) {
         commands["step"] = step
         commands["s"] = step
 
-        // create the commands reclassify that will make use of the reclassify function on the interpreter with the two LiteralExpr objects. The function is reclassify(LiteralExpr, LiteralExpr)
-        commands["reclassify"] = Command(
-            "reclassify",
-            this,
-            { str ->
-                val params = str.split(" ")
-                if(params.size != 2) {
-                    printRepl("reclassify expects 2 parameters, separated by blanks, got ${params.size}.")
-                }else {
-                    val oldClass: LiteralExpr = LiteralExpr(params[0])
-                    val newClass: LiteralExpr = LiteralExpr(params[1])
-                    interpreter!!.reclassify(oldClass, newClass)
-                }
-                false
-            },
-            "reclassify a class to a new one",
-            requiresParameter = true
-        )
-
         commands["guards"] = Command(
             "guards",
             this,
