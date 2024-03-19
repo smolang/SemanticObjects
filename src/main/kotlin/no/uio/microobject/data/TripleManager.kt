@@ -165,8 +165,8 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         // Test case only
         if (testModel != null) return testModel as Model
         // Normal behaviour with a Fuseki environment
-//        return TripleStoreGraph()
         return RDFConnectionFactory.connect(settings.tripleStore + "/query").queryConstruct("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+//        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
     }
 
     /**
@@ -274,17 +274,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         m2.read(uri, "TTL")
 
         return m2
-    }
-
-    private inner class TripleStoreGraph: GraphBase() {
-        override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
-            // construct the model by taking all the information from the triple store. The query is done by using a construct query to the triple store.
-            val query = "CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }"
-            val qexec = QueryExecutionFactory.sparqlService(settings.tripleStore + "/query", query)
-            val model = qexec.execConstruct()
-
-            return TripleListIterator(model.listStatements().asSequence().map { it.asTriple() }.toList())
-        }
     }
 
     private inner class FMOGraph : GraphBase() {
