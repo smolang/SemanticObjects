@@ -93,7 +93,11 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
+                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+
+                            if (stmt != null) {
+                                return stmt
+                            }
                         }
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select") || query.startsWith("Select")) {
@@ -116,30 +120,37 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                             return stmt
                         } else {
-                            return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
+                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+
+                            if (stmt != null) {
+                                return stmt
+                            }
                         }
                     }
                 } else {
+                    println(query)
                     val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
-                    if (res.isEmpty) {
-                        throw Exception("No results returned from the query.")
-                    }
+                    if (!res.isEmpty) {
+                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
+                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                        val modeling = if(models != null) listOf(models) else listOf()
 
-                    val models = if(modelsTable.containsKey(key)) modelsTable[key]
-                        ?.let { LiteralExpr(it, STRINGTYPE) } else  null
-                    val modeling = if(models != null) listOf(models) else listOf()
+                        if (pair.second == "") {
+                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
 
-                    if (pair.second == "") {
-                        val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                            // Remove the old object from the heap
+                            if (interpreter.heap.containsKey(id)) {
+                                interpreter.heap.remove(id)
+                            }
 
-                        // Remove the old object from the heap
-                        if (interpreter.heap.containsKey(id)) {
-                            interpreter.heap.remove(id)
+                            return stmt
+                        } else {
+                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+
+                            if (stmt != null) {
+                                return stmt
+                            }
                         }
-
-                        return stmt
-                    } else {
-                        return processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)!!
                     }
                 }
             }
@@ -284,6 +295,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
             return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
         }
-        throw Exception("No valid state found for $className")
+        return null
     }
 }
