@@ -111,14 +111,11 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         val modeling = if(models != null) listOf(models) else listOf()
 
                         if (pair.second == "") {
-                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                            // Transform the result to a List<Expression>
+                            val params = mutableListOf<Expression>()
+                            processQueryResult(result, interpreter, newMemory, params)
 
-                            // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(id)) {
-                                interpreter.heap.remove(id)
-                            }
-
-                            return stmt
+                            return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
                         } else {
                             val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
 
