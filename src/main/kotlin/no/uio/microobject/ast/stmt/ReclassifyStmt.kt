@@ -57,14 +57,12 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val newMemory: Memory = mutableMapOf()
 
-        val t = interpreter.eval(target, stackFrame)
-        val e = interpreter.eval(containerObject, stackFrame)
+        val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
+        val contextObj: LiteralExpr = interpreter.eval(containerObject, stackFrame)
 
         for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
             if (isSubclassOf(key, className.toString(), interpreter)) {
-                val id: LiteralExpr = LiteralExpr(t.literal, BaseType(t.literal))
-                val contextId: LiteralExpr = LiteralExpr(e.literal, BaseType(e.literal))
 
                 val value: String = pair.first
 
@@ -72,7 +70,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                  * Change the %this to the actual literal mapped into the memory
                  * Also, allow for the usage of rdfs:subClassOf* with %parent mapping it to prog
                  */
-                val query = modifyQuery(value, id, contextId, className)
+                val query = modifyQuery(value, targetObj, contextObj, className)
 
                 if (query.startsWith("ASK") || query.startsWith("ask") || query.startsWith("Ask")){
                     val queryResult = interpreter.ask(query)
@@ -87,13 +85,13 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
 
                             // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(id)) {
-                                interpreter.heap.remove(id)
+                            if (interpreter.heap.containsKey(targetObj)) {
+                                interpreter.heap.remove(targetObj)
                             }
 
                             return stmt
                         } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
 
                             if (stmt != null) {
                                 return stmt
@@ -115,9 +113,9 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val params = mutableListOf<Expression>()
                             processQueryResult(result, interpreter, newMemory, params)
 
-                            return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
+                            return createStmtAndFreeMemory(target, key, params, declares, modeling, targetObj, interpreter, stackFrame)
                         } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
 
                             if (stmt != null) {
                                 return stmt
@@ -125,7 +123,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                         }
                     }
                 } else {
-                    if(interpreter.settings.verbose) println("execute ISSA\n: $query")
+                    if(interpreter.settings.verbose) println("execute ISSA:\n $query")
 
                     val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
                     if (!res.isEmpty) {
@@ -137,13 +135,13 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
 
                             // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(id)) {
-                                interpreter.heap.remove(id)
+                            if (interpreter.heap.containsKey(targetObj)) {
+                                interpreter.heap.remove(targetObj)
                             }
 
                             return stmt
                         } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, id, contextId, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
 
                             if (stmt != null) {
                                 return stmt
@@ -154,7 +152,33 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             }
         }
 
-        throw Exception("No valid state found for $className")
+        // TODO: fix the check for the interpreter
+        if (interpreter.heap.containsKey(targetObj)) {
+            val className = targetObj.tag.toString()
+
+            val models = if(modelsTable.containsKey(className)) modelsTable[className]
+                ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+            val modeling = if(models != null) listOf(models) else listOf()
+
+            // Retrieve the params from the object
+            val params = mutableListOf<Expression>()
+            for (key in interpreter.heap.keys) {
+                if (key.literal == targetObj.literal) {
+                    val obj = interpreter.heap[key]
+                    if (obj != null) {
+                        for (entry in obj) {
+                            if (entry.key != "content") {
+                                params.add(LiteralExpr(entry.value.toString(), BaseType(entry.value.toString())))
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        return EvalResult(stackFrame, listOf(stackFrame))
+
+//        throw Exception("No valid state found for $className")
     }
 
     /**
@@ -180,7 +204,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      *
      * @param query The query to modify
      * @param id The id of the object
-     * @param superId The id of the superclass
+     * @param contextId The id of the superclass
      * @param className The name of the class
      * @return The modified query
      */
