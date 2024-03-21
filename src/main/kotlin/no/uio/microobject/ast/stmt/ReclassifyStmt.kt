@@ -152,33 +152,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             }
         }
 
-        // TODO: fix the check for the interpreter
-        if (interpreter.heap.containsKey(targetObj)) {
-            val className = targetObj.tag.toString()
-
-            val models = if(modelsTable.containsKey(className)) modelsTable[className]
-                ?.let { LiteralExpr(it, STRINGTYPE) } else  null
-            val modeling = if(models != null) listOf(models) else listOf()
-
-            // Retrieve the params from the object
-            val params = mutableListOf<Expression>()
-            for (key in interpreter.heap.keys) {
-                if (key.literal == targetObj.literal) {
-                    val obj = interpreter.heap[key]
-                    if (obj != null) {
-                        for (entry in obj) {
-                            if (entry.key != "content") {
-                                params.add(LiteralExpr(entry.value.toString(), BaseType(entry.value.toString())))
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        return EvalResult(stackFrame, listOf(stackFrame))
-
-//        throw Exception("No valid state found for $className")
+        return replaceStmt(AssignStmt(target, target, declares = declares), stackFrame)
     }
 
     /**
