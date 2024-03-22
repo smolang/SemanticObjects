@@ -247,6 +247,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         if(ctx!!.text == "intToDouble") return Conversion.INTTODOUBLE
         if(ctx!!.text == "doubleToInt") return Conversion.DOUBLETOINT
         if(ctx!!.text == "doubleToString") return Conversion.DOUBLETOSTRING
+        if(ctx!!.text == "booleanToString") return Conversion.BOOLEANTOSTRING
         return Conversion.DOUBLETOSTRING
     }
 
