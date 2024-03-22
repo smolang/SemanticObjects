@@ -229,6 +229,9 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                     else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#int".toRegex()))
                         LiteralExpr(found.split("^^")[0], INTTYPE)
                     else if (objNameCand.matches("\\d+.\\d+".toRegex())) LiteralExpr(found, DOUBLETYPE)
+                    else if (objNameCand == "true" || objNameCand == "false") LiteralExpr(found, BOOLEANTYPE)
+                    else if (objNameCand.matches("(true|false)".toRegex()) || objNameCand.matches("(true|false)\\^\\^http://www.w3.org/2001/XMLSchema#boolean".toRegex()))
+                        LiteralExpr(found.split("^^")[0], BOOLEANTYPE)
                     else throw Exception("Query returned unknown object/literal: $found")
                 } else {
                     LiteralExpr(varObj.toString(), BaseType(varObj.toString()))
