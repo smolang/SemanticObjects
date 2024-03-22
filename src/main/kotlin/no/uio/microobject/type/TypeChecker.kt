@@ -1139,6 +1139,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     log("Expression intToString expects a double as a parameter.",eCtx)
                     return STRINGTYPE
                 }
+                if(eCtx!!.conversion().text == "booleanToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == BOOLEANTYPE) return STRINGTYPE
+                    log("Expression booleanToString expects a boolean as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
                 log("Unknown conversion.",eCtx)
                 return ERRORTYPE
             }
