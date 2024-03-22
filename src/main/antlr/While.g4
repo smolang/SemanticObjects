@@ -76,6 +76,7 @@ NOT : '!';
 //Keywords: conversions
 INTTOSTRING :    'intToString';
 DOUBLETOSTRING : 'doubleToString';
+BOOLEANTOSTRING: 'booleanToString';
 INTTODOUBLE : 'intToDouble';
 DOUBLETOINT : 'doubleToInt';
 
@@ -201,4 +202,4 @@ fieldDeclInit : (hidden=HIDE | domain=DOMAIN)? type NAME ASS expression SEMI;
 fieldDeclInitList : fieldDeclInit fieldDeclInit*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
-conversion: INTTOSTRING | DOUBLETOSTRING | INTTODOUBLE | DOUBLETOINT;
+conversion: INTTOSTRING | DOUBLETOSTRING | BOOLEANTOSTRING | INTTODOUBLE | DOUBLETOINT;
