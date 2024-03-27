@@ -2,16 +2,14 @@ package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
 import no.uio.microobject.ast.Expression
-import no.uio.microobject.ast.Names
 import no.uio.microobject.ast.Statement
 import no.uio.microobject.ast.expr.LiteralExpr
-import no.uio.microobject.runtime.EvalResult
-import no.uio.microobject.runtime.Interpreter
-import no.uio.microobject.runtime.Memory
-import no.uio.microobject.runtime.StackEntry
+import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.query.QuerySolution
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLNamedIndividual
 import org.semanticweb.owlapi.reasoner.NodeSet
 
@@ -52,7 +50,6 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @return The result of the evaluation
      * @throws Exception If the class is unknown
      * @throws Exception If the query type is invalid
-     * @throws Exception If no valid subclass is found for className
      */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val newMemory: Memory = mutableMapOf()
@@ -82,20 +79,15 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                         // check if pair.second is not an empty string
                         if (pair.second == "") {
-                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                            val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter)
 
-                            // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(targetObj)) {
-                                interpreter.heap.remove(targetObj)
-                            }
-
-                            return stmt
+                            return newElement.let { AssignStmt(target, it, declares = declares) }
+                                .let { replaceStmt(it, stackFrame) }
                         } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
 
-                            if (stmt != null) {
-                                return stmt
-                            }
+                            return newElement?.let { AssignStmt(target, it, declares = declares) }
+                                ?.let { replaceStmt(it, stackFrame) }!!
                         }
                     }
                 } else if (query.startsWith("SELECT") || query.startsWith("select") || query.startsWith("Select")) {
@@ -113,13 +105,15 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val params = mutableListOf<Expression>()
                             processQueryResult(result, interpreter, newMemory, params)
 
-                            return createStmtAndFreeMemory(target, key, params, declares, modeling, targetObj, interpreter, stackFrame)
-                        } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
+                            val newElement = reclassify(targetObj, key, className, params, modeling, interpreter)
 
-                            if (stmt != null) {
-                                return stmt
-                            }
+                            return newElement.let { AssignStmt(target, it, declares = declares) }
+                                .let { replaceStmt(it, stackFrame) }
+                        } else {
+                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
+
+                            return newElement?.let { AssignStmt(target, it, declares = declares) }
+                                ?.let { replaceStmt(it, stackFrame) }!!
                         }
                     }
                 } else {
@@ -127,24 +121,24 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                     val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
                     if (!res.isEmpty) {
-                        val models = if(modelsTable.containsKey(key)) modelsTable[key]
-                            ?.let { LiteralExpr(it, STRINGTYPE) } else  null
-                        val modeling = if(models != null) listOf(models) else listOf()
+                        val prefix = interpreter.settings.prefixMap()
+                        val factory = OWLManager.createOWLOntologyManager().owlDataFactory
+                        val namedIndividual: OWLNamedIndividual = factory.getOWLNamedIndividual(IRI.create(prefix["run"] + contextObj.literal))
+                        if (res.containsEntity(namedIndividual)) {
+                            val models = if(modelsTable.containsKey(key)) modelsTable[key]
+                                ?.let { LiteralExpr(it, STRINGTYPE) } else  null
+                            val modeling = if(models != null) listOf(models) else listOf()
 
-                        if (pair.second == "") {
-                            val stmt = replaceStmt(CreateStmt(target, key, listOf(), declares = declares, modeling = modeling), stackFrame)
+                            if (pair.second == "") {
+                                val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter)
 
-                            // Remove the old object from the heap
-                            if (interpreter.heap.containsKey(targetObj)) {
-                                interpreter.heap.remove(targetObj)
-                            }
+                                return newElement.let { AssignStmt(target, it, declares = declares) }
+                                    .let { replaceStmt(it, stackFrame) }
+                            } else {
+                                val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
 
-                            return stmt
-                        } else {
-                            val stmt = processQueryAndCreateStmt(pair.second, targetObj, contextObj, className, target, key, declares, modeling, interpreter, newMemory, stackFrame)
-
-                            if (stmt != null) {
-                                return stmt
+                                return newElement?.let { AssignStmt(target, it, declares = declares) }
+                                    ?.let { replaceStmt(it, stackFrame) }!!
                             }
                         }
                     }
@@ -244,55 +238,110 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
     }
 
     /**
-     * Creates a new statement and frees the old object from the heap
+     * Reclassifies the object to a new class
      *
-     * @param target The target location
-     * @param key The key of the new object
-     * @param params The parameters to create the new object
-     * @param declares The type of the object
-     * @param modeling The modeling of the object
-     * @param id The id of the object
+     * The function reclassifies the object to a new class. The function will remove all the fields that are not in the
+     * parent class and add the new fields to the current state. The function will also change the object in the heap
+     * and remove the old object from the heap.
+     *
+     * @param target The target object to reclassify
+     * @param newClass The new class name
+     * @param parentClass The parent class name
+     * @param params The list of parameters that will be used to create the new object
+     * @param modeling The list of models for the new object
      * @param interpreter The interpreter
-     * @param stackFrame The current stack frame
-     * @return The result of the evaluation
+     * @return The new object
+     * @throws Exception If the target object is not in the heap
      */
-    private fun createStmtAndFreeMemory(target: Location, key: String, params: MutableList<Expression>, declares: Type?, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, stackFrame: StackEntry): EvalResult {
-        val stmt = replaceStmt(CreateStmt(target, key, params, declares = declares, modeling = modeling), stackFrame)
-
-        // Remove the old object from the heap
-        if (interpreter.heap.containsKey(id)) {
-            interpreter.heap.remove(id)
+    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter) : LiteralExpr {
+        if (!interpreter.heap.containsKey(target)) {
+            throw Exception("The target object is not in the heap: $target")
         }
 
-        return stmt
+        val currentState = interpreter.heap[target]
+
+        // Remove from the current element all the fields that are not in the parent class
+        for (field in interpreter.staticInfo.fieldTable[parentClass]!!) {
+            if (!currentState!!.containsKey(field.name)) {
+                currentState.remove(field.name)
+            }
+        }
+
+        // Add the new fields to the current state
+        var i : Int = 0
+        for (field in interpreter.staticInfo.fieldTable[newClass]!!) {
+            if (!currentState!!.containsKey(field.name)) {
+                if (i < params.size && params[i] is LiteralExpr) {
+                    currentState[field.name] = params[i] as LiteralExpr
+                    i += 1
+                }
+            }
+        }
+
+        if (currentState!!.containsKey("__describe") and modeling.isNotEmpty()) {
+            currentState["__describe"] = modeling[0] as LiteralExpr
+        } else {
+            currentState["__describe"] = LiteralExpr("", STRINGTYPE)
+        }
+
+        val newTarget = LiteralExpr(target.literal, BaseType(newClass))
+
+        interpreter.heap[newTarget] = currentState
+        interpreter.heap.remove(target)
+
+        for( mem in interpreter.heap.values ){
+            var rem :String? = null
+            for( kv in mem ){
+                if (kv.value == target) {
+                    rem = kv.key
+                    break
+                }
+            }
+            if(rem != null) mem[rem] = newTarget
+        }
+        for( entry in interpreter.stack ){
+            var rem :String? = null
+            for( kv in entry.store ){
+                if (kv.value == target) {
+                    rem = kv.key
+                    break
+                }
+            }
+            if(rem != null) entry.store[rem] = newTarget
+        }
+
+        return newTarget
     }
 
     /**
-     * Processes the query and creates a statement
+     * Processes the statement
      *
-     * @param query The query to process
+     * The function processes the statement by modifying the query, executing the query, and reclassifying the object to
+     * the new class. The function will return the new object if the query returns some useful data (either true or a
+     * result), otherwise, it will return null.
+     *
+     * @param query The query to execute
+     * @param contextId The id of the superclass
+     * @param target The target object to reclassify
+     * @param newClass The new class name
+     * @param parentClass The parent class name
+     * @param params The list of parameters that will be used to create the new object
+     * @param modeling The list of models for the new object
      * @param id The id of the object
-     * @param contextId The id of the context
-     * @param className The name of the class
-     * @param target The target location
-     * @param key The key of the new object
-     * @param declares The type of the object
-     * @param modeling The modeling of the object
      * @param interpreter The interpreter
      * @param newMemory The new memory
-     * @return The result of the evaluation
+     * @return The new object if the query returns some useful data, otherwise null
      */
-    private fun processQueryAndCreateStmt(query: String, id: LiteralExpr, contextId: LiteralExpr, className: String, target: Location, key: String, declares: Type?, modeling: List<Expression>, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): EvalResult? {
+    private fun processStmt(query: String, contextId: LiteralExpr, target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory): LiteralExpr? {
         val newQuery = modifyQuery(query, id, contextId, className)
         val queryRes = interpreter.query(newQuery)
         if (queryRes != null && queryRes.hasNext()) {
             val result = queryRes.next()
 
             // Transform the result to a List<Expression>
-            val params = mutableListOf<Expression>()
             processQueryResult(result, interpreter, newMemory, params)
 
-            return createStmtAndFreeMemory(target, key, params, declares, modeling, id, interpreter, stackFrame)
+            return reclassify(target, newClass, parentClass, params, modeling, interpreter)
         }
         return null
     }
