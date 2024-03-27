@@ -79,12 +79,12 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
 
                         // check if pair.second is not an empty string
                         if (pair.second == "") {
-                            val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter)
+                            val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
                             return newElement.let { AssignStmt(target, it, declares = declares) }
                                 .let { replaceStmt(it, stackFrame) }
                         } else {
-                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
+                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
                             return newElement?.let { AssignStmt(target, it, declares = declares) }
                                 ?.let { replaceStmt(it, stackFrame) }!!
@@ -105,12 +105,12 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val params = mutableListOf<Expression>()
                             processQueryResult(result, interpreter, newMemory, params)
 
-                            val newElement = reclassify(targetObj, key, className, params, modeling, interpreter)
+                            val newElement = reclassify(targetObj, key, className, params, modeling, interpreter, stackFrame)
 
                             return newElement.let { AssignStmt(target, it, declares = declares) }
                                 .let { replaceStmt(it, stackFrame) }
                         } else {
-                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
+                            val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
                             return newElement?.let { AssignStmt(target, it, declares = declares) }
                                 ?.let { replaceStmt(it, stackFrame) }!!
@@ -130,12 +130,12 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
                             val modeling = if(models != null) listOf(models) else listOf()
 
                             if (pair.second == "") {
-                                val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter)
+                                val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
                                 return newElement.let { AssignStmt(target, it, declares = declares) }
                                     .let { replaceStmt(it, stackFrame) }
                             } else {
-                                val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory)
+                                val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
                                 return newElement?.let { AssignStmt(target, it, declares = declares) }
                                     ?.let { replaceStmt(it, stackFrame) }!!
@@ -253,7 +253,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @return The new object
      * @throws Exception If the target object is not in the heap
      */
-    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter) : LiteralExpr {
+    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter, stackFrame: StackEntry) : LiteralExpr {
         if (!interpreter.heap.containsKey(target)) {
             throw Exception("The target object is not in the heap: $target")
         }
@@ -278,10 +278,13 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             }
         }
 
-        if (currentState!!.containsKey("__describe") and modeling.isNotEmpty()) {
-            currentState["__describe"] = modeling[0] as LiteralExpr
-        } else {
-            currentState["__describe"] = LiteralExpr("", STRINGTYPE)
+        if (currentState!!.containsKey("__describe")) {
+            if(modeling.isNotEmpty()) {
+                val rdfName = Names.getNodeName()
+                currentState["__models"] = LiteralExpr(rdfName, STRINGTYPE)
+                val evals = modeling.map { rdfName + " " + interpreter.eval(it, stackFrame).literal.removeSurrounding("\"") }
+                currentState["__describe"] = LiteralExpr(evals.joinToString(" "), STRINGTYPE)
+            }
         }
 
         val newTarget = LiteralExpr(target.literal, BaseType(newClass))
@@ -332,7 +335,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @param newMemory The new memory
      * @return The new object if the query returns some useful data, otherwise null
      */
-    private fun processStmt(query: String, contextId: LiteralExpr, target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory): LiteralExpr? {
+    private fun processStmt(query: String, contextId: LiteralExpr, target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): LiteralExpr? {
         val newQuery = modifyQuery(query, id, contextId, className)
         val queryRes = interpreter.query(newQuery)
         if (queryRes != null && queryRes.hasNext()) {
@@ -341,7 +344,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             // Transform the result to a List<Expression>
             processQueryResult(result, interpreter, newMemory, params)
 
-            return reclassify(target, newClass, parentClass, params, modeling, interpreter)
+            return reclassify(target, newClass, parentClass, params, modeling, interpreter, stackFrame)
         }
         return null
     }
