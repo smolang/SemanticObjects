@@ -16,22 +16,53 @@ import org.semanticweb.owlapi.model.IRI
 import org.semanticweb.owlapi.model.OWLNamedIndividual
 import org.semanticweb.owlapi.reasoner.NodeSet
 
-data class ClassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+/**
+ * Classify statement
+ *
+ * The classify statement is used to reclassify an object to a new class. The statement will check if the target and the
+ * context object are the same. If they are not the same, the function will create a new memory object and check if the
+ * target is a subclass of the className. If the target is a subclass of the className, the function will create a new
+ * statement and free the old object from the heap. If the target is not a subclass of the className, the function will
+ * call the ReclassifyStmt to reclassify the object.
+ *
+ * @property target The target location
+ * @property contextObject The container object
+ * @property className The name of the class
+ * @property staticTable The static table
+ * @property modelsTable The models table
+ * @property declares The type of the object
+ * @constructor Creates a classify statement
+ * @see ReclassifyStmt
+ */
+data class ClassifyStmt(val target: Location, val contextObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
     override fun toString(): String = "Reclassify to a $className"
 
     override fun getRDF(): String {
         return "prog:stmt${this.hashCode()} rdf:type smol:ReclassifyStatement.\n"
     }
 
+    /**
+     * Evaluates the classify statement
+     *
+     * The function will check if the target and the contextObj are the same. If they are not the same, the function will
+     * create a new memory object and check if the target is a subclass of the className. If the target is a subclass of
+     * the className, the function will create a new statement and free the old object from the heap. If the target is
+     * not a subclass of the className, the function will call the ReclassifyStmt to reclassify the object.
+     *
+     * @param heapObj The heap object
+     * @param stackFrame The current stack frame
+     * @param interpreter The interpreter
+     * @return The result of the evaluation
+     */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         // check if the targt and the oldState are the same
         val targetName = target.toString()
-        val contextName = containerObject.toString()
+        val contextName = contextObject.toString()
         if (targetName != contextName) {
             val newMemory: Memory = mutableMapOf()
 
             val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
-            val contextObj: LiteralExpr = interpreter.eval(containerObject, stackFrame)
+            val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
             for ((key, pair) in staticTable) {
                 // Check if key is a subclass of className
@@ -137,7 +168,7 @@ data class ClassifyStmt(val target: Location, val containerObject: Expression, v
                 }
             }
         }
-        return ReclassifyStmt(target, containerObject, className, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
+        return ReclassifyStmt(target, contextObject, className, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
     }
 
     /**
