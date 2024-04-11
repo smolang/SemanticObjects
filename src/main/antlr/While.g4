@@ -130,7 +130,7 @@ classifies_block : CLASSIFIES owldescription=STRING (COMMA selectquery=STRING)? 
              ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
-            | (declType = type)? target=expression ASS CLASSIFY OPARAN expression COMMA NAME CPARAN SEMI                                                # classify_statement
+            | ((declType = type)? target=expression ASS)? CLASSIFY OPARAN context=expression COMMA NAME CPARAN SEMI                                     # classify_statement
 			| RECLASSIFY OPARAN expression COMMA expression COMMA NAME CPARAN SEMI                                                                      # reclassify_statement
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
