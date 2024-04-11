@@ -669,21 +669,17 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Classify_statementContext -> {
-                val firstType = getType(ctx.expression(0), inner, vars, thisType, inRule)
-                val secondType = getType(ctx.expression(1), inner, vars, thisType, inRule)
+                val secondType = getType(ctx.context, inner, vars, thisType, inRule)
                 val thirdType = BaseType(ctx.NAME().text)
 
-                if (firstType == ERRORTYPE) {
-                    log("The first argument of the Reclassify statement must not be null", ctx)
-                }
                 if (secondType == ERRORTYPE) {
-                    log("The second argument of the Reclassify statement must not be null", ctx)
+                    log("The first argument of the Classify statement must not be null", ctx)
                 }
                 if (thirdType == ERRORTYPE) {
-                    log("The third argument of the Reclassify statement must not be null", ctx)
+                    log("The second argument of the Classify statement must not be null", ctx)
                 }
                 if (thirdType.getPrimary().getNameString() !in classes) {
-                    log("The third argument of the Reclassify statement must be an existing class", ctx)
+                    log("The second argument of the Classify statement must be an existing class", ctx)
                 }
             }
             is WhileParser.Reclassify_statementContext -> {
