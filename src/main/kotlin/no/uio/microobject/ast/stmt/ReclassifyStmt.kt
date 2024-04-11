@@ -22,13 +22,13 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  * If the query returns some useful data (either true or a result), the object is reclassified to the new class.
  *
  * @property target The target location to reclassify
- * @property containerObject The class that contains the object. It can be the same as the target or a superclass
+ * @property contextObject The class that contains the object. It can be the same as the target or a superclass
  * @property className The superclass name. This is needed to check that the reclassification is valid for subclasses
  * @property staticTable The static table containing the class name and the query to check which state is the new one
  * @property modelsTable The models table containing the class name and the models for that class
  * @property declares The type of the object
  */
-data class ReclassifyStmt(val target: Location, val containerObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+data class ReclassifyStmt(val target: Location, val contextObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
 
     override fun toString(): String = "Reclassify to a $className"
 
@@ -55,7 +55,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
         val newMemory: Memory = mutableMapOf()
 
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
-        val contextObj: LiteralExpr = interpreter.eval(containerObject, stackFrame)
+        val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
         for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
@@ -171,16 +171,16 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * Modifies the query to replace the %this and %context with the actual literals
      *
      * @param query The query to modify
-     * @param id The id of the object
+     * @param targetId The id of the object
      * @param contextId The id of the superclass
      * @param className The name of the class
      * @return The modified query
      */
-    private fun modifyQuery(query: String, id: LiteralExpr, contextId: LiteralExpr, className: String): String {
+    private fun modifyQuery(query: String, targetId: LiteralExpr, contextId: LiteralExpr, className: String): String {
         return query
             .removePrefix("\"")
             .removeSuffix("\"")
-            .replace("%this", "run:${id.literal}")
+            .replace("%this", "run:${targetId.literal}")
             .replace("%context", "run:${contextId.literal}")
             .replace("%parent", "prog:${className}")
     }
@@ -325,7 +325,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      *
      * @param query The query to execute
      * @param contextId The id of the superclass
-     * @param target The target object to reclassify
+     * @param targetId The target object to reclassify
      * @param newClass The new class name
      * @param parentClass The parent class name
      * @param params The list of parameters that will be used to create the new object
@@ -335,7 +335,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
      * @param newMemory The new memory
      * @return The new object if the query returns some useful data, otherwise null
      */
-    private fun processStmt(query: String, contextId: LiteralExpr, target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): LiteralExpr? {
+    private fun processStmt(query: String, contextId: LiteralExpr, targetId: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): LiteralExpr? {
         val newQuery = modifyQuery(query, id, contextId, className)
         val queryRes = interpreter.query(newQuery)
         if (queryRes != null && queryRes.hasNext()) {
@@ -344,7 +344,7 @@ data class ReclassifyStmt(val target: Location, val containerObject: Expression,
             // Transform the result to a List<Expression>
             processQueryResult(result, interpreter, newMemory, params)
 
-            return reclassify(target, newClass, parentClass, params, modeling, interpreter, stackFrame)
+            return reclassify(targetId, newClass, parentClass, params, modeling, interpreter, stackFrame)
         }
         return null
     }
