@@ -303,17 +303,26 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      * @return the object corresponding to the result of the query
      */
     override fun visitClassify_statement(ctx: Classify_statementContext): ProgramElement {
-        val target = visit(ctx.target) as Location
-        val containerObject = visit(ctx.expression(1)) as Expression
+        val contextObject = visit(ctx.context) as Expression
         val className = ctx.NAME().text
         val classType = BaseType(className)
 
-        return ReclassifyStmt(target,
-            containerObject,
-            className,
-            staticTable = classifiesTable,
-            modelsTable = owldescr,
-            classType)
+        if (ctx.target != null) {
+            val target = visit(ctx.target) as Location
+            return ClassifyStmt(target,
+                contextObject,
+                className,
+                staticTable = classifiesTable,
+                modelsTable = owldescr,
+                classType)
+        } else {
+            return ClassifyStmt(contextObject as Location,
+                contextObject,
+                className,
+                staticTable = classifiesTable,
+                modelsTable = owldescr,
+                classType)
+        }
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {
