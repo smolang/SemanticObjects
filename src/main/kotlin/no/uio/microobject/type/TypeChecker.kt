@@ -683,16 +683,16 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
             }
             is WhileParser.Reclassify_statementContext -> {
-                val firstType = getType(ctx.expression(0), inner, vars, thisType, inRule)
-                val secondType = getType(ctx.expression(1), inner, vars, thisType, inRule)
+                val firstType = getType(ctx.reclassifier, inner, vars, thisType, inRule)
+//                val secondType = getType(ctx.context, inner, vars, thisType, inRule)
                 val thirdType = BaseType(ctx.NAME().text)
 
                 if (firstType == ERRORTYPE) {
                     log("The first argument of the Reclassify statement must not be null", ctx)
                 }
-                if (secondType == ERRORTYPE) {
-                    log("The second argument of the Reclassify statement must not be null", ctx)
-                }
+//                if (secondType == ERRORTYPE) {
+//                    log("The second argument of the Reclassify statement must not be null", ctx)
+//                }
                 if (thirdType == ERRORTYPE) {
                     log("The third argument of the Reclassify statement must not be null", ctx)
                 }
