@@ -283,13 +283,22 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      * @return the object corresponding to the result of the query
      */
     override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
-        val target = visit(ctx.expression(0)) as Location
-        val containerObject = visit(ctx.expression(1)) as Expression
+        val target = visit(ctx.reclassifier) as Location
         val className = ctx.NAME().text
         val classType = BaseType(className)
 
+        if (ctx.context != null) {
+            val containerObject = visit(ctx.context) as Expression
+            return ReclassifyStmt(target,
+                containerObject,
+                className,
+                staticTable = classifiesTable,
+                modelsTable = owldescr,
+                classType)
+        }
+
         return ReclassifyStmt(target,
-            containerObject,
+            target,
             className,
             staticTable = classifiesTable,
             modelsTable = owldescr,
