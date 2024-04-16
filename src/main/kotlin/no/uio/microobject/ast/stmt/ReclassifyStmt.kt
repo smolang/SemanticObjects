@@ -259,11 +259,15 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
         }
 
         val currentState = interpreter.heap[target]
+        val parentState = interpreter.staticInfo.fieldTable[parentClass]
 
         // Remove from the current element all the fields that are not in the parent class
-        for (field in interpreter.staticInfo.fieldTable[parentClass]!!) {
-            if (!currentState!!.containsKey(field.name)) {
-                currentState.remove(field.name)
+        for (field in currentState!!) {
+            // The parent class has the field as field.name, we need to check the key field with that
+            if (!parentState!!.any { it.name == field.key }) {
+                // __describe and __models are not in the fieldTable, so we need to ensure not to wrongly remove those
+                if (field.key != "__models" && field.key != "__describe")
+                    currentState.remove(field.key)
             }
         }
 
