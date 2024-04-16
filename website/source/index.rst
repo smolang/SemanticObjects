@@ -2,9 +2,10 @@
    sphinx-quickstart on Wed Mar  2 16:05:25 2022.
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
+Semantic Micro Object Language
+==============================
 
-The SMOL Language
-*****************
+.. figure:: /images/SMOL_Logo_transparent.png
 
 SMOL is an imperative, object-oriented research language. SMOL integrates
 semantic web technologies and numerical simulation blocks, and can serve as a

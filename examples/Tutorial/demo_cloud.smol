@@ -2,51 +2,51 @@
 
 class Task(String name) end
 
-class Server(List<Task> taskList)
+class Server(ExplList<Task> taskList)
     Task excessive()
         Task ret = this.taskList.content;
         this.taskList = this.taskList.next;
         return ret;
     end
     Int add(Task task)
-        this.taskList = new List<Task>(task, this.taskList);
+        this.taskList = new ExplList<Task>(task, this.taskList);
         return 0;
     end
 end
-class Scheduler(List<Server> serverList)
+class Scheduler(ExplList<Server> serverList)
     Int reschedule()
         List<Server> over = access("SELECT ?obj WHERE{?obj a domain:Overloaded }");
         //breakpoint;
-        List<Task> tasks = this.collectExcessiveTasks(over);
+        ExplList<Task> tasks = this.collectExcessiveTasks(over);
         //breakpoint;
         tasks = this.rescheduleTasks(tasks, over);
         //breakpoint;
         while tasks != null do
-            List<Task> l = new List<Task>(tasks.content, null);
+            ExplList<Task> l = new ExplList<Task>(tasks.content, null);
             Server n = new Server(l);
-            this.serverList = new List<Server>(n, this.serverList);
+            this.serverList = new ExplList<Server>(n, this.serverList);
             tasks = tasks.next;
         end
         return 0;
     end
 
-    List<Task> collectExcessiveTasks(List<Server> overloaded)
-       List<Server> plats = this.serverList;
-       List<Task> exc = null;
+    ExplList<Task> collectExcessiveTasks(List<Server> overloaded)
+       ExplList<Server> plats = this.serverList;
+       ExplList<Task> exc = null;
        while plats != null do
             Boolean b = overloaded.contains(plats.content);
             //breakpoint;
             if b then
                 Task localExc = plats.content.excessive();
-                exc = new List<Task>(localExc, exc);
+                exc = new ExplList<Task>(localExc, exc);
             end
             plats = plats.next;
        end
        return exc;
     end
 
-    List<Task> rescheduleTasks(List<Task> tasks, List<Server> overloaded)
-       List<Server> plats = this.serverList;
+    ExplList<Task> rescheduleTasks(ExplList<Task> tasks, List<Server> overloaded)
+       ExplList<Server> plats = this.serverList;
        while plats != null do
             Boolean b = overloaded.contains(plats.content);
             if b then
@@ -70,20 +70,20 @@ main
     Task task5 = new Task("t5");
     Task task6 = new Task("t6");
 
-    List<Task> l1 = new List<Task>(task1, null);
-    List<Task> l2 = new List<Task>(task2, null);
-    List<Task> l3 = new List<Task>(task3, l2);
-    List<Task> l4 = new List<Task>(task4, null);
-    List<Task> l5 = new List<Task>(task5, l4);
-    List<Task> l6 = new List<Task>(task6, l5);
+    ExplList<Task> l1 = new ExplList<Task>(task1, null);
+    ExplList<Task> l2 = new ExplList<Task>(task2, null);
+    ExplList<Task> l3 = new ExplList<Task>(task3, l2);
+    ExplList<Task> l4 = new ExplList<Task>(task4, null);
+    ExplList<Task> l5 = new ExplList<Task>(task5, l4);
+    ExplList<Task> l6 = new ExplList<Task>(task6, l5);
 
     Server dummy = new Server(null);
     Server server1 = new Server(l1);
     Server server2 = new Server(l3);
     Server server3 = new Server(l6);
-    List<Server> sl1 = new List<Server>(server3, null);
-    List<Server> sl2 = new List<Server>(server2, sl1);
-    List<Server> sl3 = new List<Server>(server1, sl2);
+    ExplList<Server> sl1 = new ExplList<Server>(server3, null);
+    ExplList<Server> sl2 = new ExplList<Server>(server2, sl1);
+    ExplList<Server> sl3 = new ExplList<Server>(server1, sl2);
 
     Scheduler sch = new Scheduler(sl3);
     //breakpoint;
