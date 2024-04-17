@@ -194,6 +194,45 @@ A ``rule`` method is not allowed to have side-effects (except exceptions), the f
 * It cannot write into any fields.
 
 
+.. _classification:
+
+Classification and reclassification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The classification and reclassification of the objects is done using the information from the `classifies` top-level expression. It can accept either one or two query, of which the first of the type
+
+* ``select`` query, used to retrieve information about the object that is about to be classified/reclassified.
+* ``ask`` query, used to enquire whether the object should be classified or not.
+* ``owl`` query in *manchester* syntax, used to enquire whether the object should be classified or not.
+
+For the second query, if present, the type required is a ``select`` query to retrieve the information about the object that is about to be classified/reclassified. This process is done, in case of ``ask`` or ``owl`` query, to also retrieve information used to add to the new classes that is getting classified/reclassified into.
+The second query is not necessary if the new class do not have any parameter, as it is not needed to retrieve any information.
+
+Classification
+"""""""""""""
+
+The classification process is handled using the statement `classify` that takes the following as parameters:
+
+::
+
+    ((Type Identifier)? Target =)? 'classify' '(' Context ',' Superclass ')' ';'
+
+
+In case the target is specified, the process will create a new object that will be assigned to the target. If the target is not specified, the process will reclassify the object specified by `Context`.
+This double usage is needed in cases in which the element that is going to be classified is a subset of the context and needs to be created during the classification process.
+
+Reclassification
+"""""""""""""""
+
+The reclassification process is handled using the statement `reclassify` that takes the following as parameters:
+
+::
+
+    'reclassify' '(' Reclassifer ','  (Context ',')? Superclass ')' ';'
+
+
+The context is used to retrieve the information about the object that is being reclassified, and it is needed when the reclassifier is a subset of the context. Otherwise, the other two parameters are enough, albeit it is still possible to invoke the function passing all three parameters, specifying `Reclassifier` and `Context` with the same entity.
+
 Query Access
 ^^^^^^^^^^^^
 
