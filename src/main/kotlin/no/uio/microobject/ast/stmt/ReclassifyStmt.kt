@@ -260,9 +260,10 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
 
         val currentState = interpreter.heap[target]
         val parentState = interpreter.staticInfo.fieldTable[parentClass]
+        val concurrentCurrentState = currentState!!.toMutableMap() // to avoid touching the base memory when removing fields
 
         // Remove from the current element all the fields that are not in the parent class
-        for (field in currentState!!) {
+        for (field in concurrentCurrentState) {
             // The parent class has the field as field.name, we need to check the key field with that
             if (!parentState!!.any { it.name == field.key }) {
                 // __describe and __models are not in the fieldTable, so we need to ensure not to wrongly remove those
@@ -274,7 +275,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
         // Add the new fields to the current state
         var i : Int = 0
         for (field in interpreter.staticInfo.fieldTable[newClass]!!) {
-            if (!currentState!!.containsKey(field.name)) {
+            if (!currentState.containsKey(field.name)) {
                 if (i < params.size && params[i] is LiteralExpr) {
                     currentState[field.name] = params[i] as LiteralExpr
                     i += 1
@@ -282,7 +283,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
             }
         }
 
-        if (currentState!!.containsKey("__describe")) {
+        if (currentState.containsKey("__describe")) {
             if(modeling.isNotEmpty()) {
                 val rdfName = Names.getNodeName()
                 currentState["__models"] = LiteralExpr(rdfName, STRINGTYPE)
