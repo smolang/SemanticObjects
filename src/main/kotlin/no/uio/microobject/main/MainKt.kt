@@ -50,6 +50,11 @@ data class Settings(var verbose : Boolean,      //Verbosity
         return prefixMapCache as HashMap<String, String>
     }
 
+    fun addPrefixes(prefixes: HashMap<String, String>){
+        prefixMapCache = null
+        extraPrefixes.putAll(prefixes)
+    }
+
     fun replaceKnownPrefixes(string: String) : String{
         var res = string.replace("domain:", "$domainPrefix:")
             .replace("prog:", "$progPrefix:")
