@@ -71,7 +71,7 @@ class Interpreter(
     //evaluates a call on cl.nm on thisVar
     //Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
     //First return value is the created object, the second the return value
-    fun evalCall(objName: String, className: String, metName: String): Pair<LiteralExpr, LiteralExpr> {
+    fun evalCall(objName: String, className: String, metName: String, params: Map<String, LiteralExpr> = mapOf()): Pair<LiteralExpr, LiteralExpr> {
         //Construct initial state
         val classStmt =
             staticInfo.methodTable[className]
@@ -84,6 +84,14 @@ class Interpreter(
             heap.keys.first { it.literal == objName }.tag //retrieve real class, because rule methods can be inheritated
         )
         mem["this"] = obj
+
+        // Add parameters to memory
+        if (params.isNotEmpty()) {
+            for ((paramName, paramExpr) in params) {
+                mem[paramName] = paramExpr
+            }
+        }
+
         val myId = Names.getStackId()
         val se = StackEntry(met.stmt, mem, obj, myId)
         stack.push(se)
