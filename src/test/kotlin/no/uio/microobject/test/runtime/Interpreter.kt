@@ -24,10 +24,23 @@ class Interpreter : MicroObjectTest() {
         person.size shouldBe 2
     }
 
+    private fun evalParamsTest() {
+        val (interpreter, _) = initInterpreter("eval-params", StringLoad.RES)
+        executeUntilBreak(interpreter)
+
+        interpreter.evalCall(interpreter.getObjectNames("A")[0].toString(), "A", "setX", mapOf("newX" to LiteralExpr("1", BaseType("int"))))
+        val queryRes = interpreter.query("SELECT ?x WHERE { ?obj a prog:A ; prog:A_x ?x }")
+        queryRes!!.hasNext() shouldBe true
+
+        val x = queryRes.next().get("x")
+        x.toString() shouldBe interpreter.settings.runPrefix + "1"
+    }
+
     init {
         "eval" {
             evalTest()
             getObjectNamesTest()
+            evalParamsTest()
         }
     }
 }
