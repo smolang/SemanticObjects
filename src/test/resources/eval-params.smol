@@ -1,0 +1,10 @@
+class A(Int x)
+    Unit setX(Int newX)
+        this.x = newX;
+    end
+end
+
+main
+    A a = new A(5);
+    breakpoint;
+end
