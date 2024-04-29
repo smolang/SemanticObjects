@@ -4,6 +4,8 @@ import io.kotest.matchers.shouldBe
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.test.MicroObjectTest
 import no.uio.microobject.type.*
+import org.apache.jena.rdf.model.impl.LiteralImpl
+import kotlin.test.assertEquals
 
 class Interpreter : MicroObjectTest() {
     private fun evalTest() {
@@ -28,12 +30,12 @@ class Interpreter : MicroObjectTest() {
         val (interpreter, _) = initInterpreter("eval-params", StringLoad.RES)
         executeUntilBreak(interpreter)
 
-        interpreter.evalCall(interpreter.getObjectNames("A")[0].toString(), "A", "setX", mapOf("newX" to LiteralExpr("1", BaseType("int"))))
-        val queryRes = interpreter.query("SELECT ?x WHERE { ?obj a prog:A ; prog:A_x ?x }")
+        interpreter.evalCall(interpreter.getObjectNames("A")[0].toString(), "A", "setX", mapOf("newX" to LiteralExpr("1", BaseType("Int"))))
+        val queryRes = interpreter.query("SELECT * WHERE { ?obj a prog:A . ?obj prog:A_x ?x }")
         queryRes!!.hasNext() shouldBe true
 
-        val x = queryRes.next().get("x")
-        x.toString() shouldBe interpreter.settings.runPrefix + "1"
+        val x = queryRes.next()
+        assertEquals(1, (x["x"] as LiteralImpl).int)
     }
 
     init {
