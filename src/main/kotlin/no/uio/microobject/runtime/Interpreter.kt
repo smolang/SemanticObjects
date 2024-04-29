@@ -68,9 +68,20 @@ class Interpreter(
     // TripleManager used to provide virtual triples etc.
     val tripleManager : TripleManager = TripleManager(settings, staticInfo, this)
 
-    //evaluates a call on cl.nm on thisVar
-    //Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
-    //First return value is the created object, the second the return value
+    /**
+     * Evaluates a call on a method of a class
+     *
+     * This method is used to evaluate a call on a method of a class. It constructs the initial state, adds the
+     * parameters to the memory, and runs the interpreter until the return value is reached.
+     * Must ONLY be called if nm is checked to have no side-effects (i.e., is rule)
+     *
+     * @param objName the name of the object
+     * @param className the name of the class
+     * @param metName the name of the method
+     * @param params the parameters of the method
+     * @return a pair of the created object and the return value
+     * @throws Exception if an error occurs during the generation of the builtin
+     */
     fun evalCall(objName: String, className: String, metName: String, params: Map<String, LiteralExpr> = mapOf()): Pair<LiteralExpr, LiteralExpr> {
         //Construct initial state
         val classStmt =
