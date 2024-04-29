@@ -78,7 +78,7 @@ class Interpreter(
      * @param objName the name of the object
      * @param className the name of the class
      * @param metName the name of the method
-     * @param params the parameters of the method
+     * @param params the parameters of the method. It must be structured as "paramName" to "paramValue" as a LiteralExpr as a map
      * @return a pair of the created object and the return value
      * @throws Exception if an error occurs during the generation of the builtin
      */
