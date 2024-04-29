@@ -30,7 +30,7 @@ class Interpreter : MicroObjectTest() {
         val (interpreter, _) = initInterpreter("eval-params", StringLoad.RES)
         executeUntilBreak(interpreter)
 
-        interpreter.evalCall(interpreter.getObjectNames("A")[0].toString(), "A", "setX", mapOf("newX" to LiteralExpr("1", BaseType("Int"))))
+        interpreter.evalCall(interpreter.getObjectNames("A")[0].toString(), "A", "setX", mapOf("newX" to LiteralExpr("1", INTTYPE)))
         val queryRes = interpreter.query("SELECT * WHERE { ?obj a prog:A . ?obj prog:A_x ?x }")
         queryRes!!.hasNext() shouldBe true
 
