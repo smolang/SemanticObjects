@@ -115,7 +115,7 @@ open class MicroObjectTest : StringSpec() {
         return Pair(interpreter, tC)
     }
 
-    protected fun initInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH) : Pair<Interpreter, TypeChecker> {
+    protected fun initInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH, extraPrefixes: HashMap<String, String> = hashMapOf()) : Pair<Interpreter, TypeChecker> {
         val ast = when(loadAs){
             StringLoad.STMT -> loadStatement(str)
             StringLoad.PRG -> loadString(str)
@@ -132,6 +132,9 @@ open class MicroObjectTest : StringSpec() {
         val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
 
+        if (extraPrefixes.isNotEmpty()) {
+            settings.addPrefixes(extraPrefixes)
+        }
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
 
