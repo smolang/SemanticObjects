@@ -22,7 +22,7 @@ COPY src/test/resources/tree_shapes.ttl /usr/local/src/smol
 WORKDIR /usr/local/src/smol
 
 # Download and copy the tar.gz file into the container
-ADD https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-5.0.0-rc1.zip /usr/local/src/smol
+ADD https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-5.0.0.zip /usr/local/src/smol
 
 # Extract the tar.gz file
 RUN unzip apache-jena-fuseki-5.0.0-rc1.zip
