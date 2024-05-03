@@ -1,0 +1,32 @@
+class A()
+models "a ast:C";
+    Unit printVal()
+        print("A");
+    end
+end
+
+class B extends A()
+models "a ast:A";
+classifies "ASK WHERE {
+  %this domain:models [a ast:B] .
+}";
+    override Unit printVal()
+        print("B");
+    end
+end
+
+class C extends A()
+models "a ast:B";
+classifies "<domain:models> some <ast:A>";
+    override Unit printVal()
+        print("C");
+    end
+end
+
+main
+    A a = new B();
+    classify(a, A);
+    reclassify(a, A);
+    breakpoint;
+    a.printVal();
+end
