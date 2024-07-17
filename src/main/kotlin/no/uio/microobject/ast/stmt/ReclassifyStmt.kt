@@ -81,8 +81,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
                         if (pair.second == "") {
                             val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
-                            return newElement.let { AssignStmt(target, it, declares = declares) }
-                                .let { replaceStmt(it, stackFrame) }
+                            return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
                             val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
@@ -107,8 +106,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
 
                             val newElement = reclassify(targetObj, key, className, params, modeling, interpreter, stackFrame)
 
-                            return newElement.let { AssignStmt(target, it, declares = declares) }
-                                .let { replaceStmt(it, stackFrame) }
+                            return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
                             val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
@@ -132,8 +130,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
                             if (pair.second == "") {
                                 val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
-                                return newElement.let { AssignStmt(target, it, declares = declares) }
-                                    .let { replaceStmt(it, stackFrame) }
+                                return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                             } else {
                                 val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
@@ -253,38 +250,23 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
      * @return The new object
      * @throws Exception If the target object is not in the heap
      */
-    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter, stackFrame: StackEntry) : LiteralExpr {
-        if (!interpreter.heap.containsKey(target)) {
-            throw Exception("The target object is not in the heap: $target")
-        }
+    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter, stackFrame: StackEntry): LiteralExpr {
+        val currentState = interpreter.heap[target] ?: throw Exception("The target object is not in the heap: $target")
+        val parentState = interpreter.staticInfo.fieldTable[parentClass] ?: throw Exception("Parent class $parentClass not found in field table")
 
-        val currentState = interpreter.heap[target]
-        val parentState = interpreter.staticInfo.fieldTable[parentClass]
-        val concurrentCurrentState = currentState!!.toMutableMap() // to avoid touching the base memory when removing fields
+        // Remove fields not in the parent class
+        currentState.keys.retainAll((parentState.map { it.name } + listOf("__models", "__describe")).toSet())
 
-        // Remove from the current element all the fields that are not in the parent class
-        for (field in concurrentCurrentState) {
-            // The parent class has the field as field.name, we need to check the key field with that
-            if (!parentState!!.any { it.name == field.key }) {
-                // __describe and __models are not in the fieldTable, so we need to ensure not to wrongly remove those
-                if (field.key != "__models" && field.key != "__describe")
-                    currentState.remove(field.key)
+        // Add new fields from the new class
+        interpreter.staticInfo.fieldTable[newClass]?.forEach { field ->
+            if (!currentState.containsKey(field.name) && params.isNotEmpty()) {
+                currentState[field.name] = params.removeAt(0) as LiteralExpr
             }
         }
 
-        // Add the new fields to the current state
-        var i : Int = 0
-        for (field in interpreter.staticInfo.fieldTable[newClass]!!) {
-            if (!currentState.containsKey(field.name)) {
-                if (i < params.size && params[i] is LiteralExpr) {
-                    currentState[field.name] = params[i] as LiteralExpr
-                    i += 1
-                }
-            }
-        }
-
-        if (currentState.containsKey("__describe")) {
-            if(modeling.isNotEmpty()) {
+        // Process __describe and __models if present
+        currentState["__describe"]?.let {
+            if (modeling.isNotEmpty()) {
                 val rdfName = Names.getNodeName()
                 currentState["__models"] = LiteralExpr(rdfName, STRINGTYPE)
                 val evals = modeling.map { rdfName + " " + interpreter.eval(it, stackFrame).literal.removeSurrounding("\"") }
@@ -293,29 +275,15 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
         }
 
         val newTarget = LiteralExpr(target.literal, BaseType(newClass))
-
         interpreter.heap[newTarget] = currentState
         interpreter.heap.remove(target)
 
-        for( mem in interpreter.heap.values ){
-            var rem :String? = null
-            for( kv in mem ){
-                if (kv.value == target) {
-                    rem = kv.key
-                    break
-                }
-            }
-            if(rem != null) mem[rem] = newTarget
+        // Update references in heap and stack
+        interpreter.heap.values.forEach { mem ->
+            mem.entries.find { it.value == target }?.setValue(newTarget)
         }
-        for( entry in interpreter.stack ){
-            var rem :String? = null
-            for( kv in entry.store ){
-                if (kv.value == target) {
-                    rem = kv.key
-                    break
-                }
-            }
-            if(rem != null) entry.store[rem] = newTarget
+        interpreter.stack.forEach { entry ->
+            entry.store.entries.find { it.value == target }?.setValue(newTarget)
         }
 
         return newTarget
