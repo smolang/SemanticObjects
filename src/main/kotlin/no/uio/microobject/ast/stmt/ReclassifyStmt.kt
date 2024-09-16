@@ -57,6 +57,8 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
         val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
+//        interpreter.tripleManager.checkClassifyQueries()
+
         for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
             if (isSubclassOf(key, className.toString(), interpreter)) {
@@ -117,7 +119,13 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
                 } else {
                     if(interpreter.settings.verbose) println("execute ISSA:\n $query")
 
-                    val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
+                    var queryToExecute = query
+
+                    if (!query.startsWith("<domain:models>")) {
+                        queryToExecute = "<domain:models> some $query"
+                    }
+
+                    val res : NodeSet<OWLNamedIndividual> = interpreter.owlQuery(queryToExecute)
                     if (!res.isEmpty) {
                         val prefix = interpreter.settings.prefixMap()
                         val factory = OWLManager.createOWLOntologyManager().owlDataFactory
@@ -275,8 +283,9 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
         }
 
         val newTarget = LiteralExpr(target.literal, BaseType(newClass))
-        interpreter.heap[newTarget] = currentState
         interpreter.heap.remove(target)
+        interpreter.heap[newTarget] = currentState
+
 
         // Update references in heap and stack
         interpreter.heap.values.forEach { mem ->
