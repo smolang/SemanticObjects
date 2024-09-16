@@ -192,6 +192,18 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
         val name = clCtx.className.text
 
+        // check if we have classifies_block
+        if(clCtx.classifies_block() != null) {
+            // if we have the classifies_block ensure that all parameters are hidden
+            if (clCtx.external != null) {
+                for (param in clCtx.external.fieldDecl()) {
+                    if (param.HIDE() == null) {
+                        log("Class $name has a classifies block, but parameter ${param.NAME().text} is not hidden.", param)
+                    }
+                }
+            }
+        }
+
 
         //Check extends: class must exist and not *also* be generic
         if (clCtx.superType != null) {
