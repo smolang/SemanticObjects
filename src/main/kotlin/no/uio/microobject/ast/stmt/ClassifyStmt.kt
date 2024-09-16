@@ -135,7 +135,13 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                     } else {
                         if (interpreter.settings.verbose) println("execute ISSA:\n $query")
 
-                        val res: NodeSet<OWLNamedIndividual> = interpreter.owlQuery(query)
+                        var queryToExecute = query
+
+                        if (!query.startsWith("<domain:models>")) {
+                            queryToExecute = "<domain:models> some $query"
+                        }
+
+                        val res: NodeSet<OWLNamedIndividual> = interpreter.owlQuery(queryToExecute)
                         if (!res.isEmpty) {
                             val prefix = interpreter.settings.prefixMap()
                             val factory = OWLManager.createOWLOntologyManager().owlDataFactory
