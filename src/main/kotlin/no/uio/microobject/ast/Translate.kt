@@ -2,7 +2,6 @@
 
 package no.uio.microobject.ast
 
-import com.fasterxml.jackson.databind.ser.Serializers.Base
 import no.uio.microobject.antlr.WhileBaseVisitor
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.antlr.WhileParser.*
@@ -11,8 +10,6 @@ import no.uio.microobject.ast.stmt.*
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.antlr.v4.runtime.RuleContext
-import org.antlr.v4.runtime.Token
-import org.apache.jena.sparql.util.QueryExecUtils.executeQuery
 
 /**
  * This class handles multiple tasks related to translating ANTLR structures to the internal representation
@@ -24,6 +21,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
     private val classifiesTable: MutableMap<String, Pair<String, String>> = mutableMapOf()
+    private val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -158,9 +156,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             methodTable +=  Pair(entry.key, entry.value.second)
         }
 
+        val classes = hierarchy.keys
+        for((k,v) in classifiesTable){
+            for (singleClass in classes) {
+                if (hierarchy[singleClass]?.contains(k) == true) {
+                    var maps = checkClassifiesTable[singleClass]
+                    if (maps == null) maps = mutableMapOf()
+                    maps[k] = classifiesTable[k]!!
+                    checkClassifiesTable[singleClass] = maps
+                }
+            }
+        }
+
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable)
                    )
     }
 
