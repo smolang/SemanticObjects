@@ -23,14 +23,13 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  *
  * @property target The target location to reclassify
  * @property contextObject The class that contains the object. It can be the same as the target or a superclass
- * @property className The superclass name. This is needed to check that the reclassification is valid for subclasses
  * @property staticTable The static table containing the class name and the query to check which state is the new one
  * @property modelsTable The models table containing the class name and the models for that class
  * @property declares The type of the object
  */
-data class ReclassifyStmt(val target: Location, val contextObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
+data class ReclassifyStmt(val target: Location, val contextObject: Expression, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, var declares: Type?) : Statement {
 
-    override fun toString(): String = "Reclassify to a $className"
+    override fun toString(): String = "Reclassify to a new class"
 
     override fun getRDF(): String {
         return "prog:stmt${this.hashCode()} rdf:type smol:ReclassifyStatement.\n"
@@ -54,10 +53,21 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val newMemory: Memory = mutableMapOf()
 
+        val hierarchy = interpreter.staticInfo.hierarchy
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
         val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
-//        interpreter.tripleManager.checkClassifyQueries()
+        val className = if (hierarchy.containsKey(targetObj.tag.toString())) {
+            targetObj.tag.toString()
+        } else {
+            hierarchy.entries.find { it.value.contains(targetObj.tag.toString()) }?.key
+                ?: throw Exception("Class is unknown: ${targetObj.tag.toString()}")
+        }
+
+        // Since we don't pass the className we need to add the Type to the declares
+        declares = BaseType(className)
+
+//        interpreter.tripleManager.checkClassifyConsistency()
 
         for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
@@ -318,7 +328,7 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
      * @return The new object if the query returns some useful data, otherwise null
      */
     private fun processStmt(query: String, contextId: LiteralExpr, targetId: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, id: LiteralExpr, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): LiteralExpr? {
-        val newQuery = modifyQuery(query, id, contextId, className)
+        val newQuery = modifyQuery(query, id, contextId, parentClass)
         val queryRes = interpreter.query(newQuery)
         if (queryRes != null && queryRes.hasNext()) {
             val result = queryRes.next()

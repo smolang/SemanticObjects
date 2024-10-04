@@ -19,7 +19,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 /**
  * Classify statement
  *
- * The classify statement is used to reclassify an object to a new class. The statement will check if the target and the
+ * The classify statement is used to classify an object to a new class. The statement will check if the target and the
  * context object are the same. If they are not the same, the function will create a new memory object and check if the
  * target is a subclass of the className. If the target is a subclass of the className, the function will create a new
  * statement and free the old object from the heap. If the target is not a subclass of the className, the function will
@@ -27,18 +27,17 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  *
  * @property target The target location
  * @property contextObject The container object
- * @property className The name of the class
  * @property staticTable The static table
  * @property modelsTable The models table
  * @property declares The type of the object
  * @constructor Creates a classify statement
  * @see ReclassifyStmt
  */
-data class ClassifyStmt(val target: Location, val contextObject: Expression, val className: String, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, val declares: Type?) : Statement {
-    override fun toString(): String = "Reclassify to a $className"
+data class ClassifyStmt(val target: Location, val contextObject: Expression, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, var declares: Type?) : Statement {
+    override fun toString(): String = "Classify to a new class"
 
     override fun getRDF(): String {
-        return "prog:stmt${this.hashCode()} rdf:type smol:ReclassifyStatement.\n"
+        return "prog:stmt${this.hashCode()} rdf:type smol:ClassifyStatement.\n"
     }
 
     /**
@@ -55,14 +54,38 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
      * @return The result of the evaluation
      */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
-        // check if the targt and the oldState are the same
+        val hierarchy = interpreter.staticInfo.hierarchy
         val targetName = target.toString()
         val contextName = contextObject.toString()
+
         if (targetName != contextName) {
             val newMemory: Memory = mutableMapOf()
 
             val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
             val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
+//            val contextObj: LiteralExpr = targetObj
+
+            val fields = interpreter.staticInfo.fieldTable
+
+            val className: String = if (targetObj.tag.toString() == "null") ({
+                for ((key, value) in fields) {
+                    // for every element of value, check if they have target.toString().split(".")[1])
+                    for (element in value) {
+                        if (element.name == targetName.split(".")[1]) {
+                            key.toString()
+                        }
+                    }
+                }
+            }).toString() else {
+                if (hierarchy.containsKey(targetObj.tag.toString())) {
+                    targetObj.tag.toString()
+                } else {
+                    hierarchy.entries.find { it.value.contains(targetObj.tag.toString()) }?.key
+                        ?: throw Exception("Class is unknown: ${targetObj.tag.toString()}")
+                }
+            }
+
+            declares = BaseType(className)
 
             for ((key, pair) in staticTable) {
                 // Check if key is a subclass of className
@@ -74,7 +97,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                      * Change the %this to the actual literal mapped into the memory
                      * Also, allow for the usage of rdfs:subClassOf* with %parent mapping it to prog
                      */
-                    val query = modifyQuery(value, targetObj, contextObj, className)
+                    val query = modifyQuery(value, targetObj, contextObj, className!!)
 
                     if (query.startsWith("ASK") || query.startsWith("ask") || query.startsWith("Ask")) {
                         val queryResult = interpreter.ask(query)
@@ -174,7 +197,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                 }
             }
         }
-        return ReclassifyStmt(target, contextObject, className, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
+        return ReclassifyStmt(target, contextObject, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
     }
 
     /**
