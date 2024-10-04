@@ -294,25 +294,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      */
     override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
         val target = visit(ctx.reclassifier) as Location
-        val className = ctx.NAME().text
-        val classType = BaseType(className)
 
         if (ctx.context != null) {
             val containerObject = visit(ctx.context) as Expression
             return ReclassifyStmt(target,
                 containerObject,
-                className,
                 staticTable = classifiesTable,
                 modelsTable = owldescr,
-                classType)
+                null)
         }
 
         return ReclassifyStmt(target,
             target,
-            className,
             staticTable = classifiesTable,
             modelsTable = owldescr,
-            classType)
+            null)
     }
 
     /**
@@ -323,24 +319,20 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      */
     override fun visitClassify_statement(ctx: Classify_statementContext): ProgramElement {
         val contextObject = visit(ctx.context) as Expression
-        val className = ctx.NAME().text
-        val classType = BaseType(className)
 
         if (ctx.target != null) {
             val target = visit(ctx.target) as Location
             return ClassifyStmt(target,
                 contextObject,
-                className,
                 staticTable = classifiesTable,
                 modelsTable = owldescr,
-                classType)
+                null)
         } else {
             return ClassifyStmt(contextObject as Location,
                 contextObject,
-                className,
                 staticTable = classifiesTable,
                 modelsTable = owldescr,
-                classType)
+                null)
         }
     }
 
