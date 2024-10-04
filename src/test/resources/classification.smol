@@ -26,7 +26,7 @@ end
 
 main
     A a = new B();
-    classify(a, A);
+    classify(a);
     breakpoint;
     a.printVal();
 end
