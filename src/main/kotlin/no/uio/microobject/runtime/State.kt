@@ -29,6 +29,7 @@ data class StaticTable(
     val hiddenSet: Set<String>,//This set of classes is skipped by the lifting
     val owldescr: MutableMap<String, String>, // This maps class names to the default models block
     val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf(), // Queries for classification
+    val contextTable: MutableMap<String, String>
 
 ) {
     override fun toString(): String =
