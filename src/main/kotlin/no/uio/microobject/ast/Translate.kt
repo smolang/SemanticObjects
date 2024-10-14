@@ -22,6 +22,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private val owldescr : MutableMap<String, String> = mutableMapOf()
     private val classifiesTable: MutableMap<String, Pair<String, String>> = mutableMapOf()
     private val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf()
+    private val contextTable : MutableMap<String, String> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -74,6 +75,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 var res = listOf<FieldInfo>()
                 if(cl.external.fieldDecl() != null) {
                     for (nm in cl.external.fieldDecl()) {
+                        if (nm.context != null) {
+                            // add the name of the class to the context table
+                            contextTable[cl.className.text] = nm.NAME().text
+                        }
                         val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
                         res = res + FieldInfo(
                             nm.NAME().text,
@@ -94,6 +99,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 if(cl.internal.fieldDeclInit()!= null) {
                     for (nm in cl.internal.fieldDeclInit()) {
                         val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
+//                        if (nm.context != null) {
+//                            // add the name of the class to the context table
+//                            contextTable[cl.className.text] = nm.NAME().text
+//                        }
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
@@ -170,7 +179,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable, contextTable)
                    )
     }
 
