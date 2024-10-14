@@ -55,7 +55,12 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
 
         val hierarchy = interpreter.staticInfo.hierarchy
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
-        val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
+//        val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
+
+        // If I'm executing the reclassify inside a method in which the object is "this", reassign without doing anything
+        if (stackFrame.store.get("this") == targetObj) {
+            return replaceStmt(AssignStmt(target, target, declares = declares), stackFrame)
+        }
 
         val className = if (hierarchy.containsKey(targetObj.tag.toString())) {
             targetObj.tag.toString()
@@ -63,6 +68,12 @@ data class ReclassifyStmt(val target: Location, val contextObject: Expression, v
             hierarchy.entries.find { it.value.contains(targetObj.tag.toString()) }?.key
                 ?: throw Exception("Class is unknown: ${targetObj.tag.toString()}")
         }
+
+        // Get from the interpreter.heap the object that has, along the parameters, the one present on the interpreter.staticInfo.contextTable
+        // I have interpreter.staticInfo.contextTable that maps the class name to the context object
+        // class name is the same as className. For the object, I have to get the object corresponding to the context object
+        val contextObj = interpreter.heap.values.find { it.containsKey(interpreter.staticInfo.contextTable[className]) }
+            ?.get(interpreter.staticInfo.contextTable[className]) ?: targetObj
 
         // Since we don't pass the className we need to add the Type to the declares
         declares = BaseType(className)
