@@ -238,7 +238,10 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //Check parameter fields
         if(clCtx.external != null){
-            for( param in clCtx.external.fieldDecl()){
+            for((position, param) in clCtx.external.fieldDecl().withIndex()){
+                if(param.context != null && position > 0) {
+                    log("Context field must be the first field in a class.", param)
+                }
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
                 if(containsUnknown(paramType, classes))
