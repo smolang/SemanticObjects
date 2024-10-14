@@ -115,7 +115,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                                     pair.second,
                                     targetObj,
                                     contextObj,
-                                    key,
+                                    className,
                                     target,
                                     key,
                                     declares,
@@ -145,7 +145,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                                     pair.second,
                                     targetObj,
                                     contextObj,
-                                    key,
+                                    className,
                                     target,
                                     key,
                                     declares,
@@ -182,7 +182,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                                         pair.second,
                                         targetObj,
                                         contextObj,
-                                        key,
+                                        className,
                                         target,
                                         key,
                                         declares,
@@ -328,7 +328,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
      * @return The result of the evaluation
      */
     private fun processQueryAndCreateStmt(query: String, targetId: LiteralExpr, contextId: LiteralExpr, className: String, target: Location, key: String, declares: Type?, modeling: List<Expression>, interpreter: Interpreter, newMemory: Memory, stackFrame: StackEntry): EvalResult? {
-        val newQuery = modifyQuery(query, targetId, contextId, className)
+        val newQuery = modifyQuery(query, targetId, contextId, key)
         val queryRes = interpreter.query(newQuery)
         if (queryRes != null && queryRes.hasNext()) {
             val result = queryRes.next()
@@ -336,6 +336,14 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
             // Transform the result to a List<Expression>
             val params = mutableListOf<Expression>()
             processQueryResult(result, interpreter, newMemory, params)
+
+            // If I have a context object in the interpreter.staticInfo.contextTable, I mast add it to the params
+            if (interpreter.staticInfo.contextTable.containsKey(className)) {
+                val context = interpreter.staticInfo.contextTable[className]
+                if (context != null) {
+                    params.add(0, contextId)
+                }
+            }
 
             return createStmtAndFreeMemory(target, key, params, declares, modeling, targetId, interpreter, stackFrame)
         }
