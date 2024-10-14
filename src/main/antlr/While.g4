@@ -30,7 +30,7 @@ MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
 CLASSIFY : 'classify';
-RECLASSIFY : 'reclassify';
+RECLASSIFY : 'adapt';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
@@ -47,6 +47,7 @@ HIDE : 'hidden';
 MODELS : 'models';
 CLASSIFIES: 'classifies';
 DOMAIN : 'domain';
+CONTEXT : 'context';
 
 //Keywords: constants
 TRUE : 'True';
@@ -196,7 +197,7 @@ param : type NAME;
 paramList : param (COMMA param)*;
 fmuparam : direction=(IN | OUT) param;
 fmuParamList : fmuparam (COMMA fmuparam)*;
-fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
+fieldDecl : (hidden=HIDE | domain=DOMAIN | context=CONTEXT)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 fieldDeclInit : (hidden=HIDE | domain=DOMAIN)? type NAME ASS expression SEMI;
 fieldDeclInitList : fieldDeclInit fieldDeclInit*;
