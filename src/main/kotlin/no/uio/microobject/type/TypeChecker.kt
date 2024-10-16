@@ -189,8 +189,11 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         checkClassifiesStateMethods()
     }
 
-    // In triplemanager.staticTable.checkClassifiesTable we have a map from class names to a map from query names to a pair of the class name and the query name.
-    // check, for each element of the keys of the table, that all classes have the same methods name, with the same return type and same parameters. the information of the methods are in tripleManager.staticTable.methodTable
+    /**
+     * Check that the states for adaptation have the same methods in all classes
+     *
+     * This is done by checking that the methods are the same in all classes that are in the same classifies block
+     */
     private fun checkClassifiesStateMethods () {
         val classifiesTable = tripleManager.staticTable.checkClassifiesTable
         val methodTable = tripleManager.staticTable.methodTable
