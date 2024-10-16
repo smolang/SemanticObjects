@@ -3,10 +3,7 @@ package no.uio.microobject.type
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
-import no.uio.microobject.runtime.FieldEntry
-import no.uio.microobject.runtime.FieldInfo
-import no.uio.microobject.runtime.SimulatorObject
-import no.uio.microobject.runtime.Visibility
+import no.uio.microobject.runtime.*
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
@@ -187,6 +184,66 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //check main block
         checkStatement(ctx.statement(), false, mutableMapOf(), ERRORTYPE, ERRORTYPE, ERRORTYPE.name, false)
+
+        // check types for states of the adaptation
+        checkClassifiesStateMethods()
+    }
+
+    // In triplemanager.staticTable.checkClassifiesTable we have a map from class names to a map from query names to a pair of the class name and the query name.
+    // check, for each element of the keys of the table, that all classes have the same methods name, with the same return type and same parameters. the information of the methods are in tripleManager.staticTable.methodTable
+    private fun checkClassifiesStateMethods () {
+        val classifiesTable = tripleManager.staticTable.checkClassifiesTable
+        val methodTable = tripleManager.staticTable.methodTable
+        for (classifies in classifiesTable.keys) {
+            // for each of the elements of classifiesTable.keys
+            var methods: Map<String, MethodInfo>? = null
+            for (subClass in classifiesTable[classifies]!!.keys) {
+                if (methods == null) {
+                    methods = methodTable[subClass]!!
+                } else {
+                    // check that the methods are the same
+                    val subMethods = methodTable[subClass]!!
+                    for (method in methods.keys) {
+                        if (!subMethods.containsKey(method)) {
+                            log("States for adaptation must have the same methods in all classes", null)
+                        } else {
+                            val methodInfo = methods[method]!!
+                            val subMethodInfo = subMethods[method]!!
+                            if (methodInfo.params.size != subMethodInfo.params.size) {
+                                log("States for adaptation must have the same methods in all classes", null)
+                            }
+                            if (methodInfo.retType != subMethodInfo.retType) {
+                                log("States for adaptation must have the same methods in all classes", null)
+                            }
+                            for (i in methodInfo.params.indices) {
+                                if (methodInfo.params[i] != subMethodInfo.params[i]) {
+                                    log("States for adaptation must have the same methods in all classes", null)
+                                }
+                            }
+                        }
+                    }
+                    for (method in subMethods.keys) {
+                        if (!methods.containsKey(method)) {
+                            log("States for adaptation must have the same methods in all classes", null)
+                        } else {
+                            val methodInfo = methods[method]!!
+                            val subMethodInfo = subMethods[method]!!
+                            if (methodInfo.params.size != subMethodInfo.params.size) {
+                                log("States for adaptation must have the same methods in all classes", null)
+                            }
+                            if (methodInfo.retType != subMethodInfo.retType) {
+                                log("States for adaptation must have the same methods in all classes", null)
+                            }
+                            for (i in methodInfo.params.indices) {
+                                if (methodInfo.params[i] != subMethodInfo.params[i]) {
+                                    log("States for adaptation must have the same methods in all classes", null)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
@@ -201,6 +258,13 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Class $name has a classifies block, but parameter ${param.NAME().text} is not hidden.", param)
                     }
                 }
+            }
+            val superClass = clCtx.superType.text
+            if (extends[superClass] != OBJECTTYPE) {
+                log("Class $name has a classifies block, but the super class $superClass is not the root class", clCtx)
+            }
+            if (extends.values.any { it.getPrimary().getNameString() == name }) {
+                log("Class $name has a classifies block, but it's not a leaf. It can't have subclasses.", clCtx)
             }
         }
 
