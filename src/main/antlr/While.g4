@@ -30,7 +30,7 @@ MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
 CLASSIFY : 'classify';
-RECLASSIFY : 'adapt';
+ADAPT : 'adapt';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
@@ -132,7 +132,7 @@ classifies_block : CLASSIFIES owldescription=STRING (COMMA selectquery=STRING)? 
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
             | ((declType = type)? target=expression ASS)? CLASSIFY OPARAN context=expression CPARAN SEMI                                     # classify_statement
-			| RECLASSIFY OPARAN reclassifier=expression (COMMA context=expression)? CPARAN SEMI                                                                      # reclassify_statement
+			| ADAPT OPARAN adapter=expression CPARAN SEMI                                                                      # adapt_statement
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
