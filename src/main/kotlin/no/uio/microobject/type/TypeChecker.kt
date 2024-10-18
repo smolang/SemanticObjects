@@ -306,8 +306,14 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         //Check parameter fields
         if(clCtx.external != null){
             for((position, param) in clCtx.external.fieldDecl().withIndex()){
+                // Context check
                 if(param.context != null && position > 0) {
                     log("Context field must be the first field in a class.", param)
+                }
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (tripleManager.staticTable.checkClassifiesTable[classifies]!!.containsKey(param.type().text)) {
+                        log("Class $name has field ${param.type().text} that is a state for adaptation. Use the superclass $classifies", param)
+                    }
                 }
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
@@ -704,6 +710,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val newTypeFound =
                     translateType(ctx.newType, className, generics)
                 val createClass = newTypeFound.getPrimary().getNameString()
+
+                // check that the new class is not one of the classes that have the classifies block
+                if (recoverDef[createClass] != null && recoverDef[createClass]!!.classifies_block() != null) {
+                    log("Cannot instantiate class $createClass because it is a state marked for adaptation.", ctx)
+                }
+
                 val createDecl = recoverDef[createClass]
                 if(createDecl == null)
                     log("Cannot find class $createClass", ctx)
@@ -716,6 +728,14 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     if (creationParameters.size == (ctx.expression().size - (if (ctx.owldescription == null) 1 else 2))) {
                         for (i in 1 until creationParameters.size + 1) {
                             if (ctx.expression() == ctx.owldescription) continue
+                            // check that the parameter is not of type one of the classes that have the classifies block
+                            val innerType = getType(ctx.expression(i), inner, vars, thisType, inRule)
+                            for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                                if (innerType.getPrimary().getNameString() in classifies) {
+                                    log("Cannot instantiate class $createClass with a parameter of type ${innerType.getPrimary().getNameString()} because it is a state marked for adaptation.", ctx)
+                                }
+                            }
+
                             val targetType = creationParameters[i - 1]
                             val finalType = instantiateGenerics(
                                 targetType,
@@ -751,36 +771,41 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Classify_statementContext -> {
+                val firstType = getType(ctx.target, inner, vars, thisType, inRule)
                 val secondType = getType(ctx.context, inner, vars, thisType, inRule)
-//                val thirdType = BaseType(ctx.NAME().text)
-
-                if (secondType == ERRORTYPE) {
-                    log("The first argument of the Classify statement must not be null", ctx)
-                }
-//                if (thirdType == ERRORTYPE) {
-//                    log("The second argument of the Classify statement must not be null", ctx)
-//                }
-//                if (thirdType.getPrimary().getNameString() !in classes) {
-//                    log("The second argument of the Classify statement must be an existing class", ctx)
-//                }
-            }
-            is WhileParser.Reclassify_statementContext -> {
-                val firstType = getType(ctx.reclassifier, inner, vars, thisType, inRule)
-//                val secondType = getType(ctx.context, inner, vars, thisType, inRule)
-//                val thirdType = BaseType(ctx.NAME().text)
 
                 if (firstType == ERRORTYPE) {
                     log("The first argument of the Reclassify statement must not be null", ctx)
                 }
-//                if (secondType == ERRORTYPE) {
-//                    log("The second argument of the Reclassify statement must not be null", ctx)
-//                }
-//                if (thirdType == ERRORTYPE) {
-//                    log("The third argument of the Reclassify statement must not be null", ctx)
-//                }
-//                if (thirdType.getPrimary().getNameString() !in classes) {
-//                    log("The third argument of the Reclassify statement must be an existing class", ctx)
-//                }
+                var found = false
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (firstType.getPrimary().getNameString() in classifies) {
+                        found = true
+                    }
+                }
+                if (!found) {
+                    log("Class ${firstType.getPrimary().getNameString()} is not in any adaptation query.", ctx)
+                }
+
+                if (secondType == ERRORTYPE) {
+                    log("The first argument of the Classify statement must not be null", ctx)
+                }
+            }
+            is WhileParser.Adapt_statementContext -> {
+                val firstType = getType(ctx.adapter, inner, vars, thisType, inRule)
+
+                if (firstType == ERRORTYPE) {
+                    log("The first argument of the Reclassify statement must not be null", ctx)
+                }
+                var found = false
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (firstType.getPrimary().getNameString() in classifies) {
+                        found = true
+                    }
+                }
+                if (!found) {
+                    log("Class ${firstType.getPrimary().getNameString()} is not in any adaptation query.", ctx)
+                }
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
