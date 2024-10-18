@@ -31,7 +31,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  * @property modelsTable The models table
  * @property declares The type of the object
  * @constructor Creates a classify statement
- * @see ReclassifyStmt
+ * @see AdaptStmt
  */
 data class ClassifyStmt(val target: Location, val contextObject: Expression, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, var declares: Type?) : Statement {
     override fun toString(): String = "Classify to a new class"
@@ -197,7 +197,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                 }
             }
         }
-        return ReclassifyStmt(target, contextObject, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
+        return AdaptStmt(target, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
     }
 
     /**

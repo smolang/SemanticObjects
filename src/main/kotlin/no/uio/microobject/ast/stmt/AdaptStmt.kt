@@ -27,7 +27,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  * @property modelsTable The models table containing the class name and the models for that class
  * @property declares The type of the object
  */
-data class ReclassifyStmt(val target: Location, val contextObject: Expression, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, var declares: Type?) : Statement {
+data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, Pair<String, String>>, val modelsTable: MutableMap<String, String>, var declares: Type?) : Statement {
 
     override fun toString(): String = "Reclassify to a new class"
 

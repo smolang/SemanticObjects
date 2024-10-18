@@ -301,20 +301,10 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
      * @param ctx the reclassify statement
      * @return the object corresponding to the result of the query
      */
-    override fun visitReclassify_statement(ctx: Reclassify_statementContext): ProgramElement {
-        val target = visit(ctx.reclassifier) as Location
+    override fun visitAdapt_statement(ctx: Adapt_statementContext): ProgramElement {
+        val target = visit(ctx.adapter) as Location
 
-        if (ctx.context != null) {
-            val containerObject = visit(ctx.context) as Expression
-            return ReclassifyStmt(target,
-                containerObject,
-                staticTable = classifiesTable,
-                modelsTable = owldescr,
-                null)
-        }
-
-        return ReclassifyStmt(target,
-            target,
+        return AdaptStmt(target,
             staticTable = classifiesTable,
             modelsTable = owldescr,
             null)
