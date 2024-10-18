@@ -16,12 +16,12 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 /**
  * ReclassifyStmt is a statement that reclassifies an object to a new class
  *
- * The statement is used to reclassify an object to a new class. To do this, the old state of the object is used to
+ * The statement is used to adapt an object to a new class. To do this, the old state of the object is used to
  * determine the new class. The new class is determined by a static table that contains the class name and a query to
  * check which state is the new one. The queries are executed only if the old class is a subclass of className.
  * If the query returns some useful data (either true or a result), the object is reclassified to the new class.
  *
- * @property target The target location to reclassify
+ * @property target The target location to adapt
  * @property contextObject The class that contains the object. It can be the same as the target or a superclass
  * @property staticTable The static table containing the class name and the query to check which state is the new one
  * @property modelsTable The models table containing the class name and the models for that class
@@ -57,7 +57,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
 //        val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
-        // If I'm executing the reclassify inside a method in which the object is "this", reassign without doing anything
+        // If I'm executing the adapt inside a method in which the object is "this", reassign without doing anything
         if (stackFrame.store.get("this") == targetObj) {
             return replaceStmt(AssignStmt(target, target, declares = declares), stackFrame)
         }
@@ -102,7 +102,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
 
                         // check if pair.second is not an empty string
                         if (pair.second == "") {
-                            val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
+                            val newElement = adapt(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
                             return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
@@ -127,7 +127,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
                             val params = mutableListOf<Expression>()
                             processQueryResult(result, interpreter, newMemory, params)
 
-                            val newElement = reclassify(targetObj, key, className, params, modeling, interpreter, stackFrame)
+                            val newElement = adapt(targetObj, key, className, params, modeling, interpreter, stackFrame)
 
                             return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
@@ -157,7 +157,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
                             val modeling = if(models != null) listOf(models) else listOf()
 
                             if (pair.second == "") {
-                                val newElement = reclassify(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
+                                val newElement = adapt(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
                                 return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                             } else {
@@ -270,7 +270,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
      * parent class and add the new fields to the current state. The function will also change the object in the heap
      * and remove the old object from the heap.
      *
-     * @param target The target object to reclassify
+     * @param target The target object to adapt
      * @param newClass The new class name
      * @param parentClass The parent class name
      * @param params The list of parameters that will be used to create the new object
@@ -279,7 +279,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
      * @return The new object
      * @throws Exception If the target object is not in the heap
      */
-    private fun reclassify(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter, stackFrame: StackEntry): LiteralExpr {
+    private fun adapt(target: LiteralExpr, newClass: String, parentClass: String, params: MutableList<Expression>, modeling: List<Expression>, interpreter: Interpreter, stackFrame: StackEntry): LiteralExpr {
         val currentState = interpreter.heap[target] ?: throw Exception("The target object is not in the heap: $target")
         val parentState = interpreter.staticInfo.fieldTable[parentClass] ?: throw Exception("Parent class $parentClass not found in field table")
 
@@ -328,7 +328,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
      *
      * @param query The query to execute
      * @param contextId The id of the superclass
-     * @param targetId The target object to reclassify
+     * @param targetId The target object to adapt
      * @param newClass The new class name
      * @param parentClass The parent class name
      * @param params The list of parameters that will be used to create the new object
@@ -347,7 +347,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
             // Transform the result to a List<Expression>
             processQueryResult(result, interpreter, newMemory, params)
 
-            return reclassify(targetId, newClass, parentClass, params, modeling, interpreter, stackFrame)
+            return adapt(targetId, newClass, parentClass, params, modeling, interpreter, stackFrame)
         }
         return null
     }

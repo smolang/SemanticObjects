@@ -23,7 +23,7 @@ import org.semanticweb.owlapi.reasoner.NodeSet
  * context object are the same. If they are not the same, the function will create a new memory object and check if the
  * target is a subclass of the className. If the target is a subclass of the className, the function will create a new
  * statement and free the old object from the heap. If the target is not a subclass of the className, the function will
- * call the ReclassifyStmt to reclassify the object.
+ * call the AdaptStmt to adapt the object.
  *
  * @property target The target location
  * @property contextObject The container object
@@ -46,7 +46,7 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
      * The function will check if the target and the contextObj are the same. If they are not the same, the function will
      * create a new memory object and check if the target is a subclass of the className. If the target is a subclass of
      * the className, the function will create a new statement and free the old object from the heap. If the target is
-     * not a subclass of the className, the function will call the ReclassifyStmt to reclassify the object.
+     * not a subclass of the className, the function will call the AdaptStmt to adapt the object.
      *
      * @param heapObj The heap object
      * @param stackFrame The current stack frame
