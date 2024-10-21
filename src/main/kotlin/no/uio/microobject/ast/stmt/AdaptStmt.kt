@@ -55,7 +55,6 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
 
         val hierarchy = interpreter.staticInfo.hierarchy
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
-//        val contextObj: LiteralExpr = interpreter.eval(contextObject, stackFrame)
 
         // If I'm executing the adapt inside a method in which the object is "this", reassign without doing anything
         if (stackFrame.store.get("this") == targetObj) {
@@ -327,7 +326,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
      * result), otherwise, it will return null.
      *
      * @param query The query to execute
-     * @param contextId The id of the superclass
+     * @param contextId The id of the context object (used for the %context variable and to know what to check in the query)
      * @param targetId The target object to adapt
      * @param newClass The new class name
      * @param parentClass The parent class name
