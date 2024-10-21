@@ -804,7 +804,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     }
                 }
                 if (!found) {
-                    log("Class ${firstType.getPrimary().getNameString()} is not in any adaptation query.", ctx)
+                    log("Class ${firstType.getPrimary().getNameString()} is not a state for adaptation.", ctx)
                 }
             }
             is WhileParser.Sparql_statementContext -> {
