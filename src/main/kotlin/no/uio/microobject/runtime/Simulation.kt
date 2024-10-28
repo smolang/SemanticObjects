@@ -90,40 +90,6 @@ class SimulatorObject(val path : String, memory : Memory){
         sim.terminate()
     }
 
-    /* kept for easier lookup */
-    /*
-    fun dump(obj: String): String {
-        var res = "$obj smol:modelName '${sim.modelDescription.modelName}'.\n"
-        for(mVar in sim.modelDescription.modelVariables) {
-            if(mVar.causality == "input") {
-                res += "${obj}_${mVar.name} a smol:InPort.\n"
-                res += "$obj smol:hasInPort ${obj}_${mVar.name}.\n"
-            }
-            if(mVar.causality == "output"){
-                res += "${obj}_${mVar.name} a smol:OutPort.\n"
-                res += "$obj smol:hasOutPort ${obj}_${mVar.name}.\n"
-                res += "$obj ${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
-                res += "${obj}_${mVar.name} smol:withName '${mVar.name}'.\n"
-            }
-            if(mVar.causality == "parameter"){
-                res += "$obj smol:hasStatePort prog:${mVar.name}.\n"
-                res += "$obj ${obj}_${mVar.name} ${dumpSingle(sim.read(mVar.name),mVar.type)}.\n"
-                mVar.type
-            }
-        }
-        for((mCounter, snap) in series.withIndex()){
-            val name = "measure_${obj.split(":")[1]}_$mCounter"
-            res += "run:$name a smol:Measurement.\n"
-            if(snap.role != null) res += "run:$name smol:roleName '${snap.role.removeSurrounding("\"")}'.\n"
-            res += "run:$name smol:atTime ${snap.time + pseudoOffset}.\n"
-            for( data in snap.values) {
-                res += "run:$name smol:ofPort ${obj}_${data.first} .\n"
-                res += "run:$name smol:withValue ${data.second}.\n"
-            }
-        }
-        return res
-    }
-*/
     init {
         for(mVar in sim.modelDescription.modelVariables){
             if(mVar.causality == "input" || mVar.causality == "parameter"){

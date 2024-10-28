@@ -1,0 +1,301 @@
+abstract class GeoObject (hidden GeoObject above,
+                          hidden GeoObject below,
+                          hidden GeoObject left,
+                          hidden GeoObject right,
+                          hidden GeoObject behind,
+                          hidden GeoObject front,
+                          hidden Double size)
+    Double getSizeAbove()
+        if(this.above == null) then return 0.0;
+        else
+            Double a = this.above.size;
+            Double b = this.above.getSizeAbove();
+            return a+b;
+        end
+    end
+    abstract Unit update()
+    Unit updateAll()
+        this.update();
+        if(this.above != null) then
+            this.above.updateAll();
+        end
+    end
+    abstract Boolean caps()
+    abstract Unit addUnit()
+    abstract Unit printState()
+end
+
+
+
+class Fault extends GeoObject ()
+    override Unit update()
+        skip;
+    end
+    override Unit addUnit()
+        skip;
+    end
+    override Boolean caps()
+        return False;
+    end
+    override Unit printState()
+        skip;
+    end
+
+end
+
+
+abstract class GeoUnit extends GeoObject (hidden Int mergeId)
+    abstract GeoUnit clone()
+    /*@ requires other != null @*/
+    Boolean canMerge(GeoUnit other)
+        return other.mergeId == this.mergeId;
+    end
+
+    /*@ requires other != null @*/
+    Unit mergeWith(GeoUnit other)
+        this.size = this.size + other.size;
+    end
+end
+
+class ChalkUnit extends GeoUnit (List<Double> kerogenUnits)
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:chalk. ";
+
+    override Unit update()
+        List<Double> l = this.kerogenUnits;
+        while l != null do
+            Double next = l.content;
+            if next >= 0 then
+                if next + 100.0 < this.size then
+                    l.content = next + 100;
+                else
+                    if this.above != null then
+                        Boolean caps = this.above.caps();
+                        if !caps then
+                            this.above.addUnit();
+                            l.content = -1.0;
+                        else
+                            l.content = this.size;
+                            print("trap");
+                        end
+                    else
+                        print("leak");
+                        l.content = -1.0;
+                    end
+                end
+                l = l.next;
+            end
+        end
+    end
+
+    override GeoUnit clone()
+        GeoUnit g = new ChalkUnit(null, null, null, null, null, null, this.size, this.mergeId, this.kerogenUnits);
+        return g;
+    end
+    override Boolean caps() return False; end
+    override Unit addUnit() this.kerogenUnits = new List<Double>(0.0, this.kerogenUnits); end
+    override Unit printState()
+        print("Chalk at: ");
+        print(this.size);
+    end
+end
+
+class SandstoneUnit extends GeoUnit (List<Double> kerogenUnits)
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:sandstone. ";
+
+    override Unit update()
+        List<Double> l = this.kerogenUnits;
+        while l != null do
+            Double next = l.content;
+            if next >= 0 then
+                if next + 100.0 < this.size then
+                    l.content = next + 100;
+                else
+                    if this.above != null then
+                        Boolean caps = this.above.caps();
+                        if !caps then
+                            this.above.addUnit();
+                            l.content = -1.0;
+                        else
+                            l.content = this.size;
+                            print("trap");
+                        end
+                    else
+                        print("leak");
+                        l.content = -1.0;
+                    end
+                end
+                l = l.next;
+            end
+        end
+    end
+
+    override GeoUnit clone()
+        GeoUnit g = new SandstoneUnit(null, null, null, null, null, null, this.size, this.mergeId, this.kerogenUnits);
+        return g;
+    end
+    override Boolean caps() return False; end
+    override Unit addUnit() this.kerogenUnits = new List<Double>(0.0, this.kerogenUnits); end
+    override Unit printState()
+        print("Sandstone at: ");
+        print(this.size);
+    end
+end
+class ShaleUnit extends GeoUnit (hidden Double temperature, hidden Boolean hasKerogenSource, hidden Int maturedUnits)
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
+
+    override Unit update()
+        Double under = this.getSizeAbove();
+        this.temperature = 2.5 + ((under/1000) * 30);
+        if this.maturedUnits > 0 then
+            if this.above != null then
+                Boolean caps = this.above.caps();
+                if !caps then
+                    this.above.addUnit();
+                    this.maturedUnits = this.maturedUnits - 1;
+                    print("migrate from shale");
+                else
+                    print("trap in shale");
+                end
+            else
+                print("leak from shale");
+                this.maturedUnits = this.maturedUnits - 1;
+            end
+        end
+    end
+    override GeoUnit clone()
+        GeoUnit g = new ShaleUnit(null, null, null, null, null, null, this.size, this.mergeId, this.temperature, this.hasKerogenSource, this.maturedUnits);
+        return g;
+    end
+    Unit mature()
+        if this.hasKerogenSource then
+            this.maturedUnits = this.maturedUnits + 1;
+            print(">> maturation on-going!");
+            Double under = this.getSizeAbove();
+            //print(">> depth");
+            //print(under);
+            //print(">> temp");
+            //print(this.temperature);
+        end
+    end
+    override Boolean caps() return True; end
+    override Unit addUnit() skip; end
+    override Unit printState()
+        print("Shale at: ");
+        print(this.size);
+    end
+end
+
+
+hidden class DepositionGenerator(GeoUnit emitUnit, Double duration, Int times)
+    GeoUnit emit()
+        GeoUnit next = this.emitUnit.clone();
+        this.times = this.times - 1;
+        return next;
+    end
+end
+
+
+hidden class Driver(GeoUnit top, GeoUnit bottom)
+
+   Unit sim(List<DepositionGenerator> actions, Double startPast, GeoUnit init, Double checkStart)
+        print("> Starting simulation with t=-");
+        //print(startPast);
+        this.top = init;
+        this.bottom = init;
+        Double now = -1.0 * startPast;
+        List<DepositionGenerator> work = actions;
+        while work != null do
+            DepositionGenerator dg = work.content;
+            while dg.times > 0 do
+                GeoUnit un = dg.emit();
+                Boolean bb = this.top.canMerge(un);
+                if bb then
+                    this.top.mergeWith(un);
+                    destroy(un);
+                else
+                    this.top.above = un;
+                    this.top = un;
+                    un.below = this.top;
+                end
+                now = now + dg.duration;
+                this.bottom.updateAll();
+                print("t:");
+                print(now);
+                this.printState(this.bottom);
+                if now > checkStart  then
+                    List<ShaleUnit> fs = member("<domain:models> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
+                    //print("reasoning finished");
+                    while fs != null do
+                      fs.content.mature();
+                      List<ShaleUnit> os = fs;
+                      fs = fs.next;
+                      destroy(os);
+                    end
+                end
+            end
+            destroy(dg.emitUnit);
+            destroy(dg);
+            List<DepositionGenerator> s = work;
+            work = work.next;
+            destroy(s);
+        end
+        print("> Ending simulation with t =-");
+        print(now);
+   end
+
+   Unit printState(GeoObject fromBelow)
+        if fromBelow != null then
+            fromBelow.printState();
+            this.printState(fromBelow.above);
+        end
+   end
+end
+
+//the following part is the generated scenario
+main
+	ShaleUnit source = new ShaleUnit(null, null, null, null, null, null, 40.0, 1, 0.0, True, 0);
+	List<DepositionGenerator> dl = null;
+
+	SandstoneUnit fill0 = new SandstoneUnit(null, null, null, null, null, null, 27.0, 2, null);
+	DepositionGenerator fillAb0 = new DepositionGenerator(fill0, 2.0, 9);
+	dl = new List<DepositionGenerator>(fillAb0, dl);
+
+	SandstoneUnit fill1 = new SandstoneUnit(null, null, null, null, null, null, 50.0, 2, null);
+	DepositionGenerator fillAb1 = new DepositionGenerator(fill1, 2.0, 8);
+	dl = new List<DepositionGenerator>(fillAb1, dl);
+
+	SandstoneUnit fill2 = new SandstoneUnit(null, null, null, null, null, null, 29.0, 2, null);
+	DepositionGenerator fillAb2 = new DepositionGenerator(fill2, 2.0, 4);
+	dl = new List<DepositionGenerator>(fillAb2, dl);
+
+	SandstoneUnit fill3 = new SandstoneUnit(null, null, null, null, null, null, 27.0, 2, null);
+	DepositionGenerator fillAb3 = new DepositionGenerator(fill3, 2.0, 6);
+	dl = new List<DepositionGenerator>(fillAb3, dl);
+
+	ChalkUnit ekofisk = new ChalkUnit(null, null, null, null, null, null, 99.0, 2, null);
+	DepositionGenerator depEko = new DepositionGenerator(ekofisk, 2.0, 1);
+	dl = new List<DepositionGenerator>(depEko, dl);
+
+	ShaleUnit cap = new ShaleUnit(null, null, null, null, null, null, 30.0, 1, 0.0, False, 0);
+	DepositionGenerator depCap = new DepositionGenerator(cap, 2.0, 1);
+	dl = new List<DepositionGenerator>(depCap, dl);
+
+	SandstoneUnit ab0 = new SandstoneUnit(null, null, null, null, null, null, 53.0, 2, null);
+	DepositionGenerator depAb0 = new DepositionGenerator(ab0, 2.0, 7);
+	dl = new List<DepositionGenerator>(depAb0, dl);
+
+	SandstoneUnit ab1 = new SandstoneUnit(null, null, null, null, null, null, 88.0, 2, null);
+	DepositionGenerator depAb1 = new DepositionGenerator(ab1, 2.0, 5);
+	dl = new List<DepositionGenerator>(depAb1, dl);
+
+	dl = dl.reverse();
+	Driver driver = new Driver(null,null);
+	driver.sim(dl, 41.0, source, (-33.0));
+
+
+/*
+ has_source: True
+has_cap: True
+depth: 7206
+*/
+end
