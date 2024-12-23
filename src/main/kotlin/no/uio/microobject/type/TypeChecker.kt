@@ -264,7 +264,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             val superClass = clCtx.superType.text
             if (extends[superClass] != OBJECTTYPE) {
-                log("Class $name has a classifies block, but the super class $superClass is not the root class", clCtx)
+                log("Class $name has a classifies block, but the super class $superClass extends a class. Ensure it is the root class", clCtx, Severity.WARNING)
             }
             if (extends.values.any { it.getPrimary().getNameString() == name }) {
                 log("Class $name has a classifies block, but it's not a leaf. It can't have subclasses.", clCtx)
