@@ -120,8 +120,6 @@ class REPL(private val settings: Settings) {
         tC.check()
         tC.report()
 
-
-
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
 
         val initStack = Stack<StackEntry>()
@@ -133,6 +131,7 @@ class REPL(private val settings: Settings) {
             pair.second,
             settings
         )
+        tripleManager.checkAdaptationConsistency(interpreter!!)
     }
 
     private fun initCommands() {
