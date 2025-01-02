@@ -131,7 +131,7 @@ class REPL(private val settings: Settings) {
             pair.second,
             settings
         )
-        tripleManager.checkAdaptationConsistency(interpreter!!)
+        tC.checkAdaptationConsistency(interpreter!!)
     }
 
     private fun initCommands() {

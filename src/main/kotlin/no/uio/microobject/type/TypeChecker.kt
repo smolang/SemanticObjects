@@ -7,6 +7,10 @@ import no.uio.microobject.runtime.*
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -247,6 +251,46 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
             }
         }
+    }
+
+    fun checkAdaptationConsistency (interpreter: Interpreter) {
+        val queries = tripleManager.staticTable.checkClassifiesTable
+        tripleManager.currentTripleSettings.sources["heap"] = false
+
+        val m = OWLManager.createOWLOntologyManager()
+        val ontology = tripleManager.getOntology()
+        val reasoner = org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology)
+        val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+        parser.setDefaultOntology(ontology)
+
+        for ((className, querySet) in queries) {
+            val dlQueries = querySet.map {
+                val singleClass = it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "")
+//                val singleClass = prefixMap["prog"] + it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "").split(":")[1]
+                val classIRI = IRI.create(interpreter!!.settings.replaceKnownPrefixesNoColon(singleClass))
+                m.owlDataFactory.getOWLClass(classIRI)
+            }
+            val objectUnion = m.owlDataFactory.getOWLObjectUnionOf(dlQueries)
+
+            val mainClass = interpreter!!.staticInfo.owldescr[className]
+            if (mainClass == null) {
+                println("No domain model found for class $className")
+                continue
+            }
+
+            val mainClassName = mainClass.split(";").first().split(".").first().split("a ").last().replace(" ", "")
+            val mainClassIRI = IRI.create(interpreter.settings.replaceKnownPrefixesNoColon(mainClassName))
+            val classExpression = m.owlDataFactory.getOWLClass(mainClassIRI)
+            val equivalentClasses = reasoner.getEquivalentClasses(objectUnion)
+
+            if (classExpression?.let { equivalentClasses.contains(it) } == true) {
+                println("Class $mainClassName is equivalent to the union of $dlQueries")
+            } else {
+                println("Class $mainClassName is not equivalent to the union of $dlQueries")
+            }
+        }
+
+        tripleManager.currentTripleSettings.sources["heap"] = true
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){

@@ -190,46 +190,6 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         }
     }
 
-    fun checkAdaptationConsistency (interpreter: Interpreter) {
-        val queries = staticTable.checkClassifiesTable
-        currentTripleSettings.sources["heap"] = false
-
-        val m = OWLManager.createOWLOntologyManager()
-        val ontology = getOntology()
-        val reasoner = org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology)
-        val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
-        parser.setDefaultOntology(ontology)
-
-        for ((className, querySet) in queries) {
-            val dlQueries = querySet.map {
-                val singleClass = it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "")
-//                val singleClass = prefixMap["prog"] + it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "").split(":")[1]
-                val classIRI = IRI.create(interpreter!!.settings.replaceKnownPrefixesNoColon(singleClass))
-                m.owlDataFactory.getOWLClass(classIRI)
-            }
-            val objectUnion = m.owlDataFactory.getOWLObjectUnionOf(dlQueries)
-
-            val mainClass = interpreter!!.staticInfo.owldescr[className]
-            if (mainClass == null) {
-                println("No domain model found for class $className")
-                continue
-            }
-            
-            val mainClassName = mainClass.split(";").first().split(".").first().split("a ").last().replace(" ", "")
-            val mainClassIRI = IRI.create(interpreter.settings.replaceKnownPrefixesNoColon(mainClassName))
-            val classExpression = m.owlDataFactory.getOWLClass(mainClassIRI)
-            val equivalentClasses = reasoner.getEquivalentClasses(objectUnion)
-
-            if (classExpression?.let { equivalentClasses.contains(it) } == true) {
-                println("Class $mainClassName is equivalent to the union of $dlQueries")
-            } else {
-                println("Class $mainClassName is not equivalent to the union of $dlQueries")
-            }
-        }
-
-        currentTripleSettings.sources["heap"] = true
-    }
-
     // Returns the Jena model containing statements from vocab.owl
     private fun getVocabularyModel(): Model {
         val vocabularyModel = ModelFactory.createDefaultModel()
