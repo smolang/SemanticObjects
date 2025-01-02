@@ -771,19 +771,19 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(inRule) log("Non-local access in rule method.", ctx)
             }
             is WhileParser.Classify_statementContext -> {
-                val firstType = getType(ctx.target, inner, vars, thisType, inRule)
+                var firstType: Type = ERRORTYPE
+                ctx.target?.let {
+                    firstType = getType(it, inner, vars, thisType, inRule)
+                }
                 val secondType = getType(ctx.context, inner, vars, thisType, inRule)
 
-                if (firstType == ERRORTYPE) {
-                    log("The first argument of the Reclassify statement must not be null", ctx)
-                }
                 var found = false
                 for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
                     if (firstType.getPrimary().getNameString() in classifies) {
                         found = true
                     }
                 }
-                if (!found) {
+                if (!found && firstType != ERRORTYPE) {
                     log("Class ${firstType.getPrimary().getNameString()} is not in any adaptation query.", ctx)
                 }
 
