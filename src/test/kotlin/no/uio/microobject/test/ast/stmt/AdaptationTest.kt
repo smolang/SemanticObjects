@@ -11,13 +11,14 @@ import org.antlr.v4.runtime.CommonTokenStream
 import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OWLOntologyManager
 import org.semanticweb.owlapi.reasoner.OWLReasoner
 import java.io.File
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class AdaptationTest : MicroObjectTest() {
-    private fun checkConsistencyKB() {
+    private fun checkConsistencyOntologyTest() {
         val ttlFilePath = "src/test/resources/reclassification/tree.ttl"
         val ttlFile = File(ttlFilePath)
 
@@ -30,6 +31,44 @@ class AdaptationTest : MicroObjectTest() {
 
             assertTrue(reasoner.isConsistent)
             reasoner.dispose()
+        } catch (e: Exception) {
+            throw AssertionError("Error while checking consistency of the ontology: $e")
+        }
+    }
+
+    private fun countOntologyElements(ontology: OWLOntology): Map<String, Int> {
+        val classesCount = ontology.classesInSignature.count()
+        val individualsCount = ontology.individualsInSignature.count()
+        val objectPropertiesCount = ontology.objectPropertiesInSignature.count()
+        val dataPropertiesCount = ontology.dataPropertiesInSignature.count()
+
+        return mapOf(
+            "Classes" to classesCount,
+            "Individuals" to individualsCount,
+            "Object Properties" to objectPropertiesCount,
+            "Data Properties" to dataPropertiesCount
+        )
+    }
+
+    private fun checkOntologiesLengthTest() {
+        val ttlFilePath = "src/test/resources/reclassification/tree.ttl"
+        val ttlFile = File(ttlFilePath)
+
+        // Create OWL ontology manager
+        val manager: OWLOntologyManager = OWLManager.createOWLOntologyManager()
+        try {
+            // Load the ontology from the file
+            val ontology: OWLOntology = manager.loadOntologyFromOntologyDocument(ttlFile)
+            val initialCounts = countOntologyElements(ontology)
+
+            loadBackground("src/test/resources/reclassification/tree.ttl","http://www.smolang.org/tree#")
+            val (interpreter, _) = initInterpreter("reclassification/Tree", StringLoad.RES, hashMapOf("ast" to "http://www.smolang.org/tree#"))
+
+            val modifiedCounts = countOntologyElements(interpreter.tripleManager.getOntology())
+            assertTrue(modifiedCounts["Classes"]!! >= initialCounts["Classes"]!!)
+            assertTrue(modifiedCounts["Individuals"]!! >= initialCounts["Individuals"]!!)
+            assertTrue(modifiedCounts["Object Properties"]!! >= initialCounts["Object Properties"]!!)
+            assertTrue(modifiedCounts["Data Properties"]!! >= initialCounts["Data Properties"]!!)
         } catch (e: Exception) {
             throw AssertionError("Error while checking consistency of the ontology: $e")
         }
@@ -96,7 +135,8 @@ class AdaptationTest : MicroObjectTest() {
 
     init {
         "eval" {
-            checkConsistencyKB()
+            checkConsistencyOntologyTest()
+            checkOntologiesLengthTest()
             adaptTest()
             adaptTreeClassifyTest()
             adaptTreeRetrieveTest()
