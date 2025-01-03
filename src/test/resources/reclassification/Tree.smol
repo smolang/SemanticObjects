@@ -6,8 +6,8 @@ models "a ast:Tree ; domain:age %age ; domain:height %height ; domain:familyName
 end
 
 class SeedlingTree extends Tree (hidden Double oxygen)
-classifies "<ast:Seedling>",
-"SELECT DISTINCT ?oxygen WHERE {
+classifies "<ast:Seedling>";
+retrieves "SELECT DISTINCT ?oxygen WHERE {
   %context a prog:Tree ;
     domain:models ?x .
   ?x domain:familyName ?familyName .
@@ -23,8 +23,8 @@ LIMIT 1";
 end
 
 class SaplingTree extends Tree (hidden Double oxygen)
-classifies "<ast:Sapling>",
-"SELECT DISTINCT ?oxygen WHERE {
+classifies "<ast:Sapling>";
+retrieves "SELECT DISTINCT ?oxygen WHERE {
   %context a prog:Tree ;
     domain:models ?x .
   ?x domain:familyName ?familyName .
@@ -40,8 +40,8 @@ LIMIT 1";
 end
 
 class YoungTree extends Tree (hidden Double oxygen)
-classifies "<ast:Young>",
-"SELECT DISTINCT ?oxygen WHERE {
+classifies "<ast:Young>";
+retrieves "SELECT DISTINCT ?oxygen WHERE {
   %context a prog:Tree ;
     domain:models ?x .
   ?x domain:familyName ?familyName .
@@ -57,8 +57,8 @@ LIMIT 1";
 end
 
 class MatureTree extends Tree (hidden Double oxygen)
-classifies "<ast:Mature>",
-"SELECT DISTINCT ?oxygen WHERE {
+classifies "<ast:Mature>";
+retrieves "SELECT DISTINCT ?oxygen WHERE {
   %context a prog:Tree ;
     domain:models ?x .
   ?x domain:familyName ?familyName .
@@ -74,8 +74,8 @@ LIMIT 1";
 end
 
 class OldTree extends Tree (hidden Double oxygen)
-classifies "<ast:Old>",
-"SELECT DISTINCT ?oxygen WHERE {
+classifies "<ast:Old>";
+retrieves "SELECT DISTINCT ?oxygen WHERE {
   %context a prog:Tree ;
     domain:models ?x .
   ?x domain:familyName ?familyName .
