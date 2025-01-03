@@ -1,0 +1,128 @@
+class Tree(hidden String id, domain Int age, domain String familyName, domain Double height)
+models "a ast:Tree ; domain:age %age ; domain:height %height ; domain:familyName %familyName .";
+  Unit printStmt()
+    print("Tree has id: " ++ this.id ++ ", age: " ++ intToString(this.age) ++ ", familyName: " ++ this.familyName ++ ", height: " ++ doubleToString(this.height));
+  end
+end
+
+class SeedlingTree extends Tree (hidden Double oxygen)
+classifies "<ast:Seedling>",
+"SELECT DISTINCT ?oxygen WHERE {
+  %context a prog:Tree ;
+    domain:models ?x .
+  ?x domain:familyName ?familyName .
+  ?tree rdfs:subClassOf ast:Seedling ;
+    ast:oxAmount ?oxygen ;
+    ast:familyName ?family .
+  FILTER (?family = ?familyName) .
+}
+LIMIT 1";
+    override Unit printStmt()
+        print("SeedlingTree has oxygen: " ++ doubleToString(this.oxygen));
+    end
+end
+
+class SaplingTree extends Tree (hidden Double oxygen)
+classifies "<ast:Sapling>",
+"SELECT DISTINCT ?oxygen WHERE {
+  %context a prog:Tree ;
+    domain:models ?x .
+  ?x domain:familyName ?familyName .
+  ?tree rdfs:subClassOf ast:Sapling ;
+    ast:oxAmount ?oxygen ;
+    ast:familyName ?family .
+  FILTER (?family = ?familyName) .
+}
+LIMIT 1";
+    override Unit printStmt()
+        print("SaplingTree has oxygen: " ++ doubleToString(this.oxygen));
+    end
+end
+
+class YoungTree extends Tree (hidden Double oxygen)
+classifies "<ast:Young>",
+"SELECT DISTINCT ?oxygen WHERE {
+  %context a prog:Tree ;
+    domain:models ?x .
+  ?x domain:familyName ?familyName .
+  ?tree rdfs:subClassOf ast:Young ;
+    ast:oxAmount ?oxygen ;
+    ast:familyName ?family .
+  FILTER (?family = ?familyName) .
+}
+LIMIT 1";
+    override Unit printStmt()
+        print("YoungTree has oxygen: " ++ doubleToString(this.oxygen));
+    end
+end
+
+class OldTree extends Tree (hidden Double oxygen)
+classifies "<ast:Old>",
+"SELECT DISTINCT ?oxygen WHERE {
+  %context a prog:Tree ;
+    domain:models ?x .
+  ?x domain:familyName ?familyName .
+  ?tree rdfs:subClassOf ast:Old ;
+    ast:oxAmount ?oxygen ;
+    ast:familyName ?family .
+  FILTER (?family = ?familyName) .
+}
+LIMIT 1";
+    override Unit printStmt()
+        print("OldTree has oxygen: " ++ doubleToString(this.oxygen));
+    end
+end
+
+hidden class AssetModel()
+    Unit adaptBehaviour()
+        List<Tree> trees = access("
+            SELECT DISTINCT ?obj {
+                ?obj a prog:Tree .
+            }");
+
+        if trees == null then print("BEHAVIOUR> No trees"); else
+
+            while trees != null do
+                Tree tree = trees.content;
+                tree.age = 10;
+                adapt(tree);
+
+                List<Tree> oldList = trees;
+                trees = trees.next;
+                destroy(oldList);
+            end
+        end
+    end
+
+    Unit configureModel()
+        List<Tree> trees = construct("
+            PREFIX : <http://www.smolang.org/tree#>
+            SELECT ?id ?age ?familyName ?height
+            WHERE {
+                ?x rdf:type :Tree ;
+                    :id ?id ;
+                    :familyName ?familyName ;
+                    :age ?age ;
+                    :height ?height .
+            }");
+
+        if trees == null then print("CONFIG> No trees"); else
+            while trees != null do
+                Tree tree = trees.content;
+                classify(tree);
+
+                List<Tree> oldList = trees;
+                trees = trees.next;
+                destroy(oldList);
+            end
+        end
+    end
+end
+
+main
+    AssetModel assetModel = new AssetModel();
+    assetModel.configureModel();
+    assetModel.adaptBehaviour();
+
+    breakpoint;
+end
