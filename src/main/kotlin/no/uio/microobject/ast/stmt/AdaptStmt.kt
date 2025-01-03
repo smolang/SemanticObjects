@@ -77,8 +77,6 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
         // Since we don't pass the className we need to add the Type to the declares
         declares = BaseType(className)
 
-//        interpreter.tripleManager.checkClassifyConsistency()
-
         for ((key, pair) in staticTable) {
             // Check if key is a subclass of className
             if (isSubclassOf(key, className.toString(), interpreter)) {
