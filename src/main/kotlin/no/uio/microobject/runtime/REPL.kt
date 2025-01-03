@@ -118,7 +118,6 @@ class REPL(private val settings: Settings) {
         val tripleManager = TripleManager(settings, pair.second, null)
         val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
-        tC.report()
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
 
@@ -132,6 +131,7 @@ class REPL(private val settings: Settings) {
             settings
         )
         tC.checkAdaptationConsistency(interpreter!!)
+        tC.report()
     }
 
     private fun initCommands() {
