@@ -193,12 +193,25 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         checkClassifiesStateMethods()
     }
 
+    private fun getMethodContext(className: String, methodName: String): ParserRuleContext? {
+        for (clCtx in ctx.class_def()) {
+            if (clCtx.className.text == className) {
+                for (mtCtx in clCtx.method_def()) {
+                    if (mtCtx.NAME().text == methodName) {
+                        return mtCtx
+                    }
+                }
+            }
+        }
+        return null
+    }
+
     /**
      * Check that the states for adaptation have the same methods in all classes
      *
      * This is done by checking that the methods are the same in all classes that are in the same classifies block
      */
-    private fun checkClassifiesStateMethods () {
+    private fun checkClassifiesStateMethods() {
         val classifiesTable = tripleManager.staticTable.checkClassifiesTable
         val methodTable = tripleManager.staticTable.methodTable
         for (classifies in classifiesTable.keys) {
@@ -212,38 +225,38 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     val subMethods = methodTable[subClass]!!
                     for (method in methods.keys) {
                         if (!subMethods.containsKey(method)) {
-                            log("States for adaptation must have the same methods in all classes", null)
+                            log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                         } else {
                             val methodInfo = methods[method]!!
                             val subMethodInfo = subMethods[method]!!
                             if (methodInfo.params.size != subMethodInfo.params.size) {
-                                log("States for adaptation must have the same methods in all classes", null)
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                             }
                             if (methodInfo.retType != subMethodInfo.retType) {
-                                log("States for adaptation must have the same methods in all classes", null)
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                             }
                             for (i in methodInfo.params.indices) {
                                 if (methodInfo.params[i] != subMethodInfo.params[i]) {
-                                    log("States for adaptation must have the same methods in all classes", null)
+                                    log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                                 }
                             }
                         }
                     }
                     for (method in subMethods.keys) {
                         if (!methods.containsKey(method)) {
-                            log("States for adaptation must have the same methods in all classes", null)
+                            log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                         } else {
                             val methodInfo = methods[method]!!
                             val subMethodInfo = subMethods[method]!!
                             if (methodInfo.params.size != subMethodInfo.params.size) {
-                                log("States for adaptation must have the same methods in all classes", null)
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                             }
                             if (methodInfo.retType != subMethodInfo.retType) {
-                                log("States for adaptation must have the same methods in all classes", null)
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                             }
                             for (i in methodInfo.params.indices) {
                                 if (methodInfo.params[i] != subMethodInfo.params[i]) {
-                                    log("States for adaptation must have the same methods in all classes", null)
+                                    log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
                                 }
                             }
                         }
@@ -253,7 +266,14 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         }
     }
 
-    fun checkAdaptationConsistency (interpreter: Interpreter) {
+    /**
+     * Check that the adaptation is consistent with the domain model
+     *
+     * This is done by checking that the classes are equivalent to the union of the classes that classify them
+     *
+     * @param interpreter the interpreter to use for the check
+     */
+    fun checkAdaptationConsistency (interpreter: Interpreter) : Boolean {
         val queries = tripleManager.staticTable.checkClassifiesTable
         tripleManager.currentTripleSettings.sources["heap"] = false
 
@@ -262,6 +282,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
         val reasoner = org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)
+        var found = false
 
         for ((className, querySet) in queries) {
             val dlQueries = querySet.map {
@@ -272,9 +293,20 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             }
             val objectUnion = m.owlDataFactory.getOWLObjectUnionOf(dlQueries)
 
+            // Retrieve the node for the class
+            var nodeName: ParserRuleContext? = null
+
+            for (clCtx in ctx.class_def()) {
+                if (clCtx.className.text == className) {
+                    nodeName = clCtx
+                    break
+                }
+            }
+
             val mainClass = interpreter!!.staticInfo.owldescr[className]
             if (mainClass == null) {
-                println("No domain model found for class $className")
+                log("No domain model found for class $className", nodeName, Severity.ERROR)
+//                println("No domain model found for class $className")
                 continue
             }
 
@@ -283,14 +315,17 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             val classExpression = m.owlDataFactory.getOWLClass(mainClassIRI)
             val equivalentClasses = reasoner.getEquivalentClasses(objectUnion)
 
+            tripleManager.currentTripleSettings.sources["heap"] = true
+
             if (classExpression?.let { equivalentClasses.contains(it) } == true) {
-                println("Class $mainClassName is equivalent to the union of $dlQueries")
+                log("Class $mainClassName is equivalent to the union of $dlQueries", nodeName, Severity.WARNING)
+                found = true
             } else {
-                println("Class $mainClassName is not equivalent to the union of $dlQueries")
+                log("Class $mainClassName is not equivalent to the union of $dlQueries", nodeName, Severity.WARNING)
             }
         }
 
-        tripleManager.currentTripleSettings.sources["heap"] = true
+        return found
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
