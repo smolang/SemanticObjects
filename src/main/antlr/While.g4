@@ -46,6 +46,7 @@ MAIN : 'main';
 HIDE : 'hidden';
 MODELS : 'models';
 CLASSIFIES: 'classifies';
+RETRIEVES: 'retrieves';
 DOMAIN : 'domain';
 CONTEXT : 'context';
 
@@ -119,7 +120,7 @@ program : (class_def)* MAIN statement END (class_def)*;
 class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
             (internal = fieldDeclInitList)?
             (models_block)?
-            (classifies_block)?
+            (classifies_block (retrieves_block)?)?
             method_def*
             END;
 method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
@@ -127,8 +128,10 @@ method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overridi
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
              ;
-classifies_block : CLASSIFIES owldescription=STRING (COMMA selectquery=STRING)? SEMI                 # simple_classifies_block
+classifies_block : CLASSIFIES owldescription=STRING SEMI                 # adaptation_classifies_block
              ;
+retrieves_block : RETRIEVES  selectquery=STRING SEMI                 # adaptation_retrieves_block
+              ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
             | ((declType = type)? target=expression ASS)? CLASSIFY OPARAN context=expression CPARAN SEMI                                     # classify_statement
