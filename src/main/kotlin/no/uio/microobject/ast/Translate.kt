@@ -3,7 +3,6 @@
 package no.uio.microobject.ast
 
 import no.uio.microobject.antlr.WhileBaseVisitor
-import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.antlr.WhileParser.*
 import no.uio.microobject.ast.expr.*
 import no.uio.microobject.ast.stmt.*
@@ -36,10 +35,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         throw Exception("Unknown models clause: $ctx") //making the type checker happy
     }
 
-    private fun addClassifyQuery(className: String, ctx: Classifies_blockContext) {
+    private fun addClassifyQuery(className: String, ctx: Classifies_blockContext, ctxR: Retrieves_blockContext?) {
         classifiesTable[className] = Pair(
-            ctx.getToken(WhileParser.STRING, 0).text,
-            ctx.getToken(WhileParser.STRING, 1)?.text ?: "")
+            ctx.getToken(STRING, 0).text,
+            ctxR?.let {  it.getToken(STRING, 0).text } ?: ""
+        )
     }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
@@ -69,7 +69,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             }
             // Check if there's a "classifies" block and store the query
             if(cl.classifies_block() != null){
-                addClassifyQuery(cl.className.text, cl.classifies_block())
+                if (cl.retrieves_block() != null) {
+                    addClassifyQuery(cl.className.text, cl.classifies_block(), cl.retrieves_block())
+                } else {
+                    addClassifyQuery(cl.className.text, cl.classifies_block(), null)
+                }
             }
             val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
@@ -99,10 +103,6 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 if(cl.internal.fieldDeclInit()!= null) {
                     for (nm in cl.internal.fieldDeclInit()) {
                         val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
-//                        if (nm.context != null) {
-//                            // add the name of the class to the context table
-//                            contextTable[cl.className.text] = nm.NAME().text
-//                        }
                         res = res + FieldInfo(
                             nm.NAME().text,
                             TypeChecker.translateType(nm.type(), cl.className.text, mutableMapOf()),
