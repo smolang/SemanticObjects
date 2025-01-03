@@ -306,7 +306,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
             val mainClass = interpreter!!.staticInfo.owldescr[className]
             if (mainClass == null) {
                 log("No domain model found for class $className", nodeName, Severity.ERROR)
-//                println("No domain model found for class $className")
                 continue
             }
 
