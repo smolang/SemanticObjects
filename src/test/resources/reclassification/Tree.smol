@@ -91,27 +91,7 @@ LIMIT 1";
 end
 
 hidden class AssetModel()
-    Unit adaptBehaviour()
-        List<Tree> trees = access("
-            SELECT DISTINCT ?obj {
-                ?obj a prog:Tree .
-            }");
-
-        if trees == null then print("BEHAVIOUR> No trees"); else
-
-            while trees != null do
-                Tree tree = trees.content;
-                tree.age = 10;
-                adapt(tree);
-
-                List<Tree> oldList = trees;
-                trees = trees.next;
-                destroy(oldList);
-            end
-        end
-    end
-
-    Unit configureModel()
+    Unit adaptModel()
         List<Tree> trees = construct("
             PREFIX : <http://www.smolang.org/tree#>
             SELECT ?id ?age ?familyName ?height
@@ -126,7 +106,10 @@ hidden class AssetModel()
         if trees == null then print("CONFIG> No trees"); else
             while trees != null do
                 Tree tree = trees.content;
-                classify(tree);
+
+                // Set the age to get a SeedlingTree
+                tree.age = 10;
+                adapt(tree);
 
                 List<Tree> oldList = trees;
                 trees = trees.next;
@@ -138,8 +121,7 @@ end
 
 main
     AssetModel assetModel = new AssetModel();
-    assetModel.configureModel();
-    assetModel.adaptBehaviour();
+    assetModel.adaptModel();
 
     breakpoint;
 end
