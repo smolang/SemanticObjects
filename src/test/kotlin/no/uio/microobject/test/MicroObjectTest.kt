@@ -23,6 +23,7 @@ import org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
     private val IS_FUSEKI_DOCKER = System.getenv("FUSEKI_DOCKER") == "true"
+    private val adaptationTests = System.getenv("ADAPTATION_TESTS") ?: "false"
 
     val fmuNeedsWindows: (TestCase) -> Enabled = {
         if (IS_OS_WINDOWS) Enabled.enabled
@@ -39,6 +40,11 @@ open class MicroObjectTest : StringSpec() {
     val tripleStoreToTest: (TestCase) -> Enabled = {
         if (IS_FUSEKI_DOCKER) Enabled.enabled
         else Enabled.disabled("The triple store needs to be running on a docker container for this test.")
+    }
+
+    val adaptationToTest: (TestCase) -> Enabled = {
+        if (adaptationTests == "true") Enabled.enabled
+        else Enabled.disabled("Adaptation tests are disabled.")
     }
 
     private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())

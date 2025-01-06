@@ -134,7 +134,7 @@ class AdaptationTest : MicroObjectTest() {
     }
 
     init {
-        "eval" {
+        "eval".config(enabledOrReasonIf = adaptationToTest) {
             checkConsistencyOntologyTest()
             checkOntologiesLengthTest()
             adaptTest()
