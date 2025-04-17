@@ -4,6 +4,7 @@ import no.uio.microobject.ast.*
 import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.Statement
 import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.main.ReasonerMode
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
@@ -54,6 +55,8 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
      * @return The result of the evaluation
      */
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
+        val reasoner = interpreter.settings.reasoner
+        interpreter.settings.reasoner = ReasonerMode.owl
         val hierarchy = interpreter.staticInfo.hierarchy
         val targetName = target.toString()
         val contextName = contextObject.toString()
@@ -107,6 +110,8 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                                 ?.let { LiteralExpr(it, STRINGTYPE) } else null
                             val modeling = if (models != null) listOf(models) else listOf()
 
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
                             // check if pair.second is not an empty string
                             if (pair.second == "") {
                                 return createStmtAndFreeMemory(target, key, mutableListOf(), declares, modeling, targetObj, interpreter, stackFrame)
@@ -134,6 +139,9 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                             val models = if (modelsTable.containsKey(key)) modelsTable[key]
                                 ?.let { LiteralExpr(it, STRINGTYPE) } else null
                             val modeling = if (models != null) listOf(models) else listOf()
+
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
 
                             if (pair.second == "") {
                                 val params = mutableListOf<Expression>()
@@ -175,6 +183,9 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                                     ?.let { LiteralExpr(it, STRINGTYPE) } else null
                                 val modeling = if (models != null) listOf(models) else listOf()
 
+                                // Bring back the reasoner
+                                interpreter.settings.reasoner = reasoner
+
                                 if (pair.second == "") {
                                     return createStmtAndFreeMemory(target, key, mutableListOf(), declares, modeling, targetObj, interpreter, stackFrame)
                                 } else {
@@ -197,6 +208,9 @@ data class ClassifyStmt(val target: Location, val contextObject: Expression, val
                 }
             }
         }
+        // Bring back the reasoner
+        interpreter.settings.reasoner = reasoner
+
         return AdaptStmt(target, staticTable, modelsTable, declares).eval(heapObj, stackFrame, interpreter)
     }
 

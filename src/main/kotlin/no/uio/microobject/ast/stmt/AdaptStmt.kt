@@ -4,6 +4,7 @@ import no.uio.microobject.ast.*
 import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.Statement
 import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.main.ReasonerMode
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
@@ -53,6 +54,9 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val newMemory: Memory = mutableMapOf()
 
+        // Set the reasoner to owl for the adaptation process
+        val reasoner = interpreter.settings.reasoner
+        interpreter.settings.reasoner = ReasonerMode.off
         val hierarchy = interpreter.staticInfo.hierarchy
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
 
@@ -101,10 +105,14 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
                         if (pair.second == "") {
                             val newElement = adapt(targetObj, key, className, mutableListOf(), modeling, interpreter, stackFrame)
 
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
                             return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
                             val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
                             return newElement?.let { AssignStmt(target, it, declares = declares) }
                                 ?.let { replaceStmt(it, stackFrame) }!!
                         }
@@ -126,10 +134,14 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
 
                             val newElement = adapt(targetObj, key, className, params, modeling, interpreter, stackFrame)
 
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
                             return replaceStmt(AssignStmt(target, newElement, declares = declares), stackFrame)
                         } else {
                             val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
+                            // Bring back the reasoner
+                            interpreter.settings.reasoner = reasoner
                             return newElement?.let { AssignStmt(target, it, declares = declares) }
                                 ?.let { replaceStmt(it, stackFrame) }!!
                         }
@@ -160,6 +172,8 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
                             } else {
                                 val newElement = processStmt(pair.second, contextObj, targetObj, key, className, mutableListOf(), modeling, targetObj, interpreter, newMemory, stackFrame)
 
+                                // Bring back the reasoner
+                                interpreter.settings.reasoner = reasoner
                                 return newElement?.let { AssignStmt(target, it, declares = declares) }
                                     ?.let { replaceStmt(it, stackFrame) }!!
                             }
@@ -169,6 +183,8 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
             }
         }
 
+        // Bring back the reasoner
+        interpreter.settings.reasoner = reasoner
         return replaceStmt(AssignStmt(target, target, declares = declares), stackFrame)
     }
 
