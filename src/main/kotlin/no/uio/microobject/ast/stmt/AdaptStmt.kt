@@ -56,7 +56,7 @@ data class AdaptStmt(val target: Location, val staticTable: MutableMap<String, P
 
         // Set the reasoner to owl for the adaptation process
         val reasoner = interpreter.settings.reasoner
-        interpreter.settings.reasoner = ReasonerMode.off
+        interpreter.settings.reasoner = ReasonerMode.owl
         val hierarchy = interpreter.staticInfo.hierarchy
         val targetObj: LiteralExpr = interpreter.eval(target, stackFrame)
 
