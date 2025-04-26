@@ -205,8 +205,8 @@ The classification and reclassification of the objects is done using the informa
 * ``ask`` query, used to enquire whether the object should be classified or not.
 * ``owl`` query in *manchester* syntax, used to enquire whether the object should be classified or not.
 
-For the second query, if present, the type required is a ``select`` query to retrieve the information about the object that is about to be classified/reclassified. This process is done, in case of ``ask`` or ``owl`` query, to also retrieve information used to add to the new classes that is getting classified/reclassified into.
-The second query is not necessary if the new class do not have any parameter, as it is not needed to retrieve any information.
+For the `retrieves` query, if present, the type required is a ``select`` query to retrieve the information about the object that is about to be classified/reclassified. This process is done, in case of ``ask`` or ``owl`` query, to also retrieve information used to add to the new classes that is getting classified/reclassified into.
+The `retrieves` query is not necessary if the new class do not have any parameter, as it is not needed to retrieve any information.
 
 Classification
 """""""""""""

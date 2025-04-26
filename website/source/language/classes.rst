@@ -54,7 +54,16 @@ reclassification process of objects; see Section :ref:`classification`.
 
 ::
 
-    ClassifiesDeclaration ::= 'classifies' StringLiteral (',' StringLiteral)? ';'
+    ClassifiesDeclaration ::= 'classifies' StringLiteral ';'
+
+*retrieves*
+
+The ``classiretrievesfies`` declarations are used to handle the retrieval of
+values of reclassified classes; see Section :ref:`classification`.
+
+::
+
+    RetrievesDeclaration ::= 'retrieves' StringLiteral ';'
 
 *methods*
 
