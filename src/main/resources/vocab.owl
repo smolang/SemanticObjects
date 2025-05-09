@@ -60,7 +60,7 @@ smol:hasValue rdf:type owl:DatatypeProperty ,
 smol:links rdf:type owl:ObjectProperty ;
               rdfs:subPropertyOf owl:topObjectProperty ;
               rdf:type owl:FunctionalProperty ,
-               InverseFunctionalProperty .
+               owl:InverseFunctionalProperty .
 
 smol:entryOf rdf:type owl:ObjectProperty ,
                       owl:FunctionalProperty ;
