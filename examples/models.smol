@@ -1,8 +1,8 @@
 
 class M(Int i)
-   models( this.i == 0 ) "rdf:type domain:zero.";
-   models( this.i == 1 ) "rdf:type domain:single.";
-   models "rdf:type domain:any.";
+   links( this.i == 0 ) "rdf:type domain:zero.";
+   links( this.i == 1 ) "rdf:type domain:single.";
+   links "rdf:type domain:any.";
 end
 
 main

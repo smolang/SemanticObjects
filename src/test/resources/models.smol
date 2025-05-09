@@ -1,11 +1,11 @@
-class C() models "a domain:A."; end
+class C() links "a domain:A."; end
 
 main
-  C c = new C() models "a domain:B.";
+  C c = new C() links "a domain:B.";
   c = new C();
   c = new C();
-  List<C> test1 = member("<domain:models> some <domain:B>");
-  List<C> test2 = member("<domain:models> some <domain:A>");
+  List<C> test1 = member("<smol:links> some <domain:B>");
+  List<C> test2 = member("<smol:link> some <domain:A>");
   Int l1 = test1.length();
   Int l2 = test2.length();
   breakpoint;

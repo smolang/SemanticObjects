@@ -1,0 +1,6 @@
+main
+    Double d = 3.5;
+    Double e = 7.0;
+    Boolean b = d >= e;
+    print(b);
+ end

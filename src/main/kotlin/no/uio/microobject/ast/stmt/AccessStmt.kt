@@ -52,6 +52,7 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         if(mode is InfluxDBMode) return evalInflux(heapObj, stackFrame, interpreter)
 
+
         /* stmt.mode == SparqlMode */
         val str = interpreter.prepareQuery(query, params, stackFrame.store, interpreter.heap, stackFrame.obj)
         val results = interpreter.query(str.removePrefix("\"").removeSuffix("\""))

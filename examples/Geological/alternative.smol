@@ -58,7 +58,7 @@ abstract class GeoUnit extends GeoObject (hidden Int mergeId)
 end
 
 class ChalkUnit extends GeoUnit (List<Double> kerogenUnits)
-    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:chalk. ";
+    links "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:chalk. ";
 
     override Unit update()
         List<Double> l = this.kerogenUnits;
@@ -100,7 +100,7 @@ class ChalkUnit extends GeoUnit (List<Double> kerogenUnits)
 end
 
 class SandstoneUnit extends GeoUnit (List<Double> kerogenUnits)
-    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:sandstone. ";
+    links "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_geological_object>; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1. _:fr1 a domain:sandstone. ";
 
     override Unit update()
         List<Double> l = this.kerogenUnits;
@@ -141,7 +141,7 @@ class SandstoneUnit extends GeoUnit (List<Double> kerogenUnits)
     end
 end
 class ShaleUnit extends GeoUnit (hidden Double temperature, hidden Boolean hasKerogenSource, hidden Int maturedUnits)
-    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
+    links "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
 
     override Unit update()
         Double under = this.getSizeAbove();
@@ -223,7 +223,7 @@ hidden class Driver(GeoUnit top, GeoUnit bottom)
                 print(now);
                 this.printState(this.bottom);
                 if now > checkStart  then
-                    List<ShaleUnit> fs = member("<domain:models> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
+                    List<ShaleUnit> fs = member("<smol:links> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
                     //print("reasoning finished");
                     while fs != null do
                       fs.content.mature();

@@ -1,77 +1,10 @@
 
-######## Classes
-####  Semantic static layer
-smol:Class    rdfs:subClassOf owl:Class.
+######## Semantic static layer
+#### Classes
+smol:Class    rdf:type owl:Class.
 smol:Field    rdf:type owl:Class.
-prog:Object   rdf:type smol:Class.
+smol:Method   rdf:type owl:Class.
 
-######## FMUs
-smol:OutPort      rdf:type owl:Class.
-smol:OutPort      rdf:type owl:DatatypeProperty.
-smol:InPort       rdf:type owl:Class.
-smol:InPort       rdf:type owl:DatatypeProperty.
-smol:StatePort    rdf:type owl:Class.
-smol:StatePort    rdf:type owl:DatatypeProperty.
-smol:Method       rdf:type owl:Class.
-smol:Simulation   rdf:type owl:Class.
-smol:Measurement  rdf:type owl:Class .
-
-####  Semantic dynamic layer
-smol:Object               rdf:type owl:Class.
-smol:Process              rdf:type owl:Class.
-
-####  Syntactic layer
-#Statements
-smol:Statement            rdf:type owl:Class.
-smol:GuardedStatement     rdfs:subClassOf  smol:Statement.
-smol:ValueStatement       rdfs:subClassOf  smol:Statement.
-smol:QueryStatement       rdfs:subClassOf  smol:Statement.
-smol:TargetStatement      rdfs:subClassOf  smol:Statement.
-smol:VarLengthStatement   rdfs:subClassOf  smol:Statement.
-smol:DebugStatement       rdfs:subClassOf  smol:Statement.
-smol:PrintStatement       rdfs:subClassOf  smol:Statement.
-smol:DestroyStatement       rdfs:subClassOf  smol:Statement.
-smol:SequenceStatement    rdfs:subClassOf  smol:Statement.
-smol:SkipStatement        rdfs:subClassOf  smol:Statement.
-smol:TickStatement        rdfs:subClassOf  smol:Statement.
-smol:CallStatement        rdfs:subClassOf  smol:VarLengthStatement.
-smol:SuperStatement       rdfs:subClassOf  smol:VarLengthStatement.
-smol:CreateStatement      rdfs:subClassOf  smol:VarLengthStatement.
-smol:AccessStatement      rdfs:subClassOf  smol:VarLengthStatement.
-smol:SimulationStatement  rdfs:subClassOf  smol:VarLengthStatement.
-smol:IfStatement          rdfs:subClassOf  smol:GuardedStatement.
-smol:WhileStatement       rdfs:subClassOf  smol:GuardedStatement.
-smol:AssignStatement      rdfs:subClassOf  smol:ValueStatement.
-smol:ReturnStatement      rdfs:subClassOf  smol:ValueStatement.
-smol:AccessStatement      rdfs:subClassOf  smol:QueryStatement.
-smol:OwlStatement         rdfs:subClassOf  smol:QueryStatement.
-smol:AssignStatement      rdfs:subClassOf  smol:TargetStatement.
-smol:AccessStatement      rdfs:subClassOf  smol:TargetStatement.
-smol:OwlStatement         rdfs:subClassOf  smol:TargetStatement.
-smol:CallStatement        rdfs:subClassOf  smol:TargetStatement.
-smol:CreateStatement      rdfs:subClassOf  smol:TargetStatement.
-smol:StoreReturnStatement rdfs:subClassOf  smol:TargetStatement.
-smol:SimulationStatement  rdfs:subClassOf  smol:TargetStatement.
-
-
-#Expressions and Locations
-smol:Expression           rdf:type owl:Class.
-smol:LiteralExpression    rdfs:subClassOf  smol:Expression.
-smol:ArithExpression      rdfs:subClassOf  smol:Expression.
-smol:Location             rdfs:subClassOf  smol:Expression.
-smol:VarInit              rdfs:subClassOf  smol:Expression.
-smol:OthersVarLocation    rdfs:subClassOf  smol:Location.
-smol:OwnVarLocation       rdfs:subClassOf  smol:Location.
-smol:LocalVarLocation     rdfs:subClassOf  smol:Location.
-
-#Parameters
-smol:Parameter   rdf:type owl:Class.
-smol:Operand     rdf:type owl:Class.
-
-#TODO: Types
-
-######## Properties
-####  Semantic static layer
 smol:hasField   rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Field .
@@ -80,9 +13,73 @@ smol:hasMethod  rdf:type owl:ObjectProperty ;
                 rdfs:domain smol:Class ;
                 rdfs:range smol:Method .
 
+smol:subClass  rdf:type owl:ObjectProperty ,
+                        owl:TransitiveProperty ;
+                rdfs:domain smol:Class ;
+                rdfs:range smol:Class .
+
+#### Properties
+smol:hasName  rdf:type owl:DatatypeProperty ;
+       rdfs:domain [ rdf:type owl:Class ;
+                     owl:unionOf ( smol:Class
+                                   smol:Field
+                                   smol:Method
+                                 )
+                   ] ;
+              rdfs:range xsd:string .
 
 
-####### FMUs
+####  Individuals
+smol:Any rdf:type owl:NamedIndividual, smol:Object .
+
+########  Semantic dynamic layer
+#### Classes
+smol:Object               rdf:type owl:Class.
+smol:MemoryEntry          rdf:type owl:Class.
+
+#### Properties
+smol:implements rdf:type owl:ObjectProperty ,
+                         owl:FunctionalProperty ;
+                rdfs:domain smol:Object ;
+                rdfs:range smol:Class .
+
+smol:hasEntry rdf:type owl:ObjectProperty ,
+                       owl:InverseFunctionalProperty ;
+              rdfs:domain smol:Object ;
+              rdfs:range smol:MemoryEntry .
+
+smol:hasPointer rdf:type owl:ObjectProperty ,
+                         owl:FunctionalProperty ;
+                rdfs:domain smol:MemoryEntry ;
+                rdfs:range smol:Object .
+
+smol:hasValue rdf:type owl:DatatypeProperty ,
+                       owl:FunctionalProperty ;
+              rdfs:domain smol:MemoryEntry .
+
+smol:links rdf:type owl:ObjectProperty ;
+              rdfs:subPropertyOf owl:topObjectProperty ;
+              rdf:type owl:FunctionalProperty ,
+               InverseFunctionalProperty .
+
+smol:entryOf rdf:type owl:ObjectProperty ,
+                      owl:FunctionalProperty ;
+                rdfs:domain smol:MemoryEntry ;
+                rdfs:range smol:Field .
+
+#### Individuals
+smol:null rdf:type owl:NamedIndividual, smol:Object .
+
+######## FMUs
+smol:OutPort      rdf:type owl:Class.
+smol:OutPort      rdf:type owl:DatatypeProperty.
+smol:InPort       rdf:type owl:Class.
+smol:InPort       rdf:type owl:DatatypeProperty.
+smol:StatePort    rdf:type owl:Class.
+smol:StatePort    rdf:type owl:DatatypeProperty.
+smol:Simulation   rdf:type owl:Class.
+smol:Measurement  rdf:type owl:Class .
+
 
 smol:modelName  rdf:type owl:DatatypeProperty ;
                 rdfs:domain smol:Simulation ;
@@ -130,108 +127,8 @@ smol:roleName rdf:type owl:DatatypeProperty ;
            rdfs:range xsd:String .
 
 
-####  Semantic dynamic layer
-smol:runsOnObject rdf:type owl:ObjectProperty ;
-                rdfs:domain smol:Process ;
-                rdfs:range smol:Object .
-
-smol:nextOnStack  rdf:type owl:ObjectProperty ;
-                rdfs:domain smol:Process ;
-                rdfs:range smol:Process .
-
-smol:active       rdf:type owl:ObjectProperty ;
-                rdfs:domain smol:Process ;
-                rdfs:range smol:Statement .
-
-
-####  Syntactic layer
-
-## Object properties
-smol:first                rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:SequenceStatement ;
-                        rdfs:range smol:Statement .
-smol:second               rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:SequenceStatement ;
-                        rdfs:range smol:Statement .
-smol:hasThenBranch        rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:IfStatement ;
-                        rdfs:range smol:Statement .
-smol:hasElseBranch        rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:IfStatement ;
-                        rdfs:range smol:Statement .
-smol:hasCallee            rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:CallStatement ;
-                        rdfs:range smol:Location .
-smol:hasLoopBody          rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:WhileStatement ;
-                        rdfs:range smol:Statement .
-smol:hasGuard             rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:GuardedStatement ;
-                        rdfs:range smol:Expression .
-smol:hasQuery             rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:QueryStatement ;
-                        rdfs:range smol:Expression .
-smol:hasTarget            rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:TargetStatement ;
-                        rdfs:range smol:Location .
-smol:hasValue             rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:ValueStatement ;
-                        rdfs:range smol:Expression .
-smol:hasParameterValue    rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:Parameter ;
-                        rdfs:range smol:Expression .
-smol:hasOperandValue      rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:Operand ;
-                        rdfs:range smol:Expression .
-smol:hasStmtExpr          rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:PrintStatement ;
-                        rdfs:range smol:Expression .
-smol:hasExpr              rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:OthersVarLocation ;
-                        rdfs:range smol:Expression .
-
-
-## Datatype properties
-smol:Line                 rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:Statement ;
-                        rdfs:range xsd:integer.
-smol:hasMethodName        rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:CallStatement ;
-                        rdfs:range xsd:string .
-smol:hasClassName         rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:CreateStatement ;
-                        rdfs:range xsd:string .
-smol:hasLiteral           rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:LiteralExpression ;
-                        rdfs:range xsd:string .
-smol:hasName              rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:Location ;
-                        rdfs:range xsd:string .
-smol:hasTag               rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:LiteralExpression ;
-                        rdfs:range xsd:string .
-smol:hasOp                rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:ArithExpression ;
-                        rdfs:range xsd:string .
-smol:hasParameterIndex    rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:Parameter ;
-                        rdfs:range xsd:integer .
-smol:hasOperandIndex      rdf:type owl:DatatypeProperty ;
-                        rdfs:domain smol:Operand ;
-                        rdfs:range xsd:integer .
-smol:hasParameter         rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:VarLengthStatement ;
-                        rdfs:range smol:Parameter .
-smol:hasOperand           rdf:type owl:ObjectProperty ;
-                        rdfs:domain smol:ArithExpression ;
-                        rdfs:range smol:Operand .
 
 
 
-domain:models rdf:type owl:ObjectProperty ;
-              rdfs:subPropertyOf owl:topObjectProperty ;
-              rdf:type owl:FunctionalProperty.
-
-
-smol:null rdf:type owl:NamedIndividual, smol:Object .
+#### technical reasons
 prog:_Entry_ rdf:type owl:NamedIndividual, smol:Class .

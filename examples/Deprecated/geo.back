@@ -1,5 +1,0 @@
-:HasAnyNullNext rdf:type owl:Class ;
-                owl:equivalentClass [ rdf:type owl:Restriction ;
-                                      owl:onProperty prog:List_next ;
-                                      owl:hasValue smol:null
-                                    ] .

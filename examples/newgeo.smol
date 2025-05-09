@@ -59,9 +59,9 @@ class UnknownLayer extends GeoLayer()
 end
 
 class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = kerogen, 3 = volatile
-            models(this.dinoStatus == 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
-            models(this.dinoStatus == 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
-            models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale].";
+            links(this.dinoStatus == 1) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            links(this.dinoStatus == 2) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale]; domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+            links "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Shale].";
     Unit cook()
         //if(this.dinoStatus < 3 & this.dinoStatus > 0) then
         print("cooking");
@@ -96,8 +96,8 @@ class Shale extends GeoLayer(Int dinoStatus) //0 = none, 1 = deposit, 2 = keroge
 end
 
 class Sand extends GeoLayer(Int porosity, Boolean hasHC) //1 = high, 2 = medium, 3 = low
-           models(this.hasHC) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone];  domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
-           models "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
+           links(this.hasHC) "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone];  domain:constitutedBy [domain:contains [rdf:type domain:Kerogen]].";
+           links "rdf:type owl:NamedIndividual; rdf:type domain:Stratigraphic_Layer; domain:constitutedBy [rdf:type domain:Sandstone].";
     Unit compact()
         if(this.porosity < 3) then this.porosity = this.porosity +1; end
         print("compacting");
@@ -184,9 +184,9 @@ class Scenario(Int scenId, Bedrock basis, GeoLayer top)
        end
 //       breakpoint;
        List<Shale> geos2 =
-//       access("SELECT DISTINCT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
-//        access("SELECT DISTINCT ?obj WHERE{ ?obj domain:models ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000) }");
-        member("<domain:models> some <domain:CookingTrigger>");
+//       access("SELECT DISTINCT ?obj WHERE{ ?obj prog:Shale_scenId %1. ?obj smol:links ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000)  }", this.scenId);
+//        access("SELECT DISTINCT ?obj WHERE{ ?obj smol:links ?y. ?y rdf:type domain:CookingTriggerSmall; domain:GeoLayer_depth_builtin_res ?depth. FILTER(?depth >= 2000) }");
+        member("<smol:links> some <domain:CookingTrigger>");
        while(geos2 != null) do
             Shale next2 = geos2.content;
             next2.cook();

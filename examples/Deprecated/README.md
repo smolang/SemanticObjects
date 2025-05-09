@@ -1,1 +1,0 @@
-This directory contains some older examples that are not updated because they are not compatible with new features (`construct` and types).

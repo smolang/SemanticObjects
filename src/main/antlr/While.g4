@@ -42,7 +42,7 @@ RULE : 'rule';
 OVERRIDE : 'override';
 MAIN : 'main';
 HIDE : 'hidden';
-MODELS : 'models';
+MODELS : 'links';
 DOMAIN : 'domain';
 
 //Keywords: constants

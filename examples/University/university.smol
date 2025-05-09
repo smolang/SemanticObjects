@@ -1,5 +1,5 @@
 // Example describing a university with students, courses and Employees
-// This example shows how to make class hierarchies, and how to use the models keyword on both classes and instances.
+// This example shows how to make class hierarchies, and how to use the links keyword on both classes and instances.
 
 
 
@@ -64,7 +64,7 @@ class Course (private String courseId, String courseName, Department department,
 end
 
 class Person (private Int personId, private String name, private Int birthYear, private Double height)
-    models "rdf:type smol:mPerson."
+    links "rdf:type smol:mPerson."
 
     // Testing rule and domain keywords
     rule Int ruleAge()
@@ -111,7 +111,7 @@ class Person (private Int personId, private String name, private Int birthYear, 
 end
 
 class Student extends Person (private Int studentId, private Boolean paidTuition)
-    models "rdf:type smol:mStudent."
+    links "rdf:type smol:mStudent."
 
     Int getStudentId()
         return this.studentId;
@@ -173,7 +173,7 @@ main
     Course introToProgramming = new Course("C1001", "Introduction to Programming", csDep, dave);
 
     // Students
-    Student bob = new Student(845521, "Bob", 1988, 1.77, 1001, True) models "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
+    Student bob = new Student(845521, "Bob", 1988, 1.77, 1001, True) links "rdf:type smol:StudentInstance; smol:bio 'I am a 33 year old student who likes to solve math problems'; smol:age 33; smol:isEnrolled true; smol:friend run:obj15.";
     Student eve = new Student(694402, "Eve", 1986, 1.66, 1002, False);
     Student fred = new Student(894388, "Fred", 1988, 1.75, 1003, True);
 
