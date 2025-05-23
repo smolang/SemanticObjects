@@ -67,6 +67,15 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                                 newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
                             else if (f.type == DOUBLETYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#double".toRegex())))
                                 newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
+                            else if (r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix) == "true" ||
+                                r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix) == "false") {
+                                LiteralExpr(r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix), BOOLEANTYPE)
+                            } else if (r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix)
+                                    .matches("(true|false)".toRegex()) ||
+                                r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix)
+                                    .matches("(true|false)\\^\\^http://www.w3.org/2001/XMLSchema#boolean".toRegex())) {
+                                LiteralExpr(r.get(f.name).toString().removePrefix(interpreter.settings.runPrefix).split("^^")[0], BOOLEANTYPE)
+                            }
                             else if(f.type == STRINGTYPE)
                                 newObjMemory[f.name] = LiteralExpr("\""+extractedName+"\"", f.type)
                             else
