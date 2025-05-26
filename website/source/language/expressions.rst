@@ -62,7 +62,7 @@ datatypes. Additionally, there are conversion operators between strings, integer
 
    ConversionExpression ::= Conversion '(' Expression ')'
 
-   Conversion ::= 'intToString' | 'doubleToString' | 'intToDouble' | 'doubleToInt'
+   Conversion ::= 'intToString' | 'doubleToString' | 'booleanToString' | intToDouble' | 'doubleToInt'
 
    UnaryOperatorExpression ::= UnaryOperator Expression
 

@@ -3,13 +3,14 @@ package no.uio.microobject.type
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
-import no.uio.microobject.runtime.FieldEntry
-import no.uio.microobject.runtime.FieldInfo
-import no.uio.microobject.runtime.SimulatorObject
-import no.uio.microobject.runtime.Visibility
+import no.uio.microobject.runtime.*
 import org.antlr.v4.runtime.ParserRuleContext
 import org.antlr.v4.runtime.RuleContext
 import org.javafmi.wrapper.Simulation
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -187,10 +188,166 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //check main block
         checkStatement(ctx.statement(), false, mutableMapOf(), ERRORTYPE, ERRORTYPE, ERRORTYPE.name, false)
+
+        // check types for states of the adaptation
+        checkClassifiesStateMethods()
+    }
+
+    private fun getMethodContext(className: String, methodName: String): ParserRuleContext? {
+        for (clCtx in ctx.class_def()) {
+            if (clCtx.className.text == className) {
+                for (mtCtx in clCtx.method_def()) {
+                    if (mtCtx.NAME().text == methodName) {
+                        return mtCtx
+                    }
+                }
+            }
+        }
+        return null
+    }
+
+    /**
+     * Check that the states for adaptation have the same methods in all classes
+     *
+     * This is done by checking that the methods are the same in all classes that are in the same classifies block
+     */
+    private fun checkClassifiesStateMethods() {
+        val classifiesTable = tripleManager.staticTable.checkClassifiesTable
+        val methodTable = tripleManager.staticTable.methodTable
+        for (classifies in classifiesTable.keys) {
+            // for each of the elements of classifiesTable.keys
+            var methods: Map<String, MethodInfo>? = null
+            for (subClass in classifiesTable[classifies]!!.keys) {
+                if (methods == null) {
+                    methods = methodTable[subClass]!!
+                } else {
+                    // check that the methods are the same
+                    val subMethods = methodTable[subClass]!!
+                    for (method in methods.keys) {
+                        if (!subMethods.containsKey(method)) {
+                            log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                        } else {
+                            val methodInfo = methods[method]!!
+                            val subMethodInfo = subMethods[method]!!
+                            if (methodInfo.params.size != subMethodInfo.params.size) {
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                            }
+                            if (methodInfo.retType != subMethodInfo.retType) {
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                            }
+                            for (i in methodInfo.params.indices) {
+                                if (methodInfo.params[i] != subMethodInfo.params[i]) {
+                                    log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                                }
+                            }
+                        }
+                    }
+                    for (method in subMethods.keys) {
+                        if (!methods.containsKey(method)) {
+                            log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                        } else {
+                            val methodInfo = methods[method]!!
+                            val subMethodInfo = subMethods[method]!!
+                            if (methodInfo.params.size != subMethodInfo.params.size) {
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                            }
+                            if (methodInfo.retType != subMethodInfo.retType) {
+                                log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                            }
+                            for (i in methodInfo.params.indices) {
+                                if (methodInfo.params[i] != subMethodInfo.params[i]) {
+                                    log("States for adaptation must have the same methods in all classes", getMethodContext(subClass, method))
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    /**
+     * Check that the adaptation is consistent with the domain model
+     *
+     * This is done by checking that the classes are equivalent to the union of the classes that classify them
+     *
+     * @param interpreter the interpreter to use for the check
+     */
+    fun checkAdaptationConsistency (interpreter: Interpreter) : Boolean {
+        val queries = tripleManager.staticTable.checkClassifiesTable
+        tripleManager.currentTripleSettings.sources["heap"] = false
+
+        val m = OWLManager.createOWLOntologyManager()
+        val ontology = tripleManager.getOntology()
+        val reasoner = org.semanticweb.HermiT.Reasoner.ReasonerFactory().createReasoner(ontology)
+        val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
+        parser.setDefaultOntology(ontology)
+        var found = false
+
+        for ((className, querySet) in queries) {
+            val dlQueries = querySet.map {
+                val singleClass = it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "")
+//                val singleClass = prefixMap["prog"] + it.value.first.removeSurrounding("\"").replace("<", "").replace(">", "").split(":")[1]
+                val classIRI = IRI.create(interpreter!!.settings.replaceKnownPrefixesNoColon(singleClass))
+                m.owlDataFactory.getOWLClass(classIRI)
+            }
+            val objectUnion = m.owlDataFactory.getOWLObjectUnionOf(dlQueries)
+
+            // Retrieve the node for the class
+            var nodeName: ParserRuleContext? = null
+
+            for (clCtx in ctx.class_def()) {
+                if (clCtx.className.text == className) {
+                    nodeName = clCtx
+                    break
+                }
+            }
+
+            val mainClass = interpreter!!.staticInfo.owldescr[className]
+            if (mainClass == null) {
+                log("No domain model found for class $className", nodeName, Severity.ERROR)
+                continue
+            }
+
+            val mainClassName = mainClass.split(";").first().split(".").first().split("a ").last().replace(" ", "")
+            val mainClassIRI = IRI.create(interpreter.settings.replaceKnownPrefixesNoColon(mainClassName))
+            val classExpression = m.owlDataFactory.getOWLClass(mainClassIRI)
+            val equivalentClasses = reasoner.getEquivalentClasses(objectUnion)
+
+            tripleManager.currentTripleSettings.sources["heap"] = true
+
+            if (classExpression?.let { equivalentClasses.contains(it) } == true) {
+                log("Class $mainClassName is equivalent to the union of $dlQueries", nodeName, Severity.WARNING)
+                found = true
+            } else {
+                log("Class $mainClassName is not equivalent to the union of $dlQueries", nodeName, Severity.WARNING)
+            }
+        }
+
+        return found
     }
 
     internal fun checkClass(clCtx : WhileParser.Class_defContext){
         val name = clCtx.className.text
+
+        // check if we have classifies_block
+        if(clCtx.classifies_block() != null) {
+            // if we have the classifies_block ensure that all parameters are hidden
+            if (clCtx.external != null) {
+                for (param in clCtx.external.fieldDecl()) {
+                    if (param.HIDE() == null) {
+                        log("Class $name has a classifies block, but parameter ${param.NAME().text} is not hidden.", param)
+                    }
+                }
+            }
+            val superClass = clCtx.superType.text
+            if (extends[superClass] != OBJECTTYPE) {
+                log("Class $name has a classifies block, but the super class $superClass extends a class. Ensure it is the root class", clCtx, Severity.WARNING)
+            }
+            if (extends.values.any { it.getPrimary().getNameString() == name }) {
+                log("Class $name has a classifies block, but it's not a leaf. It can't have subclasses.", clCtx)
+            }
+        }
 
 
         //Check extends: class must exist and not *also* be generic
@@ -226,7 +383,16 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
 
         //Check parameter fields
         if(clCtx.external != null){
-            for( param in clCtx.external.fieldDecl()){
+            for((position, param) in clCtx.external.fieldDecl().withIndex()){
+                // Context check
+                if(param.context != null && position > 0) {
+                    log("Context field must be the first field in a class.", param)
+                }
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (tripleManager.staticTable.checkClassifiesTable[classifies]!!.containsKey(param.type().text)) {
+                        log("Class $name has field ${param.type().text} that is a state for adaptation. Use the superclass $classifies", param)
+                    }
+                }
                 val paramName = param.NAME().text
                 val paramType = translateType(param.type(), name, generics)
                 if(containsUnknown(paramType, classes))
@@ -622,6 +788,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val newTypeFound =
                     translateType(ctx.newType, className, generics)
                 val createClass = newTypeFound.getPrimary().getNameString()
+
+                // check that the new class is not one of the classes that have the classifies block
+                if (recoverDef[createClass] != null && recoverDef[createClass]!!.classifies_block() != null) {
+                    log("Cannot instantiate class $createClass because it is a state marked for adaptation.", ctx)
+                }
+
                 val createDecl = recoverDef[createClass]
                 if(createDecl == null)
                     log("Cannot find class $createClass", ctx)
@@ -634,6 +806,14 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     if (creationParameters.size == (ctx.expression().size - (if (ctx.owldescription == null) 1 else 2))) {
                         for (i in 1 until creationParameters.size + 1) {
                             if (ctx.expression() == ctx.owldescription) continue
+                            // check that the parameter is not of type one of the classes that have the classifies block
+                            val innerType = getType(ctx.expression(i), inner, vars, thisType, inRule)
+                            for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                                if (innerType.getPrimary().getNameString() in classifies) {
+                                    log("Cannot instantiate class $createClass with a parameter of type ${innerType.getPrimary().getNameString()} because it is a state marked for adaptation.", ctx)
+                                }
+                            }
+
                             val targetType = creationParameters[i - 1]
                             val finalType = instantiateGenerics(
                                 targetType,
@@ -667,6 +847,43 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 }
 
                 if(inRule) log("Non-local access in rule method.", ctx)
+            }
+            is WhileParser.Classify_statementContext -> {
+                var firstType: Type = ERRORTYPE
+                ctx.target?.let {
+                    firstType = getType(it, inner, vars, thisType, inRule)
+                }
+                val secondType = getType(ctx.context, inner, vars, thisType, inRule)
+
+                var found = false
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (firstType.getPrimary().getNameString() in classifies) {
+                        found = true
+                    }
+                }
+                if (!found && firstType != ERRORTYPE) {
+                    log("Class ${firstType.getPrimary().getNameString()} is not in any adaptation query.", ctx)
+                }
+
+                if (secondType == ERRORTYPE) {
+                    log("The first argument of the Classify statement must not be null", ctx)
+                }
+            }
+            is WhileParser.Adapt_statementContext -> {
+                val firstType = getType(ctx.adapter, inner, vars, thisType, inRule)
+
+                if (firstType == ERRORTYPE) {
+                    log("The first argument of the Reclassify statement must not be null", ctx)
+                }
+                var found = false
+                for (classifies in tripleManager.staticTable.checkClassifiesTable.keys) {
+                    if (firstType.getPrimary().getNameString() in classifies) {
+                        found = true
+                    }
+                }
+                if (!found) {
+                    log("Class ${firstType.getPrimary().getNameString()} is not a state for adaptation.", ctx)
+                }
             }
             is WhileParser.Sparql_statementContext -> {
                 if(ctx.lang is WhileParser.Influx_modeContext){
@@ -1101,6 +1318,12 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                     val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
                     if(inner == DOUBLETYPE) return STRINGTYPE
                     log("Expression intToString expects a double as a parameter.",eCtx)
+                    return STRINGTYPE
+                }
+                if(eCtx!!.conversion().text == "booleanToString") {
+                    val inner = getType(eCtx.expression(), fields, vars, thisType, inRule)
+                    if(inner == BOOLEANTYPE) return STRINGTYPE
+                    log("Expression booleanToString expects a boolean as a parameter.",eCtx)
                     return STRINGTYPE
                 }
                 log("Unknown conversion.",eCtx)

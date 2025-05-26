@@ -47,6 +47,24 @@ reflection; see Section :ref:`modeling-bridge`.
    ModelsDeclaration ::= ('models' '(' Expression ')' StringLiteral ';')*
                          'models' StringLiteral ';'
 
+*classifies*
+
+The ``classifies`` declarations are used to handle the classification and
+reclassification process of objects; see Section :ref:`classification`.
+
+::
+
+    ClassifiesDeclaration ::= 'classifies' StringLiteral ';'
+
+*retrieves*
+
+The ``classiretrievesfies`` declarations are used to handle the retrieval of
+values of reclassified classes; see Section :ref:`classification`.
+
+::
+
+    RetrievesDeclaration ::= 'retrieves' StringLiteral ';'
+
 *methods*
 
 A ``rule`` method cannot have side-effects (no object creation, no writing field access), no parameters and can only call other ``rule`` methods.

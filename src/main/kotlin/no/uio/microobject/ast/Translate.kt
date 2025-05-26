@@ -19,7 +19,9 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
     private val table : MutableMap<String, Pair<FieldEntry, Map<String,MethodInfo>>> = mutableMapOf()
     private val owldescr : MutableMap<String, String> = mutableMapOf()
-
+    private val classifiesTable: MutableMap<String, Pair<String, String>> = mutableMapOf()
+    private val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf()
+    private val contextTable : MutableMap<String, String> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -31,6 +33,13 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             return Pair(tail.first + Pair(expr,str), tail.second)
         }
         throw Exception("Unknown models clause: $ctx") //making the type checker happy
+    }
+
+    private fun addClassifyQuery(className: String, ctx: Classifies_blockContext, ctxR: Retrieves_blockContext?) {
+        classifiesTable[className] = Pair(
+            ctx.getToken(STRING, 0).text,
+            ctxR?.let {  it.getToken(STRING, 0).text } ?: ""
+        )
     }
 
     fun generateStatic(ctx: ProgramContext?) : Pair<StackEntry,StaticTable> {
@@ -48,7 +57,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             modelsTable = modelsTable + Pair(cl.className.text, modelsList)
             if(cl.hidden != null) hidden = hidden + cl.className.text
 
-                    if(cl.superType != null){
+            if(cl.superType != null){
                 val superType =
                     TypeChecker.translateType(cl.superType, cl!!.className.text, mutableMapOf())
                 var maps = hierarchy[superType.getPrimary().getNameString()]
@@ -58,10 +67,22 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             } else {
                 roots += cl!!.className.text
             }
+            // Check if there's a "classifies" block and store the query
+            if(cl.classifies_block() != null){
+                if (cl.retrieves_block() != null) {
+                    addClassifyQuery(cl.className.text, cl.classifies_block(), cl.retrieves_block())
+                } else {
+                    addClassifyQuery(cl.className.text, cl.classifies_block(), null)
+                }
+            }
             val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
                 if(cl.external.fieldDecl() != null) {
                     for (nm in cl.external.fieldDecl()) {
+                        if (nm.context != null) {
+                            // add the name of the class to the context table
+                            contextTable[cl.className.text] = nm.NAME().text
+                        }
                         val cVisibility = if(nm.HIDE() != null) Visibility.HIDE else Visibility.DEFAULT
                         res = res + FieldInfo(
                             nm.NAME().text,
@@ -144,9 +165,21 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
             methodTable +=  Pair(entry.key, entry.value.second)
         }
 
+        val classes = hierarchy.keys
+        for((k,v) in classifiesTable){
+            for (singleClass in classes) {
+                if (hierarchy[singleClass]?.contains(k) == true) {
+                    var maps = checkClassifiesTable[singleClass]
+                    if (maps == null) maps = mutableMapOf()
+                    maps[k] = classifiesTable[k]!!
+                    checkClassifiesTable[singleClass] = maps
+                }
+            }
+        }
+
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable, contextTable)
                    )
     }
 
@@ -233,6 +266,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         if(ctx!!.text == "intToDouble") return Conversion.INTTODOUBLE
         if(ctx!!.text == "doubleToInt") return Conversion.DOUBLETOINT
         if(ctx!!.text == "doubleToString") return Conversion.DOUBLETOSTRING
+        if(ctx!!.text == "booleanToString") return Conversion.BOOLEANTOSTRING
         return Conversion.DOUBLETOSTRING
     }
 
@@ -259,6 +293,46 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                           ctx!!.start.line,
                           targetType,
                           modeling )
+    }
+
+    /**
+     * Reclassify an object based on the classifiesTable
+     *
+     * @param ctx the reclassify statement
+     * @return the object corresponding to the result of the query
+     */
+    override fun visitAdapt_statement(ctx: Adapt_statementContext): ProgramElement {
+        val target = visit(ctx.adapter) as Location
+
+        return AdaptStmt(target,
+            staticTable = classifiesTable,
+            modelsTable = owldescr,
+            null)
+    }
+
+    /**
+     * Classify an object based on the classifiesTable
+     *
+     * @param ctx the reclassify statement
+     * @return the object corresponding to the result of the query
+     */
+    override fun visitClassify_statement(ctx: Classify_statementContext): ProgramElement {
+        val contextObject = visit(ctx.context) as Expression
+
+        if (ctx.target != null) {
+            val target = visit(ctx.target) as Location
+            return ClassifyStmt(target,
+                contextObject,
+                staticTable = classifiesTable,
+                modelsTable = owldescr,
+                null)
+        } else {
+            return ClassifyStmt(contextObject as Location,
+                contextObject,
+                staticTable = classifiesTable,
+                modelsTable = owldescr,
+                null)
+        }
     }
 
     override fun visitSparql_statement(ctx: Sparql_statementContext?): ProgramElement {

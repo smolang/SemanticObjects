@@ -4,10 +4,7 @@ import com.sksamuel.hoplite.ConfigLoader
 import no.uio.microobject.ast.*
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.runtime.*
-import no.uio.microobject.type.DOUBLETYPE
-import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.type.STRINGTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import java.io.File
 
@@ -82,8 +79,13 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], DOUBLETYPE)
                     else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], INTTYPE)
+                    else if (objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#int".toRegex()))
+                        LiteralExpr(found.split("^^")[0], INTTYPE)
                     else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] =
                         LiteralExpr(found, DOUBLETYPE)
+                    else if (objNameCand == "true" || objNameCand == "false") LiteralExpr(found, BOOLEANTYPE)
+                    else if (objNameCand.matches("(true|false)".toRegex()) || objNameCand.matches("(true|false)\\^\\^http://www.w3.org/2001/XMLSchema#boolean".toRegex()))
+                        LiteralExpr(found.split("^^")[0], BOOLEANTYPE)
                     else throw Exception("Query returned unknown object/literal: $found")
                 }
                 newMemory["next"] = list

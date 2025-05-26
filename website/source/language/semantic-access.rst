@@ -194,6 +194,46 @@ A ``rule`` method is not allowed to have side-effects (except exceptions), the f
 * It cannot write into any fields.
 
 
+.. _classification:
+
+Classification and reclassification
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+The classification and reclassification of the objects is done using the information from the `classifies` top-level expression. It can accept either one or two query, of which the first of the type
+
+* ``select`` query, used to retrieve information about the object that is about to be classified/reclassified.
+* ``ask`` query, used to enquire whether the object should be classified or not.
+* ``owl`` query in *manchester* syntax, used to enquire whether the object should be classified or not.
+
+For the `retrieves` query, if present, the type required is a ``select`` query to retrieve the information about the object that is about to be classified/reclassified. This process is done, in case of ``ask`` or ``owl`` query, to also retrieve information used to add to the new classes that is getting classified/reclassified into.
+The `retrieves` query is not necessary if the new class do not have any parameter, as it is not needed to retrieve any information.
+
+Classification
+"""""""""""""
+
+The classification process is handled using the statement `classify` that takes the following as parameters:
+
+::
+
+    ((Type Identifier)? Target =)? 'classify' '(' Context ')' ';'
+
+
+In case the target is specified, the process will create a new object that will be assigned to the target. If the target is not specified, the process will reclassify the object specified by `Context`.
+This double usage is needed in cases in which the element that is going to be classified is a subset of the context and needs to be created during the classification process.
+
+Adaptation
+"""""""""""""""
+
+The adaptation process is handled using the statement `adapt` that takes the following as parameters:
+
+::
+
+    'adapt' '(' Reclassifer)' ';'
+
+
+For some cases we also need the context for adaptation. The context is defined at class level from the root class tagging the object that will use as context with the `context` tag. For example we could have  `abstract hidden class UavState(context Uav uav)`.
+The context is used to retrieve the information about the object that is being adapted, and it is needed when the reclassifier is a subset of the context.
+
 Query Access
 ^^^^^^^^^^^^
 

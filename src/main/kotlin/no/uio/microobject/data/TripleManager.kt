@@ -29,7 +29,12 @@ import org.apache.jena.riot.RiotException
 import org.apache.jena.util.iterator.ExtendedIterator
 import org.apache.jena.util.iterator.NiceIterator
 import org.javafmi.wrapper.Simulation
+import org.semanticweb.owlapi.apibinding.OWLManager
+import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
+import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLOntology
+import org.semanticweb.owlapi.model.OntologyConfigurator
 import java.net.URL
 import java.util.*
 import java.util.regex.Pattern
@@ -43,7 +48,7 @@ data class TripleSettings(
     val guards: HashMap<String,Boolean>, // If true, then guard clauses are used.
     var virtualization: HashMap<String,Boolean>, // If true, virtualization is used. Otherwise, naive method is used.
     var jenaReasoner: ReasonerMode, // Must be either off, rdfs or owl
-    var fusekiModel: Model? = null // If given, then this model is used instead of the FusekiGraph
+    var cachedModel: Model? = null // If given, then this model is used instead of the FusekiGraph
 )
 
 // Class managing triples from all the different sources, how to reason over them, and how to query them using SPARQL or DL queries.
@@ -56,7 +61,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         guards = hashMapOf("heap" to true, "staticTable" to true),
         virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
         jenaReasoner = settings.reasoner,
-        fusekiModel = null
+        cachedModel = null
     )
 
 
@@ -134,12 +139,14 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             includedGraphs.add(getVocabularyModel().graph)
         }
         if (tripleSettings.sources.getOrDefault("externalOntology", false)) {
-            includedGraphs.add(getExternalOntologyAsModel().graph)
+            if (tripleSettings.cachedModel == null)
+                tripleSettings.cachedModel = getExternalOntologyAsModel()
+            includedGraphs.add(tripleSettings.cachedModel!!.graph)
         }
         if (tripleSettings.sources.getOrDefault("urlOntology", false)) {
-            if (tripleSettings.fusekiModel == null)
-                tripleSettings.fusekiModel = getTripleStoreOntologyAsModel()
-            includedGraphs.add(tripleSettings.fusekiModel!!.graph)
+            if (tripleSettings.cachedModel == null)
+                tripleSettings.cachedModel = getTripleStoreOntologyAsModel()
+            includedGraphs.add(tripleSettings.cachedModel!!.graph)
         }
         val model = ModelFactory.createModelForGraph(MultiUnion(includedGraphs.toTypedArray()))
         for ((key, value) in prefixMap) model.setNsPrefix(key, value)  // Adding prefixes
@@ -164,15 +171,23 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         // Test case only
         if (testModel != null) return testModel as Model
         // Normal behaviour with a Fuseki environment
-        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
+        return RDFConnectionFactory.connect(settings.tripleStore + "/query").queryConstruct("CONSTRUCT { ?s ?p ?o } WHERE { ?s ?p ?o }")
+//        return RDFConnectionFactory.connect(settings.tripleStore + "/data").fetch()
     }
 
     /**
-     * Regenerate the triple store model. We'll do so by fetching again the data
-     * This will be called when the triple store is updated, and we want to update the model.
+     * Regenerate the background model. We'll do so by fetching again the data
+     * This will be called when there's an update either file or store, and we want to update the model.
+     * We assume that either the background or the triple store is present.
      */
     fun regenerateTripleStoreModel(): Unit {
-        currentTripleSettings.fusekiModel = getTripleStoreOntologyAsModel()
+        currentTripleSettings.cachedModel = null
+
+        if (settings.background != "") {
+            currentTripleSettings.cachedModel = getExternalOntologyAsModel()
+        } else if (settings.tripleStore != "") {
+            currentTripleSettings.cachedModel = getTripleStoreOntologyAsModel()
+        }
     }
 
     // Returns the Jena model containing statements from vocab.owl
