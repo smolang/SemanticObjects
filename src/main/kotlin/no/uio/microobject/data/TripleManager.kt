@@ -4,14 +4,12 @@ import com.github.owlcs.ontapi.OntManagers
 import com.github.owlcs.ontapi.OntologyManager
 import com.github.owlcs.ontapi.config.OntLoaderConfiguration
 import no.uio.microobject.ast.expr.LiteralExpr
-import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.main.ReasonerMode
 import java.io.*
 import no.uio.microobject.main.Settings
 import no.uio.microobject.main.testModel
 import no.uio.microobject.runtime.*
 import no.uio.microobject.type.*
-import org.apache.commons.io.IOUtils
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.graph.Graph
 import org.apache.jena.graph.impl.GraphBase
@@ -20,7 +18,6 @@ import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
 import org.apache.jena.graph.Triple
 import org.apache.jena.graph.compose.MultiUnion
-import org.apache.jena.query.*
 import org.apache.jena.rdf.model.*
 import org.apache.jena.rdfconnection.RDFConnectionFactory
 import org.apache.jena.reasoner.Reasoner
@@ -32,9 +29,7 @@ import org.javafmi.wrapper.Simulation
 import org.semanticweb.owlapi.model.OWLOntology
 import java.net.URL
 import java.util.*
-import java.util.regex.Pattern
 import kotlin.collections.HashMap
-import kotlin.system.exitProcess
 
 
 // Settings controlling the TripleManager.
@@ -47,7 +42,7 @@ data class TripleSettings(
 )
 
 // Class managing triples from all the different sources, how to reason over them, and how to query them using SPARQL or DL queries.
-class TripleManager(private val settings: Settings, val staticTable: StaticTable, private val interpreter: Interpreter?) {
+class TripleManager(val settings: Settings, val staticTable: StaticTable, private val interpreter: Interpreter?) {
     private val prefixMap = settings.prefixMap()
 
     // Default settings. These can be changed with REPL commands.
@@ -171,7 +166,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
      * Regenerate the triple store model. We'll do so by fetching again the data
      * This will be called when the triple store is updated, and we want to update the model.
      */
-    fun regenerateTripleStoreModel(): Unit {
+    fun regenerateTripleStoreModel() {
         currentTripleSettings.fusekiModel = getTripleStoreOntologyAsModel()
     }
 
@@ -205,22 +200,9 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         override fun next(): Triple = tripleList[(listIndex++)]
     }
 
-    // Helper method to crate triple with URIs in all three positions
-    private fun uriTriple(s: String, p: String, o: String): Triple {
-        return Triple(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
-    }
 
-    // Helper method to crate triple with URIs in two first positions and a literal in object position
-    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): Triple? {
-        if (o == null) return null
-        return Triple(
-            NodeFactory.createURI(s),
-            NodeFactory.createURI(p),
-            getLiteralNode(LiteralExpr(o.toString(), type), settings)
-        )
-    }
     // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
-    private fun addIfMatch(candidateTriple: Triple?, searchTriple: Triple?, matchList: MutableList<Triple>, pseudo: Boolean)  {
+    fun addIfMatch(candidateTriple: Triple?, searchTriple: Triple?, matchList: MutableList<Triple>, pseudo: Boolean)  {
         if (searchTriple == null) return
         if (candidateTriple == null) return
         // This is just a quick fix to resolve the problem with > and < in the uris. They appear for example when the stdlib.smol is used, since it has List<LISTT>.
@@ -291,10 +273,10 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                 var simulationURI = "${run}${name}"
 
                 addIfMatch(uriTriple(simulationURI, "${rdf}type", "${smol}Simulation"), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(simulationURI, "${smol}loads", simulationObject.path, STRINGTYPE), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(simulationURI, "${smol}time", simulationObject.time, DOUBLETYPE), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(simulationURI, "${smol}pseudoOffset", simulationObject.pseudoOffset, DOUBLETYPE), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(simulationURI, "${smol}role", simulationObject.role, STRINGTYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}loads", simulationObject.path, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}time", simulationObject.time, DOUBLETYPE, settings), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}pseudoOffset", simulationObject.pseudoOffset, DOUBLETYPE, settings), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(simulationURI, "${smol}role", simulationObject.role, STRINGTYPE, settings), searchTriple, matchingTriples, false)
 
                 var simulator : Simulation = simulationObject.sim
                 var modelDescription = simulator.modelDescription
@@ -303,19 +285,19 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
                 addIfMatch(uriTriple(simulationURI, "${smol}simulator", simulatorURI), searchTriple, matchingTriples, false)
                 addIfMatch(uriTriple(simulatorURI, "${smol}modelDescription", modelDescriptionURI), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(modelDescriptionURI, "${smol}generatorTool", modelDescription.generationTool, STRINGTYPE), searchTriple, matchingTriples, false)
-                addIfMatch(literalTriple(modelDescriptionURI, "${smol}modelName", modelDescription.modelName, STRINGTYPE), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(modelDescriptionURI, "${smol}generatorTool", modelDescription.generationTool, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                addIfMatch(literalTriple(modelDescriptionURI, "${smol}modelName", modelDescription.modelName, STRINGTYPE, settings), searchTriple, matchingTriples, false)
 
                 for (v in modelDescription.getModelVariables()) {
                     var variableURI = "${run}${name}_var_${v.name}"
 
                     addIfMatch(uriTriple(modelDescriptionURI, "${smol}variable", variableURI), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}variableName", v.name, STRINGTYPE), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}typeName", v.typeName, STRINGTYPE), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}causality", v.causality, STRINGTYPE), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}variability", v.variability, STRINGTYPE), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}valueReference", v.valueReference, INTTYPE), searchTriple, matchingTriples, false)
-                    addIfMatch(literalTriple(variableURI, "${smol}description", v.description, STRINGTYPE), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}variableName", v.name, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}typeName", v.typeName, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}causality", v.causality, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}variability", v.variability, STRINGTYPE, settings), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}valueReference", v.valueReference, INTTYPE, settings), searchTriple, matchingTriples, false)
+                    addIfMatch(literalTriple(variableURI, "${smol}description", v.description, STRINGTYPE, settings), searchTriple, matchingTriples, false)
                 }
             }
 
@@ -375,136 +357,25 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
             // Generate triples for fields (and classes)
             for(classObj in fieldTable){
-                val className: String = classObj.key
-
-                addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${smol}Class"), searchTriple, matchingTriples, pseudo)
-                addIfMatch(uriTriple("${prog}${className}", "${rdf}type", "${owl}Class" ), searchTriple, matchingTriples, pseudo)
-                addIfMatch(uriTriple("${prog}${className}", "${rdfs}subClassOf", "${prog}Object" ), searchTriple, matchingTriples, pseudo)
-
-                for(fieldEntry in classObj.value){
-                    if(fieldEntry.computationVisibility == Visibility.HIDE) continue
-                    val fieldName: String = classObj.key+"_"+fieldEntry.name
-                    // Guard clause: Skip this fieldName when the subject of the search triple is different from both "${prog}${className}" and "${prog}$fieldName"
-                    if (useGuardClauses) {
-                        if (searchTriple.subject is Node_URI){
-                            if (searchTriple.subject.uri != "${prog}${className}" && searchTriple.subject.uri != "${prog}$fieldName") continue
-                        }
-                    }
-
-                    addIfMatch(uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"), searchTriple, matchingTriples, pseudo)
-                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"), searchTriple, matchingTriples, pseudo)
-                    addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
-
-                    when (fieldEntry.type) {
-                        INTTYPE -> {
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDinteger.uri), searchTriple, matchingTriples, pseudo)
-                        }
-                        STRINGTYPE -> {
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
-                        }
-                        BOOLEANTYPE -> {
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
-                        }
-                        DOUBLETYPE -> {
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                            addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
-                        }
-                        else -> {
-                            if(fieldEntry.type !is SimulatorType) {
-                                addIfMatch(
-                                    uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}FunctionalProperty"),
-                                    searchTriple,
-                                    matchingTriples,
-                                    pseudo
-                                )
-                                addIfMatch(
-                                    uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}ObjectProperty"),
-                                    searchTriple,
-                                    matchingTriples,
-                                    pseudo
-                                )
-                                addIfMatch(
-                                    uriTriple(
-                                        "${prog}${fieldName}",
-                                        "${rdfs}range",
-                                        "${prog}${fieldEntry.type}"
-                                    ), searchTriple, matchingTriples, pseudo
-                                )
-                            }
-                        }
-                    }
-                }
+                liftClass(classObj,
+                    this@TripleManager,
+                    searchTriple,
+                    tripleSettings,
+                    matchingTriples,
+                    pseudo)
             }
 
             // Generate triples for all methods
-            for(classObj in methodTable){
-                for(method in classObj.value){
-                    val methodName: String = classObj.key+"_"+method.key
-
-                    // Suggestion: should this also be called for rules and domains? Is rules/domains considered to be methods?
-                    // example of generated triples from rules:
-                    // (prog:Course smol:hasMethod prog:Course_ruleGetLecturer)
-                    // (prog:Course_ruleGetLecturer a smol:Method)
-                    // (prog:Course_ruleGetLecturer a owl:NamedIndividual)
-                    addIfMatch(uriTriple("${prog}${classObj.key}", "${smol}hasMethod", "${prog}${methodName}"), searchTriple, matchingTriples, pseudo)
-                    addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples, pseudo)
-                    addIfMatch(uriTriple("${prog}${methodName}", "${rdf}type", "${smol}Method"), searchTriple, matchingTriples, pseudo)
-
-                    // Suggestion: The code below is very extensive and should be compressed/refactored.
-                    //rule
-                    if(method.value.isRule ) {
-                        when (method.value.retType) {
-                            INTTYPE -> {
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDinteger.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            STRINGTYPE -> {
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            BOOLEANTYPE -> {
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            DOUBLETYPE -> {
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            else -> {
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${prog}${methodName}_builtin_res", "${rdfs}range", "${prog}${method.value.retType}"), searchTriple, matchingTriples, pseudo)
-                            }
-                        }
-                    }
-                    if(method.value.isDomain ) {
-                        when (method.value.retType) {
-                            INTTYPE -> {
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDinteger.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            STRINGTYPE -> {
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDstring.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            BOOLEANTYPE -> {
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDboolean.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            DOUBLETYPE -> {
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}DatatypeProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", XSDDatatype.XSDdouble.uri), searchTriple, matchingTriples, pseudo)
-                            }
-                            else -> {
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}FunctionalProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdf}type", "${owl}ObjectProperty"), searchTriple, matchingTriples, pseudo)
-                                addIfMatch(uriTriple("${domain}${methodName}_builtin_res", "${rdfs}range", "${prog}${method.value.retType}"), searchTriple, matchingTriples, pseudo)
-                            }
-                        }
-                    }
+            for(classObj in methodTable) {
+                for (method in classObj.value) {
+                    liftMethod(
+                        method,
+                        classObj.key,
+                        this@TripleManager,
+                        searchTriple,
+                        matchingTriples,
+                        pseudo
+                    )
                 }
             }
 
@@ -512,17 +383,17 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             val allClasses: MutableSet<String> = methodTable.keys.toMutableSet()
             for(classObj in hierarchy.entries){
                 for(subClass in classObj.value){
-                    addIfMatch(uriTriple("${prog}${subClass}", "${rdfs}subClassOf", "${prog}${classObj.key}"), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple("${prog}${subClass}", "${smol}subClass", "${prog}${classObj.key}"), searchTriple, matchingTriples, pseudo)
                     allClasses -= subClass
                 }
             }
+
             // allClasses now only contains classes without any ancestors. They should be subclass of Object
-            for(classObj in allClasses) addIfMatch(uriTriple("${prog}${classObj}", "${rdfs}subClassOf", "${prog}Object"), searchTriple, matchingTriples, pseudo)
+            for(classObj in allClasses) addIfMatch(uriTriple("${prog}${classObj}", "${smol}subClass", "${prog}Object"), searchTriple, matchingTriples, pseudo)
 
             return TripleListIterator(matchingTriples)
         }
     }
-
 
     // Graph representing the heap
     private inner class HeapGraph(val tripleSettings: TripleSettings, interpreter: Interpreter, val pseudo: Boolean = false): GraphBase() {
@@ -530,7 +401,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
         // Returns an iterator of all triples in the heap that matches searchTriple
         // graphBaseFind only constructs/fetches the triples that match searchTriple.
-        public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
+        override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
             val useGuardClauses = false //tripleSettings.guards.getOrDefault("heap", true)
             val settings: Settings = interpreter.settings
             val heap: GlobalMemory = interpreter.heap
@@ -561,192 +432,59 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                 val subjectString = "${run}${obj.literal}"
 
                 // Guard clause. If this obj does not match to the subject of the search triple, then continue to the next obj
-                if (useGuardClauses) {
-                    if (searchTriple.subject is Node_URI){
-                        if (searchTriple.subject.nameSpace == run) {
-                            if (searchTriple.subject.uri != subjectString) { continue }
-                        }
-                    }
+                if (useGuardClauses && searchTriple.subject is Node_URI && searchTriple.subject.nameSpace == run) {
+                    if (searchTriple.subject.uri != subjectString) { continue }
                 }
 
                 addIfMatch(uriTriple(subjectString, "${rdf}type", "${owl}NamedIndividual"), searchTriple, matchingTriples, pseudo)
                 addIfMatch(uriTriple(subjectString, "${rdf}type", "${smol}Object"), searchTriple, matchingTriples, pseudo)
-                addIfMatch(uriTriple(subjectString, "${rdf}type", "${prog}${(obj.tag as BaseType).name}"), searchTriple, matchingTriples, pseudo)
+                addIfMatch(uriTriple(subjectString, "${smol}implements", "${prog}${(obj.tag as BaseType).name}"), searchTriple, matchingTriples, pseudo)
 
-                /** this code adds the rule triple directly to the KB */
+                /** this code adds the rule triples directly to the KB */
                 if(interpreter.staticInfo.methodTable[obj.tag.name] != null)
-                    for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries) {
-                        var retVal: Pair<LiteralExpr, LiteralExpr>? = null
-                        if (m.value.isRule) {
+                    for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries.filter { it.value.isRule || it.value.isDomain })
+                       liftRuleMethod(m, this@TripleManager, searchTriple, interpreter,obj, matchingTriples, pseudo, useGuardClauses)
 
-                            // Guard on the predicate. If the predicate is not what we search for, then we can skip evalCall below.
-                            val predicateString = settings.replaceKnownPrefixesNoColon("prog:${m.value.declaringClass}_${m.key}_builtin_res")
-                            if (useGuardClauses) {
-                                if (searchTriple.predicate is Node_URI){
-                                    if (searchTriple.predicate.uri != predicateString) continue
-                                }
-                            }
 
-                            retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
-                            val resNode = getLiteralNode(retVal.second, settings)
-                            val resTriple =
-                                Triple(
-                                    NodeFactory.createURI(settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
-                                    NodeFactory.createURI(predicateString),
-                                    resNode
-                                )
-                            addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
-
-                        }
-                        if (m.value.isDomain && heap[obj]!!.containsKey("__models")) {
-                            val models =
-                                heap[obj]!!.getOrDefault(
-                                    "__models",
-                                    LiteralExpr("ERROR")
-                                ).literal.removeSurrounding("\"")
-
-                            // Guard on the predicate. If the predicate is not what we search for, then we can skip evalCall below.
-                            val predicateString = "$domain${m.value.declaringClass}_${m.key}_builtin_res"
-                            if (useGuardClauses) {
-                                if (searchTriple.predicate is Node_URI){
-                                    if (searchTriple.predicate.uri != predicateString) continue
-                                }
-                            }
-
-                            if(retVal == null) retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
-                            val resNode = getLiteralNode(retVal.second, settings)
-                            val resTriple =
-                                Triple(
-                                    NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(models)),
-                                    NodeFactory.createURI(predicateString),
-                                    resNode
-                                )
-                            addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
-                        }
-                    }
+                if(heap[obj]!!.containsKey("__models")) {
+                    val modelString = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
+                    val modelURI = settings.replaceKnownPrefixesNoColon(modelString)
+                    addIfMatch(uriTriple(subjectString, "${domain}links", modelURI), searchTriple, matchingTriples, pseudo)
+                }
+                if(heap[obj]!!.containsKey("__describe"))
+                    generateLinkage()
 
                 // Generating triples for all fields values
-                for(store in heap[obj]!!.keys) {
-                    if (store == "__models") {
-                        // Connect object to a model
-                        val modelString = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal.removeSurrounding("\"")
-                        val modelURI = settings.replaceKnownPrefixesNoColon(modelString)
-                        addIfMatch(uriTriple(subjectString, "${domain}models", modelURI), searchTriple, matchingTriples, pseudo)
-                    }
-                    else if (store == "__describe") {
-                        // Connect model to the description
-                        var description: String = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal
+                for(store in heap[obj]!!.keys.filter { it != "__models" && it != "__describe" })
+                    liftField(store,this@TripleManager,searchTriple,interpreter,obj,matchingTriples,pseudo,heap,useGuardClauses,subjectString)
 
-                        // Guard on the subject of the description.
-                        // If the first string in the description (which equals the URI of the model) does not match the searchTriple subject, then continue to the next store
-                        val modelURI: String = settings.replaceKnownPrefixesNoColon(description.split(" ")[0])
-                        if (useGuardClauses) {
-                            if (searchTriple.subject is Node_URI){
-                                if (searchTriple.subject.uri != modelURI) continue
-                            }
-                        }
-
-                        // Parse and load the description into a jena model.
-                        var extendedDescription = ""
-                        //Here we must now check which models clause we take
-                        val staticInfo = interpreter.staticInfo
-                        if(staticInfo.modelsTable[obj.tag.name] != null && staticInfo.modelsTable[obj.tag.name]!!.isNotEmpty()){
-                            for(mEntry in staticInfo.modelsTable[obj.tag.name]!!){
-                                val ret = interpreter.evalClassLevel(mEntry.first, obj)
-                                if(ret == TRUEEXPR){
-                                    val target = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
-                                    val descr = mEntry.second.removeSurrounding("\"")
-                                    description = "$target $descr\n"
-                                    break
-                                }
-                            }
-                        }
-
-                        for ((key, value) in interpreter.settings.prefixMap()) extendedDescription += "@prefix $key: <$value> .\n"
-                        description = description.replace("\\\"","\"")
-                        for(fd in heap[obj]!!.keys.filter { !it.startsWith("__") }){
-                            val ll = getLiteralNode(heap[obj]!![fd]!!, settings)
-                            if(ll.isLiteral)
-                                description = description.replace("%$fd",ll.literal.toString(true).replace(settings.prefixMap()["xsd"]!!,"xsd:"))
-                            else
-                                description = description.replace("%$fd",ll.toString())
-                        }
-
-                        //this instantiates blank nodes so they are stable over subqueries, should probably be moved into the translation
-                        val matches = Regex("_:[a-zA-Z0-9]*").findAll(description)
-                        for(m in matches) {
-                            val suffix = m.value.split(":")[1]
-                            val newName = "domain:virt_${modelURI.split("#")[1]}_$suffix"
-                            description = description.replace(m.value, newName)
-                        }
-                        extendedDescription += description
-                        try {
-                            val m: Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
-                            // Consider each triple and add it if it matches the search triple.
-                            for (st in m.listStatements()) addIfMatch(st.asTriple(), searchTriple, matchingTriples, pseudo)
-                        } catch (r: RiotException){
-                            println("Parsing error during lifting of the extended model description.")
-                        }
-                    }
-                    else {
-                        //get the declaration
-                        val fDeclare = interpreter.staticInfo.fieldTable[obj.tag.name]!!.first { it.name == store }
-
-
-                        if(fDeclare.isDomain) {
-                            // Generate triples for each of the fields of the object.
-                            val predicateString = "${domain}${obj.tag}_${store}"
-                            val target = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
-                            val value: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-
-                            if (useGuardClauses) {
-                                if (searchTriple.predicate is Node_URI) {
-                                    if (searchTriple.predicate.uri != predicateString) continue
-                                }
-                            }
-
-                            val candidateTriple = Triple(
-                                NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(target)),
-                                NodeFactory.createURI(predicateString),
-                                getLiteralNode(value, settings)
-                            )
-                            addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                        } else {
-                            // Generate triples for each of the fields of the object.
-                            val predicateString = "${prog}${obj.tag}_${store}"
-
-                            // Guard on the predicate. If the current predicate does not match the predicate of the search triple, then continue to the next store
-                            if (useGuardClauses) {
-                                if (searchTriple.predicate is Node_URI) {
-                                    if (searchTriple.predicate.uri != predicateString) continue
-                                }
-                            }
-
-                            val target: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                            val candidateTriple = Triple(
-                                NodeFactory.createURI(subjectString),
-                                NodeFactory.createURI(predicateString),
-                                getLiteralNode(target, settings)
-                            )
-                            addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
-                        }
-                    }
-                }
             }
             return TripleListIterator(matchingTriples)
         }
     }
+}
 
+fun uriTriple(s: String, p: String, o: String): Triple {
+    return Triple(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
+}
 
-    // Given a LiteralExpr, return the correct type of node
-    fun getLiteralNode(target: LiteralExpr, settings: Settings): Node {
-        val smol = settings.prefixMap()["smol"]
-        val run = settings.prefixMap()["run"]
-        return if (target.literal == "null") NodeFactory.createURI("${smol}null")
-        else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring)
-        else if (target.tag == INTTYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDinteger)
-        else if (target.tag == BOOLEANTYPE) NodeFactory.createLiteral(target.literal.lowercase(Locale.getDefault()), XSDDatatype.XSDboolean)
-        else if (target.tag == DOUBLETYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDdouble)
-        else NodeFactory.createURI("${run}${target.literal}")
-    }
+fun literalTriple(s: String, p: String, o: Any?, type: BaseType, settings: Settings): Triple? {
+    if (o == null) return null
+    return Triple(
+        NodeFactory.createURI(s),
+        NodeFactory.createURI(p),
+        getLiteralNode(LiteralExpr(o.toString(), type), settings)
+    )
+}
+
+// Given a LiteralExpr, return the correct type of node
+fun getLiteralNode(target: LiteralExpr, settings: Settings): Node {
+    val smol = settings.prefixMap()["smol"]
+    val run = settings.prefixMap()["run"]
+    return if (target.literal == "null") NodeFactory.createURI("${smol}null")
+    else if (target.tag == ERRORTYPE || target.tag == STRINGTYPE) NodeFactory.createLiteral(target.literal.removeSurrounding("\""), XSDDatatype.XSDstring)
+    else if (target.tag == INTTYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDinteger)
+    else if (target.tag == BOOLEANTYPE) NodeFactory.createLiteral(target.literal.lowercase(Locale.getDefault()), XSDDatatype.XSDboolean)
+    else if (target.tag == DOUBLETYPE) NodeFactory.createLiteral(target.literal, XSDDatatype.XSDdouble)
+    else NodeFactory.createURI("${run}${target.literal}")
 }

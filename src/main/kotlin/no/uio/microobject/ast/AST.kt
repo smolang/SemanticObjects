@@ -70,4 +70,5 @@ object Names{
     fun getVarName(tag : Type = ERRORTYPE) : LocalVar = LocalVar("_v${i++}", tag)
     fun getStackId() : Int = j++
     fun getNodeName() : String = "domain:model${k++}"
+    fun getEntryName() : String = "run:entry${k++}"
 }
