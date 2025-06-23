@@ -452,11 +452,11 @@ class TripleManager(val settings: Settings, val staticTable: StaticTable, privat
                     addIfMatch(uriTriple(subjectString, "${domain}links", modelURI), searchTriple, matchingTriples, pseudo)
                 }
                 if(heap[obj]!!.containsKey("__describe"))
-                    generateLinkage()
+                    generateLinkage(this@TripleManager,searchTriple,interpreter,obj, matchingTriples,pseudo,heap,useGuardClauses)
 
                 // Generating triples for all fields values
                 for(store in heap[obj]!!.keys.filter { it != "__models" && it != "__describe" })
-                    liftField(store,this@TripleManager,searchTriple,interpreter,obj,matchingTriples,pseudo,heap,useGuardClauses,subjectString)
+                    liftField(store,this@TripleManager,searchTriple,interpreter,obj,matchingTriples,pseudo,heap,useGuardClauses)
 
             }
             return TripleListIterator(matchingTriples)

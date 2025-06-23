@@ -311,8 +311,7 @@ fun liftField(store:String,  //class to lift
     }
 }
 
-fun generateLinkage(store:String,  //class to lift
-                  manager : TripleManager,
+fun generateLinkage(manager : TripleManager,
                   searchTriple: Triple,
                   interpreter: Interpreter,
                   obj : LiteralExpr,
@@ -321,7 +320,7 @@ fun generateLinkage(store:String,  //class to lift
                   heap: GlobalMemory,
                   useGuardClauses : Boolean){
     // Connect model to the description
-    var description: String = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR")).literal
+    var description: String = heap[obj]!!.getOrDefault("__describe", LiteralExpr("ERROR")).literal
 
     // Guard on the subject of the description.
     // If the first string in the description (which equals the URI of the model) does not match the searchTriple subject, then continue to the next store
