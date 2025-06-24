@@ -456,7 +456,7 @@ class TripleManager(val settings: Settings, val staticTable: StaticTable, privat
 
                 // Generating triples for all fields values
                 for(store in heap[obj]!!.keys.filter { it != "__models" && it != "__describe" })
-                    liftField(store,this@TripleManager,searchTriple,interpreter,obj,matchingTriples,pseudo,heap,useGuardClauses)
+                    liftField(store,this@TripleManager,searchTriple,interpreter,obj,matchingTriples,pseudo,heap,useGuardClauses,subjectString)
 
             }
             return TripleListIterator(matchingTriples)

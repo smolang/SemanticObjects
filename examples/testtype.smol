@@ -1,0 +1,10 @@
+class C(Int i) end
+class D(C c) end
+
+main
+    C c = new C(5);
+   List<C> cs = access("SELECT ?obj WHERE { ?obj smol:implements prog:C. ?obj smol:hasEntry [smol:hasValue 5; smol:entryOf prog:C_i].}");
+   print(cs);
+   breakpoint;
+   breakpoint;
+end

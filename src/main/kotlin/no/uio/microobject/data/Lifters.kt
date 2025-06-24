@@ -258,11 +258,13 @@ fun liftField(store:String,  //class to lift
               matchingTriples: MutableList<Triple>,
               pseudo: Boolean,
               heap: GlobalMemory,
-              useGuardClauses : Boolean){
+              useGuardClauses : Boolean,subjectString: String){
 
     val prefixMap = manager.settings.prefixMap()
     val prog = prefixMap["prog"]
     val smol = prefixMap["smol"]
+    val rdf = prefixMap["rdf"]
+    val run = prefixMap["run"]
     val domain = prefixMap["domain"]
     //get the declaration
     val fDeclare = interpreter.staticInfo.fieldTable[(obj.tag as BaseType).name]!!.first { it.name == store }
@@ -286,17 +288,17 @@ fun liftField(store:String,  //class to lift
         }
 
         val candidateTriple = Triple(
-            NodeFactory.createURI(target),
+            NodeFactory.createURI(subjectString),
             NodeFactory.createURI(predicateString),
             resNode
         )
         manager.addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
     } else {
 
-        val entry = NodeFactory.createURI(Names.getEntryName())
+        val entry = NodeFactory.createURI("${run}${obj.tag}_${store}")
         var resTriple =
             Triple(
-                NodeFactory.createURI(target),
+                NodeFactory.createURI(subjectString),
                 NodeFactory.createURI("${smol}hasEntry"),
                 entry
             )
@@ -306,6 +308,20 @@ fun liftField(store:String,  //class to lift
                 entry,
                 NodeFactory.createURI("${smol}hasValue"),
                 resNode
+            )
+        manager.addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
+        resTriple =
+            Triple(
+                entry,
+                NodeFactory.createURI("${rdf}type"),
+                NodeFactory.createURI("${smol}MemoryEntry"),
+            )
+        manager.addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
+        resTriple =
+            Triple(
+                entry,
+                NodeFactory.createURI("${smol}entryOf"),
+                NodeFactory.createURI("${prog}${(fDeclare.declaredIn as BaseType).name}_${fDeclare.name}"),
             )
         manager.addIfMatch(resTriple, searchTriple, matchingTriples, pseudo)
     }
