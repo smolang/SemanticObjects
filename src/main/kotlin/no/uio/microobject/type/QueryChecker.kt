@@ -31,6 +31,11 @@ import java.util.HashSet
 data class Edge(val label : String, val inverted : Boolean, var next : DL)
 
 data class DL(val name: String, val tree : MutableList<Edge>, val origin : Node?){
+    fun isTreeLike(vars : Set<String>) : Boolean{
+        if(name.startsWith("?") && !name.startsWith("??"))
+            return tree.fold(vars.contains(name), {x, nx -> x && nx.next.isTreeLike(vars + name)})
+        return true
+    }
     fun find(name: String) : DL? {
         if (name == this.name) return this
         return tree.firstOrNull { it.next.find(name) != null }?.next
@@ -195,7 +200,6 @@ class QueryChecker(
     }
 
 
-    //TODO: this returns a tree, but we do no check if a variable occurs twice, so it actually could be a graph
     fun buildTree(query: Query) : DL?{
         val pattern = query.queryPattern
         if(pattern !is ElementGroup) return null
