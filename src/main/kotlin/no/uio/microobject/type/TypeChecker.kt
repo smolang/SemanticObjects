@@ -689,8 +689,6 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                         log("Parameter of an influx DB access must be a String, which contains a path to the connection configuration.", ctx)
                     log("Flux queries are not supported for type checking yet", ctx, Severity.WARNING)
                 } else {
-                    if(settings.verbose && !ctx.query.text.matches("^SELECT\\s*\\?\\w*\\s*(WHERE)?\\s*\\{.*".toRegex()))
-                        log("Access statements assume that only a single result variable is used, this statement is possibly malformed", ctx, Severity.WARNING)
                     var expType: Type? = null
                     if (ctx.declType != null) {
                         val lhs = ctx.expression(0)

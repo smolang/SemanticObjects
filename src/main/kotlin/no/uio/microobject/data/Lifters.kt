@@ -79,6 +79,12 @@ fun liftClass(classObj : Map.Entry<String, FieldEntry>,  //class to lift
             matchingTriples,
             pseudo
         )
+        manager.addIfMatch(
+            uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}Class"),
+            searchTriple,
+            matchingTriples,
+            pseudo
+        )
         if(manager.settings.punning){
             manager.addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 

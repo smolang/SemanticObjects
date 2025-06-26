@@ -2,10 +2,14 @@
 
 package no.uio.microobject.type
 
+import com.github.owlcs.ontapi.owlapi.objects.entity.OWLObjectPropertyImpl
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.Settings
+import org.apache.jena.graph.Node
+import org.apache.jena.query.Query
 import org.apache.jena.query.QueryFactory
+import org.apache.jena.sparql.syntax.Element
 import org.apache.jena.sparql.syntax.ElementGroup
 import org.apache.jena.sparql.syntax.ElementPathBlock
 import org.semanticweb.HermiT.Configuration
@@ -13,12 +17,59 @@ import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
 import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLAnnotation
+import org.semanticweb.owlapi.model.OWLAxiom
 import org.semanticweb.owlapi.model.OWLClassExpression
+import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom
+import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
+import uk.ac.manchester.cs.owl.owlapi.OWLObjectSomeValuesFromImpl
+import uk.ac.manchester.cs.owl.owlapi.OWLSubClassOfAxiomImpl
+import java.util.HashSet
 
-data class DLNode(val str : String, val isVar : Boolean)
-data class DLEdge(val from : DLNode, val label : String, val to : DLNode)
+data class Edge(val label : String, val inverted : Boolean, var next : DL)
+
+data class DL(val name: String, val tree : MutableList<Edge>, val origin : Node?){
+    fun find(name: String) : DL? {
+        if (name == this.name) return this
+        return tree.firstOrNull { it.next.find(name) != null }?.next
+    }
+    fun contains(dl:DL) : Boolean{
+        return this == dl || tree.any { it.next.contains(dl) }
+    }
+    fun collectNames() : Set<String> {
+        if(!name.startsWith("?")) return setOf() //case: this is a literal
+        return tree.fold(setOf(name), {x, nx -> x + nx.next.collectNames()})
+    }
+    fun merge(dl : DL)  {
+        val names = dl.collectNames().intersect(collectNames())
+        val dlHere = find(names.first())!!
+        val dlThere = dl.find(names.first())!!
+
+        invertNewNode(dl, dlThere)
+        dlHere.tree.addAll(dlThere.tree)
+    }
+    fun add(dl : DL){
+        if(dl.name == this.name)
+            tree.addAll(dl.tree)
+        else
+            tree.forEach { it.next.add(dl) }
+    }
+}
+
+
+
+fun invertNewNode(root: DL, newRoot : DL){
+    if(root == newRoot) return
+    if(!root.collectNames().contains(newRoot.name)) return
+    val child = root.tree.first { it.next.contains(newRoot) }
+    invertNewNode(child.next, newRoot)
+    root.tree.remove(child)
+    child.next.tree.add(Edge(child.label, true, root))
+}
+
+
 
 class QueryChecker(
     private val settings: Settings,
@@ -28,28 +79,29 @@ class QueryChecker(
     private val varName : String
 ) : TypeErrorLogger()  {
 
-    private val incidence : MutableMap<DLNode, MutableSet<DLEdge>> = mutableMapOf()
     private var formula = ""
 
     fun type(tripleManager: TripleManager) : Boolean{
         val successBuild = buildTree()
         if(!successBuild) {
-            log("Building the tree for the query failed", ctx, Severity.WARNING)
-            return false
-        }
-        val successQuery = buildFormula()
-        if(!successQuery){
-            log("Building the tree for the query failed", ctx, Severity.WARNING)
+            log("Building the tree or formula for the query failed", ctx, Severity.WARNING)
             return false
         }
         return check(tripleManager)
     }
 
+    fun getOntologyNoHeap(tripleManager : TripleManager) : OWLOntology{
+        val save = tripleManager.currentTripleSettings.sources["heap"]
+        tripleManager.currentTripleSettings.sources["heap"] = false
+        val ontology = tripleManager.getOntology()
+        tripleManager.currentTripleSettings.sources["heap"] = save == true
+        return ontology
+    }
 
 
     private fun check(tripleManager: TripleManager) : Boolean{
         try {
-            val ontology = tripleManager.getStaticDataOntology()
+            val ontology = getOntologyNoHeap(tripleManager)
 
             val reasoner = Reasoner(Configuration(), ontology)
 
@@ -60,11 +112,16 @@ class QueryChecker(
             }
             val owlSub = getQueryExpression(tripleManager)
             if(owlSub != null) {
-                val owlSup = OWLClassImpl(IRI.create(settings.progPrefix + tString))
-                val subs = reasoner.getSuperClasses(owlSub)
-                val res = subs.containsEntity(owlSup)
-                if(!res)
-                    log("Could not check query $query: specified type is $type, but inferred supertypes are $subs", ctx)
+                var owlSup : OWLClassExpression =  OWLClassImpl(IRI.create(settings.progPrefix + tString))
+                if(!settings.punning)
+                    owlSup = OWLObjectSomeValuesFromImpl(OWLObjectPropertyImpl(IRI.create(settings.prefixMap()["smol"] + "implements")), owlSup)
+                val res = reasoner.isEntailed(OWLSubClassOfAxiomImpl(owlSub,owlSup, HashSet()))
+
+                if (!res)
+                    log(
+                        "Could not check query $query: specified type is $type",
+                        ctx
+                    )
                 return res
             } else {
                 log("Failed to extract OWL expression for query", ctx)
@@ -72,6 +129,7 @@ class QueryChecker(
             }
         } catch (e: Exception){
             log("Failed to typecheck query (Exception: ${e.message}) ", ctx)
+            e.printStackTrace()
             return false
         }
     }
@@ -80,7 +138,7 @@ class QueryChecker(
         try {
             val out = settings.replaceKnownPrefixes(formula)
             val m = OWLManager.createOWLOntologyManager()
-            val ontology = tripleManager.getStaticDataOntology()
+            val ontology = getOntologyNoHeap(tripleManager)
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
             return parser.parseClassExpression(out)
@@ -103,38 +161,7 @@ class QueryChecker(
         return inner.toString()
     }
 
-    private fun build(current : DLNode, seenVars : MutableSet<DLNode>) : String? {
-        var ret = "owl:Thing"
-        if(seenVars.contains(current)) return null
-        seenVars.add(current)
-        if(!current.isVar) return current.str.substring(0,current.str.indexOfFirst { it == '^' }).removeSurrounding("\"")
-        val next = incidence.getOrDefault(current, mutableSetOf())
 
-        for(n in next){
-            var nextString = ""
-            if(n.label == "a"){
-                nextString = "<${n.to.str}>"
-            } else if(n.from == current && !seenVars.contains(n.to) && n.to.isVar){
-                nextString = "(<${n.label}> SOME ${build(n.to, seenVars)})"
-            } else if(n.from == current && !seenVars.contains(n.to) && !n.to.isVar){
-                nextString = "(<${n.label}> VALUE ${build(n.to, seenVars)})"
-            } else if(n.from != current && !seenVars.contains(n.from) && n.from.isVar){
-                nextString = "(inverse(<${n.label}>) SOME ${build(n.to, seenVars)})"
-            } else if(n.from != current && !seenVars.contains(n.from) && !n.from.isVar){
-                nextString = "(inverse(<${n.label}>) VALUE ${build(n.to, seenVars)})"
-            }
-            ret = if(ret == "owl:Thing") if( nextString != "") nextString else ret else "$ret AND $nextString"
-        }
-        return ret
-    }
-
-    private fun buildFormula() : Boolean {
-        val ret = build(DLNode(varName, true), mutableSetOf())
-        if(ret != null){
-            formula = ret
-        }
-        return ret != null
-    }
 
     private fun buildTree() : Boolean {
 
@@ -145,6 +172,7 @@ class QueryChecker(
         }
 
         val query = QueryFactory.create(toCheck)
+
         if(!query.isSelectType) {
             log("non-select queries are not supported yet", ctx)
             return false
@@ -153,58 +181,90 @@ class QueryChecker(
         if(varName == "obj" && (query.projectVars.size != 1 || query.projectVars.first().name != varName)){
             log("access-queries must have a single extracted variable called ?obj", ctx)
             return false
-        }else if(!query.projectVars.any { it.name == varName }){
-            log("variable $varName not found in query", ctx)
-            return false
         }
 
-
-
-        val pattern = query.queryPattern
-        if(pattern !is ElementGroup || pattern.elements.size != 1) {
-            log("This kind of query is not supported", ctx, Severity.WARNING)
-            return false
+        val dl = buildTree(query)
+        if(dl != null) {
+            val f = buildFormula(dl)
+            if(f != null)
+                formula = f
+            else return false
         }
-        val elem = pattern.elements.first()
-        if(elem !is ElementPathBlock) {
-            log("This kind of query is not supported", ctx, Severity.WARNING)
-            return false
-        }
-
-        for(f in elem.pattern.list){
-            if(!f.isTriple){
-                log("This kind of query is not supported", ctx, Severity.WARNING)
-                return false
-            }
-            val sub  = f.subject
-            val predicate = f.predicate
-            val obj  = f.`object`
-            if( predicate.toString() == "http://www.w3.org/1999/02/22-rdf-syntax-ns#type" && sub.isVariable && !obj.isVariable){
-                val subNode = DLNode(sub.name, true)
-                val objNode = DLNode(obj.toString(), false)
-                val edge = DLEdge(subNode, "a", objNode)
-                val old = incidence.getOrDefault(subNode, mutableSetOf())
-                old.add(edge)
-                incidence[subNode] = old
-            } else if( !predicate.isVariable && sub.isVariable && (obj.isVariable || obj.isLiteral)){
-                val subNode = DLNode(sub.name, true)
-                val objNode = if(obj.isVariable) DLNode(obj.name, obj.isVariable) else DLNode(obj.toString(), obj.isVariable)
-                val edge = DLEdge(subNode, predicate.toString(), objNode)
-                val old = incidence.getOrDefault(subNode, mutableSetOf())
-                old.add(edge)
-                incidence[subNode] = old
-                if(obj.isVariable){
-                    val old2 = incidence.getOrDefault(objNode, mutableSetOf())
-                    old2.add(edge)
-                    incidence[objNode] = old2
-                }
-            } else {
-                log("This kind of query is not supported", ctx, Severity.WARNING)
-                return false
-            }
-        }
+        else return false
         return true
     }
+
+
+    //TODO: this returns a tree, but we do no check if a variable occurs twice, so it actually could be a graph
+    fun buildTree(query: Query) : DL?{
+        val pattern = query.queryPattern
+        if(pattern !is ElementGroup) return null
+        val orig = DL("?obj",mutableListOf(), null)
+        val dls = mutableListOf(orig)
+        for (p in pattern.elements )
+            buildTreeInternal(p, dls)
+
+        dls.remove(orig)
+        while (true) {
+            val origNames = orig.collectNames()
+            val mergeable = dls.filter { origNames.intersect(it.collectNames()).isNotEmpty() }
+            dls.removeAll(mergeable)
+            if (mergeable.isNotEmpty()) {
+                for (dl in mergeable)
+                    orig.merge(dl)
+            } else break
+        }
+
+        return orig
+    }
+
+    fun buildTreeInternal(element : Element, dls : MutableList<DL>) {
+
+        if(element !is ElementPathBlock) {
+            log("This kind of query is not supported", ctx, Severity.WARNING)
+            return
+        }
+
+        for(f in element.pattern.list){
+            if(f.isTriple){
+                val sub  = f.subject
+                val predicate = f.predicate
+                val obj  = f.`object`
+                val target = dls.firstOrNull{ it.find(sub.toString()) != null }
+                val newDL = DL(
+                    sub.toString(),
+                    mutableListOf(Edge(predicate.uri, false, DL(obj.toString(), mutableListOf(), obj))),
+                    sub
+                )
+                if(target != null)  target.add(newDL)
+                else dls.add(newDL)
+            } else {
+                log("This kind of query is not supported", ctx, Severity.WARNING)
+            }
+        }
+    }
+
+
+    fun buildFormula(dl : DL)  : String? {
+        if(dl.origin != null && dl.origin.isURI) return "<${dl.name}>"
+        if(dl.origin != null && dl.origin.isLiteral) return dl.name.substring(0,dl.name.indexOfFirst { it == '^' }).removeSurrounding("\"")
+        var ret = "owl:Thing"
+        for(n in dl.tree){
+            var nextString = ""
+            if(n.label == "a"){
+                nextString = "<${buildFormula(n.next)}>"
+            } else if(n.next.origin!!.isLiteral && !n.inverted) {
+                nextString = "(<${n.label}> VALUE ${buildFormula(n.next)})"
+            } else if(!n.inverted){
+                nextString = "(<${n.label}> SOME ${buildFormula(n.next)})"
+            } else {
+                nextString = "(inverse(<${n.label}>) SOME ${buildFormula(n.next)})"
+            }
+            ret = if(ret == "owl:Thing") nextString else "$ret AND $nextString"
+        }
+        return ret
+    }
+
 
 
 
