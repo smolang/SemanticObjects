@@ -17,10 +17,7 @@ import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
 import org.semanticweb.owlapi.model.IRI
-import org.semanticweb.owlapi.model.OWLAnnotation
-import org.semanticweb.owlapi.model.OWLAxiom
 import org.semanticweb.owlapi.model.OWLClassExpression
-import org.semanticweb.owlapi.model.OWLObjectSomeValuesFrom
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OntologyConfigurator
 import uk.ac.manchester.cs.owl.owlapi.OWLClassImpl
@@ -170,7 +167,7 @@ class QueryChecker(
 
     private fun buildTree() : Boolean {
 
-        val toCheck = "$sparqlPrefix\n\n $query\n"
+        val toCheck = "${settings.queryPrefixes()}\n\n $query\n"
         if(toCheck.contains("%")) {
             log("%n constants are not supported yet", ctx, Severity.WARNING)
             return false
@@ -254,15 +251,15 @@ class QueryChecker(
         if(dl.origin != null && dl.origin.isLiteral) return dl.name.substring(0,dl.name.indexOfFirst { it == '^' }).removeSurrounding("\"")
         var ret = "owl:Thing"
         for(n in dl.tree){
-            var nextString = ""
+            val nextString: String =
             if(n.label == "a"){
-                nextString = "<${buildFormula(n.next)}>"
+                 "<${buildFormula(n.next)}>"
             } else if(n.next.origin!!.isLiteral && !n.inverted) {
-                nextString = "(<${n.label}> VALUE ${buildFormula(n.next)})"
+                 "(<${n.label}> VALUE ${buildFormula(n.next)})"
             } else if(!n.inverted){
-                nextString = "(<${n.label}> SOME ${buildFormula(n.next)})"
+                 "(<${n.label}> SOME ${buildFormula(n.next)})"
             } else {
-                nextString = "(inverse(<${n.label}>) SOME ${buildFormula(n.next)})"
+                 "(inverse(<${n.label}>) SOME ${buildFormula(n.next)})"
             }
             ret = if(ret == "owl:Thing") nextString else "$ret AND $nextString"
         }
@@ -271,16 +268,4 @@ class QueryChecker(
 
 
 
-
-    private val sparqlPrefix =
-        """
-                    PREFIX smol: <${settings.langPrefix}>
-                    PREFIX prog: <${settings.progPrefix}>
-                    PREFIX run: <${settings.runPrefix}>
-                    PREFIX owl: <http://www.w3.org/2002/07/owl#> 
-                    PREFIX rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> 
-                    PREFIX rdfs: <http://www.w3.org/2000/01/rdf-schema#> 
-                    PREFIX xsd: <http://www.w3.org/2001/XMLSchema#> 
-                    PREFIX domain: <${settings.domainPrefix}> 
-                """.trimIndent()
 }

@@ -80,6 +80,14 @@ data class Settings(var verbose : Boolean,      //Verbosity
         for( (k,v) in extraPrefixes) res = "$res\n@prefix $k: <$v>."
         return res + "\n"
     }
+    fun queryPrefixes() : String {
+        var res = """PREFIX smol: <${langPrefix}> 
+           PREFIX prog: <${progPrefix}>
+           PREFIX domain: <${domainPrefix}>
+           PREFIX run: <${runPrefix}> """.trimIndent()
+        for( (k,v) in extraPrefixes) res = "$res\nPREFIX $k: <$v>"
+        return res + "\n"
+    }
 
     fun getHeader() : String {
         return """
