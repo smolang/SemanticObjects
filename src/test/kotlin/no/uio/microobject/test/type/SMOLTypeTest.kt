@@ -9,7 +9,7 @@ class SMOLTypeTest : MicroObjectTypeTest() {
             "Query check success $i"{
                 val tC = checkMet("Test", "mSuccess$i", "type_query")
                 assert(tC.report(false))
-                assert(tC.queryCheckers.all { it.error.none { it.severity == Severity.ERROR } })
+                assert(tC.queryCheckers.all { it.error.none { it -> it.severity == Severity.ERROR } })
             }
 
         "Query check fail 1"{

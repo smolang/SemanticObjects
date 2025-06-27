@@ -87,7 +87,7 @@ open class MicroObjectTest : StringSpec() {
         val path = str.map { this::class.java.classLoader.getResource("$it.smol").file }
         val localPath = if(IS_OS_WINDOWS) path.map { it.removePrefix("/")} else path
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
-        val program =  localPath.map { File(it).readText(Charsets.UTF_8)}.joinToString("\n")
+        val program = localPath.joinToString("\n") { File(it).readText(Charsets.UTF_8) }
         val lexer = WhileLexer(CharStreams.fromString(stdLib + program))
         val tokens = CommonTokenStream(lexer)
         val parser = WhileParser(tokens)

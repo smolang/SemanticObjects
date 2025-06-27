@@ -2,7 +2,6 @@ package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
 import no.uio.microobject.ast.expr.LiteralExpr
-import no.uio.microobject.ast.expr.LocalVar
 import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory

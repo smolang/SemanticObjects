@@ -46,7 +46,6 @@ data class GenericType(val name : String) : SimpleType() {
     override fun toString(): String = name
     override fun isFullyConcrete(): Boolean = false
     override fun containsUnknown(types: Set<String>): Boolean = !types.contains(name)
-    override fun isAssignable(rhs: Type, extends: MutableMap<String, Type>): Boolean = super.isAssignable(rhs, extends)
 }
 data class BaseType(val name : String) : SimpleType(){
     override fun getNameString() : String  = name

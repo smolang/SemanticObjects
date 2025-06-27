@@ -134,7 +134,7 @@ class Main : CliktCommand() {
         if (tripleStore != null){
             assert(back == null)
 
-            val url = tripleStore.toString() + "/query"
+            val url = "$tripleStore/query"
 
             // We check if the connection exists by querying the triple store for a single element
             // If the query fails, we exit the program. There might be a more elegant way of doing it

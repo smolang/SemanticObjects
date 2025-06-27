@@ -12,7 +12,7 @@ import kotlin.math.roundToInt
 
 data class ConversionExpr(val c : Conversion, val inner : Expression) : Expression {
     override fun eval(stack: Memory, heap: GlobalMemory, simMemory: SimulationMemory, obj: LiteralExpr): LiteralExpr {
-        val i = inner.eval(stack, heap, simMemory, obj);
+        val i = inner.eval(stack, heap, simMemory, obj)
         when (c){
             Conversion.DOUBLETOINT ->
                 if (i.tag == DOUBLETYPE){

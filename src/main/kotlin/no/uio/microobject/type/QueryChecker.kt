@@ -31,7 +31,7 @@ data class Edge(val label : String, val inverted : Boolean, var next : DL)
 data class DL(val name: String, val tree : MutableList<Edge>, val origin : Node?){
     fun isTreeLike(vars : Set<String>) : Boolean{
         if(name.startsWith("?") && !name.startsWith("??"))
-            return tree.fold(vars.contains(name), {x, nx -> x && nx.next.isTreeLike(vars + name)})
+            return tree.fold(vars.contains(name)) { x, nx -> x && nx.next.isTreeLike(vars + name) }
         return true
     }
     fun find(name: String) : DL? {
@@ -43,7 +43,7 @@ data class DL(val name: String, val tree : MutableList<Edge>, val origin : Node?
     }
     fun collectNames() : Set<String> {
         if(!name.startsWith("?")) return setOf() //case: this is a literal
-        return tree.fold(setOf(name), {x, nx -> x + nx.next.collectNames()})
+        return tree.fold(setOf(name)) { x, nx -> x + nx.next.collectNames() }
     }
     fun merge(dl : DL)  {
         val names = dl.collectNames().intersect(collectNames())

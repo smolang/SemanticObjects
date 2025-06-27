@@ -29,7 +29,6 @@ import org.semanticweb.owlapi.reasoner.NodeSet
 import java.io.File
 import java.io.FileWriter
 import java.util.*
-import kotlin.streams.toList
 
 data class InfluxDBConnection(val url : String, val org : String, val token : String, val bucket : String){
     private var influxDBClient : InfluxDBClientKotlin? = null
@@ -225,9 +224,9 @@ class Interpreter(
         for (expr in params) {
             val p = eval(expr, stackMemory, heap, simMemory, obj)
             str = when (p.tag) {
-                INTTYPE     -> str.replace("%${i++}", if(SPARQL) "\"${p.literal}\"^^xsd:integer" else p.literal);
-                DOUBLETYPE  -> str.replace("%${i++}", if(SPARQL)"\"${p.literal}\"^^xsd:double" else p.literal);
-                STRINGTYPE  -> str.replace("%${i++}", p.literal);
+                INTTYPE     -> str.replace("%${i++}", if(SPARQL) "\"${p.literal}\"^^xsd:integer" else p.literal)
+                DOUBLETYPE  -> str.replace("%${i++}", if(SPARQL)"\"${p.literal}\"^^xsd:double" else p.literal)
+                STRINGTYPE  -> str.replace("%${i++}", p.literal)
                 else        -> str.replace("%${i++}", "run:${p.literal}")
             }
         }
