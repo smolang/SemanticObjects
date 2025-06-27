@@ -17,6 +17,7 @@ import org.semanticweb.HermiT.Reasoner
 import org.semanticweb.owlapi.apibinding.OWLManager
 import org.semanticweb.owlapi.manchestersyntax.parser.ManchesterOWLSyntaxParserImpl
 import org.semanticweb.owlapi.model.IRI
+import org.semanticweb.owlapi.model.OWLClass
 import org.semanticweb.owlapi.model.OWLClassExpression
 import org.semanticweb.owlapi.model.OWLOntology
 import org.semanticweb.owlapi.model.OntologyConfigurator
@@ -115,10 +116,15 @@ class QueryChecker(
             val owlSub = getQueryExpression(tripleManager)
             if(owlSub != null) {
                 var owlSup : OWLClassExpression =  OWLClassImpl(IRI.create(settings.progPrefix + tString))
-                if(!settings.punning)
-                    owlSup = OWLObjectSomeValuesFromImpl(OWLObjectPropertyImpl(IRI.create(settings.prefixMap()["smol"] + "implements")), owlSup)
-                val res = reasoner.isEntailed(OWLSubClassOfAxiomImpl(owlSub,owlSup, HashSet()))
-
+                val res = if(!settings.punning) {
+                    owlSup = OWLObjectSomeValuesFromImpl(
+                        OWLObjectPropertyImpl(IRI.create(settings.prefixMap()["smol"] + "implements")),
+                        owlSup
+                    )
+                    reasoner.isEntailed(OWLSubClassOfAxiomImpl(owlSub, owlSup, HashSet()))
+                } else {
+                     reasoner.getSuperClasses(owlSub).containsEntity(owlSup as OWLClass)
+                }
                 if (!res)
                     log(
                         "Could not check query $query: specified type is $type",
@@ -143,6 +149,8 @@ class QueryChecker(
             val ontology = getOntologyNoHeap(tripleManager)
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
+            ontology.classesInSignature().forEach { println("Class: $it") }
+            ontology.objectPropertiesInSignature().forEach { println("Object property: $it") }
             return parser.parseClassExpression(out)
         } catch (e: Exception) {
             if(settings.verbose) e.printStackTrace()

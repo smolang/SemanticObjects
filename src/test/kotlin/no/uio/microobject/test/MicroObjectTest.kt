@@ -41,12 +41,12 @@ open class MicroObjectTest : StringSpec() {
         else Enabled.disabled("The triple store needs to be running on a docker container for this test.")
     }
 
-    private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
-    private var tripleStoreSettings = Settings(false, false,  "/tmp/mo","http://localhost:3030/ds","","urn:", extraPrefixes = hashMapOf())
+    private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf(), punning = true)
+    private var tripleStoreSettings = Settings(false, false,  "/tmp/mo","http://localhost:3030/ds","","urn:", extraPrefixes = hashMapOf(), punning = true)
     protected fun loadBackground(path : String, domainPrefix : String = ""){
         val file = File(path)
         val backgr = file.readText()
-        settings = Settings(false, false,  "/tmp/mo","",backgr,domainPrefix,"urn:", extraPrefixes = hashMapOf())
+        settings = Settings(false, false,  "/tmp/mo","",backgr,domainPrefix,"urn:", extraPrefixes = hashMapOf(), punning = true)
     }
     private fun loadString(program : String) : WhileParser.ProgramContext{
         val stdLib = this::class.java.classLoader.getResource("StdLib.smol").readText() + "\n\n"
@@ -162,7 +162,6 @@ open class MicroObjectTest : StringSpec() {
 
         val tC = TypeChecker(ast, tripleStoreSettings, tripleManager)
         tC.collect()
-        var rules = ""
 
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
@@ -191,7 +190,7 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val settings = Settings(false, true, "/tmp/mo","","","urn:", extraPrefixes = hashMapOf(), useQueryType = true)
+        val settings = Settings(false, true, "/tmp/mo","","","urn:", extraPrefixes = hashMapOf(), useQueryType = true, punning = true)
         val tripleManager = TripleManager(settings, pair.second, null)
 
         val tC = TypeChecker(ast, settings, tripleManager)

@@ -5,7 +5,9 @@ main
   c = new C();
   c = new C();
   List<C> test1 = member("<smol:links> some <domain:B>");
-  List<C> test2 = member("<smol:link> some <domain:A>");
+  print(test1);
+  List<C> test2 = member("<smol:links> some <domain:A>");
+  print(test2);
   Int l1 = test1.length();
   Int l2 = test2.length();
   breakpoint;

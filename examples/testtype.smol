@@ -2,7 +2,11 @@ class C(Int i) end
 class D(C c)
   Unit m()
      List<C> cs = access("SELECT ?obj WHERE { ?obj smol:implements prog:C. ?obj smol:hasEntry [smol:hasValue 5; smol:entryOf prog:C_i].}");
-   print(cs);
+     print(cs);
+  end
+  Unit m()
+     List<C> cs = access("SELECT ?obj WHERE { ?obj smol:implements prog:C. ?obj smol:hasEntry ?x. ?x smol:hasValue 5. ?x smol:entryOf prog:C_i.}");
+     print(cs);
   end
 end
 

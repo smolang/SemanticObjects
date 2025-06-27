@@ -383,6 +383,14 @@ class TripleManager(val settings: Settings, val staticTable: StaticTable, privat
             val allClasses: MutableSet<String> = methodTable.keys.toMutableSet()
             for(classObj in hierarchy.entries){
                 for(subClass in classObj.value){
+                    if(settings.punning) {
+                        addIfMatch(
+                            uriTriple("${prog}${subClass}", "${rdfs}subClassOf", "${prog}${classObj.key}"),
+                            searchTriple,
+                            matchingTriples,
+                            pseudo
+                        )
+                    }
                     addIfMatch(uriTriple("${prog}${subClass}", "${smol}subClass", "${prog}${classObj.key}"), searchTriple, matchingTriples, pseudo)
                     allClasses -= subClass
                 }
@@ -442,14 +450,16 @@ class TripleManager(val settings: Settings, val staticTable: StaticTable, privat
 
                 /** this code adds the rule triples directly to the KB */
                 if(interpreter.staticInfo.methodTable[obj.tag.name] != null)
-                    for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries.filter { it.value.isRule || it.value.isDomain })
-                       liftRuleMethod(m, this@TripleManager, searchTriple, interpreter,obj, matchingTriples, pseudo, useGuardClauses)
+                    for (m in interpreter.staticInfo.methodTable[obj.tag.name]!!.entries){
+                       if(m.value.isDomain || m.value.isRule)
+                        liftRuleMethod(m, this@TripleManager, searchTriple, interpreter,obj, matchingTriples, pseudo, useGuardClauses)
+                    }
 
 
                 if(heap[obj]!!.containsKey("__models")) {
                     val modelString = heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")
                     val modelURI = settings.replaceKnownPrefixesNoColon(modelString)
-                    addIfMatch(uriTriple(subjectString, "${domain}links", modelURI), searchTriple, matchingTriples, pseudo)
+                    addIfMatch(uriTriple(subjectString, "${smol}links", modelURI), searchTriple, matchingTriples, pseudo)
                 }
                 if(heap[obj]!!.containsKey("__describe"))
                     generateLinkage(this@TripleManager,searchTriple,interpreter,obj, matchingTriples,pseudo,heap,useGuardClauses)

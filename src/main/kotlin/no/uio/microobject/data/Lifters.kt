@@ -67,24 +67,7 @@ fun liftClass(classObj : Map.Entry<String, FieldEntry>,  //class to lift
             }
         }
 
-        manager.addIfMatch(
-            uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"),
-            searchTriple,
-            matchingTriples,
-            pseudo
-        )
-        manager.addIfMatch(
-            uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"),
-            searchTriple,
-            matchingTriples,
-            pseudo
-        )
-        manager.addIfMatch(
-            uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}Class"),
-            searchTriple,
-            matchingTriples,
-            pseudo
-        )
+
         if(manager.settings.punning){
             manager.addIfMatch(uriTriple("${prog}${fieldName}", "${rdfs}domain", "${prog}${className}"), searchTriple, matchingTriples, pseudo)
 
@@ -116,6 +99,25 @@ fun liftClass(classObj : Map.Entry<String, FieldEntry>,  //class to lift
 
                 }
             }
+        } else {
+            manager.addIfMatch(
+                uriTriple("${prog}${className}", "${smol}hasField", "${prog}${fieldName}"),
+                searchTriple,
+                matchingTriples,
+                pseudo
+            )
+            manager.addIfMatch(
+                uriTriple("${prog}${fieldName}", "${rdf}type", "${smol}Field"),
+                searchTriple,
+                matchingTriples,
+                pseudo
+            )
+            manager.addIfMatch(
+                uriTriple("${prog}${fieldName}", "${rdf}type", "${owl}Class"),
+                searchTriple,
+                matchingTriples,
+                pseudo
+            )
         }
     }
 }
@@ -219,7 +221,7 @@ fun liftRuleMethod(m : Map.Entry<String, MethodInfo>,  //class to lift
 
     val local = if(m.value.isDomain) domain else prog
     // Guard on the predicate. If the predicate is not what we search for, then we can skip evalCall below.
-    val predicateString = manager.settings.replaceKnownPrefixesNoColon("${local}:${m.value.declaringClass}_${m.key}_builtin_res")
+    val predicateString = manager.settings.replaceKnownPrefixesNoColon("${local}${m.value.declaringClass}_${m.key}_builtin_res")
     if (useGuardClauses && searchTriple.predicate is Node_URI &&
         searchTriple.predicate.uri != "${smol}hasEntry" &&
         searchTriple.predicate.uri != "${smol}hasValue" &&
@@ -300,7 +302,6 @@ fun liftField(store:String,  //class to lift
         )
         manager.addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
     } else {
-
         val entry = NodeFactory.createURI("${run}${obj.tag}_${store}")
         var resTriple =
             Triple(
