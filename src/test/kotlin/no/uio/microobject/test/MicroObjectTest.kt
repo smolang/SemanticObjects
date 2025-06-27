@@ -178,7 +178,7 @@ open class MicroObjectTest : StringSpec() {
         return Pair(interpreter, tC)
     }
 
-    protected fun initTc(str : String, loadAs : StringLoad = StringLoad.PATH) : Pair<TypeChecker, WhileParser.ProgramContext> {
+    protected fun initTc(str : String, loadAs : StringLoad = StringLoad.PATH, punningB : Boolean = true) : Pair<TypeChecker, WhileParser.ProgramContext> {
 
         val ast = when(loadAs){
             StringLoad.STMT -> loadStatement(str)
@@ -190,7 +190,7 @@ open class MicroObjectTest : StringSpec() {
         val visitor = Translate()
         val pair = visitor.generateStatic(ast)
 
-        val settings = Settings(false, true, "/tmp/mo","","","urn:", extraPrefixes = hashMapOf(), useQueryType = true, punning = true)
+        val settings = Settings(false, true, "/tmp/mo","","","urn:", extraPrefixes = hashMapOf(), useQueryType = true, punning = punningB)
         val tripleManager = TripleManager(settings, pair.second, null)
 
         val tC = TypeChecker(ast, settings, tripleManager)

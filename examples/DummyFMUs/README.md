@@ -1,0 +1,1 @@
+This directory contains the FMUs and the underlying modelica code to generate dummies for the smarthouse example.

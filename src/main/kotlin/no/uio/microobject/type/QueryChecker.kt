@@ -149,8 +149,6 @@ class QueryChecker(
             val ontology = getOntologyNoHeap(tripleManager)
             val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
             parser.setDefaultOntology(ontology)
-            ontology.classesInSignature().forEach { println("Class: $it") }
-            ontology.objectPropertiesInSignature().forEach { println("Object property: $it") }
             return parser.parseClassExpression(out)
         } catch (e: Exception) {
             if(settings.verbose) e.printStackTrace()

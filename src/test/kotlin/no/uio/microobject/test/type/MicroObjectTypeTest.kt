@@ -5,8 +5,8 @@ import no.uio.microobject.type.TypeChecker
 
 open class MicroObjectTypeTest  : MicroObjectTest() {
 
-    protected fun checkMet(className : String, metName : String, filename: String) : TypeChecker{
-        val pair = initTc(filename, StringLoad.RES)
+    protected fun checkMet(className : String, metName : String, filename: String, punningB : Boolean = true) : TypeChecker{
+        val pair = initTc(filename, StringLoad.RES, punningB)
         val classes = retrieveClass(className, pair.second)
         assert(classes.size == 1)
         val methods = retrieveMethod(metName, classes[0])
