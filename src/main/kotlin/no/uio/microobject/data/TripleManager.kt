@@ -155,7 +155,15 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             for ((key, value) in prefixMap) str += "@prefix $key: <$value> .\n"
             str += settings.background + "\n"
             val s: InputStream = ByteArrayInputStream(str.toByteArray())
-            model.read(s, null, "TTL")
+            try {
+                model.read(s, null, "TTL")
+            } catch (e: Exception) {
+                println("ERROR parsing background TTL: ${e.message}")
+                println("Problematic TTL content:")
+                println(str)
+                throw e
+            }
+
         }
         return model
     }
@@ -662,6 +670,10 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             }
                         }
 
+                        if (description.trim().isEmpty() || description.trim() == heap[obj]!!.getOrDefault("__models", LiteralExpr("ERROR")).literal.removeSurrounding("\"")) {
+                            continue  // Skip this object
+                        }
+
                         for ((key, value) in interpreter.settings.prefixMap()) extendedDescription += "@prefix $key: <$value> .\n"
                         description = description.replace("\\\"","\"")
                         for(fd in heap[obj]!!.keys.filter { !it.startsWith("__") }){
@@ -679,7 +691,13 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             val newName = "domain:virt_${modelURI.split("#")[1]}_$suffix"
                             description = description.replace(m.value, newName)
                         }
+
                         extendedDescription += description
+                        val contentAfterPrefixes = extendedDescription.substringAfter("@prefix prog:").substringAfter(".").trim()
+                        if (contentAfterPrefixes.isEmpty()) {
+                            println("DEBUG: Skipping empty TTL content - only prefixes found")
+                            continue
+                        }
                         try {
                             val m: Model = ModelFactory.createDefaultModel().read(IOUtils.toInputStream(extendedDescription, "UTF-8"), null, "TTL")
                             // Consider each triple and add it if it matches the search triple.

@@ -1,3 +1,7 @@
+// To run the simulation:
+// java -jar build/libs/smol.jar -i sediment_hosted_copper/copper_simulation.smol -v -e -b sediment_hosted_copper/copper.ttl -p UFRGS1=https://www.inf.ufrgs.br/bdi/ontologies/geocoreontology#UFRGS -p obo=http://purl.obolibrary.org/obo/ -d http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#
+// Save output: > debug_output.txt 2>&1
+
 // ========================================================================
 // SIMULATION PARAMETERS CLASS
 // ========================================================================
@@ -32,67 +36,86 @@ class SimulationParameters (
 end
 
 // ========================================================================
-// BASE GEOLOGICAL OBJECT CLASS
-// ========================================================================
-// Abstract base class for all geological units in the copper system. Extends the basic GeoObject pattern from the petroleum system.
-abstract class GeoObject (
-    hidden GeoObject above,             // Unit stratigraphically above
-    hidden GeoObject below,             // Unit stratigraphically below
-    hidden GeoObject left,              // Lateral connectivity (future enhancement)
-    hidden GeoObject right,             // Lateral connectivity (future enhancement)
-    hidden GeoObject behind,            // 3D connectivity (future enhancement)
-    hidden GeoObject front,             // 3D connectivity (future enhancement)
-    hidden Double size)                 // Thickness of unit in metres
-
-    // Calculate total depth by summing all units above
-    Double getDepth()
-        if(this.above == null) then return 0.0;
-        else
-            Double a = this.above.size;
-            Double b = this.above.getDepth();
-            return a + b;
-        end
-    end
-
-    // Calculate temperature based on depth and geothermal gradient
-    Double getTemperature(SimulationParameters params)
-        Double depth_km = this.getDepth() / 1000.0;
-        return params.surface_temperature + (depth_km * params.geothermal_gradient);
-    end
-
-    // Abstract methods that subclasses must implement.
-    abstract Unit update(SimulationParameters params)；
-    abstract Unit printState()；
-end
-
-// ========================================================================
 // COPPER-SPECIFIC GEOLOGICAL UNIT CLASS
 // ========================================================================
-// This abstract class adds copper-system specific properties to geological units.
-abstract class CopperGeoUnit extends GeoObject (
-    hidden Int unitType,                // 1=basement, 2=reduced sediment, 3=oxidised sediment
-    hidden Double salinity,             // Current pore water salinity (wt% NaCl equiv)
-    hidden Double copperContent,        // Accumulated copper (kg/m³)
-    hidden Boolean isReduced,           // True if unit has reducing conditions
-    hidden Double porosity,             // Porosity (0-1) controls fluid flow
-    hidden Double permeability,         // Permeability (mD) controls fluid flow rate
-    hidden Double organicContent,       // Organic carbon content (wt%) - creates reducing conditions
+// This abstract class that hosts copper-system specific properties as geological units.
+abstract class CopperGeoUnit (
+    hidden CopperGeoUnit above,             // Unit stratigraphically above
+    hidden CopperGeoUnit below,             // Unit stratigraphically below
+    hidden CopperGeoUnit left,              // Lateral connectivity (future enhancement)
+    hidden CopperGeoUnit right,             // Lateral connectivity (future enhancement)
+    hidden CopperGeoUnit behind,            // 3D connectivity (future enhancement)
+    hidden CopperGeoUnit front,             // 3D connectivity (future enhancement)
+    hidden Double size,                     // Thickness of unit in metres
+    hidden Int unitType,                    // 1=basement, 2=reduced sediment, 3=oxidised sediment
+    hidden Double salinity,                 // Current pore water salinity (wt% NaCl equiv)
+    hidden Double copperContent,            // Accumulated copper (kg/m³)
+    hidden Boolean isReduced,               // True if unit has reducing conditions
+    hidden Double porosity,                 // Porosity (0-1) controls fluid flow
+    hidden Double permeability,             // Permeability (mD) controls fluid flow rate
+    hidden Double organicContent,           // Organic carbon content (wt%) - creates reducing conditions
     hidden SimulationParameters params)
 
     // Process brine flowing through this unit.
-    // Returns: [remaining_copper, new_salinity, new_oxidation].
     abstract List<Double> processBrine(Double brineCopper, Double brineSalinity, Double brineOxidation)
 
     // Check if this unit can act as a seal (low permeability).
     Boolean canSeal()
-        return this.permeability < 0.1; // Less than 0.1 mD acts as seal
+        return this.permeability < 0.1;
     end
 
-    // Update all units from bottom to top.
+    // Calculate total depth from the surface to the top of the current unit
+    Double getDepth()
+
+        Double totalDepth = 0.0;
+        Double tempDepth = 0.0;
+        CopperGeoUnit current = this;
+
+        while current.above != null do
+            tempDepth = totalDepth + current.above.size;
+            totalDepth = tempDepth;
+            current = current.above;
+        end
+
+        return totalDepth;
+    end
+
+    // Calculate temperature based on depth and geothermal gradient
+    Double getTemperature(SimulationParameters params)
+        Double depth_km_temp = this.getDepth();
+        Double depth_km = depth_km_temp / 1000.0;
+        return params.surface_temperature + (depth_km * params.geothermal_gradient);
+    end
+
+    // Abstract methods that subclasses must implement.
+    abstract Unit update(SimulationParameters params)
+    abstract Unit printState()
+
     Unit updateAll(SimulationParameters params)
+        print("    Updating unit at depth ");
+        Double depth = this.getDepth();
+        print(depth);
+        print(" m, type=");
+        print(this.unitType);  // Add unit type to identify
+        print(", organic=");
+        print(this.organicContent);  // Add unique property
+        print(" m");
+
         this.update(params);
-        if(this.above != null) then
-            this.above.updateAll(params);
+        if this.above != null then
+            Double aboveDepth = this.above.getDepth();
+            print("      -> Moving to above unit at depth ");
+            print(aboveDepth);
+            print(" m");
+
+            if aboveDepth >= depth then
+                print("    ERROR: Above unit is deeper or same depth! Circular reference detected!");
+                print("    Stopping traversal to prevent infinite loop.");
+            else
+                this.above.updateAll(params);
+            end
+        else
+            print("    Reached top of stratigraphy");
         end
     end
 end
@@ -103,82 +126,44 @@ end
 // Represents crystalline basement rocks (granite, gneiss, etc.) These units can host mineralisation in fractures but don't have primary porosity.
 class BasementUnit extends CopperGeoUnit ()
     // Link this class to the granite_gneiss concept in our ontology, which enables reasoning about basement rock properties.
-    models "a <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#granite_gneiss>"
+    models "a <domain:granite_gneiss> .";
 
     override List<Double> processBrine(Double brineCopper, Double brineSalinity, Double brineOxidation)
-        // BASEMENT MINERALISATION MECHANISM:
-        // 1. PRIMARY POROSITY: Near zero (0.01-1%) vs sediments (10-30%)
-        //    - Fluids can only flow through fractures and faults, creating focused flow rather than pervasive flow.
-        // 2. REDOX STATE: Generally neither strongly oxidising nor reducing
-        //    - No organic matter for reduction.
-        //    - No red bed oxidation.
-        //    - Cannot precipitate copper via redox reactions.
-        // 3. MINERALISATION STYLE: Structurally controlled veins only
-        //    - No disseminated ore like in sediments.
-        //    - Requires fractures + high temp + high salinity.
+
+        Double newOxidation = brineOxidation * 1.1;
+        if newOxidation > 1.0 then newOxidation = 1.0; end
+
+        List<Double> result = new List<Double>(newOxidation, null);
 
         // Get current temperature based on depth.
         Double temp = this.getTemperature(this.params);
 
-        // VEIN FORMATION TRIGGER CHECK: Both conditions must be met for basement mineralisation.
-        // 1. Temperature >= 150°C (creates convective circulation in fractures)
-        // 2. Salinity > 31 wt% (ensures high metal carrying capacity)
-        if temp >= this.params.vein_formation_temp and brineSalinity > this.params.vein_formation_salinity then
-            // BASEMENT PRECIPITATION MECHANISM:
-            // Without redox control, precipitation occurs via:
-            // 1. COOLING: As hot brine rises through fractures.
-            // 2. PRESSURE DROP: Decreasing pressure in dilational fractures.
-            // 3. WALL ROCK REACTION: Feldspar alteration releases Ca, precipitates sulfides.
-            // 4. MIXING: With cooler, less saline groundwater in fracture networks.
+        if temp >= this.params.vein_formation_temp then
+            if brineSalinity > this.params.vein_formation_salinity then
 
-            // Only 10% precipitates because:
-            // - No redox trap (main precipitation mechanism absent).
-            // - Fractures are small volume compared to porous sediments.
-            // - Fast flow in fractures limits reaction time.
-            Double veinCopper = brineCopper * 0.1;
+                Double veinCopper = brineCopper * 0.1;
 
-            // Vein concentration factor applies because:
-            // - All precipitation occurs in narrow fractures.
-            // - No dispersion into rock matrix.
-            // - Multiple fluid pulses use same fractures.
-            this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
+                this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
 
-            print(">> Vein mineralisation in basement at depth ");
-            Double depth = this.getDepth();
-            print(depth);
-            print(" m, temperature ");
-            print(temp);
-            print(" C");
+                print(">> Vein mineralisation in basement at depth ");
+                Double depth = this.getDepth();
+                print(depth);
+                print(" m, temperature ");
+                print(temp);
+                print(" C");
 
-            // Basement doesn't reduce fluid because:
-            // - No organic matter or other reductants.
-            // - Mineralisation is physical/chemical, not redox.
-            // Fluid remains capable of transporting Cu upward.
-            List<Double> result = new List<Double>();
-            result.add(brineCopper - veinCopper);
-            result.add(brineSalinity);
-            result.add(brineOxidation);
-            return result;
+                result = new List<Double>(brineSalinity, result);
+                result = new List<Double>(brineCopper - veinCopper, result);
+                return result;
+            end
         end
 
-        // NO PRECIPITATION CASE:
-        // If temperature or salinity too low, basement is just a conduit.
-        // Fluids pass through fractures without chemical change.
-        // This is important because basement often separates ore zones vertically.
-        List<Double> result = new List<Double>();
-        result.add(brineCopper);
-        result.add(brineSalinity);
-        result.add(brineOxidation);
+        result = new List<Double>(brineSalinity, result);
+        result = new List<Double>(brineCopper, result);
         return result;
     end
 
     override Unit update(SimulationParameters params)
-        // BASEMENT STABILITY:
-        // Basement properties don't evolve during mineralisation:
-        // - No compaction (already crystalline)
-        // - No diagenesis (already metamorphosed)
-        // - No organic maturation (no organics present)
-        // - Fractures may form tectonically, but we model that separately.
         skip;
     end
 
@@ -197,114 +182,68 @@ end
 // ========================================================================
 // Represents organic-rich sediments that create reducing conditions. These units are the primary sites for copper precipitation via redox reactions.
 class ReducedSedimentUnit extends CopperGeoUnit ()
-    // Ontology link: This unit has both shale lithology and reducing environment quality.
-    models "a <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#shale>; <http://purl.obolibrary.org/obo/RO_0000086> some <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#reducing_environment>"
+    models "a <domain:shale>;
+            <obo:RO_0000086> _:env1 .
+            _:env1 a <domain:reducing_environment> .";
 
     override List<Double> processBrine(Double brineCopper, Double brineSalinity, Double brineOxidation)
-        // CRITICAL PROCESS: REDOX-CONTROLLED PRECIPITATION
-        // This is where sediment-hosted copper deposits actually form.
 
-        // THREE CONDITIONS MUST BE MET FOR PRECIPITATION:
-        // 1. brineCopper > 0.0: Brine must carry dissolved copper
-        // 2. brineOxidation > 0.5: Brine must be oxidised to transport Cu as Cu²⁺
-        // 3. this.isReduced: This unit must provide reducing conditions
-        if brineCopper > 0.0 && brineOxidation > 0.5 && this.isReduced then
-            // REDOX TRIGGER ACTIVATED: the fundamental ore-forming process in sediment-hosted copper systems.
+        Double newOxidation = brineOxidation * 0.3;
 
-            // PRECIPITATION CALCULATION:
-            // Amount precipitated depends on three factors multiplied together:
-            // 1. brineCopper: How much copper is available
-            // 2. precipitation_efficiency (0.7): Not all copper precipitates due to:
-            //    - Kinetic limitations (reaction isn't instantaneous)
-            //    - Some fluid bypasses reactive surfaces
-            //    - Competing reactions may consume reductants
-            // 3. brineOxidation: More oxidised fluids precipitate more copper
-            //    because they have more Cu²⁺ that can be reduced
-            Double precipitated = brineCopper * this.params.precipitation_efficiency * brineOxidation;
-            this.copperContent = this.copperContent + precipitated;
+        List<Double> result = new List<Double>(newOxidation, null);
+        result = new List<Double>(brineSalinity, result);
 
-            print(">>> COPPER PRECIPITATION at redox boundary!");
-            print("    Depth: ");
-            print(this.getDepth());
-            print(" m, Precipitated: ");
-            print(precipitated);
-            print(" kg/m3");
+        if brineCopper > 0.0 then
+            if brineOxidation > 0.5 then
+                if this.isReduced then
 
-            // CRITICAL: Reduce the oxidation state after reaction
-            // The factor 0.3 means 70% of oxidising capacity is consumed because:
-            // - Reduction of Cu²⁺ to Cu₂S consumes oxidants
-            // - Organic matter is partially oxidised to CO₂
-            // - This prevents the fluid from remobilising copper upstream
-            Double newOxidation = brineOxidation * 0.3;
+                    Double precipitated = brineCopper * this.params.precipitation_efficiency * brineOxidation;
+                    this.copperContent = this.copperContent + precipitated;
 
-            // CHECK FOR ENHANCED VEIN FORMATION
-            // If BOTH temperature and salinity triggers are also met, we get veins
-            // This represents the HIGHEST GRADE mineralisation style.
-            Double temp = this.getTemperature(this.params);
-            if temp >= this.params.vein_formation_temp && brineSalinity > this.params.vein_formation_salinity then
-                // TRIPLE TRIGGER SCENARIO - all three conditions met:
-                // 1. Redox boundary (chemical precipitation)
-                // 2. High temperature (enhanced fluid flow)
-                // 3. High salinity (high metal carrying capacity)
-                // Result: High-grade veins + disseminated ore
+                    print(">>> COPPER PRECIPITATION at redox boundary!");
+                    print("    Depth: ");
+                    Double current_depth = this.getDepth();
+                    print(current_depth);
+                    print(" m, Precipitated: ");
+                    print(precipitated);
+                    print(" kg/m3");
 
-                // Additional 30% of remaining copper goes into veins
-                // This is higher than basement (10%) because:
-                // - Redox gradient focuses precipitation
-                // - Temperature creates convection cells
-                // - High salinity maintains metal in solution until precipitation
-                Double veinCopper = (brineCopper - precipitated) * 0.3;
+                    Double temp = this.getTemperature(this.params);
+                    if temp >= this.params.vein_formation_temp then
+                        if brineSalinity > this.params.vein_formation_salinity then
 
-                // Vein concentration factor applied because veins are:
-                // - Focused in fractures and bedding planes
-                // - Result of multiple fluid pulses
-                // - Not diluted by barren rock
-                this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
+                            Double veinCopper = (brineCopper - precipitated) * 0.3;
 
-                print("    >>> VEIN FORMATION - Temperature and salinity triggers met!");
-                print("        Additional vein copper: ");
-                print(veinCopper * this.params.vein_concentration_factor);
+                            this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
 
-                // Return depleted brine with reduced oxidation state
-                return new List<Double>(brineCopper - precipitated - veinCopper,
-                                      new List<Double>(brineSalinity,
-                                                      new List<Double>(newOxidation, null)));
+                            print("    >>> VEIN FORMATION - Temperature and salinity triggers met!");
+                            print("        Additional vein copper: ");
+                            print(veinCopper * this.params.vein_concentration_factor);
+
+                            result = new List<Double>(brineCopper - precipitated - veinCopper, result);
+                            return result;
+                        end
+                    end
+
+                    result = new List<Double>(brineCopper - precipitated, result);
+                    return result;
+                end
             end
-
-            // DISSEMINATED ORE ONLY (no veins)
-            // This is still economic but lower grade than vein systems
-            return new List<Double>(brineCopper - precipitated,
-                                  new List<Double>(brineSalinity,
-                                                  new List<Double>(newOxidation, null)));
         end
 
         // NO PRECIPITATION CASE
-        // Occurs when one of the three conditions isn't met:
-        // - No copper in brine (already depleted)
-        // - Brine is reduced (can't carry copper)
-        // - Unit isn't reduced (no precipitation mechanism)
-        return new List<Double>(brineCopper,
-                              new List<Double>(brineSalinity,
-                                              new List<Double>(brineOxidation, null)));
+        result = new List<Double>(brineCopper, result);
+        return result;
     end
 
     override Unit update(SimulationParameters params)
-        // MAINTAINING REDUCING CONDITIONS
-        // Reducing capacity depends on organic content preservation
-        // We use 0.5 wt% as threshold because:
-        // - Below this, not enough organic matter to reduce fluids
-        // - Based on TOC (Total Organic Carbon) in ore-hosting shales
-        // In reality, this could degrade over time through:
-        // - Oxidation during fluid flow
-        // - Thermal maturation
-        // - Bacterial consumption
-        // But we keep it simple for this model
         this.isReduced = this.organicContent > 0.5;
     end
 
     override Unit printState()
         print("Reduced sediment at depth: ");
-        print(this.getDepth());
+        Double current_depth = this.getDepth();
+        print(current_depth);
         print(" m, copper: ");
         print(this.copperContent);
         print(" kg/m3, organic content: ");
@@ -319,84 +258,48 @@ end
 // Represents red beds or other oxidised sediments. These units allow copper transport but don't precipitate copper.
 class OxidisedSedimentUnit extends CopperGeoUnit ()
     // Ontology link: Sandstone lithology with oxidising environment
-    // The oxidising environment maintains Cu²⁺ in solution for transport
-    models "a <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#sandstone>; <http://purl.obolibrary.org/obo/RO_0000086> some <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#oxidising_environment>"
+    models "a <domain:sandstone>;
+            <obo:RO_0000086> _:env2 .
+            _:env2 a <domain:oxidising_environment> .";
 
     override List<Double> processBrine(Double brineCopper, Double brineSalinity, Double brineOxidation)
-        // FUNDAMENTAL ROLE: COPPER TRANSPORT PATHWAY
-        // Oxidised sediments are crucial for ore formation because they:
-        // 1. MAINTAIN copper in solution as Cu²⁺ (can't precipitate in oxidising conditions)
-        // 2. PROVIDE pathways for fluid flow (typically high porosity/permeability)
-        // 3. SOURCE additional copper by leaching detrital minerals
-        // 4. INCREASE fluid oxidation through interaction with hematite/Fe³⁺
 
-        // OXIDATION ENHANCEMENT PROCESS
-        // Red beds contain hematite (Fe₂O₃) which maintains oxidising conditions
-        // The reaction: Fe₂O₃ + reduced species → Fe²⁺ + oxidised species
-        // This keeps copper mobile and prevents premature precipitation
         Double newOxidation = brineOxidation * 1.1;  // 10% increase
         if newOxidation > 1.0 then newOxidation = 1.0; end  // Cap at maximum
 
-        // This oxidation boost is important because:
-        // - Ensures copper stays dissolved as Cu²⁺
-        // - Counteracts any minor reduction from trace organics
-        // - Maximises copper delivery to trap sites
+        List<Double> result = new List<Double>(newOxidation, null);
+        result = new List<Double>(brineSalinity, result);
 
-        // CHECK FOR VEIN FORMATION
-        // Even oxidised units can host veins if T and salinity are high enough
-        // This represents structural traps rather than chemical traps
         Double temp = this.getTemperature(this.params);
-        if temp >= this.params.vein_formation_temp && brineSalinity > this.params.vein_formation_salinity then
-            // PHYSICAL PRECIPITATION ONLY (no redox control)
-            // Mechanisms in oxidised units:
-            // 1. COOLING: Temperature drop causes saturation
-            // 2. PRESSURE CHANGE: Decompression in dilational structures
-            // 3. pH CHANGE: Wall rock reactions
-            // 4. MIXING: With meteoric water in fractures
+        if temp >= this.params.vein_formation_temp then
+            if brineSalinity > this.params.vein_formation_salinity then
+                Double veinCopper = brineCopper * 0.05;
 
-            // Only 5% precipitates because:
-            // - No chemical reduction (main mechanism absent)
-            // - Oxidising conditions keep most Cu in solution
-            // - Limited to physical precipitation mechanisms
-            Double veinCopper = brineCopper * 0.05;
+                this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
 
-            // Still get concentration factor in veins because:
-            // - Precipitation focused in narrow fractures
-            // - Multiple fluid pulses through same structures
-            this.copperContent = this.copperContent + (veinCopper * this.params.vein_concentration_factor);
+                print(">> Minor vein formation in oxidised unit at ");
+                Double current_depth = this.getDepth();
+                print(current_depth);
+                print(" m depth");
 
-            print(">> Minor vein formation in oxidised unit at ");
-            print(this.getDepth());
-            print(" m depth");
-
-            // Fluid remains oxidised - crucial for downstream transport
-            return new List<Double>(brineCopper - veinCopper,
-                                  new List<Double>(brineSalinity,
-                                                  new List<Double>(newOxidation, null)));
+                // Fluid remains oxidised - crucial for downstream transport
+                result = new List<Double>(brineCopper - veinCopper, result);
+                return result;
+            end
         end
 
-        // NORMAL CASE: Pure transport, no precipitation
-        // This is the most common scenario - oxidised units act as highways
-        // for copper-bearing fluids to reach reducing traps
-        // The increased oxidation ensures maximum copper mobility
-        return new List<Double>(brineCopper,
-                              new List<Double>(brineSalinity,
-                                              new List<Double>(newOxidation, null)));
+        result = new List<Double>(brineCopper, result);
+        return result;
     end
 
     override Unit update(SimulationParameters params)
-        // OXIDATION STATE PERSISTENCE
-        // Oxidised units remain oxidised throughout geological time because:
-        // - Hematite (Fe₂O₃) is stable and maintains oxidising conditions
-        // - Low/absent organic matter means no reduction potential
-        // - Already at maximum oxidation state
-        // This stability is why red beds are reliable fluid conduits
         this.isReduced = False;
     end
 
     override Unit printState()
         print("Oxidised sediment at depth: ");
-        print(this.getDepth());
+        Double current_depth = this.getDepth();
+        print(current_depth);
         print(" m, copper: ");
         print(this.copperContent);
         print(" kg/m3");
@@ -409,67 +312,34 @@ end
 // Represents salt/anhydrite layers that act as seals and brine sources
 // Critical for providing high salinity fluids and creating fluid flow barriers
 class EvaporiteUnit extends CopperGeoUnit ()
-    // Ontology link: Evaporite lithology
-    // These units are crucial for the overall mineralising system
-    models "a <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#evaporite>"
+    models "a <domain:evaporite> .";
 
     override List<Double> processBrine(Double brineCopper, Double brineSalinity, Double brineOxidation)
-        // DUAL ROLE OF EVAPORITES IN COPPER SYSTEMS:
-        // 1. SALINITY SOURCE: Dissolution increases brine salinity
-        // 2. AQUITARD: Low permeability creates fluid flow barriers
-
-        // SALINITY ENHANCEMENT MECHANISM
-        // When undersaturated brine contacts evaporites:
-        // NaCl(solid) → Na⁺ + Cl⁻ (dissolved)
-        // This is crucial because high salinity:
-        // - Increases copper solubility (chloride complexing: CuCl₂⁻, CuCl₃²⁻)
-        // - Increases fluid density → drives convection
-        // - Triggers vein formation when threshold exceeded
 
         Double newSalinity = brineSalinity + 5.0; // Add 5 wt% NaCl equivalent
 
-        // Cap at 39 wt% based on Selley et al. (2005) maximum observed values
-        // This represents halite saturation at reservoir conditions
         if newSalinity > 39.0 then newSalinity = 39.0; end
 
         print(">> Brine salinity increased by evaporite dissolution to ");
         print(newSalinity);
         print(" wt% at depth ");
-        print(this.getDepth());
+        Double current_depth = this.getDepth();
+        print(current_depth);
 
-        // HYDROLOGICAL SIGNIFICANCE:
-        // Evaporites typically have permeability < 0.01 mD, acting as:
-        // 1. CAP ROCKS: Trap fluids below, forcing lateral flow
-        // 2. FOCUSING AGENTS: Channel flow to fault zones
-        // 3. OVERPRESSURE CREATORS: Seal can cause fluid buildup
-        // This flow focusing is why many deposits occur near evaporite margins
-
-        // NO COPPER PRECIPITATION in evaporites because:
-        // - No reducing agents (pure chemical precipitates)
-        // - No temperature drop (good insulators)
-        // - Chemistry inhibits sulphide formation
-        // - Any copper stays as chloride complexes
-
-        // Oxidation state unchanged - evaporites are chemically inert to redox
-        return new List<Double>(brineCopper,
-                              new List<Double>(newSalinity,
-                                              new List<Double>(brineOxidation, null)));
+        List<Double> result = new List<Double>(brineOxidation, null);
+        result = new List<Double>(newSalinity, result);
+        result = new List<Double>(brineCopper, result);
+        return result;
     end
 
     override Unit update(SimulationParameters params)
-        // EVAPORITE EVOLUTION:
-        // In real systems, evaporites can:
-        // - DISSOLVE: Creating collapse breccias and fluid pathways
-        // - FLOW: Salt tectonics creates diapirs and structural traps
-        // - DEHYDRATE: Gypsum → anhydrite + water
-        // For this simple model, we assume static behaviour
-        // Future enhancement could model dissolution fronts
         skip;
     end
 
     override Unit printState()
         print("Evaporite at depth: ");
-        print(this.getDepth());
+        Double current_depth = this.getDepth();
+                print(current_depth);
         print(" m, permeability: ");
         print(this.permeability);
         print(" mD");
@@ -483,104 +353,72 @@ end
 // Integrates programmatic checks with semantic reasoning capabilities
 class TriggerMonitor(SimulationParameters params)
 
-    // CHECK VEIN FORMATION CONDITIONS
-    // This is a simple programmatic check for efficiency
-    // Used frequently during simulation so needs to be fast
     Boolean checkVeinConditions(Double temperature, Double salinity)
-        // BOTH conditions must be met based on Selley et al. (2005):
-        // - Temperature ≥ 150°C: Creates convective circulation
-        // - Salinity > 31 wt%: Ensures high metal carrying capacity
-        // When both met, focused vein formation can occur
-        return temperature >= params.vein_formation_temp &&
-               salinity > params.vein_formation_salinity;
+        if temperature >= this.params.vein_formation_temp then
+            if salinity > this.params.vein_formation_salinity then
+                return True;
+            else
+                return False;
+            end
+        else
+            return False;
+        end
     end
 
-    // ONTOLOGY-BASED TEMPERATURE QUERY
-    // Uses semantic reasoning to find units meeting temperature criteria
-    // This leverages the complex class restrictions we added to the ontology
     List<CopperGeoUnit> findHighTemperatureUnits()
-        // This SPARQL-like query translates to:
-        // "Find all geological objects that participate in the vein formation temperature trigger"
-        // The reasoner automatically identifies units where temperature ≥ 150°C
-        // based on the complex class definition with datatype restrictions
-        String query = "<domain:models> some (<obo:RO_0000056> some <domain:vein_formation_temperature_trigger>)";
+        print("    [findHighTemperatureUnits] Starting ontology query...");
 
-        // The member() function invokes the ontology reasoner
-        // Returns list of all units matching the criteria
-        List<CopperGeoUnit> result = member(query);
+        List<CopperGeoUnit> result = member("<domain:models> some (<obo:RO_0000056> some <domain:vein_formation_temperature_trigger>)");
+        print("    [findHighTemperatureUnits] member() call completed");
 
         if result != null then
-            print(">> Ontology reasoner found units meeting temperature trigger");
+            print("    [findHighTemperatureUnits] SUCCESS: Ontology reasoner found units meeting temperature trigger");
         end
 
+        print("    [findHighTemperatureUnits] Returning result");
         return result;
     end
 
     // ONTOLOGY-BASED REDOX BOUNDARY FINDER
-    // Identifies all reduced units that could create ore-forming redox boundaries
     List<CopperGeoUnit> findRedoxBoundaries()
-        // Query translates to:
-        // "Find all geological objects that have the quality of being a reducing environment"
-        // These are potential sites for copper precipitation
-        String query = "<domain:models> some (<obo:RO_0000086> some <domain:reducing_environment>)";
+        print("    [findRedoxBoundaries] Starting ontology query...");
 
-        // The reasoner identifies:
-        // - Reduced sediment units (organic-rich shales)
-        // - Any other units with reducing qualities
-        // This helps identify ALL potential ore zones
-        return member(query);
+        List<CopperGeoUnit> results = member("<domain:models> some (<obo:RO_0000086> some <domain:reducing_environment>)");
+        print("    [findRedoxBoundaries] member() call completed");
+
+        if results != null then
+            print("    [findRedoxBoundaries] SUCCESS: Ontology reasoner found reducing units for redox boundaries");
+        end
+
+        print("    [findRedoxBoundaries] Returning results");
+        return results;
     end
 
-    // COMPREHENSIVE TRIGGER CHECKING
-    // Combines programmatic and ontology approaches for complete analysis
-    Unit checkAllTriggers(CopperGeoUnit unit, Double brineSalinity)
+    Unit checkAllTriggers(CopperGeoUnit cu, Double brineSalinity)
         // Get temperature for this specific unit
-        Double temp = unit.getTemperature(params);
+        Double temp = cu.getTemperature(this.params);
 
         // CHECK 1: REDOX TRIGGER
-        // Most fundamental control on copper precipitation
-        if unit.isReduced then
+        if cu.isReduced then
             print("  Redox trigger potential at depth ");
-            print(unit.getDepth());
-            // This indicates a potential precipitation site
-            // Actual precipitation depends on fluid being oxidised
+            Double current_depth = cu.getDepth();
+            print(current_depth);
         end
 
         // CHECK 2: TEMPERATURE TRIGGER
-        // Controls whether veins can form (enhanced fluid flow)
-        if temp >= params.vein_formation_temp then
+        if temp >= this.params.vein_formation_temp then
             print("  Temperature trigger met: ");
             print(temp);
             print(" C");
-            // High temperature enables:
-            // - Convective circulation in fractures
-            // - Enhanced reaction kinetics
-            // - Greater metal solubility
         end
 
         // CHECK 3: SALINITY TRIGGER
-        // Controls metal carrying capacity and vein formation
-        if brineSalinity > params.vein_formation_salinity then
+        if brineSalinity > this.params.vein_formation_salinity then
             print("  Salinity trigger met: ");
             print(brineSalinity);
             print(" wt%");
-            // High salinity enables:
-            // - Formation of copper chloride complexes
-            // - Density-driven fluid flow
-            // - Higher total metal content
         end
-
-        // TRIGGER COMBINATIONS determine mineralisation style:
-        // - Redox only: Disseminated ore
-        // - Temperature + Salinity only: Barren veins
-        // - Redox + Temperature + Salinity: High-grade vein ore
     end
-
-    // FUTURE ENHANCEMENTS could include:
-    // - Salinity trigger queries using complex restrictions
-    // - Spatial reasoning for proximity to faults
-    // - Temporal reasoning for evolution of triggers
-    // - Fuzzy logic for partial trigger activation
 end
 
 // ========================================================================
@@ -591,85 +429,87 @@ end
 class StratigraphyBuilder(SimulationParameters params)
 
     // CREATE LAYERED SEQUENCE
-    // Models the key elements of sediment-hosted copper systems
     CopperGeoUnit buildColumn()
         // BASEMENT FOUNDATION
-        // Represents Paleoproterozoic crystalline basement (~2.0 Ga)
-        // In Zambian Copperbelt: Lufubu Schist, Muva Supergroup granites
         BasementUnit basement = new BasementUnit(null, null, null, null, null, null,
-                                               1000.0,  // 1km thick - represents minimum modeled thickness
-                                               1,       // unitType = basement
-                                               0.0,     // Initial salinity - no connate brines
-                                               0.0,     // No copper yet - will come from overlying units
-                                               False,   // Not reduced - crystalline rocks
-                                               0.01,    // Very low porosity (~1%) - only fractures
-                                               0.001,   // Very low permeability - barrier to flow
-                                               0.0,     // No organic content in crystalline rocks
-                                               params);
+            1000.0,  // 1km thick - represents minimum modeled thickness
+            1,       // unitType = basement
+            0.0,     // Initial salinity - no connate brines
+            0.0,     // No copper yet - will come from overlying units
+            False,   // Not reduced - crystalline rocks
+            0.01,    // Very low porosity (~1%) - only fractures
+            0.001,   // Very low permeability - barrier to flow
+            0.0,     // No organic content in crystalline rocks
+            this.params);
 
         CopperGeoUnit current = basement;
-
-        // BUILD SEDIMENTARY SEQUENCE FROM BOTTOM TO TOP
-        // This simplified sequence captures the essential elements:
-        // 1. Basal oxidised clastics (fluid conduits)
-        // 2. Reduced ore horizon (precipitation site)
-        // 3. Upper oxidised sequence (continued fluid flow)
-        // 4. Evaporite cap (salinity source and seal)
+        print("Created: Basement unit, 1000m thick at depth 0-1000m");
 
         // LAYER 1: LOWER OXIDISED CLASTICS
-        // Analogous to Mindola Clastics Formation in Zambia
-        // These are crucial as copper transport pathways
         print("Building lower oxidised sequence...");
-        for Int i = 0; i < 5; i++ do
-            OxidisedSedimentUnit ox = new OxidisedSedimentUnit(
-                current, null, null, null, null, null,
-                params.unit_thickness,  // Each unit 100m thick
-                3,      // oxidised type
-                15.0,   // Moderate initial salinity from connate brines
-                0.0,    // No copper initially
-                False,  // Oxidised - contains hematite
-                0.25,   // Good porosity (25%) - excellent aquifer
-                100.0,  // High permeability (100 mD) - good fluid conduit
-                0.1,    // Very low organic content - hence oxidised
-                params);
+        Int i = 0;
+        while i < 5 do
+
+            OxidisedSedimentUnit ox1 = new OxidisedSedimentUnit(
+                null,                           // above
+                current,                        // below
+                null,                           // left
+                null,                           // right
+                null,                           // behind
+                null,                           // front
+                this.params.unit_thickness,     // Each unit 100m thick
+                3,                              // oxidised type
+                15.0,                           // Moderate initial salinity from connate brines
+                0.0,                            // No copper initially
+                False,                          // Oxidised - contains hematite
+                0.25,                           // Good porosity (25%) - excellent aquifer
+                100.0,                          // High permeability (100 mD) - good fluid conduit
+                0.1,                            // Very low organic content - hence oxidised
+                this.params);
 
             // Link stratigraphy
-            current.above = ox;
-            ox.below = current;
-            current = ox;
+            current.above = ox1;
+            ox1.below = current;
+            current = ox1;
+
+            i = i + 1;
         end
 
+        print("Created: 5 lower oxidised clastic units, 100m each, depths 1000-1500m");
+
         // LAYER 2: MAIN ORE HORIZON - REDUCED SHALES
-        // Analogous to Copperbelt Orebody Member (ore shale)
-        // THE MOST IMPORTANT UNITS - where copper precipitates
         print("Building ore horizon reduced sequence...");
-        for Int i = 0; i < 3; i++ do
+        Int j = 0;
+        while j < 3 do
             ReducedSedimentUnit red = new ReducedSedimentUnit(
-                current, null, null, null, null, null,
-                params.unit_thickness * 0.5,  // Thinner units (50m) - ore zones often thin
+                null, current, null, null, null, null,
+                this.params.unit_thickness * 0.5,  // Thinner units (50m) - ore zones often thin
                 2,      // reduced type
                 20.0,   // Salinity increasing upward
                 0.0,    // No copper initially - will precipitate here
                 True,   // REDUCED - this is the key property!
                 0.15,   // Moderate porosity (15%) - compacted shale
                 10.0,   // Lower permeability (10 mD) - acts as partial barrier
-                2.5,    // HIGH organic content (2.5 wt%) - creates reducing conditions
-                        // This represents algal matter, bacterial mats, or terrestrial organics
-                params);
+                2.5,    // HIGH organic content (2.5 wt%) - creates reducing conditions, which represents algal matter, bacterial mats, or terrestrial organics
+                this.params);
 
             current.above = red;
             red.below = current;
             current = red;
+
+            j = j + 1;
         end
 
+        print("Created: 3 ore horizon reduced shale units, 50m each, depths 1500-1650m");
+
         // LAYER 3: UPPER OXIDISED SEQUENCE
-        // Represents continued clastic deposition
-        // Can host secondary mineralisation where structures focus flow
         print("Building upper oxidised sequence...");
-        for Int i = 0; i < 5; i++ do
-            OxidisedSedimentUnit ox = new OxidisedSedimentUnit(
-                current, null, null, null, null, null,
-                params.unit_thickness,
+        Int k = 0;
+        while k < 5 do
+
+            OxidisedSedimentUnit ox2 = new OxidisedSedimentUnit(
+                null, current, null, null, null, null,
+                this.params.unit_thickness,
                 3,      // oxidised type
                 25.0,   // Higher salinity - closer to evaporites
                 0.0,    // No initial copper
@@ -677,198 +517,253 @@ class StratigraphyBuilder(SimulationParameters params)
                 0.20,   // Moderate porosity (20%)
                 50.0,   // Moderate permeability (50 mD)
                 0.2,    // Low organic content
-                params);
+                this.params);
 
-            current.above = ox;
-            ox.below = current;
-            current = ox;
+            current.above = ox2;
+            ox2.below = current;
+            current = ox2;
+
+            k = k + 1;
         end
 
+        print("Created: 5 upper oxidised clastic units, 100m each, depths 1650-2150m");
+
         // LAYER 4: EVAPORITE CAP
-        // Analogous to Upper Roan Group evaporites
-        // Provides high salinity and acts as regional seal
         print("Building evaporite cap...");
         EvaporiteUnit evap = new EvaporiteUnit(
-            current, null, null, null, null, null,
-            200.0,  // Thick sequence (200m) - regional extent
-            4,      // evaporite type
-            35.0,   // Very high salinity from dissolution
-            0.0,    // No copper
-            False,  // Not reduced
-            0.05,   // Very low porosity (5%) - chemical precipitate
-            0.01,   // Extremely low permeability (0.01 mD) - excellent seal
-                    // Forces fluid flow laterally and down-dip
-            0.0,    // No organic content
-            params);
+            null,       // above
+            current,    // below
+            null,       // left
+            null,       // right
+            null,       // behind
+            null,       // front
+            200.0,      // Thick sequence (200m) - regional extent
+            4,          // evaporite type
+            35.0,       // Very high salinity from dissolution
+            0.0,        // No copper
+            False,      // Not reduced
+            0.05,       // Very low porosity (5%) - chemical precipitate
+            0.01,       // Extremely low permeability (0.01 mD) - excellent seal
+            0.0,        // No organic content
+            this.params);
+
+        print("Created: Evaporite cap unit, 200m thick, depths 2150-2350m");
 
         current.above = evap;
-        evap.below = current;
 
         print("Stratigraphy complete!");
 
-        // Return bottom unit - simulation will traverse upward from here
+        // Calculate total thickness
+        print("  STRATIGRAPHY SUMMARY:");
+        print("  - Total sediment thickness: 1850m");
+        print("  - Expected ore zones: 2 (depths ~650m and ~1250m)");
+        print("  - Vein formation depth: >4200m (150°C threshold)");
+        print("  - Phase 1 duration: 1000-600 Ma (no mineralisation)");
+        print("  - Phase 2 duration: 600-0 Ma (active mineralisation)");
         return basement;
     end
-
-    // FUTURE ENHANCEMENTS:
-    // - Add lateral variations (facies changes)
-    // - Include fault zones as vertical conduits
-    // - Model unconformities as flow barriers
-    // - Add carbonate units (can be reduced via BSR)
-    // - Include volcanic units as copper sources
 end
 
 // ========================================================================
 // FLUID FLOW SIMULATOR
 // ========================================================================
-// Main driver class that simulates brine flow and mineralisation
-// Controls timing, flow patterns, and integration of all components
-class CopperSystemDriver(TriggerMonitor monitor, SimulationParameters params)
+hidden class CopperSystemDriver(TriggerMonitor monitor, SimulationParameters params)
 
-    // RUN THE MAIN SIMULATION
-    // Simulates basin evolution and fluid flow through geological time
-    Unit simulate(CopperGeoUnit bottom, Double startTime)
+    Unit sim(CopperGeoUnit bottom, Double startTime)
         print("=== STARTING COPPER SYSTEM SIMULATION ===");
         print("Time range: ");
         print(startTime);
         print(" Ma to ");
-        print(params.simulation_end);
+        print(this.params.simulation_end);
         print(" Ma");
 
         Double currentTime = startTime;
         Int timeStep = 0;
 
-        // MAIN TIME LOOP
-        // Works backwards through geological time (Ma = millions of years ago)
-        // This allows us to model the sequence of geological events
-        while currentTime > params.simulation_end do
+        while currentTime > this.params.simulation_end do
+            print(">>> Time step ");
+            print(timeStep);
+            print(", Time = ");
+            print(currentTime);
+            print(" Ma");
+            if currentTime >= this.params.mineralisation_start then
+                print("  === PHASE 1: BASIN FORMATION (NO MINERALISATION) ===");
+                print("  Current time: ");
+                print(currentTime);
+                print(" Ma - No fluid flow expected");
 
-            // CRITICAL TIMING CONTROL
-            // Fluid flow only begins after structural/thermal conditions are right
-            // Before mineralisation_start: just burial and lithification
-            // After mineralisation_start: active fluid flow and ore formation
-            if currentTime <= params.mineralisation_start then
-                print("\n>>> Time step ");
-                print(timeStep);
-                print(", Time = ");
+                // Verify no copper has precipitated yet
+                this.verifyNoMineralisation(bottom);
+            else
+                print("  === PHASE 2: MINERALISATION PHASE ===");
+                print("  >> Entering mineralisation phase at ");
                 print(currentTime);
                 print(" Ma");
+                print("  >> Calling updateAll...");
+                bottom.updateAll(this.params);
 
-                // UPDATE GEOLOGICAL CONDITIONS
-                // Temperature increases with burial
-                // Organic matter maturity changes
-                // Porosity/permeability evolve
-                bottom.updateAll(params);
+                print("  >> updateAll completed");
+                print("  >> Starting simulateBrineFlow...");
 
-                // SIMULATE FLUID FLOW EVENT
-                // Each time step represents a pulse of fluid flow
-                // Multiple pulses can enhance ore grades
                 this.simulateBrineFlow(bottom);
+                print("  >> simulateBrineFlow completed");
+                print("  >> Checking ontology triggers...");
 
-                // CHECK TRIGGERS WITH ONTOLOGY
-                // Use semantic reasoning to identify ore-forming conditions
                 this.checkOntologyTriggers();
+                print("  >> Ontology triggers checked");
             end
 
-            // ADVANCE TIME
-            // 10 Ma time steps balance computation with geological realism
-            // Smaller steps (1 Ma) for more detail if needed
             currentTime = currentTime - 10.0;
             timeStep = timeStep + 1;
         end
 
-        print("\n=== SIMULATION COMPLETE ===");
+        // print("=== SIMULATION COMPLETE ===");
         this.reportResults(bottom);
     end
 
-    // SIMULATE UPWARD BRINE FLOW
-    // Models density-driven circulation of metal-bearing brines
     Unit simulateBrineFlow(CopperGeoUnit bottom)
-        print("\n  >> Simulating brine flow pulse");
+        print("  >> =========================");
+        print("  >> BRINE FLOW EVENT STARTING");
+        print("  >> Initial conditions:");
+        print("  >>   Copper: ");
+        print(this.params.copper_concentration);
+        print(" ppm");
+        print("  >>   Salinity: 25.0 wt%");
+        print("  >>   Oxidation: ");
+        print(this.params.fluid_oxidation);
+        print("  >> =========================");
 
-        // INITIAL BRINE PROPERTIES
-        // These represent basinal brines that have:
-        // - Leached metals from red beds (hence copper content)
-        // - Dissolved evaporites (hence salinity)
-        // - Interacted with oxidised sediments (hence oxidised state)
-        Double brineCopper = params.copper_concentration;     // Metal content from parameters
-        Double brineSalinity = 25.0;                         // Starting salinity (wt% NaCl)
-        Double brineOxidation = params.fluid_oxidation;      // Oxidation state (0-1)
+        Double brineCopper = this.params.copper_concentration;      // Metal content from parameters
+        Double brineSalinity = 25.0;                                // Starting salinity (wt% NaCl)
+        Double brineOxidation = this.params.fluid_oxidation;        // Oxidation state (0-1)
 
-        // UPWARD FLOW SIMULATION
-        // Flow is driven by:
-        // - Density differences (dense brines sink, then heat up and rise)
-        // - Tectonic pumping (compression/extension cycles)
-        // - Topographic drive (highlands to basin)
         CopperGeoUnit current = bottom;
-        while current != null do
-            // CHECK ALL TRIGGERS
-            // This identifies if current unit can precipitate copper
-            monitor.checkAllTriggers(current, brineSalinity);
+        print("  >> Starting upward brine migration from basement");
+        Int unitCounter = 1;
 
-            // PROCESS BRINE-ROCK INTERACTION
-            // Each unit modifies the brine based on its properties:
-            // - Reduced units precipitate copper
-            // - Oxidised units maintain/increase oxidation
-            // - Evaporites increase salinity
-            // - All units can host veins if T/salinity sufficient
+        while current != null do
+            print("  >> ===== UNIT ");
+            print(unitCounter);
+            print(" PROCESSING =====");
+            Double currentDepth = current.getDepth();
+            Double currentTemp = current.getTemperature(this.params);
+            print("  >> Depth: ");
+            print(currentDepth);
+            print("m, Temperature: ");
+            print(currentTemp);
+            print("°C");
+            print("  >> Unit type: ");
+            print(current.unitType);
+            print(", Reduced: ");
+            print(current.isReduced);
+            print(", Organic: ");
+            print(current.organicContent);
+            print(" wt%");
+            print("  >> BRINE BEFORE: Cu=");
+            print(brineCopper);
+            print("ppm, Salinity=");
+            print(brineSalinity);
+            print("wt%, Oxidation=");
+            print(brineOxidation);
+
+            this.monitor.checkAllTriggers(current, brineSalinity);
+
             List<Double> result = current.processBrine(brineCopper, brineSalinity, brineOxidation);
 
-            // EXTRACT MODIFIED BRINE PROPERTIES
-            // The list structure allows returning multiple values
-            brineCopper = result.content;                    // Remaining copper
+            print("  >> BRINE AFTER: Cu=");
+            print(result.content);
+            print("ppm, Salinity=");
+            print(result.next.content);
+            print("wt%, Oxidation=");
+            print(result.next.next.content);
+            print("  >> Unit Cu content now: ");
+            print(current.copperContent);
+            print(" kg/m³");
+            unitCounter = unitCounter + 1;
+
+            brineCopper = result.content;                   // Remaining copper
             brineSalinity = result.next.content;            // Modified salinity
             brineOxidation = result.next.next.content;      // Modified oxidation
 
             // MOVE UP TO NEXT UNIT
             current = current.above;
 
-            // EARLY TERMINATION CHECK
-            // If all copper precipitated, no point continuing
-            // Saves computation and is geologically realistic
             if brineCopper <= 0.1 then
                 print("  >> All copper precipitated, flow stops");
                 current = null; // Exit loop
             end
         end
-
-        // FLOW COMPLETION
-        // Any remaining copper exits system (lost to surface)
-        // This is why trap efficiency matters
     end
 
-    // USE ONTOLOGY REASONING
-    // Demonstrates integration with semantic web technologies
     Unit checkOntologyTriggers()
-        // TEMPERATURE-BASED REASONING
-        // Find all units hot enough for vein formation
-        // The reasoner checks each unit's calculated temperature
-        // against the complex class restriction (≥150°C)
-        List<CopperGeoUnit> hotUnits = monitor.findHighTemperatureUnits();
+        print("  [checkOntologyTriggers] Starting ontology trigger checks...");
+
+        print("  [checkOntologyTriggers] Checking high temperature units...");
+        List<CopperGeoUnit> hotUnits = this.monitor.findHighTemperatureUnits();
         if hotUnits != null then
             print("  >> High temperature zones detected by reasoner");
-            // These are candidates for vein formation
-            // Actual formation also needs high salinity
+        else
+            print("  [checkOntologyTriggers] No high temperature zones found");
         end
 
-        // REDOX-BASED REASONING
-        // Find all units with reducing conditions
-        // The reasoner identifies units with reducing_environment quality
-        List<CopperGeoUnit> redoxUnits = monitor.findRedoxBoundaries();
+        print("  [checkOntologyTriggers] Checking redox boundaries...");
+        List<CopperGeoUnit> redoxUnits = this.monitor.findRedoxBoundaries();
         if redoxUnits != null then
-            print("  >> Redox boundaries detected by reasoner");
-            // These are primary precipitation sites
-            // Ore grade depends on copper flux and efficiency
+            print("  [checkOntologyTriggers] Redox boundaries detected by reasoner");
+        else
+            print("  [checkOntologyTriggers] No redox boundaries found");
         end
 
-        // FUTURE ENHANCEMENT: Spatial reasoning
-        // Could query for units NEAR faults, at basin margins, etc.
+        print("  [checkOntologyTriggers] Ontology trigger checks completed");
     end
 
-    // REPORT MINERALISATION RESULTS
-    // Summarizes where economic copper accumulations formed
+    Unit verifyNoMineralisation(CopperGeoUnit bottom)
+        print("  >> Verifying Phase 1 conditions (no mineralisation expected):");
+
+        CopperGeoUnit current = bottom;
+        Int unitCount = 0;
+        Boolean errorFound = False;
+
+        while current != null do
+            unitCount = unitCount + 1;
+
+            // Check if any copper has precipitated (shouldn't happen in Phase 1)
+            if current.copperContent > 0.0 then
+                print("    ERROR: Unit ");
+                print(unitCount);
+                print(" has copper content ");
+                print(current.copperContent);
+                print(" kg/m³ during Phase 1!");
+                errorFound = True;
+            end
+
+            // Monitor temperature gradient
+            Double temp = current.getTemperature(this.params);
+            Double depth = current.getDepth();
+            print("    Unit ");
+            print(unitCount);
+            print(" (");
+            print(current.unitType);
+            print(") - Depth: ");
+            print(depth);
+            print("m, Temp: ");
+            print(temp);
+            print("°C");
+
+            current = current.above;
+        end
+
+        if errorFound then
+            print("  >> WARNING: Unexpected mineralisation in Phase 1!");
+        else
+            print("  >> Phase 1 verified: No mineralisation, ");
+            print(unitCount);
+            print(" units stable");
+        end
+    end
+
     Unit reportResults(CopperGeoUnit bottom)
-        print("\n=== MINERALISATION RESULTS ===");
+        print("=== MINERALISATION RESULTS ===");
 
         // ECONOMIC PARAMETERS
         Double totalCopper = 0.0;
@@ -876,36 +771,25 @@ class CopperSystemDriver(TriggerMonitor monitor, SimulationParameters params)
         // Industry cutoffs: 0.4-0.6% for open pit, 1-2% for underground
 
         // TRAVERSE STRATIGRAPHY
-        // Check each unit for economic mineralisation
         CopperGeoUnit current = bottom;
         while current != null do
             // ORE GRADE CHECK
             if current.copperContent > oreGradeCutoff then
-                print("\nORE ZONE at depth ");
-                print(current.getDepth());
+                print("ORE ZONE at depth ");
+                Double current_depth = current.getDepth();
+                print(current_depth);
                 print(" m:");
                 current.printState();
 
                 // Accumulate total resource
                 totalCopper = totalCopper + current.copperContent;
-
-                // ECONOMIC GEOLOGY NOTES:
-                // - Disseminated: lower grade but larger volume
-                // - Vein: higher grade but smaller volume
-                // - Both styles can be economic
             end
             current = current.above;
         end
 
-        print("\n>> Total copper above cutoff: ");
+        print(">> Total copper above cutoff: ");
         print(totalCopper);
         print(" kg/m³");
-
-        // RESOURCE CLASSIFICATION would consider:
-        // - Continuity of ore zones
-        // - Average grade vs cutoff
-        // - Mining method constraints
-        // - Metallurgical recovery
     end
 end
 
@@ -916,7 +800,7 @@ main
     print("=== SEDIMENT-HOSTED COPPER DEPOSIT SIMULATION ===");
     print("Based on Zambian Copperbelt parameters from Selley et al. (2005)");
 
-    // Initialize parameters based on Zambian Copperbelt
+    // Initialise parameters based on Zambian Copperbelt
     SimulationParameters params = new SimulationParameters(
         // Temporal parameters
         1000.0,  // start_time (Ma) - Mesoproterozoic
@@ -950,14 +834,19 @@ main
     StratigraphyBuilder builder = new StratigraphyBuilder(params);
     CopperGeoUnit basement = builder.buildColumn();
 
-    print("\n>> Stratigraphy built successfully");
+    print(">> Stratigraphy built successfully");
 
     // Create monitoring and driver systems
+    print(">> Creating TriggerMonitor...");
     TriggerMonitor monitor = new TriggerMonitor(params);
+    print(">> TriggerMonitor created");
+    print(">> Creating CopperSystemDriver...");
     CopperSystemDriver driver = new CopperSystemDriver(monitor, params);
+    print(">> CopperSystemDriver created");
+    print(">> Starting simulation...");
 
     // Run the simulation
-    driver.simulate(basement, params.start_time);
+    driver.sim(basement, params.start_time);
 
-    print("\n=== END OF SIMULATION ===");
+    print("=== END OF SIMULATION ===");
 end

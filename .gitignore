@@ -16,6 +16,5 @@ CLAUDE.md
 *.png
 *.mermaid
 *.log
-*.md
 *.pdf
 .gitignore

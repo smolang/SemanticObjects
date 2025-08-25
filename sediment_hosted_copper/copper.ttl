@@ -10,7 +10,7 @@
 @prefix UFRGS: <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:> .
 @prefix terms: <http://purl.org/dc/terms/> .
 @prefix untitled-ontology-38: <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#> .
-@prefix domain: <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#> . # Why is this line missing?
+@prefix domain: <http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#> .
 @base <http://purl.obolibrary.org/obo/bfo.owl> .
 
 <http://purl.obolibrary.org/obo/bfo.owl> rdf:type owl:Ontology ;
