@@ -433,6 +433,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return MonitorStmt(target, query, ll, ctx!!.start.line, target.getType())
     }
 
+    override fun visitPushStatic_statement(ctx: PushStatic_statementContext?): ProgramElement {
+        return PushStaticStatement(ctx!!.start.line)
+    }
+
+
     override fun visitWindow_statement(ctx: Window_statementContext?): ProgramElement {
         val target = visit(ctx!!.target) as Location
         if(ctx.declType != null) {

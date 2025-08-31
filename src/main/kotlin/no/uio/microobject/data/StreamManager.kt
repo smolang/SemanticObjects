@@ -16,12 +16,14 @@ import java.util.Observer;
 import java.util.Observable
 import java.util.concurrent.ConcurrentHashMap
 import java.io.File
+import java.io.StringWriter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.apache.log4j.BasicConfigurator
 import org.apache.log4j.Level
 import org.apache.log4j.Logger as Log4jLogger
 import org.apache.log4j.PropertyConfigurator
+import org.apache.jena.rdf.model.Model
 import kotlin.text.toLong
 
 class ResultPusher(private val name: LiteralExpr, private val resultTable: MutableMap<LiteralExpr, RDFTable?>) : Observer {
@@ -152,6 +154,17 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         }
 
         return queryWithPrefixes
+    }
+
+    public fun putStaticNamedGraph(iri: String, model: Model) {
+        if (!engineInitialized) initEngine()
+
+        // serialize the model (RDF/XML matches the engine's first attempt)
+        val sw = StringWriter()
+        model.write(sw, "RDF/XML")
+
+        // hand it to the C-SPARQL engine
+        engine.putStaticNamedModel(iri, sw.toString())
     }
 
 }
