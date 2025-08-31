@@ -128,3 +128,5 @@ class ExplList<LISTTT>(LISTTT content, ExplList<LISTTT> next)
 end
 
 class ExplPair<PAIRTONET,PAIRTTWOT>(PAIRTONET first, PAIRTTWOT second) end
+
+hidden class Monitor<MONITORT>() end
