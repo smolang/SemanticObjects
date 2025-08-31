@@ -31,7 +31,9 @@ SIMULATE : 'simulate';
 VALIDATE : 'validate';
 CLASSIFY : 'classify';
 ADAPT : 'adapt';
+MONITOR : 'monitor';
 TICK : 'tick';
+WINDOW : 'window';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
 DESTROY : 'destroy';
@@ -49,6 +51,8 @@ CLASSIFIES: 'classifies';
 RETRIEVES: 'retrieves';
 DOMAIN : 'domain';
 CONTEXT : 'context';
+STREAMER : 'streamer';
+EMITS : 'emits';
 
 //Keywords: constants
 TRUE : 'True';
@@ -94,6 +98,9 @@ FMU : 'FMO';
 PORT : 'port';
 SPARQLMODE : 'SPARQL';
 INFLUXMODE : 'INFLUXDB';
+// MONITORTYPE : 'Monitor';
+// QUERYRESULTTYPE : 'QueryResult';
+CLOCK : 'clock';
 // Note that the IN, OUT constants are also used in
 // TypeChecker.kt:translateType in the FMU branch; adapt strings there if
 // changing the syntax here
@@ -117,13 +124,13 @@ namelist : NAME (COMMA NAME)*;
 program : (class_def)* MAIN statement END (class_def)*;
 
 //classes
-class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
+class_def : (abs=ABSTRACT)? (hidden=HIDE)? (streamer=STREAMER)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
             (internal = fieldDeclInitList)?
             (models_block)?
             (classifies_block (retrieves_block)?)?
             method_def*
             END;
-method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
+method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN emits_block? (statement END)?;
 
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
@@ -132,14 +139,18 @@ classifies_block : CLASSIFIES owldescription=STRING SEMI                 # adapt
              ;
 retrieves_block : RETRIEVES  selectquery=STRING SEMI                 # adaptation_retrieves_block
               ;
+emits_block : EMITS OPARAN expression (COMMA expression)* CPARAN;
+
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
             | ((declType = type)? target=expression ASS)? CLASSIFY OPARAN context=expression CPARAN SEMI                                     # classify_statement
 			| ADAPT OPARAN adapter=expression CPARAN SEMI                                                                      # adapt_statement
-			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
+            | (declType = type)? target=expression ASS MONITOR OPARAN registeredQuery=expression (COMMA expression)* CPARAN SEMI                        # monitor_statement
+			| (clock = CLOCK)? (declType = type)? expression ASS expression SEMI                                                                        # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
+			| (declType = type)? target=expression ASS WINDOW OPARAN monitor=expression CPARAN SEMI                                                     # window_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
         // TODO: allow new statements without assignment
 			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                         # create_statement
@@ -194,6 +205,7 @@ expression :      THIS                           # this_expression
 type : NAME                                                    #simple_type
      | NAME LT typelist GT                                     #nested_type
      | FMU OBRACK fmuParamList? CBRACK                         #fmu_type
+    //  | MONITORTYPE LT typelist GT                              #monitor_type
      ;
 typelist : type (COMMA type)*;
 param : type NAME;
