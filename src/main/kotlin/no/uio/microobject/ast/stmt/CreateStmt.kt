@@ -50,6 +50,9 @@ data class CreateStmt(val target : Location, val className: String, val params :
         interpreter.heap[name] = newMemory
         val localFrame = StackEntry(SkipStmt(), mutableMapOf(Pair("this", name)),name,0)
         n.filter { it.internalInit != null }.forEach { newMemory[it.name] = interpreter.eval(it.internalInit!!, localFrame) }
+        if (interpreter.staticInfo.streamersTable.containsKey(className)) {
+            interpreter.streamManager.registerStream(className, name)
+        }
         return replaceStmt(AssignStmt(target, name, declares = declares), stackFrame)
     }
 }

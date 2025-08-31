@@ -109,6 +109,9 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                 newListMemory["next"] = list
                 interpreter.heap[newListName] = newListMemory
                 list = newListName
+                if (interpreter.staticInfo.streamersTable.containsKey(className)) {
+                    interpreter.streamManager.registerStream(className, newObjName)
+                }
             }
         }
         return replaceStmt(AssignStmt(target, list, declares = declares), stackFrame)

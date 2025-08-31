@@ -10,9 +10,10 @@ import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
 import no.uio.microobject.type.BaseType
 import no.uio.microobject.type.Type
+import no.uio.microobject.type.INTTYPE
 
 // Assignment, where value cannot refer to calls or object creations.
-data class AssignStmt(val target : Location, val value : Expression, val pos : Int = -1, val declares: Type?) :
+data class AssignStmt(val target : Location, val value : Expression, val isClock: Boolean = false, val pos : Int = -1, val declares: Type?) :
     Statement {
     override fun toString(): String = "$target := $value"
     override fun getRDF(): String {
@@ -28,7 +29,14 @@ data class AssignStmt(val target : Location, val value : Expression, val pos : I
     override fun eval(heapObj: Memory, stackFrame : StackEntry, interpreter: Interpreter) : EvalResult {
         val res = interpreter.eval(value, stackFrame)
         when (target) {
-            is LocalVar -> stackFrame.store[target.name] = res
+            is LocalVar -> {
+                if (isClock && interpreter.streamManager.clockVar == null) {
+                    interpreter.streamManager.clockVar = target.name
+                }
+                if (interpreter.streamManager.clockVar != null && target.name.equals(interpreter.streamManager.clockVar) 
+                    && res.tag == INTTYPE) interpreter.streamManager.clockTimestampSec = res.literal
+                stackFrame.store[target.name] = res
+            }
             is OwnVar -> {
                 val got = interpreter.staticInfo.fieldTable[(stackFrame.obj.tag as BaseType).name] ?: throw Exception("Cannot find class ${stackFrame.obj.tag.name}")
                 if (!got.map {it.name} .contains(target.name))

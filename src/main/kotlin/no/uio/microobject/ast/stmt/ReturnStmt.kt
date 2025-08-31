@@ -5,6 +5,7 @@ import no.uio.microobject.runtime.EvalResult
 import no.uio.microobject.runtime.Interpreter
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
+import no.uio.microobject.type.BaseType
 
 // Return statement
 data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
@@ -22,6 +23,7 @@ data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
         val over = interpreter.stack.pop()
         if (over.active is StoreReturnStmt) {
             val res = interpreter.eval(value, stackFrame)
+            checkTriggerStream(over.active, stackFrame, interpreter)
             return EvalResult(
                 StackEntry(
                     AssignStmt(over.active.target, res, declares = null),
@@ -35,8 +37,17 @@ data class ReturnStmt(var value : Expression, val pos : Int = -1) : Statement {
             val active = over.active.first
             val next = over.active.second
             val res = interpreter.eval(value, stackFrame)
+            checkTriggerStream(over.active.first, stackFrame, interpreter)
             return replaceStmt(appendStmt(AssignStmt(active.target, res, declares = null), next), over)
         }
         throw Exception("Malformed heap")
+    }
+
+    // trigger stream at the end of emission method, right before returning the result
+    private fun checkTriggerStream(storeReturnStmt: StoreReturnStmt, stackFrame: StackEntry, interpreter: Interpreter) {
+        if (storeReturnStmt.emitFromMethod != null) {
+            val className = (stackFrame.obj.tag as BaseType).name
+            interpreter.streamManager.triggerStream(className, stackFrame.obj, storeReturnStmt.emitFromMethod, stackFrame)
+        }
     }
 }
