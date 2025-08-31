@@ -1071,6 +1071,41 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(tickType != DOUBLETYPE)
                     log("Tick statement expects a Double as second parameter, but got $tickType }.",ctx)
             }
+            is WhileParser.Monitor_statementContext -> {
+                // todo check monitor type
+                var expType: Type? = null
+                if (ctx.declType != null) {
+                    val lhs = ctx.expression(0)
+                    if (lhs !is WhileParser.Var_expressionContext) {
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = lhs.NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else {
+                            expType = translateType(ctx.type(), className, generics)
+                            vars[name] = expType
+                        }
+                    }
+                }
+            }
+            is WhileParser.Window_statementContext -> {
+                var expType: Type? = null
+                if (ctx.declType != null) {
+                    val lhs = ctx.expression(0)
+                    if (lhs !is WhileParser.Var_expressionContext) {
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = lhs.NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else {
+                            expType = translateType(ctx.type(), className, generics)
+                            vars[name] = expType
+                        }
+                    }
+                }
+                if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
+                    log("Non-local access in rule method.", ctx)
+            }
             else -> {
                 log("Statements with class ${ctx.javaClass} cannot be type checked",ctx)
             }
