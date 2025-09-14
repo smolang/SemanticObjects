@@ -52,9 +52,23 @@ class MonitorObject(private val name: LiteralExpr, private val declaredType: Typ
     
     private fun iriToLiteral(iri: String, interpreter: Interpreter): LiteralExpr {
 
-        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#integer")) return LiteralExpr(iri.split("^^")[0], INTTYPE)
+        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#integer"))
+            return LiteralExpr(iri.split("^^")[0].removeSurrounding("\""), INTTYPE)
         if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#boolean")) return LiteralExpr(iri.split("^^")[0], BOOLEANTYPE)
-        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#double")) return LiteralExpr(iri.split("^^")[0], DOUBLETYPE)
+        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#double") || 
+            iri.endsWith("^^http://www.w3.org/2001/XMLSchema#float") || 
+            iri.endsWith("^^http://www.w3.org/2001/XMLSchema#decimal")) {
+            val raw = iri.split("^^")[0]
+            val inner = raw.removeSurrounding("\"")
+            // try to remove scientific notation
+            try {
+                val normalized = inner.toDouble()
+                val normalizedStr = "${normalized}"
+                return LiteralExpr(normalizedStr, DOUBLETYPE)
+            } catch (e: NumberFormatException) {
+                throw Exception("Invalid xsd:double literal: $raw")
+            }
+        }
         if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#string")) return LiteralExpr(iri.split("^^")[0], STRINGTYPE)
         val literal = iri.removePrefix(interpreter.settings.runPrefix)
         for (obj in interpreter.heap.keys + interpreter.simMemory.keys)
@@ -75,7 +89,7 @@ class MonitorObject(private val name: LiteralExpr, private val declaredType: Typ
                     // only consider first result for now
                     var literal = iriToLiteral(rdfTuple.get(0), interpreter)
                     if (literal.tag != declaredType)
-                        throw Exception("Monitor parameter has incorrect type")
+                        throw Exception("Monitor parameter has incorrect type (expected ${declaredType}, got ${literal.tag})")
 
                     val name = Names.getObjName("List")
                     val newMemory: Memory = mutableMapOf()                    
