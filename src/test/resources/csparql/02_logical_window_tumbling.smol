@@ -1,0 +1,59 @@
+streamer class C(Int x, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT (SUM(?x) as ?sumX)
+            FROM STREAM %1 [RANGE 3s TUMBLING]
+            WHERE { ?s prog:C_x ?x }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    C o = new C(0, null);
+    o.register();
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    while i < endAt do
+        o.doStream();
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 
+// >>103: 6 = 1+2+3
+// >>104: 6 
+// >>105: 6 
+// >>106: 15 = 4+5+6
+// >>107: 15 
+// >>108: 15 
+// >>109: 24 = 7+8+9
+// ..
+
+// Notes:
+// - External timestamp: clock variable increased by 1 second each iteration = timestamp increased by 1000 ms
+// - RANGE 3s TUMBLING = tumbling window of 3 seconds
+// - Similar output as in 01_physical_window.smol (3 seconds * 1 triple per second = 3 triples)
+// - First 3 windows are empty because the window size is 3 seconds

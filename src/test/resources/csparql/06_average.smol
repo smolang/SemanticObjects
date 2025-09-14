@@ -1,0 +1,57 @@
+streamer class C(Int x, Monitor<Double> m)
+
+    Unit register()
+        Monitor<Double> m = monitor("
+            SELECT (AVG(?x) as ?avgX)
+            FROM STREAM %1 [RANGE 5s STEP 2s]
+            WHERE { ?s prog:C_x ?x }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+    String windowToString()
+        String s = "";
+        List<Double> l = window(this.m);
+        while l != null do
+            s = s ++ doubleToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    C o = new C(0, null);
+    o.register();
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    while i < endAt do
+        o.doStream();
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 1.5 = (1+2) / 2
+// >>103: 1.5 
+// >>104: 2.5 = (1+2+3+4) / 4
+// >>105: 2.5 
+// >>106: 4.0 = (2+3+4+5+6) / 5
+// >>107: 4.0 
+// >>108: 6.0 = (4+5+6+7+8) / 5
+// >>109: 6.0 
+// >>110: 8.0 = (6+7+8+9+10) / 5
+// ..
+
+// Notes:
+// - Average returns double values (not integer)

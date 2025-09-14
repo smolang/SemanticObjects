@@ -1,0 +1,82 @@
+class Controller(List<C> streamers, Monitor<Int> m)
+    
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM STREAM %1 [RANGE TRIPLES 6]
+            FROM STREAM %2 [RANGE TRIPLES 6]
+            FROM STREAM %3 [RANGE TRIPLES 6]
+            WHERE { ?s prog:C_x ?x }", 
+            this.streamers.content,
+            this.streamers.next.content,
+            this.streamers.next.next.content
+        );
+        this.m = m;
+    end
+
+    Unit doStream()
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.doStream();
+            objs = objs.next;
+        end
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+streamer class C(Int x)
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+end
+
+main
+    C o1 = new C(0);
+    C o2 = new C(10);
+    C o3 = new C(20);
+    List<C> l3 = new List<C>(o3, null);
+    List<C> l2 = new List<C>(o2, l3);
+    List<C> streamers = new List<C>(o1, l2);
+
+    Controller ctrl = new Controller(streamers, null);
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    ctrl.register();
+
+    while i < endAt do
+        ctrl.doStream();
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 1 11 21 2 12 22 
+// >>103: 1 11 21 2 12 22 
+// >>104: 3 13 23 4 14 24 
+// >>105: 3 13 23 4 14 24 
+// >>106: 5 15 25 6 16 26 
+// >>107: 5 15 25 6 16 26 
+// >>108: 7 17 27 8 18 28 
+// ..
+
+// Notes:
+// - Three streams with different starting points (0, 10, 20)

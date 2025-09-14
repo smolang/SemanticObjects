@@ -1,0 +1,55 @@
+streamer class C(Int x, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM STREAM %1 [RANGE 5s STEP 2s]
+            WHERE { ?s prog:C_x ?x }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    C o = new C(0, null);
+    o.register();
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    while i < endAt do
+        o.doStream();
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 1 2 
+// >>103: 1 2 
+// >>104: 1 2 3 4 
+// >>105: 1 2 3 4 
+// >>106: 2 3 4 5 6 
+// >>107: 2 3 4 5 6 
+// >>108: 4 5 6 7 8 
+// ..
+
+// Notes:
+// - Multiple elements in the window because there is no aggregation function

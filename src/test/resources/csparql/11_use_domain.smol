@@ -1,0 +1,86 @@
+// Commands:
+// java -jar build/libs/smol.jar -b reada src/test/resources/csparql/example.owl -p ex=https://example.com/ontology#
+// reada src/test/resources/csparql/11_use_domain.smol
+
+class Controller(List<C> streamers, Monitor<Int> m)
+    
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM STREAM %1 [RANGE TRIPLES 6]
+            FROM STREAM %2 [RANGE TRIPLES 6]
+            FROM STREAM %3 [RANGE TRIPLES 6]
+            WHERE { ?s prog:C_x ?x }", 
+            this.streamers.content,
+            this.streamers.next.content,
+            this.streamers.next.next.content
+        );
+        this.m = m;
+    end
+
+    Unit doStream()
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.doStream();
+            objs = objs.next;
+        end
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+streamer class C(String id, Int x) models "a ex:Class.";
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+end
+
+main
+    List<C> streamers = construct("
+        SELECT ?id ?x 
+        WHERE {
+            ?s a ex:Class ;
+               ex:id ?id ;
+               ex:x0 ?x .
+        } ORDER BY DESC (?id)
+    ");
+    Controller ctrl = new Controller(streamers, null);
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    ctrl.register();
+
+    while i < endAt do
+        ctrl.doStream();
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 1 11 21 2 12 22 
+// >>103: 1 11 21 2 12 22 
+// >>104: 3 13 23 4 14 24 
+// >>105: 3 13 23 4 14 24 
+// >>106: 5 15 25 6 16 26 
+// >>107: 5 15 25 6 16 26 
+// >>108: 7 17 27 8 18 28 
+// ..
+
+// Notes:
+// - Same output as 10_multiple_streams.smol
+// - But now the streamers are created based on the domain knowledge

@@ -1,0 +1,56 @@
+streamer class C(Int x, Monitor<Int> m)
+
+    Unit register()
+        String static = pushStatic("heap,staticTable");
+        Monitor<Int> m = monitor("
+            SELECT (SUM(?x) as ?sumX)
+            FROM STREAM %1 [RANGE 3s TUMBLING]
+            FROM <%2>
+            WHERE { ?s prog:C_x ?x . ?s a prog:C . }
+        ", this, static);
+        this.m = m;
+    end
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+main
+    C o = new C(10, null);
+    o.register();
+
+    clock Int i = 100;
+    Int endAt = 200;
+
+    while i < endAt do
+        o.doStream();
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 
+// >>103: 0 
+// >>104: 0 
+// >>105: 0 
+// >>106: 0 
+// ..
+
+// Notes:
+// Error: Static join does not work!
