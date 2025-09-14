@@ -434,7 +434,17 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     }
 
     override fun visitPushStatic_statement(ctx: PushStatic_statementContext?): ProgramElement {
-        return PushStaticStatement(ctx!!.start.line)
+        val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val decl = getClassDecl(ctx)
+            val className = if(decl == null) ERRORTYPE.name else decl!!.className.text
+            val targetType = TypeChecker.translateType(ctx.declType, className, mutableMapOf())
+            target.setType(targetType)
+        }
+
+        val sources = visit(ctx!!.sources) as Expression
+
+        return PushStaticStmt(target, sources, ctx!!.start.line, target.getType())
     }
 
 

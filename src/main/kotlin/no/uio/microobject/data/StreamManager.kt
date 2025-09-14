@@ -47,6 +47,10 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
 
     var clockVar : String? = null
     var clockTimestampSec : String? = null
+    var lastTimestamp: Long = 0
+    var firstTsPassed: Boolean = false
+
+    var nStaticGraphsPushed = 0
 
     init {
         
@@ -82,8 +86,18 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     }
     
     private fun getTimestamp(): Long {
-        if (clockTimestampSec != null) return secToMs(clockTimestampSec!!.toLong())
-        return System.currentTimeMillis()
+        var ms: Long
+        if (clockTimestampSec != null) {
+            ms = secToMs(clockTimestampSec!!.toLong())
+            if (!firstTsPassed) ms -= 1  // workaround: first timestamp is decreased by 1 ms
+        } else {
+            ms = System.currentTimeMillis()
+        }
+
+        if (ms > lastTimestamp && !firstTsPassed) firstTsPassed = true
+
+        lastTimestamp = ms
+        return ms
     }
 
     private fun secToMs(s: Long): Long {
@@ -128,13 +142,14 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     public fun registerQuery(name: LiteralExpr, queryExpr : Expression, params: List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true): CsparqlQueryResultProxy {
         if (!engineInitialized) initEngine()
         val queryStr = prepareQuery(name, queryExpr, params, stackMemory, heap, obj, SPARQL)
-        var resultProxy = engine.registerQuery(queryStr, true) // reasoning enabled
+        if (settings.verbose) println("Registering query:\n$queryStr")
+        var resultProxy = engine.registerQuery(queryStr, false) // reasoning disabled
         resultProxy.addObserver(ResultPusher(name, queryResults)) // each key is only used by one observer
         return resultProxy
     }
 
     private fun prepareQuery(name: LiteralExpr, queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true) : String{
-        val queryHeader = "REGISTER QUERY ${name.literal} AS "
+        val queryHeader = "REGISTER QUERY Query${name.literal} AS "
 
         val queryBody = interpreter!!.prepareQuery(queryExpr, params, stackMemory, heap, obj, SPARQL)
             .removePrefix("\"").removeSuffix("\"")
@@ -165,6 +180,12 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
 
         // hand it to the C-SPARQL engine
         engine.putStaticNamedModel(iri, sw.toString())
+    }
+
+    public fun getStaticNamedIri(): String {
+        val s = "${settings.runPrefix}loadStatic${nStaticGraphsPushed}"
+        nStaticGraphsPushed += 1
+        return s
     }
 
 }
