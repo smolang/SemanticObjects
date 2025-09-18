@@ -1,10 +1,14 @@
+// reada src/test/resources/csparql/03_logical_window_step.smol
+
 streamer class C(Int x, Monitor<Int> m)
 
     Unit register()
         Monitor<Int> m = monitor("
-            SELECT (SUM(?x) as ?sumX)
-            FROM STREAM %1 [RANGE 5s STEP 2s]
-            WHERE { ?s prog:C_x ?x }
+            SELECT (SUM(?x) AS ?sumX)
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT6s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:C_x ?x }
+            }
         ", this);
         this.m = m;
     end
@@ -25,16 +29,27 @@ streamer class C(Int x, Monitor<Int> m)
 end
 
 main
-    C o = new C(0, null);
-    o.register();
-
+    // configure simulation
     clock Int i = 100;
     Int endAt = 200;
 
+    // initialize stream
+    C o = new C(0, null);
+
+    // initialize monitor
+    o.register();
+
+    // run simulation
     while i < endAt do
+
+        // put triples in the stream
         o.doStream();
+
+        // read window contents
         String res = o.windowToString();
         print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
         i = i + 1;
     end
 end
@@ -55,5 +70,5 @@ end
 
 // Notes:
 // - Step 2 seconds = new window every 2 seconds
-// - Windows have {2, 4, 5, 5, 5, ...} elements
+// - Range 6s: Windows have {2, 4, 5, 5, 5, ...} elements
 
