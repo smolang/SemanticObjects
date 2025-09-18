@@ -10,9 +10,6 @@ import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import java.io.File
 
-import eu.larkc.csparql.core.engine.CsparqlQueryResultProxy
-import eu.larkc.csparql.common.RDFTuple
-
 data class MonitorStmt(val target : Location, val query: Expression, val params : List<Expression>, val pos : Int = -1, val declares: Type?) :
     Statement {
     override fun toString(): String = "$target := monitor($query, ${params.joinToString(",")})"
@@ -36,10 +33,9 @@ data class MonitorStmt(val target : Location, val query: Expression, val params 
 
     override fun eval(heapObj: Memory, stackFrame: StackEntry, interpreter: Interpreter): EvalResult {
         val name = Names.getObjName("Monitor")
-        interpreter.streamManager.registerQuery(name, query, params, stackFrame.store, interpreter.heap, stackFrame.obj)
         if (declares is ComposedType && declares.getPrimary().getNameString().equals("Monitor")) {
             // only consider the first type for now. e.g., Monitor<Double>
-            interpreter.streamManager.addMonitor(name, MonitorObject(name, declares.params[0]))
+            interpreter.streamManager.registerQuery(name, query, params, stackFrame.store, interpreter.heap, stackFrame.obj, declaredType=declares.params[0])
         } else {
             throw Exception("Monitor statement can only be assigned to type Monitor<T>")
         }
@@ -52,7 +48,10 @@ class MonitorObject(private val name: LiteralExpr, private val declaredType: Typ
     
     private fun iriToLiteral(iri: String, interpreter: Interpreter): LiteralExpr {
 
-        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#integer"))
+        if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#integer") ||
+            iri.endsWith("^^http://www.w3.org/2001/XMLSchema#long") || 
+            iri.endsWith("^^http://www.w3.org/2001/XMLSchema#int")
+        )
             return LiteralExpr(iri.split("^^")[0].removeSurrounding("\""), INTTYPE)
         if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#boolean")) return LiteralExpr(iri.split("^^")[0], BOOLEANTYPE)
         if (iri.endsWith("^^http://www.w3.org/2001/XMLSchema#double") || 
@@ -82,12 +81,13 @@ class MonitorObject(private val name: LiteralExpr, private val declaredType: Typ
 
         if (rdfTable != null) {
 
-            val resIt = rdfTable.iterator()
+            val resIt = rdfTable.rows().iterator()
+            val firstVar = rdfTable.varNames.get(0)
             while (resIt.hasNext()) {
                 val rdfTuple = resIt.next()
                 try {
                     // only consider first result for now
-                    var literal = iriToLiteral(rdfTuple.get(0), interpreter)
+                    var literal = iriToLiteral(rdfTuple.get(firstVar).toString(), interpreter)
                     if (literal.tag != declaredType)
                         throw Exception("Monitor parameter has incorrect type (expected ${declaredType}, got ${literal.tag})")
 

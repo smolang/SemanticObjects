@@ -12,9 +12,7 @@ import no.uio.microobject.main.ReasonerMode
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import org.apache.jena.rdf.model.Model
 import java.io.File
-
-import eu.larkc.csparql.core.engine.CsparqlQueryResultProxy
-import eu.larkc.csparql.common.RDFTuple
+import java.io.FileWriter
 
 data class PushStaticStmt(val target : Location, val sources: Expression, val pos : Int = -1, val declares: Type?) : Statement {
     override fun toString(): String = "$target:=pushStatic(sources=$sources)"
@@ -60,9 +58,14 @@ data class PushStaticStmt(val target : Location, val sources: Expression, val po
         )
 
         val model = interpreter.tripleManager.getModel(ts)
+        // todo implement
+        val file = "output.ttl"
+        File(interpreter.settings.outdir).mkdirs()
+        File("${interpreter.settings.outdir}/${file}").createNewFile()
+        model.write(FileWriter("${interpreter.settings.outdir}/${file}"),"TTL")
+        val resultPath = "<file://${interpreter.settings.outdir}/${file}>"
 
-        interpreter.streamManager.putStaticNamedGraph(namedIri, model)
-        val resultLit = LiteralExpr(namedIri, STRINGTYPE)
+        val resultLit = LiteralExpr(resultPath, STRINGTYPE)
         return replaceStmt(AssignStmt(target, resultLit, declares = declares), stackFrame)
     }
 

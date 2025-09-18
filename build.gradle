@@ -1,5 +1,5 @@
 plugins {
-    id 'org.jetbrains.kotlin.jvm' version '1.6.21'
+    id 'org.jetbrains.kotlin.jvm' version '1.8.22'
     id 'com.github.johnrengelman.shadow' version '5.2.0'
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
@@ -17,7 +17,7 @@ java {
 
 repositories {
     mavenCentral()
-    maven { url "https://overture.au.dk/artifactory/libs-release/" }
+    maven { url "https://jitpack.io" }
 }
 
 test {
@@ -35,21 +35,25 @@ dependencies {
     testImplementation 'io.kotest:kotest-runner-junit5:5.2.3'
     testImplementation 'org.jetbrains.kotlin:kotlin-test-junit'
     testImplementation 'org.apache.commons:commons-lang3:3.12.0'
-    testImplementation 'org.apache.jena:jena-fuseki-main:3.16.0'
+    testImplementation 'org.apache.jena:jena-fuseki-main:4.10.0'
     implementation 'com.github.ajalt.clikt:clikt:3.4.2'
     implementation 'org.antlr:antlr4:4.8'
     antlr 'org.antlr:antlr4:4.8'
     implementation 'net.sourceforge.owlapi:org.semanticweb.hermit:1.4.5.519'
     implementation 'org.slf4j:slf4j-simple:1.7.25'
-    implementation 'org.apache.jena:apache-jena-libs:3.16.0'
-    implementation 'org.apache.jena:jena-core:3.16.0'
+    implementation 'org.apache.jena:apache-jena-libs:4.10.0'
+    implementation 'org.apache.jena:jena-core:4.10.0'
     implementation 'org.siani.javafmi:fmu-wrapper:2.26.3'
     implementation "com.influxdb:influxdb-client-kotlin:2.3.0"
     implementation 'com.sksamuel.hoplite:hoplite-core:1.4.1'
     implementation 'com.sksamuel.hoplite:hoplite-yaml:1.4.1'
-    implementation 'com.github.owlcs:ontapi:2.1.0'
+    implementation 'com.github.owlcs:ontapi:3.0.5'
     implementation 'org.jline:jline:3.21.0'
-    implementation files('libs/csparql-ui-0.9.7-jar-with-dependencies.jar')
+    implementation 'com.github.streamreasoning.rsp4j:api:1.1.8'
+    implementation 'com.github.streamreasoning.rsp4j:yasper:1.1.8'
+    implementation 'com.github.streamreasoning.rsp4j:io:1.1.8'
+    implementation 'com.github.streamreasoning.rsp4j:dsms:1.1.8'
+    implementation 'com.github.streamreasoning.rsp4j:csparql2:1.1.8'
 }
 
 

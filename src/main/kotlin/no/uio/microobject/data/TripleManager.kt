@@ -18,7 +18,7 @@ import org.apache.jena.graph.impl.GraphBase
 import org.apache.jena.graph.Node
 import org.apache.jena.graph.Node_URI
 import org.apache.jena.graph.NodeFactory
-import org.apache.jena.graph.Triple
+import org.apache.jena.graph.Triple as JenaTriple
 import org.apache.jena.graph.compose.MultiUnion
 import org.apache.jena.query.*
 import org.apache.jena.rdf.model.*
@@ -212,30 +212,30 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
     // A custom type of (nice)iterator which takes a list as input and iterates over them.
     // It iterates through all elements in the list from start to end.
-    private class TripleListIterator(private val tripleList: List<Triple>): NiceIterator<Triple>() {
+    private class TripleListIterator(private val tripleList: List<JenaTriple>): NiceIterator<JenaTriple>() {
         var listIndex: Int = 0  // index of next element
 
         override fun hasNext(): Boolean = listIndex < tripleList.size
 
-        override fun next(): Triple = tripleList[(listIndex++)]
+        override fun next(): JenaTriple = tripleList[(listIndex++)]
     }
 
     // Helper method to crate triple with URIs in all three positions
-    private fun uriTriple(s: String, p: String, o: String): Triple {
-        return Triple(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
+    private fun uriTriple(s: String, p: String, o: String): JenaTriple {
+        return JenaTriple.create(NodeFactory.createURI(s), NodeFactory.createURI(p), NodeFactory.createURI(o))
     }
 
     // Helper method to crate triple with URIs in two first positions and a literal in object position
-    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): Triple? {
+    private fun literalTriple(s: String, p: String, o: Any?, type: BaseType): JenaTriple? {
         if (o == null) return null
-        return Triple(
+        return JenaTriple.create(
             NodeFactory.createURI(s),
             NodeFactory.createURI(p),
             getLiteralNode(LiteralExpr(o.toString(), type), settings)
         )
     }
     // If searchTriple matches candidateTriple, then candidateTriple will be added to matchList
-    private fun addIfMatch(candidateTriple: Triple?, searchTriple: Triple?, matchList: MutableList<Triple>, pseudo: Boolean)  {
+    private fun addIfMatch(candidateTriple: JenaTriple?, searchTriple: JenaTriple?, matchList: MutableList<JenaTriple>, pseudo: Boolean)  {
         if (searchTriple == null) return
         if (candidateTriple == null) return
         // This is just a quick fix to resolve the problem with > and < in the uris. They appear for example when the stdlib.smol is used, since it has List<LISTT>.
@@ -290,7 +290,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     }
 
     private inner class FMOGraph : GraphBase() {
-        override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
+        override fun graphBaseFind(searchTriple: JenaTriple): ExtendedIterator<JenaTriple> {
             if(interpreter == null)
                 return TripleListIterator(mutableListOf())
 
@@ -298,7 +298,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             val smol = prefixMap["smol"]
             val run = prefixMap["run"]
 
-            val matchingTriples: MutableList<Triple> = mutableListOf()
+            val matchingTriples: MutableList<JenaTriple> = mutableListOf()
 
             for( fmo in interpreter.simMemory ){
                 val name = fmo.key.literal
@@ -345,7 +345,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
         // Returns an iterator of all triples in the static table that matches searchTriple
         // graphBaseFind only constructs the triples that match searchTriple.
-        public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
+        public override fun graphBaseFind(searchTriple: JenaTriple): ExtendedIterator<JenaTriple> {
             val useGuardClauses = tripleSettings.guards.getOrDefault("staticTable", true)
             val fieldTable: Map<String,FieldEntry> = staticTable.fieldTable
             val methodTable: Map<String,Map<String,MethodInfo>> = staticTable.methodTable
@@ -386,7 +386,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
             }
 
 
-            val matchingTriples: MutableList<Triple> = mutableListOf()
+            val matchingTriples: MutableList<JenaTriple> = mutableListOf()
 
             // Generate triples for fields (and classes)
             for(classObj in fieldTable){
@@ -545,7 +545,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
 
         // Returns an iterator of all triples in the heap that matches searchTriple
         // graphBaseFind only constructs/fetches the triples that match searchTriple.
-        public override fun graphBaseFind(searchTriple: Triple): ExtendedIterator<Triple> {
+        public override fun graphBaseFind(searchTriple: JenaTriple): ExtendedIterator<JenaTriple> {
             val useGuardClauses = false //tripleSettings.guards.getOrDefault("heap", true)
             val settings: Settings = interpreter.settings
             val heap: GlobalMemory = interpreter.heap
@@ -568,7 +568,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                 }
             }
 
-            val matchingTriples: MutableList<Triple> = mutableListOf()
+            val matchingTriples: MutableList<JenaTriple> = mutableListOf()
 
             for(obj in heap.keys){
                 if(staticTable.hiddenSet.contains(obj.tag.getPrimary().getNameString())) continue;
@@ -605,7 +605,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                             val resNode = getLiteralNode(retVal.second, settings)
                             val resTriple =
-                                Triple(
+                                JenaTriple.create(
                                     NodeFactory.createURI(settings.replaceKnownPrefixesNoColon("run:${obj.literal}")),
                                     NodeFactory.createURI(predicateString),
                                     resNode
@@ -631,7 +631,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             if(retVal == null) retVal = interpreter.evalCall(obj.literal, obj.tag.name, m.key)
                             val resNode = getLiteralNode(retVal.second, settings)
                             val resTriple =
-                                Triple(
+                                JenaTriple.create(
                                     NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(models)),
                                     NodeFactory.createURI(predicateString),
                                     resNode
@@ -720,7 +720,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                                 }
                             }
 
-                            val candidateTriple = Triple(
+                            val candidateTriple = JenaTriple.create(
                                 NodeFactory.createURI(settings.replaceKnownPrefixesNoColon(target)),
                                 NodeFactory.createURI(predicateString),
                                 getLiteralNode(value, settings)
@@ -738,7 +738,7 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
                             }
 
                             val target: LiteralExpr = heap[obj]!!.getOrDefault(store, LiteralExpr("ERROR"))
-                            val candidateTriple = Triple(
+                            val candidateTriple = JenaTriple.create(
                                 NodeFactory.createURI(subjectString),
                                 NodeFactory.createURI(predicateString),
                                 getLiteralNode(target, settings)

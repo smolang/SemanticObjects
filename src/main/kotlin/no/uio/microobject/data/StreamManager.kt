@@ -7,14 +7,11 @@ import no.uio.microobject.ast.stmt.MonitorObject
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
 
-
-import eu.larkc.csparql.core.engine.*
-import eu.larkc.csparql.cep.api.*
-import eu.larkc.csparql.core.*
-import eu.larkc.csparql.common.*
+import java.nio.file.*
 import java.util.Observer;
 import java.util.Observable
 import java.util.concurrent.ConcurrentHashMap
+import java.util.function.Consumer
 import java.io.File
 import java.io.StringWriter
 import org.slf4j.Logger
@@ -24,32 +21,41 @@ import org.apache.log4j.Level
 import org.apache.log4j.Logger as Log4jLogger
 import org.apache.log4j.PropertyConfigurator
 import org.apache.jena.rdf.model.Model
+import org.apache.jena.sparql.algebra.Table
+import org.apache.jena.graph.Graph
 import kotlin.text.toLong
 
-class ResultPusher(private val name: LiteralExpr, private val resultTable: MutableMap<LiteralExpr, RDFTable?>) : Observer {
-    public override fun update(o: Observable, arg: Any) {
-        val results: RDFTable = arg as RDFTable
-        resultTable[name] = results
-    }
-}
+import org.streamreasoning.rsp4j.csparql2.engine.CSPARQLEngine
+import org.streamreasoning.rsp4j.csparql2.engine.JenaContinuousQueryExecution
+import org.streamreasoning.rsp4j.csparql2.stream.GraphStreamSchema
+import org.streamreasoning.rsp4j.csparql2.sysout.ResponseFormatterFactory
+import org.streamreasoning.rsp4j.csparql2.syntax.QueryFactory
+import org.streamreasoning.rsp4j.csparql2.sysout.GenericResponseSysOutFormatter
+import org.streamreasoning.rsp4j.api.engine.config.EngineConfiguration;
+import org.streamreasoning.rsp4j.io.DataStreamImpl
+import org.streamreasoning.rsp4j.api.stream.data.DataStream
+import org.streamreasoning.rsp4j.api.sds.SDSConfiguration
+import org.apache.jena.rdf.model.*;
+import org.apache.jena.atlas.lib.tuple.Tuple
 
 // Class managing streams
 class StreamManager(private val settings: Settings, val staticTable: StaticTable, private val interpreter: Interpreter?) {
 
-    private val engine: CsparqlEngineImpl = CsparqlEngineImpl()
+    private var engine: CSPARQLEngine? = null
     private var engineInitialized = false
+    private var sdsConfig: SDSConfiguration? = null
+    private var ec: EngineConfiguration? = null
     val LOG : Logger? = LoggerFactory.getLogger(StreamManager::class.java)
 
-    private var streams: MutableMap<String, MutableMap<LiteralExpr, RdfStream>> = mutableMapOf()
+    private var streams: MutableMap<String, MutableMap<LiteralExpr, StreamObject>> = mutableMapOf()
     private var monitors: MutableMap<LiteralExpr, MonitorObject> = mutableMapOf()
-    
-    private var queryResults: MutableMap<LiteralExpr, RDFTable?> = ConcurrentHashMap()
+
+    private var queryResults: MutableMap<LiteralExpr, Table?> = ConcurrentHashMap()
 
     var clockVar : String? = null
     var clockTimestampSec : String? = null
     var lastTimestamp: Long = 0
-    var firstTsPassed: Boolean = false
-
+    
     var nStaticGraphsPushed = 0
 
     init {
@@ -65,22 +71,41 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
             System.setProperty(org.slf4j.impl.SimpleLogger.DEFAULT_LOG_LEVEL_KEY, "ERROR")
         }
     }
+    
+    private fun initEngineIfNeeded() {
+        if (!engineInitialized) {
+            val ts = getTimestamp()
 
-    private fun initEngine() {
+            val configPath = "src/main/resources/csparql2.properties"
+            val defaultPath = "src/main/resources/default-csparql2.properties"
 
-        engine.initialize(true) // timestamp enabled
-        engineInitialized = true
+            if (File(configPath).exists()) {
+                ec = EngineConfiguration(configPath)
+                sdsConfig = SDSConfiguration(configPath)
+                println("Loaded csparql2.properties successfully at ts=$ts.")
+            } else {
+                println("Failed to load csparql2.properties, falling back to default-csparql2.properties at ts=$ts.")
+                ec = EngineConfiguration(defaultPath)
+                sdsConfig = SDSConfiguration(defaultPath)
+            }
+
+            engine = CSPARQLEngine(0, ec)
+            engineInitialized = true
+        }
     }
 
-    public fun getQueryResults(name: LiteralExpr): RDFTable? {
+    public fun getQueryResults(name: LiteralExpr): Table? {
         return queryResults[name]
     }
 
     public fun registerStream(className: String, obj: LiteralExpr) {
-        if (!engineInitialized) initEngine()
+        initEngineIfNeeded()
         val streamIri = "${settings.runPrefix}${obj.toString()}"
-        val stream = RdfStream(streamIri)
-        engine.registerStream(stream)
+
+        val stream = StreamObject(streamIri)
+        val reg = engine!!.register(stream)
+        stream.setWritable(reg)
+
         if (!streams.containsKey(className)) streams[className] = mutableMapOf()
         streams[className]!![obj] = stream
     }
@@ -89,12 +114,9 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         var ms: Long
         if (clockTimestampSec != null) {
             ms = secToMs(clockTimestampSec!!.toLong())
-            if (!firstTsPassed) ms -= 1  // workaround: first timestamp is decreased by 1 ms
         } else {
             ms = System.currentTimeMillis()
         }
-
-        if (ms > lastTimestamp && !firstTsPassed) firstTsPassed = true
 
         lastTimestamp = ms
         return ms
@@ -115,72 +137,72 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
             val res = interpreter.eval(expr, stackEntry)
 
             val predIri = "${settings.progPrefix}${className}_${expr.toString().removePrefix("this.").replace('.', '_')}"
-            val objIri = literalToIri(res)
 
-            val quad = RdfQuadruple(subjIri, predIri, objIri, timestamp)
-            // println(quad.toString())
-            stream.put(quad)
+            val m = ModelFactory.createDefaultModel()
+            val stmt = m.createStatement(m.createResource(subjIri), m.createProperty(predIri), literalToIri(m, res, settings))
+            m.add(stmt)
+
+            stream.putGraph(m.getGraph(), timestamp)
         }
     }
 
-    private fun literalToIri(lit: LiteralExpr): String {
-        if (lit.tag == INTTYPE) return "\"${lit.literal}\"^^http://www.w3.org/2001/XMLSchema#integer"
-        if (lit.tag == BOOLEANTYPE) return "\"${lit.literal}\"^^http://www.w3.org/2001/XMLSchema#boolean"
-        if (lit.tag == DOUBLETYPE) return "\"${lit.literal}\"^^http://www.w3.org/2001/XMLSchema#double"
-        if (lit.tag == STRINGTYPE) return "\"${lit.literal}\"^^http://www.w3.org/2001/XMLSchema#string"
-        return "${settings.runPrefix}${lit.literal}"
-    }
-
-    public fun addMonitor(name: LiteralExpr, monitor: MonitorObject) {
-        monitors[name] = monitor
+    private fun literalToIri(m: Model, lit: LiteralExpr, settings: Settings): RDFNode =
+    when (lit.tag) {
+        INTTYPE    -> m.createTypedLiteral(lit.literal.toInt())
+        DOUBLETYPE -> m.createTypedLiteral(lit.literal.toDouble())
+        BOOLEANTYPE-> m.createTypedLiteral(lit.literal.toBoolean())
+        STRINGTYPE -> m.createLiteral(lit.literal)
+        else       -> m.createResource("${settings.runPrefix}${lit.literal}")
     }
 
     public fun getMonitor(name: LiteralExpr): MonitorObject? {
         return monitors[name]
     }
 
-    public fun registerQuery(name: LiteralExpr, queryExpr : Expression, params: List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true): CsparqlQueryResultProxy {
-        if (!engineInitialized) initEngine()
+    public fun registerQuery(name: LiteralExpr, queryExpr : Expression, params: List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true, declaredType: Type): JenaContinuousQueryExecution {
+        initEngineIfNeeded()
         val queryStr = prepareQuery(name, queryExpr, params, stackMemory, heap, obj, SPARQL)
-        if (settings.verbose) println("Registering query:\n$queryStr")
-        var resultProxy = engine.registerQuery(queryStr, false) // reasoning disabled
-        resultProxy.addObserver(ResultPusher(name, queryResults)) // each key is only used by one observer
-        return resultProxy
+
+        val cqe = engine!!.register(queryStr, sdsConfig) as JenaContinuousQueryExecution
+        monitors[name] = MonitorObject(name, declaredType)
+
+        val outputStream = cqe.outstream()
+        outputStream?.addConsumer { arg, ts -> 
+            val results: Table = arg as Table
+            queryResults[name] = results
+        }
+
+        return cqe
     }
 
-    private fun prepareQuery(name: LiteralExpr, queryExpr : Expression, params : List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true) : String{
-        val queryHeader = "REGISTER QUERY Query${name.literal} AS "
+    private fun prepareQuery(name: LiteralExpr, queryExpr : Expression, params : List<Expression>, 
+            stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true) : String{
+
+        var prefixes = ""
+        for ((key, value) in settings.prefixMap()) prefixes += "PREFIX $key: <$value>\n"
+
+        val queryHeader = "REGISTER RSTREAM <${settings.runPrefix}${name.literal}> AS "
 
         val queryBody = interpreter!!.prepareQuery(queryExpr, params, stackMemory, heap, obj, SPARQL)
             .removePrefix("\"").removeSuffix("\"")
 
-        var queryWithPrefixes = queryHeader
-        // for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
-        queryWithPrefixes += queryBody
+        var queryWithPrefixes = prefixes + queryHeader + queryBody
         queryWithPrefixes = queryWithPrefixes.replace("\\\"", "\"")
-
-        // Replace occurrences of value:x with <keyx> for each prefix in prefixMap
-        for ((key, value) in settings.prefixMap()) {
-            // Regex to match key: followed by a valid identifier (e.g., obj4)
-            val regex = Regex("""${Regex.escape(key)}:([A-Za-z0-9_]+)""")
-            queryWithPrefixes = queryWithPrefixes.replace(regex) { matchResult ->
-            "<$value${matchResult.groupValues[1]}>"
-            }
-        }
 
         return queryWithPrefixes
     }
 
-    public fun putStaticNamedGraph(iri: String, model: Model) {
-        if (!engineInitialized) initEngine()
+    // todo implement
+    // public fun putStaticNamedGraph(iri: String, model: Model) {
+    //     if (!engineInitialized) initEngine()
 
-        // serialize the model (RDF/XML matches the engine's first attempt)
-        val sw = StringWriter()
-        model.write(sw, "RDF/XML")
+    //     // serialize the model (RDF/XML matches the engine's first attempt)
+    //     val sw = StringWriter()
+    //     model.write(sw, "RDF/XML")
 
-        // hand it to the C-SPARQL engine
-        engine.putStaticNamedModel(iri, sw.toString())
-    }
+    //     // hand it to the C-SPARQL engine
+    //     engine.putStaticNamedModel(iri, sw.toString())
+    // }
 
     public fun getStaticNamedIri(): String {
         val s = "${settings.runPrefix}loadStatic${nStaticGraphsPushed}"
@@ -188,5 +210,19 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         return s
     }
 
+}
+
+class StreamObject(var iri: String) : DataStreamImpl<Graph>(iri) {
+
+    private var s: DataStream<Graph>? = null
+
+    fun setWritable(s: DataStream<Graph>) {
+        this.s = s
+    }
+
+    fun putGraph(m: Graph, t: Long) {
+        if (s == null) throw Exception("Stream $iri is not writable")
+        s!!.put(m, t)
+    }
 }
  
