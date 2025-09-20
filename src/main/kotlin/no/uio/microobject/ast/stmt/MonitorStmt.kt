@@ -76,32 +76,35 @@ class MonitorObject(private val name: LiteralExpr, private val declaredType: Typ
     }
 
     fun getWindowResults(interpreter: Interpreter): LiteralExpr {
-        val rdfTable = interpreter.streamManager.getQueryResults(name)
+        val rdfTables = interpreter.streamManager.getQueryResults(name)
+        
         var list = LiteralExpr("null")
 
-        if (rdfTable != null) {
+        if (rdfTables != null) {
+            for (rdfTable in rdfTables) {
 
-            val resIt = rdfTable.rows().iterator()
-            val firstVar = rdfTable.varNames.get(0)
-            while (resIt.hasNext()) {
-                val rdfTuple = resIt.next()
-                try {
-                    // only consider first result for now
-                    var literal = iriToLiteral(rdfTuple.get(firstVar).toString(), interpreter)
-                    if (literal.tag != declaredType)
-                        throw Exception("Monitor parameter has incorrect type (expected ${declaredType}, got ${literal.tag})")
+                val resIt = rdfTable.rows().iterator()
+                val firstVar = rdfTable.varNames.get(0)
+                
+                while (resIt.hasNext()) {
+                    val rdfTuple = resIt.next()
+                    try {
+                        // only consider first result for now
+                        var literal = iriToLiteral(rdfTuple.get(firstVar).toString(), interpreter)
+                        if (literal.tag != declaredType)
+                            throw Exception("Monitor parameter has incorrect type (expected ${declaredType}, got ${literal.tag})")
 
-                    val name = Names.getObjName("List")
-                    val newMemory: Memory = mutableMapOf()                    
-                    newMemory["content"] = literal
-                    newMemory["next"] = list
-                    interpreter.heap[name] = newMemory
-                    list = name
+                        val name = Names.getObjName("List")
+                        val newMemory: Memory = mutableMapOf()
+                        newMemory["content"] = literal
+                        newMemory["next"] = list
+                        interpreter.heap[name] = newMemory
+                        list = name
 
-                } catch (e: Exception) {
-                    throw Exception("Error while processing query result: ${e.message}")
+                    } catch (e: Exception) {
+                        throw Exception("Error while processing query result: ${e.message}")
+                    }
                 }
-
             }
         }
         return list

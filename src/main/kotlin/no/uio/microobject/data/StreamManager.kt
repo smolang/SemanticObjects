@@ -38,6 +38,9 @@ import org.streamreasoning.rsp4j.api.sds.SDSConfiguration
 import org.apache.jena.rdf.model.*;
 import org.apache.jena.atlas.lib.tuple.Tuple
 
+// Per-monitor state
+data class WindowBuf(var tick: Long? = null, val current: MutableList<Table> = mutableListOf())
+
 // Class managing streams
 class StreamManager(private val settings: Settings, val staticTable: StaticTable, private val interpreter: Interpreter?) {
 
@@ -50,12 +53,14 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     private var streams: MutableMap<String, MutableMap<LiteralExpr, StreamObject>> = mutableMapOf()
     private var monitors: MutableMap<LiteralExpr, MonitorObject> = mutableMapOf()
 
-    private var queryResults: MutableMap<LiteralExpr, Table?> = ConcurrentHashMap()
+    private val windowBufs = ConcurrentHashMap<LiteralExpr, WindowBuf>()
+    private val queryResults = ConcurrentHashMap<LiteralExpr, List<Table>>() // read-only snapshots
 
     var clockVar : String? = null
     var clockTimestampSec : String? = null
     var lastTimestamp: Long = 0
-    
+    var lastWindowTs: Long? = null
+
     var nStaticGraphsPushed = 0
 
     init {
@@ -89,12 +94,12 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
                 sdsConfig = SDSConfiguration(defaultPath)
             }
 
-            engine = CSPARQLEngine(0, ec)
+            engine = CSPARQLEngine(ts, ec)
             engineInitialized = true
         }
     }
 
-    public fun getQueryResults(name: LiteralExpr): Table? {
+    public fun getQueryResults(name: LiteralExpr): List<Table>? {
         return queryResults[name]
     }
 
@@ -130,13 +135,27 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         val stream = streams[className]!![obj]!!
         val expressions = interpreter!!.staticInfo.streamersTable[className]!![methodName]!!
 
-        val subjIri = "${settings.runPrefix}${obj.literal}"
         val timestamp = getTimestamp()
 
         for (expr in expressions) {
             val res = interpreter.eval(expr, stackEntry)
 
-            val predIri = "${settings.progPrefix}${className}_${expr.toString().removePrefix("this.").replace('.', '_')}"
+            val exprParts = expr.toString().split('.')
+            var subjIri: String = "${settings.runPrefix}${obj.literal}"
+            var predIri = "${settings.progPrefix}${className}_${expr.toString().removePrefix("this.").replace('.', '_')}"
+            if (exprParts.size < 2) {
+                throw Exception("Streamer expression must be of the form this.field or this.obj.field")
+            }
+            if (exprParts.size > 2) {
+                // find the one before last part
+                var currentObj: LiteralExpr = obj
+                for (i in 1 until exprParts.size - 1) {
+                    val fieldName = exprParts[i]
+                    currentObj = interpreter.heap[currentObj]!![fieldName]!!
+                }
+                subjIri = "${settings.runPrefix}${currentObj.literal}"
+                predIri = "${settings.progPrefix}${(currentObj.tag as BaseType).name}_${exprParts.last()}"
+            }
 
             val m = ModelFactory.createDefaultModel()
             val stmt = m.createStatement(m.createResource(subjIri), m.createProperty(predIri), literalToIri(m, res, settings))
@@ -162,14 +181,25 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     public fun registerQuery(name: LiteralExpr, queryExpr : Expression, params: List<Expression>, stackMemory: Memory, heap: GlobalMemory, obj: LiteralExpr, SPARQL : Boolean = true, declaredType: Type): JenaContinuousQueryExecution {
         initEngineIfNeeded()
         val queryStr = prepareQuery(name, queryExpr, params, stackMemory, heap, obj, SPARQL)
+        if (settings.verbose) println("Registering query:\n$queryStr")
 
         val cqe = engine!!.register(queryStr, sdsConfig) as JenaContinuousQueryExecution
         monitors[name] = MonitorObject(name, declaredType)
 
+        windowBufs.computeIfAbsent(name) { WindowBuf() }
+
         val outputStream = cqe.outstream()
-        outputStream?.addConsumer { arg, ts -> 
-            val results: Table = arg as Table
-            queryResults[name] = results
+        outputStream?.addConsumer { arg, ts ->
+            val table = arg as Table
+            val b = windowBufs.getOrPut(name) { WindowBuf() }
+
+            if (b.tick != ts) {
+                b.tick = ts
+                b.current.clear()
+            }
+            b.current += table
+
+            queryResults[name] = b.current.toList()
         }
 
         return cqe
@@ -181,7 +211,7 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         var prefixes = ""
         for ((key, value) in settings.prefixMap()) prefixes += "PREFIX $key: <$value>\n"
 
-        val queryHeader = "REGISTER RSTREAM <${settings.runPrefix}${name.literal}> AS "
+        val queryHeader = "REGISTER RSTREAM <${settings.runPrefix}${name.literal}/out> AS "
 
         val queryBody = interpreter!!.prepareQuery(queryExpr, params, stackMemory, heap, obj, SPARQL)
             .removePrefix("\"").removeSuffix("\"")
