@@ -61,6 +61,9 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     var lastTimestamp: Long = 0
     var lastWindowTs: Long? = null
 
+    var lastTriggerTs: Long? = null
+    var lastModel: Model? = null
+
     var nStaticGraphsPushed = 0
 
     init {
@@ -136,6 +139,13 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         val expressions = interpreter!!.staticInfo.streamersTable[className]!![methodName]!!
 
         val timestamp = getTimestamp()
+        if (lastTriggerTs == null || timestamp > lastTriggerTs!!) {
+            // put model only if time has advanced (guarantee one graph per timestamp)
+            if (lastTriggerTs != null)
+                stream.putGraph(lastModel!!.getGraph(), lastTriggerTs!!)
+            lastModel = ModelFactory.createDefaultModel()
+            lastTriggerTs = timestamp
+        } 
 
         for (expr in expressions) {
             val res = interpreter.eval(expr, stackEntry)
@@ -157,11 +167,8 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
                 predIri = "${settings.progPrefix}${(currentObj.tag as BaseType).name}_${exprParts.last()}"
             }
 
-            val m = ModelFactory.createDefaultModel()
-            val stmt = m.createStatement(m.createResource(subjIri), m.createProperty(predIri), literalToIri(m, res, settings))
-            m.add(stmt)
-
-            stream.putGraph(m.getGraph(), timestamp)
+            val stmt = lastModel!!.createStatement(lastModel!!.createResource(subjIri), lastModel!!.createProperty(predIri), literalToIri(lastModel!!, res, settings))
+            lastModel!!.add(stmt)
         }
     }
 

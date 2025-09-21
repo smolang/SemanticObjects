@@ -1,20 +1,23 @@
-// reada src/test/resources/csparql/03_logical_window_step.smol
+// reada src/test/resources/csparql/03_sum.smol
 
-streamer class C(Int x, Monitor<Int> m)
+class Observation(Int x, Int ts) end
+
+streamer class C(Int x, Observation obs, Monitor<Int> m)
 
     Unit register()
         Monitor<Int> m = monitor("
             SELECT (SUM(?x) AS ?sumX)
-            FROM NAMED WINDOW <win> ON %1 [RANGE PT6s STEP PT2s]
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT5.001s STEP PT2s]
             WHERE {
-                WINDOW ?w { ?s prog:C_x ?x }
+                WINDOW ?w { ?s prog:Observation_x ?x }
             }
         ", this);
         this.m = m;
     end
 
-    Unit doStream() emits(this.x)
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
         this.x = this.x + 1;
+        this.obs = new Observation(this.x, ts);
     end
 
     String windowToString()
@@ -34,7 +37,7 @@ main
     Int endAt = 200;
 
     // initialize stream
-    C o = new C(0, null);
+    C o = new C(0, null, null);
 
     // initialize monitor
     o.register();
@@ -43,7 +46,7 @@ main
     while i < endAt do
 
         // put triples in the stream
-        o.doStream();
+        o.doStream(i);
 
         // read window contents
         String res = o.windowToString();
@@ -69,6 +72,4 @@ end
 // ..
 
 // Notes:
-// - Step 2 seconds = new window every 2 seconds
-// - Range 6s: Windows have {2, 4, 5, 5, 5, ...} elements
-
+// - SUM aggregation works as expected

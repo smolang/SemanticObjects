@@ -1,16 +1,25 @@
 // Commands:
-// java -jar build/libs/smol.jar -b reada src/test/resources/csparql/example.owl -p ex=https://example.com/ontology#
+// java -jar build/libs/smol.jar -b src/test/resources/csparql/example.owl -p ex=https://example.com/ontology#
 // reada src/test/resources/csparql/11_use_domain.smol
+
+class Observation(Int x, Int ts) end
 
 class Controller(List<C> streamers, Monitor<Int> m)
     
     Unit register()
         Monitor<Int> m = monitor("
             SELECT ?x
-            FROM STREAM %1 [RANGE TRIPLES 6]
-            FROM STREAM %2 [RANGE TRIPLES 6]
-            FROM STREAM %3 [RANGE TRIPLES 6]
-            WHERE { ?s prog:C_x ?x }", 
+            FROM NAMED WINDOW <win1> ON %1 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win2> ON %2 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win3> ON %3 [RANGE PT4.001s STEP PT2s]
+            WHERE {
+                { WINDOW <win1> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win2> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win3> { ?s prog:C_x ?x. } }
+            }
+        ", 
             this.streamers.content,
             this.streamers.next.content,
             this.streamers.next.next.content
@@ -39,13 +48,20 @@ class Controller(List<C> streamers, Monitor<Int> m)
 
 end
 
-streamer class C(String id, Int x) models "a ex:Class.";
+streamer class C(Int x) models "a ex:Class.";
+
     Unit doStream() emits(this.x)
         this.x = this.x + 1;
     end
+
 end
 
 main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
     List<C> streamers = construct("
         SELECT ?id ?x 
         WHERE {
@@ -56,15 +72,20 @@ main
     ");
     Controller ctrl = new Controller(streamers, null);
 
-    clock Int i = 100;
-    Int endAt = 200;
-
+    // initialize monitor
     ctrl.register();
 
+    // run simulation
     while i < endAt do
-        ctrl.doStream();
+
+        // put triples in the stream
+        ctrl.doStream(i);
+
+        // read window contents
         String res = ctrl.windowToString();
         print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
         i = i + 1;
     end
 end
@@ -72,13 +93,18 @@ end
 // Output:
 // >>100: 
 // >>101: 
-// >>102: 1 11 21 2 12 22 
-// >>103: 1 11 21 2 12 22 
-// >>104: 3 13 23 4 14 24 
-// >>105: 3 13 23 4 14 24 
-// >>106: 5 15 25 6 16 26 
-// >>107: 5 15 25 6 16 26 
-// >>108: 7 17 27 8 18 28 
+// >>102: 
+// >>103: 11 21 1 12 22 2                    : 1-2, 11-12, 21-22
+// >>104: 11 21 1 12 22 2 
+// >>105: 24 21 4 1 12 11 23 2 14 22 13 3    : 2-5, 12-15, 22-25
+// >>106: 24 21 4 1 12 11 23 2 14 22 13 3 
+// >>107: 24 15 4 6 23 26 14 25 13 3 5 16    : 3-6, 13-16, 23-26
+// >>108: 24 15 4 6 23 26 14 25 13 3 5 16 
+// >>109: 15 27 6 18 26 17 7 28 25 8 5 16    : 5-8, 15-18, 25-28
+// >>110: 15 27 6 18 26 17 7 28 25 8 5 16 
+// >>111: 27 10 30 18 17 29 7 20 28 19 9 8   : 7-10, 17-20, 27-30
+// >>112: 27 10 30 18 17 29 7 20 28 19 9 8 
+// >>113: 22 10 30 21 32 11 29 20 31 19 12 9 : 9-12, 19-22, 29-32
 // ..
 
 // Notes:

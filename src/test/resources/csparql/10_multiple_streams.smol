@@ -1,12 +1,23 @@
+// reada src/test/resources/csparql/10_multiple_streams.smol
+
+class Observation(Int x, Int ts) end
+
 class Controller(List<C> streamers, Monitor<Int> m)
     
     Unit register()
         Monitor<Int> m = monitor("
             SELECT ?x
-            FROM STREAM %1 [RANGE TRIPLES 6]
-            FROM STREAM %2 [RANGE TRIPLES 6]
-            FROM STREAM %3 [RANGE TRIPLES 6]
-            WHERE { ?s prog:C_x ?x }", 
+            FROM NAMED WINDOW <win1> ON %1 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win2> ON %2 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win3> ON %3 [RANGE PT4.001s STEP PT2s]
+            WHERE {
+                { WINDOW <win1> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win2> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win3> { ?s prog:C_x ?x. } }
+            }
+        ", 
             this.streamers.content,
             this.streamers.next.content,
             this.streamers.next.next.content
@@ -44,6 +55,11 @@ streamer class C(Int x)
 end
 
 main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
     C o1 = new C(0);
     C o2 = new C(10);
     C o3 = new C(20);
@@ -53,15 +69,20 @@ main
 
     Controller ctrl = new Controller(streamers, null);
 
-    clock Int i = 100;
-    Int endAt = 200;
-
+    // initialize monitor
     ctrl.register();
 
+    // run simulation
     while i < endAt do
-        ctrl.doStream();
+
+        // put triples in the stream
+        ctrl.doStream(i);
+
+        // read window contents
         String res = ctrl.windowToString();
         print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
         i = i + 1;
     end
 end
@@ -69,13 +90,18 @@ end
 // Output:
 // >>100: 
 // >>101: 
-// >>102: 1 11 21 2 12 22 
-// >>103: 1 11 21 2 12 22 
-// >>104: 3 13 23 4 14 24 
-// >>105: 3 13 23 4 14 24 
-// >>106: 5 15 25 6 16 26 
-// >>107: 5 15 25 6 16 26 
-// >>108: 7 17 27 8 18 28 
+// >>102: 
+// >>103: 1 11 21 2 12 22                    : 1-2, 11-12, 21-22
+// >>104: 1 11 21 2 12 22 
+// >>105: 1 21 14 4 3 23 11 22 24 12 13 2    : 2-5, 12-15, 22-25
+// >>106: 1 21 14 4 3 23 11 22 24 12 13 2 
+// >>107: 25 4 14 3 23 16 26 24 6 5 13 15    : 3-6, 13-16, 23-26
+// >>108: 25 4 14 3 23 16 26 24 6 5 13 15 
+// >>109: 25 27 16 26 28 6 17 5 8 7 18 15    : 5-8, 15-18, 25-28
+// >>110: 25 27 16 26 28 6 17 5 8 7 18 15 
+// >>111: 30 20 27 28 10 9 17 29 8 19 7 18   : 7-10, 17-20, 27-30
+// >>112: 30 20 27 28 10 9 17 29 8 19 7 18 
+// >>113: 30 20 32 21 10 9 22 29 12 11 19 31 : 9-12, 19-22, 29-32
 // ..
 
 // Notes:

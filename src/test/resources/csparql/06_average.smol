@@ -1,16 +1,23 @@
-streamer class C(Int x, Monitor<Double> m)
+// reada src/test/resources/csparql/06_average.smol
+
+class Observation(Int x, Int ts) end
+
+streamer class C(Int x, Observation obs, Monitor<Double> m)
 
     Unit register()
         Monitor<Double> m = monitor("
-            SELECT (AVG(?x) as ?avgX)
-            FROM STREAM %1 [RANGE 5s STEP 2s]
-            WHERE { ?s prog:C_x ?x }
+            SELECT (AVG(?x) AS ?avgX)
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT5.001s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x }
+            }
         ", this);
         this.m = m;
     end
 
-    Unit doStream() emits(this.x)
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
         this.x = this.x + 1;
+        this.obs = new Observation(this.x, ts);
     end
 
     String windowToString()
@@ -25,16 +32,27 @@ streamer class C(Int x, Monitor<Double> m)
 end
 
 main
-    C o = new C(0, null);
-    o.register();
-
+    // configure simulation
     clock Int i = 100;
     Int endAt = 200;
 
+    // initialize stream
+    C o = new C(0, null, null);
+
+    // initialize monitor
+    o.register();
+
+    // run simulation
     while i < endAt do
-        o.doStream();
+
+        // put triples in the stream
+        o.doStream(i);
+
+        // read window contents
         String res = o.windowToString();
         print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
         i = i + 1;
     end
 end
@@ -54,4 +72,5 @@ end
 // ..
 
 // Notes:
+// - AVG aggregation works as expected
 // - Average returns double values (not integer)
