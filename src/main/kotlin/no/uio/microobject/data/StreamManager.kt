@@ -230,18 +230,6 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         return queryWithPrefixes
     }
 
-    // todo implement
-    // public fun putStaticNamedGraph(iri: String, model: Model) {
-    //     if (!engineInitialized) initEngine()
-
-    //     // serialize the model (RDF/XML matches the engine's first attempt)
-    //     val sw = StringWriter()
-    //     model.write(sw, "RDF/XML")
-
-    //     // hand it to the C-SPARQL engine
-    //     engine.putStaticNamedModel(iri, sw.toString())
-    // }
-
     public fun getStaticNamedIri(): String {
         val s = "${settings.runPrefix}loadStatic${nStaticGraphsPushed}"
         nStaticGraphsPushed += 1

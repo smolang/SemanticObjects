@@ -40,31 +40,37 @@ data class PushStaticStmt(val target : Location, val sources: Expression, val po
             "urlOntology"      to false,
             "fmos"             to false
         )
+        var reasonerMode: ReasonerMode = ReasonerMode.off
         for (s in sourcesList) {
             val trimmed = s.trim()
             if (sourcesMap.containsKey(trimmed)) {
                 sourcesMap[trimmed] = true
+            } else if (trimmed == "reasoner") {
+                reasonerMode = interpreter.settings.reasoner
             } else {
-                throw Exception("Unknown source '$trimmed' in pushStatic statement, only comma-separated [heap, staticTable, vocabularyFile, externalOntology, urlOntology, fmos] are allowed")
+                throw Exception("Unknown source '$trimmed' in pushStatic statement, only comma-separated [heap, staticTable, vocabularyFile, externalOntology, urlOntology, fmos (or reasoner)] are allowed")
             }
         }
 
+        // load settings from source map
         val ts = TripleSettings(
             sources = sourcesMap,
             guards = hashMapOf("heap" to true, "staticTable" to true),
             virtualization = hashMapOf("heap" to true, "staticTable" to true, "fmos" to true),
-            jenaReasoner = interpreter.settings.reasoner,
+            jenaReasoner = reasonerMode,
             cachedModel = null
         )
 
+        // write output to a file
         val model = interpreter.tripleManager.getModel(ts)
-        // todo implement
         val file = "output.ttl"
         File(interpreter.settings.outdir).mkdirs()
         File("${interpreter.settings.outdir}/${file}").createNewFile()
         model.write(FileWriter("${interpreter.settings.outdir}/${file}"),"TTL")
         val resultPath = "<file://${interpreter.settings.outdir}/${file}>"
 
+        // return the file path as a string literal
+        println("Saving static data to $resultPath")
         val resultLit = LiteralExpr(resultPath, STRINGTYPE)
         return replaceStmt(AssignStmt(target, resultLit, declares = declares), stackFrame)
     }

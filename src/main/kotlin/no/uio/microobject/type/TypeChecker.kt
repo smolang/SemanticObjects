@@ -1106,6 +1106,26 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 if(ctx.target != null && ctx.target !is WhileParser.Var_expressionContext && inRule)
                     log("Non-local access in rule method.", ctx)
             }
+            is WhileParser.PushStatic_statementContext -> {
+                val innerType = getType(ctx.sources, inner, vars, thisType, inRule)
+                if(innerType != ERRORTYPE && innerType != STRINGTYPE)
+                    log("PushStatic expects a string as its parameter", ctx)
+                if (ctx.declType != null) {
+                    val lhs = ctx.target
+                    if (lhs !is WhileParser.Var_expressionContext) {
+                        log("Variable declaration must declare a variable.", ctx)
+                    } else {
+                        val name = lhs.NAME().text
+                        if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
+                        else {
+                            val expType = translateType(ctx.type(), className, generics)
+                            vars[name] = expType
+                        }
+                    }
+                    if (translateType(ctx.declType, className, generics) != STRINGTYPE)
+                        log("PushStatic expects a String variable to assign to", ctx)
+                }
+            }
             else -> {
                 log("Statements with class ${ctx.javaClass} cannot be type checked",ctx)
             }
