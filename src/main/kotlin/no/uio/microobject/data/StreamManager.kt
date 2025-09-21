@@ -61,8 +61,9 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     var lastTimestamp: Long = 0
     var lastWindowTs: Long? = null
 
-    var lastTriggerTs: Long? = null
-    var lastModel: Model? = null
+    // monitor state
+    var lastTriggerTs: MutableMap<LiteralExpr, Long> = mutableMapOf()
+    var lastModels: MutableMap<LiteralExpr, Model> = mutableMapOf()
 
     var nStaticGraphsPushed = 0
 
@@ -139,12 +140,12 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
         val expressions = interpreter!!.staticInfo.streamersTable[className]!![methodName]!!
 
         val timestamp = getTimestamp()
-        if (lastTriggerTs == null || timestamp > lastTriggerTs!!) {
+        if (!lastTriggerTs.containsKey(obj) || timestamp > lastTriggerTs[obj]!!) {
             // put model only if time has advanced (guarantee one graph per timestamp)
-            if (lastTriggerTs != null)
-                stream.putGraph(lastModel!!.getGraph(), lastTriggerTs!!)
-            lastModel = ModelFactory.createDefaultModel()
-            lastTriggerTs = timestamp
+            if (lastTriggerTs.containsKey(obj))
+                stream.putGraph(lastModels[obj]!!.getGraph(), lastTriggerTs[obj]!!)
+            lastModels[obj] = ModelFactory.createDefaultModel()
+            lastTriggerTs[obj] = timestamp
         } 
 
         for (expr in expressions) {
@@ -167,8 +168,8 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
                 predIri = "${settings.progPrefix}${(currentObj.tag as BaseType).name}_${exprParts.last()}"
             }
 
-            val stmt = lastModel!!.createStatement(lastModel!!.createResource(subjIri), lastModel!!.createProperty(predIri), literalToIri(lastModel!!, res, settings))
-            lastModel!!.add(stmt)
+            val stmt = lastModels[obj]!!.createStatement(lastModels[obj]!!.createResource(subjIri), lastModels[obj]!!.createProperty(predIri), literalToIri(lastModels[obj]!!, res, settings))
+            lastModels[obj]!!.add(stmt)
         }
     }
 
