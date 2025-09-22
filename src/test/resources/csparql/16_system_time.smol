@@ -1,0 +1,110 @@
+// reada src/test/resources/csparql/16_system_time.smol
+
+class Observation(Int x, Int ts) end
+
+streamer class C(Int x, Observation obs, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT0.5s STEP PT0.2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x }
+            }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.x = this.x + 1;
+        this.obs = new Observation(this.x, ts);
+    end
+
+    Unit wait(Int iter)
+        Int x = 0;
+        Int j = 0;
+        Int k = 0;
+        while j < 100 do
+            while k < 100 do
+                x = j * k;
+                x = 0;
+                while x < iter do
+                    x = x + 1;
+                end
+                k = k + 1;
+            end
+            k = 0;
+            j = j + 1;
+        end
+    end
+        
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    // configure simulation
+    Int i = 0;
+    Int endAt = 10;
+
+    // initialize stream
+    C o = new C(0, null, null);
+
+    // initialize monitor
+    o.register();
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        o.doStream(i);
+
+        // advance i
+        i = i + 1;
+
+        // wait
+        o.wait(i);
+
+        // read window contents
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+    end
+end
+
+// Example run output:
+// >>1: 
+// >>2: 
+// >>3: 1 2 
+// >>4: 1 2 3 
+// >>5: 1 2 3 
+// >>6: 1 2 3 
+// >>7: 2 3 4 5 6 
+// >>8: 2 3 4 5 6 
+// >>9: 2 3 4 5 6 
+// >>10: 4 5 6 7 8 9 
+
+// Analysis of the example:
+// - Window configuration: Range 500ms, Step 200ms
+// - Consider first timestamp (1758566583488) as 0 point, listing (add, push) times in ms relative to that point
+// - Ex. (1758566583488 - 1758566583488, 1758566583506 - 1758566583488) = (0, 18)
+// - p.w.i = previous window includes (the elements in the last window are monitored)
+//   * 1: ( 0 , 18 ) -> window   (0, 200]
+//   * 2: (137, 138) -> window   (0, 200]
+//   * 3: (230, 357) -> window   (0, 400]; p.w.i. 1, 2
+//   * 4: (404, 408) -> window (100, 600]; p.w.i. 1, 2, 3
+//   * 5: (451, 451) -> window (100, 600]; p.w.i. 1, 2, 3
+//   * 6: (511, 511) -> window (100, 600]; p.w.i. 1, 2, 3
+//   * 7: (647, 651) -> window (300, 800]; p.w.i. 2, 3, 4, 5, 6
+//   * 8: (706, 707) -> window (300, 800]; p.w.i. 2, 3, 4, 5, 6
+//   * 9: (749, 749) -> window (300, 800]; p.w.i. 2, 3, 4, 5, 6
+//   * 10:(800, 803) -> window (500,1000]; p.w.i. 4, 5, 6, 7, 8, 9
+// - Full output given in 16_system_time_full_output.txt
+// - Note: The actual times may vary based on system performance and load
