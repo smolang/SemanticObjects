@@ -34,7 +34,7 @@ data class AssignStmt(val target : Location, val value : Expression, val isClock
                     interpreter.streamManager.clockVar = target.name
                 }
                 if (interpreter.streamManager.clockVar != null && target.name.equals(interpreter.streamManager.clockVar) 
-                    && res.tag == INTTYPE) interpreter.streamManager.clockTimestampSec = res.literal
+                    && res.tag == INTTYPE) interpreter.streamManager.updateClock(res.literal.toLong())
                 stackFrame.store[target.name] = res
             }
             is OwnVar -> {

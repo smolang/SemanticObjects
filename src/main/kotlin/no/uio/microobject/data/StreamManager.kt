@@ -50,6 +50,7 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     private var ec: EngineConfiguration? = null
     val LOG : Logger? = LoggerFactory.getLogger(StreamManager::class.java)
 
+    private var streamToClass: MutableMap<LiteralExpr, String> = mutableMapOf()
     private var streams: MutableMap<String, MutableMap<LiteralExpr, StreamObject>> = mutableMapOf()
     private var monitors: MutableMap<LiteralExpr, MonitorObject> = mutableMapOf()
 
@@ -57,11 +58,9 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
     private val queryResults = ConcurrentHashMap<LiteralExpr, List<Table>>() // read-only snapshots
 
     var clockVar : String? = null
-    var clockTimestampSec : String? = null
-    var lastTimestamp: Long = 0
-    var lastWindowTs: Long? = null
+    var clockTimestampSec : Long? = null
 
-    // monitor state
+    // stream state
     var lastTriggerTs: MutableMap<LiteralExpr, Long> = mutableMapOf()
     var lastModels: MutableMap<LiteralExpr, Model> = mutableMapOf()
 
@@ -117,22 +116,34 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
 
         if (!streams.containsKey(className)) streams[className] = mutableMapOf()
         streams[className]!![obj] = stream
+        streamToClass[obj] = className
     }
     
     private fun getTimestamp(): Long {
-        var ms: Long
-        if (clockTimestampSec != null) {
-            ms = secToMs(clockTimestampSec!!.toLong())
-        } else {
-            ms = System.currentTimeMillis()
-        }
-
-        lastTimestamp = ms
-        return ms
+        if (clockTimestampSec != null)
+            return secToMs(clockTimestampSec!!)
+        return System.currentTimeMillis()
     }
 
     private fun secToMs(s: Long): Long {
         return s * 1000
+    }
+
+    fun updateClock(newTsSec: Long) {
+        if (clockTimestampSec != newTsSec) {
+            clockTimestampSec = newTsSec
+
+            // push last models to streams if time has advanced
+            pushLastModels()
+        }
+    }
+
+    private fun pushLastModels() {
+        for ((obj, model) in lastModels) {
+            if (model.isEmpty) continue
+            streams[streamToClass[obj]!!]!![obj]!!.putGraph(model.getGraph(), lastTriggerTs[obj]!!)
+            lastModels[obj] = ModelFactory.createDefaultModel()
+        }
     }
 
     public fun triggerStream(className: String, obj: LiteralExpr, methodName: String, stackEntry: StackEntry) {
@@ -170,6 +181,15 @@ class StreamManager(private val settings: Settings, val staticTable: StaticTable
 
             val stmt = lastModels[obj]!!.createStatement(lastModels[obj]!!.createResource(subjIri), lastModels[obj]!!.createProperty(predIri), literalToIri(lastModels[obj]!!, res, settings))
             lastModels[obj]!!.add(stmt)
+            // println("Added to stream $obj at $timestamp: $stmt")
+        }
+
+        // if the clock variable is not used, push the model immediately
+        // assume system time (ms) has advanced or will advance before next trigger
+        if (clockVar == null) {
+            stream.putGraph(lastModels[obj]!!.getGraph(), lastTriggerTs[obj]!!)
+            // println("Pushed immediately to stream $obj at ${lastTriggerTs[obj]}: ${lastModels[obj]!!.size()} triples (now: ${getTimestamp()})")
+            lastModels[obj] = ModelFactory.createDefaultModel()
         }
     }
 
