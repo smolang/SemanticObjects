@@ -1,4 +1,4 @@
-// reada src/test/resources/csparql/04_no_aggregation.smol
+// reada src/test/resources/csparql/01_no_aggregation.smol
 
 class Observation(Int x, Int ts) end
 
