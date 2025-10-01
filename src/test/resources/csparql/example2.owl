@@ -1,0 +1,29 @@
+@prefix owl:  <http://www.w3.org/2002/07/owl#> .
+@prefix rdf:  <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xsd:  <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix ex:   <https://example.com/ontology#> .
+
+# class terminology
+ex:Class         a owl:Class .
+ex:StreamerClass a owl:Class ;
+                 rdfs:subClassOf ex:Class .
+
+# property terminology
+ex:id    a owl:DatatypeProperty ;
+         rdfs:domain ex:Class ;
+         rdfs:range xsd:string .
+ex:x0    a owl:DatatypeProperty ;
+         rdfs:domain ex:Class ;
+         rdfs:range xsd:integer . 
+
+# instances
+ex:A     a ex:StreamerClass ;
+         ex:id "A" ;
+         ex:x0 0 .
+ex:B     a ex:StreamerClass ;
+         ex:id "B" ;
+         ex:x0 10 .
+ex:C     a ex:StreamerClass ;
+         ex:id "C" ;
+         ex:x0 20 .
