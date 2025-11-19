@@ -16,6 +16,8 @@ Starting at 600 Ma, oxidized brines begin circulating through the system. This i
 
 ## Trigger Events to Monitor
 
+"Salinity Evolution" should be the first event (increase salinity).
+
 ### 1. **Redox Boundary Precipitation (Primary Trigger)**
 **When:** When oxidised brine (oxidation > 0.5) encounters reduced sediment units (isReduced = true, organicContent > 0.5)
 
@@ -26,7 +28,7 @@ Starting at 600 Ma, oxidized brines begin circulating through the system. This i
 - Brine oxidation drops to 30% of original value
 - Parameters affected: copperContent increases, brineOxidation decreases
 
-### 2. **Vein Formation Triggers (Secondary Triggers)**
+### 2. **Metal Precipitation Triggers (Secondary Triggers)**
 Veins form when both conditions are met:
 - Temperature ≥ 150°C 
 - Salinity > 31 wt% NaCl

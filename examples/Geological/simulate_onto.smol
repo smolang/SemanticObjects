@@ -329,6 +329,7 @@ hidden class Driver(GeoUnit top, GeoUnit bottom)
                 if now > checkStart  then
                     List<ShaleUnit> fs = member("<domain:models> some (<obo:RO_0000056> some <domain:oil_window_maturation_trigger>)");
                     print("reasoning finished");
+                    breakpoint;
 
                     while fs != null do
                       // For each such shale, increment maturedUnits if it has a kerogen source.

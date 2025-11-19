@@ -1,0 +1,10 @@
+# Python dependencies for copper simulation analysis
+# Install with: pip install -r requirements.txt
+
+# Core numerical and plotting libraries
+numpy>=1.21.0
+matplotlib>=3.4.0
+pandas>=1.3.0
+
+# For data analysis and CSV handling
+# (pandas also provides matplotlib integration)

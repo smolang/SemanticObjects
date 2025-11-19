@@ -143,7 +143,10 @@ class Interpreter(
         for ((key, value) in settings.prefixMap()) queryWithPrefixes += "PREFIX $key: <$value>\n"
         queryWithPrefixes += str
 
+        println("[DEBUG] Interpreter.query: About to call tripleManager.getModel()")
+        println("[DEBUG] Interpreter.query: Current heap size: ${heap.size}")
         val model = tripleManager.getModel()
+        println("[DEBUG] Interpreter.query: getModel() completed, model size: ${model.size()}")
         queryWithPrefixes = queryWithPrefixes.replace("\\\"", "\"")
         if(settings.verbose) println("execute ISSA\n: $queryWithPrefixes")
         val query = QueryFactory.create(queryWithPrefixes)
@@ -156,13 +159,21 @@ class Interpreter(
     // Run OWL query and return all instances of the described class.
     // str should be in Manchester syntax
     fun owlQuery(str: String): NodeSet<OWLNamedIndividual> {
+//        println("[DEBUG Interpreter.owlQuery] === OWL Query Execution ===")
+//        println("[DEBUG Interpreter.owlQuery] Input query: $str")
         val out : String = settings.replaceKnownPrefixesNoColon(str.removeSurrounding("\""))
+//        println("[DEBUG Interpreter.owlQuery] After prefix replacement: $out")
         val m = OWLManager.createOWLOntologyManager()
+//        println("[DEBUG Interpreter.owlQuery] Getting ontology from TripleManager...")
         val ontology = tripleManager.getOntology()
+//        println("[DEBUG Interpreter.owlQuery] Ontology axiom count: ${ontology.axiomCount}")
+//        println("[DEBUG Interpreter.owlQuery] Creating HermiT reasoner...")
         val reasoner = Reasoner.ReasonerFactory().createReasoner(ontology)
         val parser = ManchesterOWLSyntaxParserImpl(OntologyConfigurator(), m.owlDataFactory)
         parser.setDefaultOntology(ontology)
         val expr = parser.parseClassExpression(out)
+//        println("[DEBUG Interpreter.owlQuery] Parsed class expression: $expr")
+//        println("[DEBUG Interpreter.owlQuery] Querying reasoner for instances...")
         return reasoner.getInstances(expr)
     }
 

@@ -54,10 +54,15 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
 
         /* stmt.mode == SparqlMode */
         val str = interpreter.prepareQuery(query, params, stackFrame.store, interpreter.heap, stackFrame.obj)
+        println("[DEBUG] AccessStmt: About to execute query: $query")
+        println("[DEBUG] AccessStmt: Query execution starting at ${System.currentTimeMillis()}")
         val results = interpreter.query(str.removePrefix("\"").removeSuffix("\""))
+        println("[DEBUG] AccessStmt: Query completed at ${System.currentTimeMillis()}")
+        println("[DEBUG] AccessStmt: Query result type: ${results?.javaClass?.simpleName}")
         var list = LiteralExpr("null")
         if (results != null) {
             for (r in results) {
+                println("[DEBUG] AccessStmt: Processing query result item: ${r}")
                 val obres = r.get(r.varNames().next())
                     ?: throw Exception("Could not select a results variable from results, please add one")
                 val name = Names.getObjName("List")
@@ -72,6 +77,10 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
                     }
                 }
                 if (!newMemory.containsKey("content")) {
+                    println("[DEBUG] AccessStmt: Processing objNameCand: $objNameCand")
+                    println("[DEBUG] AccessStmt: Processing found: $found")
+                    println("[DEBUG] AccessStmt: obres.isLiteral: ${obres.isLiteral}")
+                    println("[DEBUG] AccessStmt: obres type: ${obres.javaClass.simpleName}")
                     if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDstring) newMemory["content"] =
                         LiteralExpr("\"" + found + "\"", STRINGTYPE)
                     else if(obres.isLiteral && obres.asNode().literalDatatype == XSDDatatype.XSDinteger)
@@ -82,9 +91,14 @@ data class AccessStmt(val target : Location, val query: Expression, val params :
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], DOUBLETYPE)
                     else if(objNameCand.matches("\\d+".toRegex()) || objNameCand.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#integer".toRegex()))
                         newMemory["content"] = LiteralExpr(found.split("^^")[0], INTTYPE)
-                    else if(objNameCand.matches("\\d+.\\d+".toRegex())) newMemory["content"] =
-                        LiteralExpr(found, DOUBLETYPE)
-                    else throw Exception("Query returned unknown object/literal: $found")
+                    else if(objNameCand.matches("\\d+.\\d+".toRegex()))
+                        newMemory["content"] = LiteralExpr(found, DOUBLETYPE)
+                    else {
+                        println("[DEBUG] AccessStmt: No pattern matched, about to throw exception")
+                        println("[DEBUG] AccessStmt: objNameCand: '$objNameCand'")
+                        println("[DEBUG] AccessStmt: found: '$found'")
+                        throw Exception("Query returned unknown object/literal: $found")
+                    }
                 }
                 newMemory["next"] = list
                 interpreter.heap[name] = newMemory

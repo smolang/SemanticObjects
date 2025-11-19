@@ -63,7 +63,11 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
     // Main method used to deliver the Jena model to run SPARQL queries on.
     // When special settings are given, it will override the general settings
     fun getModel(specialSettings: TripleSettings = currentTripleSettings): Model {
+        println("[DEBUG] TripleManager.getModel: Starting model generation")
+        println("[DEBUG] TripleManager.getModel: Sources enabled: ${specialSettings.sources}")
         val model =  getModelUnionWithReasoning(specialSettings)
+        println("[DEBUG] TripleManager.getModel: getModelUnionWithReasoning completed")
+        println("[DEBUG] TripleManager.getModel: Model has ${model.size()} statements")
 
         // If the materialize flag is given, then write to file
         if (settings.materialize) {
@@ -104,10 +108,11 @@ class TripleManager(private val settings: Settings, val staticTable: StaticTable
         return manager.addOntology(model.graph, conf)
     }
 
-
     // Get the Jena model including all requested sources and the requested reasoner
     private fun getModelUnionWithReasoning(tripleSettings: TripleSettings): Model {
+        println("[DEBUG] TripleManager.getModelUnionWithReasoning: Starting with reasoner: ${tripleSettings.jenaReasoner}")
         val modelUnion = getModelUnion(tripleSettings)
+        println("[DEBUG] TripleManager.getModelUnionWithReasoning: Base model union completed, size: ${modelUnion.size()}")
         val reasoner = getJenaReasoner(tripleSettings) ?: return modelUnion  // Get correct reasoner based on settings
         return ModelFactory.createInfModel(reasoner, modelUnion)
     }

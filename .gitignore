@@ -17,4 +17,14 @@ CLAUDE.md
 *.mermaid
 *.log
 *.pdf
+/src
 .gitignore
+/sediment_hosted_copper/python_equivalent
+/sediment_hosted_copper/sensitivity_analysis_legacy
+venv/
+env/
+ENV/
+*.venv
+.venv
+*/venv/
+*/env/

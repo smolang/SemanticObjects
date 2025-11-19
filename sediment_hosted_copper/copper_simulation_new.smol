@@ -1,0 +1,1057 @@
+// To run the simulation:
+
+// Interactive mode:
+// java -jar build/libs/smol.jar -i sediment_hosted_copper/copper_simulation_new.smol -v -l -m -b sediment_hosted_copper/copper_ontology.ttl -p UFRGS1=https://www.inf.ufrgs.br/bdi/ontologies/geocoreontology#UFRGS -p obo=http://purl.obolibrary.org/obo/ -d http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#
+
+// Non-interactive mode:
+// java -jar build/libs/smol.jar -i sediment_hosted_copper/copper_simulation_new.smol -v -e -m -b sediment_hosted_copper/copper_ontology.ttl -p UFRGS1=https://www.inf.ufrgs.br/bdi/ontologies/geocoreontology#UFRGS -p obo=http://purl.obolibrary.org/obo/ -d http://www.semanticweb.org/quy/ontologies/2023/2/untitled-ontology-38#
+
+// Save output: > ./sediment_hosted_copper/debug_output.txt 2>&1
+
+// ============================================================================
+// SIMULATION PARAMETERS CLASS
+// ============================================================================
+class SimulationParameters (
+    // Temporal parameters (million years ago)
+    hidden Double startTime,
+    hidden Double mineralisationStart,
+    hidden Double simulationEnd,
+    hidden Double timestep,
+    
+    // Temperature parameters
+    hidden Double surfaceTemperature,
+    hidden Double geothermalGradient,
+    
+    // Trigger thresholds
+    hidden Double veinFormationTemp,
+    hidden Double veinFormationSalinity,
+    
+    // Fluid chemistry parameters
+    hidden Double initialCopperConcentration,
+    hidden Double initialBrineSalinity,
+    hidden Double initialBrineOxidation,
+    
+    // Precipitation parameters
+    hidden Double precipitationEfficiency,
+    hidden Double veinConcentrationFactor,
+    
+    // Salinity evolution
+    hidden Double salinityIncreasePerEvaporite,
+    hidden Double maxSalinity
+)
+end
+
+// ============================================================================
+// BRINE CLASS (NOT semantically lifted - computational object only)
+// ============================================================================
+class Brine (
+    hidden Int id,
+    hidden Double copper,           // ppm
+    hidden Double salinity,         // wt% NaCl
+    hidden Double oxidation,        // 0-1 scale
+    hidden CopperGeoUnit currentUnit,
+    hidden String direction,        // "up" or "down"
+    hidden Int age
+)
+    Unit printState()
+        print("  Brine#");
+        print(this.id);
+        print(" (");
+        print(this.direction);
+        print("): Cu=");
+        print(this.copper);
+        print("ppm, Sal=");
+        print(this.salinity);
+        print("%, Ox=");
+        print(this.oxidation);
+    end
+end
+
+// ============================================================================
+// ABSTRACT BASE CLASS: CopperGeoUnit
+// ============================================================================
+abstract class CopperGeoUnit (
+    hidden CopperGeoUnit above,
+    hidden CopperGeoUnit below,
+    hidden Double thickness,
+    hidden Double organicContent,
+    hidden Double temperature,
+    hidden Double copperContent,        // Accumulated ore (kg/m³)
+    hidden SimulationParameters params,
+    
+    // Transient fluid state (overwritten by each passing brine)
+    hidden Double currentBrineCopper,
+    hidden Double currentBrineSalinity,
+    hidden Double currentBrineOxidation
+)
+    // Calculate depth below surface
+    Double getDepth()
+        Double depth = 0.0;
+        CopperGeoUnit current = this;
+        while current.above != null do
+            depth = depth + current.thickness;
+            current = current.above;
+        end
+        return depth + 2000.0;
+    end
+    
+    // Calculate temperature based on depth and geothermal gradient
+    Double getTemperature()
+        Double currentDepth = this.getDepth();
+        Double depthKm = currentDepth / 1000.0;
+        return this.params.surfaceTemperature + (depthKm * this.params.geothermalGradient);
+    end
+    
+    // Recursively update temperatures for entire column
+    Unit updateAll()
+        this.temperature = this.getTemperature();
+        if this.above != null then
+            this.above.updateAll();
+        end
+    end
+    
+    // Load brine properties into unit's transient state
+    Unit loadBrine(Brine b)
+        this.currentBrineCopper = b.copper;
+        this.currentBrineSalinity = b.salinity;
+        this.currentBrineOxidation = b.oxidation;
+    end
+    
+    // Save unit's transient state back to brine
+    Unit saveBrine(Brine b)
+        b.copper = this.currentBrineCopper;
+        b.salinity = this.currentBrineSalinity;
+        b.oxidation = this.currentBrineOxidation;
+    end
+    
+    // Abstract methods to be implemented by subclasses
+    abstract Unit processBrine()
+    abstract Unit printState()
+end
+
+// ============================================================================
+// BASEMENT UNIT (Granite)
+// ============================================================================
+class BasementUnit extends CopperGeoUnit ()
+    
+    override Unit processBrine()
+        // Basement slightly increases oxidation by 10%
+        Double newOx = this.currentBrineOxidation * 1.1;
+        if newOx > 1.0 then
+            this.currentBrineOxidation = 1.0;
+        else
+            this.currentBrineOxidation = newOx;
+        end
+    end
+    
+    override Unit printState()
+        print("Basement: depth=");
+        Double currentDepth = this.getDepth();
+        print(currentDepth);
+        print("m, T=");
+        print(this.temperature);
+        print("°C, Cu=");
+        print(this.copperContent);
+        print(" kg/m³");
+    end
+end
+
+// ============================================================================
+// REDUCED SEDIMENT UNIT (Shale with organic matter)
+// ============================================================================
+class ReducedSedimentUnit extends CopperGeoUnit ()
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>;
+        <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:rock1;
+        obo:RO_0000086 _:temp1;
+        obo:RO_0001015 _:fluid1, _:organic1;
+        obo:RO_0000056 _:redoxTrigger;
+        obo:RO_0000056 _:metalTrigger.
+        _:redoxTrigger a domain:redox_boundary_trigger.
+        _:metalTrigger a domain:metal_precipitation_trigger.
+        _:rock1 a domain:shale.
+        _:temp1 domain:datavalue %temperature; a domain:temperature.
+        _:fluid1 a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_earth_fluid>;
+            obo:RO_0000086 _:sal1, _:ox1.
+        _:sal1 domain:datavalue %currentBrineSalinity; a domain:salinity.
+        _:ox1 domain:datavalue %currentBrineOxidation; a domain:oxidation_state.
+        _:organic1 a domain:amount_of_organic_matter;
+            domain:datavalue %organicContent.";
+
+
+    override Unit processBrine()
+        // Reduced sediments don't modify brine during passage
+        // Precipitation happens in checkTriggers
+        skip;
+    end
+    
+    override Unit printState()
+        print("Reduced shale: depth=");
+        Double currentDepth = this.getDepth();
+        print(currentDepth);
+        print("m, T=");
+        print(this.temperature);
+        print("°C, org=");
+        print(this.organicContent);
+        print("%, Cu=");
+        print(this.copperContent);
+        print(" kg/m³");
+    end
+end
+
+// ============================================================================
+// OXIDISED SEDIMENT UNIT (Red beds)
+// ============================================================================
+class OxidisedSedimentUnit extends CopperGeoUnit ()
+    
+    override Unit processBrine()
+        // Oxidised sediments increase brine oxidation by 10%
+        Double newOx = this.currentBrineOxidation * 1.1;
+        if newOx > 1.0 then
+            this.currentBrineOxidation = 1.0;
+        else
+            this.currentBrineOxidation = newOx;
+        end
+    end
+    
+    override Unit printState()
+        print("Oxidised sediment: depth=");
+        Double currentDepth = this.getDepth();
+        print(currentDepth);
+        print("m, T=");
+        print(this.temperature);
+        print("°C, Cu=");
+        print(this.copperContent);
+        print(" kg/m³");
+    end
+end
+
+// ============================================================================
+// EVAPORITE UNIT (Salt cap - salinity source)
+// ============================================================================
+class EvaporiteUnit extends CopperGeoUnit ()
+    models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>;
+        <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:rock1;
+        obo:RO_0000086 _:temp1, _:sal1;
+        obo:RO_0001015 _:fluid1;
+        obo:RO_0000056 _:salinityTrigger.
+        _:salinityTrigger a domain:salinity_evolution_trigger.
+        _:rock1 a domain:evaporite.
+        _:temp1 domain:datavalue %temperature; a domain:temperature.
+        _:sal1 domain:datavalue %currentBrineSalinity; a domain:salinity.
+        _:fluid1 a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_earth_fluid>;
+            obo:RO_0000086 _:sal2, _:ox1.
+        _:sal2 domain:datavalue %currentBrineSalinity; a domain:salinity.
+        _:ox1 domain:datavalue %currentBrineOxidation; a domain:oxidation_state.";
+    
+    override Unit processBrine()
+        skip
+    end
+    
+    override Unit printState()
+        print("Evaporite: depth=");
+        Double currentDepth = this.getDepth();
+        print(currentDepth);
+        print("m, T=");
+        print(this.temperature);
+        print("°C, Cu=");
+        print(this.copperContent);
+        print(" kg/m³");
+    end
+end
+
+// ============================================================================
+// STRATIGRAPHY BUILDER
+// ============================================================================
+class StratigraphyBuilder (hidden SimulationParameters params)
+    
+    CopperGeoUnit buildColumn()
+        print("======================================================================");
+        print("BUILDING STRATIGRAPHIC COLUMN");
+        print("======================================================================");
+        
+        // 1. BASEMENT (1000m)
+        BasementUnit basement = new BasementUnit(
+            null, null, 1000.0, 0.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+        );
+        basement.temperature = basement.getTemperature();
+        CopperGeoUnit current = basement;
+        print("Created: Basement (1000m)");
+        
+        // 2. LOWER OXIDISED CLASTICS (5 x 100m)
+        Int i = 0;
+        while i < 5 do
+            OxidisedSedimentUnit oxUnit = new OxidisedSedimentUnit(
+                null, current, 100.0, 0.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+            );
+            oxUnit.temperature = oxUnit.getTemperature();
+            current.above = oxUnit;
+            oxUnit.below = current;
+            current = oxUnit;
+            i = i + 1;
+        end
+        print("Created: 5 lower oxidised units (500m)");
+        
+        // 3. MAIN ORE HORIZON (3 x 50m reduced shales)
+        Int j = 0;
+        while j < 3 do
+            ReducedSedimentUnit redUnit = new ReducedSedimentUnit(
+                null, current, 50.0, 1.5, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+            );
+            redUnit.temperature = redUnit.getTemperature();
+            current.above = redUnit;
+            redUnit.below = current;
+            current = redUnit;
+            j = j + 1;
+        end
+        print("Created: 3 main ore horizon units (150m)");
+        
+        // 4. MIDDLE OXIDISED CLASTICS (5 x 100m)
+        Int k = 0;
+        while k < 5 do
+            OxidisedSedimentUnit oxiUnit = new OxidisedSedimentUnit(
+                null, current, 100.0, 0.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+            );
+            oxiUnit.temperature = oxiUnit.getTemperature();
+            current.above = oxiUnit;
+            oxiUnit.below = current;
+            current = oxiUnit;
+            k = k + 1;
+        end
+        print("Created: 5 middle oxidised units (500m)");
+        
+        // 5. UPPER REDUCED SHALES (2 x 50m)
+        Int m = 0;
+        while m < 2 do
+            ReducedSedimentUnit reduUnit = new ReducedSedimentUnit(
+                null, current, 50.0, 1.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+            );
+            reduUnit.temperature = reduUnit.getTemperature();
+            current.above = reduUnit;
+            reduUnit.below = current;
+            current = reduUnit;
+            m = m + 1;
+        end
+        print("Created: 2 upper ore horizon units (100m)");
+        
+        // 6. UPPER OXIDISED CLASTICS (2 x 100m)
+        Int n = 0;
+        while n < 2 do
+            OxidisedSedimentUnit oxidUnit = new OxidisedSedimentUnit(
+                null, current, 100.0, 0.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+            );
+            oxidUnit.temperature = oxidUnit.getTemperature();
+            current.above = oxidUnit;
+            oxidUnit.below = current;
+            current = oxidUnit;
+            n = n + 1;
+        end
+        print("Created: 2 upper oxidised units (200m)");
+        
+        // 7. EVAPORITE CAP (1 x 200m)
+        EvaporiteUnit evaporite = new EvaporiteUnit(
+            null, current, 200.0, 0.0, 0.0, 0.0, this.params, 0.0, 0.0, 0.0
+        );
+        evaporite.temperature = evaporite.getTemperature();
+        current.above = evaporite;
+        evaporite.below = current;
+        print("Created: Evaporite cap (200m)");
+        
+        return basement;
+    end
+end
+
+// ============================================================================
+// SIMULATION DRIVER
+// ============================================================================
+class SimulationDriver (
+    hidden CopperGeoUnit bottom,
+    hidden CopperGeoUnit top,
+    hidden SimulationParameters params,
+    hidden List<Brine> activeBrines,
+    hidden Int brineCounter
+)
+    // Find the top unit (evaporite)
+    Unit findTop()
+        CopperGeoUnit current = this.bottom;
+        while current.above != null do
+            current = current.above;
+        end
+        this.top = current;
+    end
+    
+    // Create a new brine at basement
+    Brine createBrine(Double currentTime)
+        this.brineCounter = this.brineCounter + 1;
+        Brine b = new Brine(
+            this.brineCounter,
+            this.params.initialCopperConcentration,
+            this.params.initialBrineSalinity,
+            this.params.initialBrineOxidation,
+            this.bottom,
+            "up",
+            0
+        );
+        return b;
+    end
+    
+    // Move a single brine one unit
+    Boolean moveBrine(Brine b)
+        if b.direction == "up" then
+            if b.currentUnit.above != null then
+                b.currentUnit = b.currentUnit.above;
+                return True;
+            else
+                // Reached top - reverse direction
+                print("  Brine#");
+                print(b.id);
+                print(" reached top, reversing to downward flow");
+                b.direction = "down";
+                return True;
+            end
+        else
+            // direction == "down"
+            if b.currentUnit.below != null then
+                b.currentUnit = b.currentUnit.below;
+                return True;
+            else
+                // Reached bottom - remove brine
+                print("  Brine#");
+                print(b.id);
+                print(" exited at basement");
+                return False;
+            end
+        end
+    end
+    
+    // Move all brines one unit
+    Unit moveAllBrines()
+        List<Brine> newList = null;
+        List<Brine> current = this.activeBrines;
+        
+        while current != null do
+            Brine b = current.content;
+            b.age = b.age + 1;
+            Boolean stillActive = this.moveBrine(b);
+            
+            if stillActive then
+                newList = new List<Brine>(b, newList);
+            end
+            
+            current = current.next;
+        end
+        
+        this.activeBrines = newList;
+    end
+    
+    // Process all upward-moving brines
+    Unit processUpwardBrines()
+        List<Brine> current = this.activeBrines;
+
+        while current != null do
+            Brine b = current.content;
+
+            if b.direction == "up" then
+                // Load brine properties into unit
+                b.currentUnit.loadBrine(b);
+
+                // Unit processes the brine (oxidation changes, etc.)
+                b.currentUnit.processBrine();
+
+                // Save modified properties back to brine
+                b.currentUnit.saveBrine(b);
+            end
+
+            current = current.next;
+        end
+
+        this.checkSalinityTrigger();
+        this.checkRedoxBoundaryTrigger();
+        this.checkMetalPrecipitationTrigger();
+
+        current = this.activeBrines;
+        while current != null do
+            Brine b1 = current.content;
+            if b1.direction == "up" then
+                b1.currentUnit.saveBrine(b1);  // Save modified transient state
+            end
+            current = current.next;
+        end
+    end
+    
+    // Process all downward-moving brines
+    Unit processDownwardBrines()
+        List<Brine> current = this.activeBrines;
+
+        while current != null do
+            Brine b2 = current.content;
+
+            if b2.direction == "down" then
+                // Load brine properties into unit
+                b2.currentUnit.loadBrine(b2);
+
+                // Unit processes the brine (oxidation changes, etc.)
+                b2.currentUnit.processBrine();
+
+                // Save modified properties back to brine
+                b2.currentUnit.saveBrine(b2);
+            end
+
+            current = current.next;
+        end
+
+        this.checkSalinityTrigger();
+        this.checkRedoxBoundaryTrigger();
+        this.checkMetalPrecipitationTrigger();
+
+        current = this.activeBrines;
+        while current != null do
+            Brine b = current.content;
+            if b.direction == "down" then
+                b.currentUnit.saveBrine(b);  // Save modified transient state
+            end
+            current = current.next;
+        end
+    end
+    
+    // Remove depleted brines (copper < 0.1 ppm)
+    Unit cleanupBrines()
+        List<Brine> newList = null;
+        List<Brine> current = this.activeBrines;
+        
+        while current != null do
+            Brine b = current.content;
+            
+            if b.copper >= 0.1 then
+                newList = new List<Brine>(b, newList);
+            end
+            
+            current = current.next;
+        end
+        
+        this.activeBrines = newList;
+    end
+    
+    // Count active brines
+    Int countBrines()
+        Int count = 0;
+        List<Brine> current = this.activeBrines;
+        
+        while current != null do
+            count = count + 1;
+            current = current.next;
+        end
+        
+        return count;
+    end
+
+    // Check salinity evolution trigger (evaporite units)
+    Unit checkSalinityTrigger()
+        print("Entered Salinity Trigger Check");
+        List<EvaporiteUnit> salinityUnits = member("<domain:models> some (<obo:RO_0000056> some <domain:salinity_evolution_trigger>)");
+        print("member function for salinity evolution trigger has completed.");
+
+        print(">> Semantic: Checking Salinity Evolution Trigger");
+        Int unitCount = 0;
+
+        while salinityUnits != null do
+            EvaporiteUnit evaUnit = salinityUnits.content;
+            unitCount = unitCount + 1;
+
+            // Process salinity increase
+            Double oldSal = evaUnit.currentBrineSalinity;
+            Double newSal = evaUnit.currentBrineSalinity + evaUnit.params.salinityIncreasePerEvaporite;
+            if newSal > evaUnit.params.maxSalinity then
+                evaUnit.currentBrineSalinity = evaUnit.params.maxSalinity;
+            else
+                evaUnit.currentBrineSalinity = newSal;
+            end
+
+            print("  Triggered at depth ");
+            Double currentDepth = evaUnit.getDepth();
+            print(currentDepth);
+            print("m: salinity ");
+            print(oldSal);
+            print(" -> ");
+            print(evaUnit.currentBrineSalinity);
+            print(" wt%");
+
+            // Compact summary for visualisation
+            print("");
+            print("VIZ|Evaporite|depth=");
+            print(currentDepth);
+            print("|SalBefore=");
+            print(oldSal);
+            print("|SalAfter=");
+            print(evaUnit.currentBrineSalinity);
+
+            salinityUnits = salinityUnits.next;
+        end
+
+        if unitCount == 0 then
+            print("No units triggered");
+        end
+        print("Exit Salinity Trigger Check");
+    end
+
+    // Check redox boundary trigger (reduced sediment units)
+    Unit checkRedoxBoundaryTrigger()
+        print("Entered Redox Boundary Trigger Check");
+
+        List<ReducedSedimentUnit> redoxUnits = member("<domain:models> some (<obo:RO_0000056> some <domain:redox_boundary_trigger>)");
+
+        print("DEBUG: member() query result:");
+        if redoxUnits == null then
+            print("  Result: NULL (no units matched)");
+        else
+            print("  Result: Found units!");
+            Int matchCount = 0;
+            List<ReducedSedimentUnit> countList = redoxUnits;
+            while countList != null do
+                matchCount = matchCount + 1;
+                countList = countList.next;
+            end
+            print("  Number of units matched: ");
+            print(matchCount);
+        end
+        print("");
+        // *** END DEBUG ***
+
+        print(">> Semantic: Checking Redox Boundary Trigger");
+        Int unitCount = 0;
+
+        while redoxUnits != null do
+            ReducedSedimentUnit redUnit = redoxUnits.content;
+
+            if redUnit.currentBrineCopper > 0.0 then
+                if redUnit.currentBrineOxidation > 0.5 then
+                    if redUnit.organicContent > 0.5 then
+                        unitCount = unitCount + 1;
+                        print("*** REDOX BOUNDARY PRECIPITATION ***");
+                        Double currentDepth = redUnit.getDepth();
+                        print("Depth: ");
+                        print(currentDepth);
+                        print("m, T=");
+                        print(redUnit.temperature);
+                        print("°C");
+
+                        Double initialOx = redUnit.currentBrineOxidation;
+                        Double initialCu = redUnit.currentBrineCopper;
+                        Double initialSal = redUnit.currentBrineSalinity;
+
+                        print("BEFORE: Ox=");
+                        print(initialOx);
+                        print(", Cu=");
+                        print(initialCu);
+                        print("ppm, Sal=");
+                        print(initialSal);
+                        print("wt%");
+
+                        // Precipitate 70% of copper
+                        Double copperToDeposit = redUnit.currentBrineCopper * redUnit.params.precipitationEfficiency;
+                        redUnit.copperContent = redUnit.copperContent + copperToDeposit;
+                        redUnit.currentBrineCopper = redUnit.currentBrineCopper * (1.0 - redUnit.params.precipitationEfficiency);
+
+                        // Reduce oxidation to 30%
+                        redUnit.currentBrineOxidation = redUnit.currentBrineOxidation * 0.3;
+
+                        print("AFTER:  Ox=");
+                        print(redUnit.currentBrineOxidation);
+                        print(", Cu=");
+                        print(redUnit.currentBrineCopper);
+                        print("ppm, Sal=");
+                        print(redUnit.currentBrineSalinity);
+                        print("wt%");
+                        print("Cu DEPOSITED: ");
+                        print(copperToDeposit);
+                        print(" kg/m³ (");
+                        Double effPercent = redUnit.params.precipitationEfficiency * 100.0;
+                        print(effPercent);
+                        print("% efficiency)");
+                        print("CUMULATIVE Cu IN LAYER: ");
+                        print(redUnit.copperContent);
+                        print(" kg/m³");
+                        print("Unit organic content: ");
+                        print(redUnit.organicContent);
+                        print(" wt%");
+
+                        // Compact summary for visualisation
+                        print("");
+                        print("VIZ|RedoxPpt|depth=");
+                        print(currentDepth);
+                        print("|Cu=");
+                        print(copperToDeposit);
+                        print("|Ox=");
+                        print(redUnit.currentBrineOxidation);
+                    end
+                end
+            end
+
+            redoxUnits = redoxUnits.next;
+        end
+
+        if unitCount == 0 then
+            print("No units triggered");
+        end
+        print("Exit Redox Boundary Trigger Check");
+    end
+
+    // Check metal precipitation trigger (vein formation)
+    Unit checkMetalPrecipitationTrigger()
+        print("Entered Metal Precipitation Trigger Check");
+        List<ReducedSedimentUnit> veinUnits = member("<domain:models> some (<obo:RO_0000056> some <domain:metal_precipitation_trigger>)");
+
+        print(">> Semantic: Checking Metal Precipitation Trigger");
+        Int unitCount = 0;
+
+        while veinUnits != null do
+            ReducedSedimentUnit reducedUnit = veinUnits.content;
+
+            if reducedUnit.currentBrineCopper > 0.0 then
+                if reducedUnit.temperature >= reducedUnit.params.veinFormationTemp then
+                    if reducedUnit.currentBrineSalinity >= reducedUnit.params.veinFormationSalinity then
+
+                        unitCount = unitCount + 1;
+
+                        print("*** VEIN FORMATION ***");
+                        Double currentDepth = reducedUnit.getDepth();
+                        print("Depth: ");
+                        print(currentDepth);
+                        print("m, T=");
+                        print(reducedUnit.temperature);
+                        print("°C");
+
+                        Double beforeCu = reducedUnit.currentBrineCopper;
+                        print("Brine Cu BEFORE: ");
+                        print(beforeCu);
+                        print(" ppm");
+
+                        // Additional 30% precipitation as veins
+                        Double copperToDeposit = reducedUnit.currentBrineCopper * 0.3;
+                        Double veinGrade = copperToDeposit * reducedUnit.params.veinConcentrationFactor;
+                        reducedUnit.copperContent = reducedUnit.copperContent + veinGrade;
+                        reducedUnit.currentBrineCopper = reducedUnit.currentBrineCopper * 0.7;
+
+                        print("Brine Cu AFTER: ");
+                        print(reducedUnit.currentBrineCopper);
+                        print(" ppm");
+                        print("VEIN Cu DEPOSITED: ");
+                        print(veinGrade);
+                        print(" kg/m³ (concentration factor=");
+                        print(reducedUnit.params.veinConcentrationFactor);
+                        print(")");
+                        print("CUMULATIVE Cu IN LAYER: ");
+                        print(reducedUnit.copperContent);
+                        print(" kg/m³");
+
+                        // Compact summary for visualisation
+                        print("");
+                        String unitType = "reduced";
+                        if reducedUnit.organicContent < 0.5 then
+                            unitType = "oxidised";
+                        end
+                        print("VIZ|VeinPpt|type=");
+                        print(unitType);
+                        print("|depth=");
+                        print(currentDepth);
+                        print("|Cu=");
+                        print(veinGrade);
+                    end
+                end
+            end
+
+            veinUnits = veinUnits.next;
+        end
+
+        if unitCount == 0 then
+            print("No reduced units triggered");
+        end
+        print("Exit Metal Precipitation Trigger Check");
+    end
+
+    // Print results recursively
+    Unit printResults(CopperGeoUnit geoUnit)
+        if geoUnit != null then
+            geoUnit.printState();
+            this.printResults(geoUnit.above);
+        end
+    end
+    
+    // Main simulation loop
+    Unit simulateNow()
+        print("======================================================================");
+        print("PHASE 1: BASIN FORMATION (1000-600 Ma)");
+        print("======================================================================");
+        this.bottom.updateAll();
+        print("Basin stratigraphy established.");
+        print("");
+        
+        print("======================================================================");
+        print("PHASE 2: MINERALISATION (600-0 Ma)");
+        print("======================================================================");
+        
+        Double now = this.params.mineralisationStart;
+        Int timestepNumber = 0;
+
+        // Debugging control: Change this number to pause at different timesteps
+        Int breakAtTimestep = 999;
+        print("DEBUG: Will pause before timestep ");
+        print(breakAtTimestep);
+        print("");
+        
+        while now < this.params.simulationEnd do
+            timestepNumber = timestepNumber + 1;
+
+            // Pause at specified timestep for debugging
+            if timestepNumber == breakAtTimestep then
+                print("======================================================================");
+                print("DEBUG: Reached timestep ");
+                print(breakAtTimestep);
+                print(" - PAUSING for inspection");
+                print("======================================================================");
+                breakpoint;
+            end
+
+            print("======================================================================");
+            print("TIMESTEP #");
+            print(timestepNumber);
+            print(": ");
+            Double timeAbs = now;
+            if timeAbs < 0.0 then
+                timeAbs = -1.0 * timeAbs;
+            end
+            print(timeAbs);
+            print(" Ma ago");
+            print("Active brines: ");
+            Int currentBrine = this.countBrines();
+            print(currentBrine);
+            print("======================================================================");
+            
+            // STEP 1: Move all brines one unit
+            print("--- Moving brines ---");
+            this.moveAllBrines();
+            print("");
+
+            print("Current brine states:");
+            List<Brine> currentList = this.activeBrines;
+            if currentList == null then
+                print("No brine at the moment");
+            end
+            while currentList != null do
+                Brine b = currentList.content;
+                print("Brine#");
+                print(b.id);
+                print(": depth=");
+                Double brineDepth = b.currentUnit.getDepth();
+                print(brineDepth);
+                print("m, Cu=");
+                print(b.copper);
+                print("ppm, Sal=");
+                print(b.salinity);
+                print("%, Ox=");
+                print(b.oxidation);
+                print(", dir=");
+                print(b.direction);
+                currentList = currentList.next;
+            end
+
+            print("");
+            print("DEBUG: Detailed unit analysis:");
+            List<Brine> debugBrineList = this.activeBrines;
+            while debugBrineList != null do
+                Brine db = debugBrineList.content;
+                print("  Brine#");
+                print(db.id);
+                print(" at unit depth ");
+                Double unitDepth = db.currentUnit.getDepth();
+                print(unitDepth);
+                print("m");
+
+                // Check unit type by organic content
+                Double org = db.currentUnit.organicContent;
+                print(", organic=");
+                print(org);
+                if org > 0.5 then
+                    print(" wt% (REDUCED UNIT)");
+                else
+                    // Check if at evaporite depth (2000m)
+                    Double unitDepthCheck = db.currentUnit.getDepth();
+                    if unitDepthCheck == 2000.0 then
+                        print(" wt% (EVAPORITE)");
+                    else
+                        print(" wt% (oxidised/basement)");
+                    end
+                end
+
+                print(", temp=");
+                print(db.currentUnit.temperature);
+                print("°C");
+
+                debugBrineList = debugBrineList.next;
+            end
+            print("");
+
+            // Compact summary for visualisation
+            print("--- COMPACT SUMMARY (FOR VISUALISATION) ---");
+            List<Brine> visList = this.activeBrines;
+            while visList != null do
+                Brine vb = visList.content;
+                Double vbDepth = vb.currentUnit.getDepth();
+                print("VIZ|Brine#");
+                print(vb.id);
+                print("(");
+                print(vb.direction);
+                print(")|Cu=");
+                print(vb.copper);
+                print("|Sal=");
+                print(vb.salinity);
+                print("|Ox=");
+                print(vb.oxidation);
+                print("|depth=");
+                print(vbDepth);
+                visList = visList.next;
+            end
+            print("--- END COMPACT SUMMARY ---");
+            print("");
+
+            // STEP 2: Process upward-moving brines
+            print("--- Processing upward brines ---");
+            this.processUpwardBrines();
+            print("");
+            
+            // STEP 3: Process downward-moving brines
+            print("--- Processing downward brines ---");
+            this.processDownwardBrines();
+            print("");
+
+            // Calculate cumulative copper deposited so far
+            Double cumulativeCopper = 0.0;
+            CopperGeoUnit currentUnit = this.bottom;
+            while currentUnit != null do
+                cumulativeCopper = cumulativeCopper + currentUnit.copperContent;
+                currentUnit = currentUnit.above;
+            end
+            print("Cumulative copper deposited: ");
+            print(cumulativeCopper);
+            print(" kg/m³");
+
+            // STEP 4: Inject new brine at basement
+            Brine newBrine = this.createBrine(now);
+            this.activeBrines = new List<Brine>(newBrine, this.activeBrines);
+            print("Injected Brine#");
+            print(newBrine.id);
+            print("");
+            print("This brine is at depth:");
+            List<Brine> currentListNew = this.activeBrines;
+            Brine bNew = currentListNew.content;
+            Double brineDepthNew = bNew.currentUnit.getDepth();
+            print(brineDepthNew);
+            
+            // STEP 5: Remove depleted brines
+            this.cleanupBrines();
+            
+            now = now + this.params.timestep;
+            print("Time step completed:");
+            print(timestepNumber);
+        end
+        
+        print("======================================================================");
+        print("FINAL RESULTS");
+        print("======================================================================");
+        this.printResults(this.bottom);
+        print("");
+
+        // Calculate total and maximum copper (REQUIRED for sensitivity analysis)
+        print("======================================================================");
+        print("FINAL RESULTS SUMMARY");
+        print("======================================================================");
+
+        Double totalCopper = 0.0;
+        Double maxCopper = 0.0;
+        Int mineralisedUnits = 0;
+        CopperGeoUnit current = this.bottom;
+
+        while current != null do
+            totalCopper = totalCopper + current.copperContent;
+            if current.copperContent > maxCopper then
+                maxCopper = current.copperContent;
+            end
+            if current.copperContent > 0.1 then
+                mineralisedUnits = mineralisedUnits + 1;
+            end
+            current = current.above;
+        end
+
+        print("Total copper deposited: ");
+        print(totalCopper);
+        print(" kg/m3");
+        print("Maximum unit copper: ");
+        print(maxCopper);
+        print(" kg/m3");
+        print("Mineralized units: ");
+        print(mineralisedUnits);
+
+        print("======================================================================");
+    end
+end
+
+// ============================================================================
+// MAIN PROGRAM
+// ============================================================================
+main
+    print("======================================================================");
+    print("COPPER DEPOSIT SIMULATION");
+    print("Sediment-hosted copper with bidirectional brine flow");
+    print("======================================================================");
+    print("");
+    
+    // Create simulation parameters
+    SimulationParameters params = new SimulationParameters(
+        -1000.0,    // startTime
+        -600.0,     // mineralisationStart
+        0.0,        // simulationEnd
+        10.0,       // timestep
+        25.0,       // surfaceTemperature
+        30.0,       // geothermalGradient
+        150.0,      // veinFormationTemp
+        31.0,       // veinFormationSalinity
+        100.0,      // initialCopperConcentration
+        25.0,       // initialBrineSalinity
+        0.5,        // initialBrineOxidation
+        0.7,        // precipitationEfficiency
+        20.0,       // veinConcentrationFactor
+        5.0,        // salinityIncreasePerEvaporite
+        39.0        // maxSalinity
+    );
+
+    print("======================================================================");
+    print("SIMULATION PARAMETERS");
+    print("======================================================================");
+    print("GEOTHERMAL_GRADIENT: ");
+    print(params.geothermalGradient);
+    print(" °C/km");
+    print("VEIN_SALINITY_THRESHOLD: ");
+    print(params.veinFormationSalinity);
+    print(" wt% NaCl");
+    print("INITIAL_COPPER_PPM: ");
+    print(params.initialCopperConcentration);
+    print(" ppm");
+    print("BRINE_OXIDATION: ");
+    print(params.initialBrineOxidation);
+    print("");
+    print("PRECIP_EFFICIENCY: ");
+    print(params.precipitationEfficiency);
+    print("");
+    print("======================================================================");
+    print("");
+
+    // Build stratigraphic column
+    StratigraphyBuilder builder = new StratigraphyBuilder(params);
+    CopperGeoUnit basement = builder.buildColumn();
+    
+    // Create simulation driver
+    SimulationDriver driver = new SimulationDriver(basement, null, params, null, 0);
+    driver.findTop();
+    
+    // Run simulation
+    driver.simulateNow();
+end
