@@ -31,7 +31,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val langPrefix : String = "https://github.com/Edkamb/SemanticObjects#",
                     val extraPrefixes : HashMap<String, String>,
                     val useQueryType : Boolean = false,
-                    val reasoner : ReasonerMode = ReasonerMode.owl
+                    var reasoner : ReasonerMode = ReasonerMode.owl
                     ){
     var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {

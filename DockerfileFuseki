@@ -10,7 +10,7 @@ FROM ubuntu:latest
 
 RUN <<EOF
     apt-get -y update
-    DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-17-jdk-headless python3 python3-pip liblapack3 wget
+    DEBIAN_FRONTEND=noninteractive apt-get -y install openjdk-17-jdk-headless python3 python3-pip liblapack3 wget unzip
     rm -rf /var/lib/apt/lists/*
     pip3 install pyzmq
 EOF
@@ -22,10 +22,10 @@ COPY src/test/resources/tree_shapes.ttl /usr/local/src/smol
 WORKDIR /usr/local/src/smol
 
 # Download and copy the tar.gz file into the container
-ADD https://dlcdn.apache.org/jena/binaries/apache-jena-fuseki-4.10.0.tar.gz /usr/local/src/smol
+ADD https://archive.apache.org/dist/jena/binaries/apache-jena-fuseki-5.0.0.zip /usr/local/src/smol
 
 # Extract the tar.gz file
-RUN tar -xvzf apache-jena-fuseki-4.10.0.tar.gz
+RUN unzip apache-jena-fuseki-5.0.0-rc1.zip
 
 # Execute the command
 CMD /usr/local/src/smol/apache-jena-fuseki-4.10.0/fuseki-server --update --config docker_fuseki_config.ttl

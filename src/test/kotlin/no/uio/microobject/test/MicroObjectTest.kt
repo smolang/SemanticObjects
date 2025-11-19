@@ -23,6 +23,7 @@ import org.apache.commons.lang3.SystemUtils.IS_OS_WINDOWS
 open class MicroObjectTest : StringSpec() {
     protected enum class StringLoad {STMT, CLASS, PRG, PATH, RES}
     private val IS_FUSEKI_DOCKER = System.getenv("FUSEKI_DOCKER") == "true"
+    private val adaptationTests = System.getenv("ADAPTATION_TESTS") ?: "false"
 
     val fmuNeedsWindows: (TestCase) -> Enabled = {
         if (IS_OS_WINDOWS) Enabled.enabled
@@ -39,6 +40,11 @@ open class MicroObjectTest : StringSpec() {
     val tripleStoreToTest: (TestCase) -> Enabled = {
         if (IS_FUSEKI_DOCKER) Enabled.enabled
         else Enabled.disabled("The triple store needs to be running on a docker container for this test.")
+    }
+
+    val adaptationToTest: (TestCase) -> Enabled = {
+        if (adaptationTests == "true") Enabled.enabled
+        else Enabled.disabled("Adaptation tests are disabled.")
     }
 
     private var settings = Settings(false, false,  "/tmp/mo","","","urn:", extraPrefixes = hashMapOf())
@@ -115,7 +121,7 @@ open class MicroObjectTest : StringSpec() {
         return Pair(interpreter, tC)
     }
 
-    protected fun initInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH) : Pair<Interpreter, TypeChecker> {
+    protected fun initInterpreter(str : String, loadAs : StringLoad = StringLoad.PATH, extraPrefixes: HashMap<String, String> = hashMapOf()) : Pair<Interpreter, TypeChecker> {
         val ast = when(loadAs){
             StringLoad.STMT -> loadStatement(str)
             StringLoad.PRG -> loadString(str)
@@ -132,6 +138,9 @@ open class MicroObjectTest : StringSpec() {
         val tC = TypeChecker(ast, settings, tripleManager)
         tC.collect()
 
+        if (extraPrefixes.isNotEmpty()) {
+            settings.addPrefixes(extraPrefixes)
+        }
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
 

@@ -10,6 +10,7 @@ import no.uio.microobject.antlr.WhileLexer
 import no.uio.microobject.antlr.WhileParser
 import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.Translate
+import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.data.TripleManager
 import no.uio.microobject.main.ReasonerMode
 import no.uio.microobject.main.Settings
@@ -117,9 +118,6 @@ class REPL(private val settings: Settings) {
         val tripleManager = TripleManager(settings, pair.second, null)
         val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
-        tC.report()
-
-
 
         val initGlobalStore: GlobalMemory = mutableMapOf(Pair(pair.first.obj, mutableMapOf()))
 
@@ -132,6 +130,8 @@ class REPL(private val settings: Settings) {
             pair.second,
             settings
         )
+        tC.checkAdaptationConsistency(interpreter!!)
+        tC.report()
     }
 
     private fun initCommands() {
@@ -319,6 +319,21 @@ class REPL(private val settings: Settings) {
         )
         commands["query"] = query
         commands["q"] = query
+
+        val ask = Command(
+            "ask",
+            this,
+            { str ->
+                val results = interpreter!!.ask(str)
+                printRepl("\n" + results)
+                false
+            },
+            "executes a SPARQL ask query",
+            parameterHelp = "SPARQL ask query",
+            requiresParameter = true
+        )
+        commands["ask"] = ask
+        commands["a"] = ask
 
         commands["plot"] = Command(
             "plot",

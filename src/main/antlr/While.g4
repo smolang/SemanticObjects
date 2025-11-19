@@ -29,6 +29,8 @@ CONSTRUCT : 'construct';
 MEMBER : 'member';
 SIMULATE : 'simulate';
 VALIDATE : 'validate';
+CLASSIFY : 'classify';
+ADAPT : 'adapt';
 TICK : 'tick';
 BREAKPOINT : 'breakpoint';
 SUPER : 'super';
@@ -43,7 +45,10 @@ OVERRIDE : 'override';
 MAIN : 'main';
 HIDE : 'hidden';
 MODELS : 'models';
+CLASSIFIES: 'classifies';
+RETRIEVES: 'retrieves';
 DOMAIN : 'domain';
+CONTEXT : 'context';
 
 //Keywords: constants
 TRUE : 'True';
@@ -73,6 +78,7 @@ NOT : '!';
 //Keywords: conversions
 INTTOSTRING :    'intToString';
 DOUBLETOSTRING : 'doubleToString';
+BOOLEANTOSTRING: 'booleanToString';
 INTTODOUBLE : 'intToDouble';
 DOUBLETOINT : 'doubleToInt';
 
@@ -114,6 +120,7 @@ program : (class_def)* MAIN statement END (class_def)*;
 class_def : (abs=ABSTRACT)? (hidden=HIDE)? CLASS  className = NAME (LT namelist GT)? (EXTENDS superType = type)? OPARAN (external=fieldDeclList)? CPARAN
             (internal = fieldDeclInitList)?
             (models_block)?
+            (classifies_block (retrieves_block)?)?
             method_def*
             END;
 method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overriding=OVERRIDE)? type NAME OPARAN paramList? CPARAN (statement END)?;
@@ -121,15 +128,21 @@ method_def :  (abs=ABSTRACT)? (builtinrule=RULE)? (domainrule=DOMAIN)? (overridi
 models_block : MODELS owldescription=STRING SEMI                                                    #simple_models_block
              | MODELS OPARAN guard=expression CPARAN owldescription=STRING SEMI models_block        #complex_models_block
              ;
+classifies_block : CLASSIFIES owldescription=STRING SEMI                 # adaptation_classifies_block
+             ;
+retrieves_block : RETRIEVES  selectquery=STRING SEMI                 # adaptation_retrieves_block
+              ;
 //Statements
 statement :   SKIP_S SEMI                                                                                                                               # skip_statment
+            | ((declType = type)? target=expression ASS)? CLASSIFY OPARAN context=expression CPARAN SEMI                                     # classify_statement
+			| ADAPT OPARAN adapter=expression CPARAN SEMI                                                                      # adapt_statement
 			| (declType = type)? expression ASS expression SEMI                                                                                         # assign_statement
 			| ((declType = type)? target=expression ASS)? SUPER OPARAN (expression (COMMA expression)*)? CPARAN SEMI                                    # super_statement
 			| RETURN expression SEMI                                                                                                                    # return_statement
 			| fmu=expression DOT TICK OPARAN time=expression CPARAN SEMI                                                                                # tick_statement
 			| ((declType = type)? target=expression ASS)? expression DOT NAME OPARAN (expression (COMMA expression)*)? CPARAN SEMI                      # call_statement
         // TODO: allow new statements without assignment
-			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                          # create_statement
+			| (declType = type)? target=expression ASS NEW newType = type OPARAN (expression (COMMA expression)*)? CPARAN (MODELS owldescription = expression)? SEMI                         # create_statement
 			| BREAKPOINT SEMI                                                                                                                           # debug_statement
 			| PRINTLN OPARAN expression CPARAN SEMI                                                                                                     # output_statement
 			| DESTROY OPARAN expression CPARAN SEMI                                                                                                     # destroy_statement
@@ -187,10 +200,10 @@ param : type NAME;
 paramList : param (COMMA param)*;
 fmuparam : direction=(IN | OUT) param;
 fmuParamList : fmuparam (COMMA fmuparam)*;
-fieldDecl : (hidden=HIDE | domain=DOMAIN)? type NAME;
+fieldDecl : (hidden=HIDE | domain=DOMAIN | context=CONTEXT)? type NAME;
 fieldDeclList : fieldDecl (COMMA fieldDecl)*;
 fieldDeclInit : (hidden=HIDE | domain=DOMAIN)? type NAME ASS expression SEMI;
 fieldDeclInitList : fieldDeclInit fieldDeclInit*;
 varInit : NAME ASS expression;
 varInitList : varInit (COMMA varInit)*;
-conversion: INTTOSTRING | DOUBLETOSTRING | INTTODOUBLE | DOUBLETOINT;
+conversion: INTTOSTRING | DOUBLETOSTRING | BOOLEANTOSTRING | INTTODOUBLE | DOUBLETOINT;

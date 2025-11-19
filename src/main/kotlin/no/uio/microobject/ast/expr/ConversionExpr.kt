@@ -5,6 +5,7 @@ import no.uio.microobject.ast.ProgramElement
 import no.uio.microobject.runtime.GlobalMemory
 import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.SimulationMemory
+import no.uio.microobject.type.BOOLEANTYPE
 import no.uio.microobject.type.DOUBLETYPE
 import no.uio.microobject.type.INTTYPE
 import no.uio.microobject.type.STRINGTYPE
@@ -38,6 +39,12 @@ data class ConversionExpr(val c : Conversion, val inner : Expression) : Expressi
                 } else {
                     throw Exception("Conversion.INTTODOUBLE requires an Int value as its parameter")
                 }
+            Conversion.BOOLEANTOSTRING ->
+                if (i.tag == BOOLEANTYPE){
+                    return LiteralExpr(i.literal, STRINGTYPE)
+                } else {
+                    throw Exception("Conversion.BOOLEANTOSTRING requires a Boolean value as its parameter")
+                }
         }
     }
 
@@ -67,5 +74,10 @@ enum class Conversion : ProgramElement{
         override fun getRDF(): String {
             TODO("Not yet implemented")
         }
-    }
+    },
+    BOOLEANTOSTRING{
+        override fun getRDF(): String {
+            TODO("Not yet implemented")
+        }
+    },
 }

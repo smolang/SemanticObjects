@@ -1,5 +1,5 @@
 abstract class KindModel (String name)
-    Unit adapt()
+    Unit adaptModel()
         print("RECONFIG> Reconfiguring the "++ this.name);
         this.adaptDefect();
         this.adaptAddition();
@@ -29,7 +29,7 @@ class AssetModel extends Twin (List<Decision> decisions, List<KindModel> mods)
 
         List<KindModel> ms = this.mods;
         while ms != null do
-            ms.content.adapt();
+            ms.content.adaptModel();
             ms = ms.next;
         end
 

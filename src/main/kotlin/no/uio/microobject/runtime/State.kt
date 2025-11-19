@@ -4,6 +4,7 @@ import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.Statement
 import no.uio.microobject.type.Type
+import org.apache.jena.query.ResultSet
 
 /*
 We use the term "heap" NOT in the sense of C and other low-level here.
@@ -14,6 +15,7 @@ typealias GlobalMemory = MutableMap<LiteralExpr, Memory>  // Maps object name li
 typealias SimulationMemory = MutableMap<LiteralExpr, SimulatorObject>  // Maps object name literals to local memories
 typealias FieldEntry = List<FieldInfo>                   //list of fields
 typealias ModelsEntry = Pair<Expression, String>      //guard expression and models string
+typealias QueryCache = MutableMap<String, ResultSet>      //query cache
 
 enum class Visibility { DEFAULT, HIDE }
 
@@ -25,7 +27,9 @@ data class StaticTable(
     val hierarchy: MutableMap<String, MutableSet<String>> = mutableMapOf(), // DOWNWARDS class hierarchy
     val modelsTable: Map<String, List<ModelsEntry>>,                // This maps class names to complex models blocks
     val hiddenSet: Set<String>,//This set of classes is skipped by the lifting
-    val owldescr: MutableMap<String, String> // This maps class names to the default models block
+    val owldescr: MutableMap<String, String>, // This maps class names to the default models block
+    val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf(), // Queries for classification
+    val contextTable: MutableMap<String, String>
 
 ) {
     override fun toString(): String =

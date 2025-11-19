@@ -2,12 +2,11 @@ package no.uio.microobject.ast.stmt
 
 import com.sksamuel.hoplite.ConfigLoader
 import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.FALSEEXPR
 import no.uio.microobject.ast.expr.LiteralExpr
+import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.runtime.*
-import no.uio.microobject.type.DOUBLETYPE
-import no.uio.microobject.type.INTTYPE
-import no.uio.microobject.type.STRINGTYPE
-import no.uio.microobject.type.Type
+import no.uio.microobject.type.*
 import org.apache.jena.datatypes.xsd.XSDDatatype
 import java.io.File
 

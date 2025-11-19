@@ -1,0 +1,436 @@
+@prefix : <http://www.smolang.org/tree#> .
+@prefix owl: <http://www.w3.org/2002/07/owl#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix xml: <http://www.w3.org/XML/1998/namespace> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@base <http://www.smolang.org/tree#> .
+
+<http://www.smolang.org/tree#> rdf:type owl:Ontology .
+
+#################################################################
+#    Data properties
+#################################################################
+
+###  http://www.smolang.org/tree#age
+:age rdf:type owl:DatatypeProperty ;
+     rdfs:domain :Tree ;
+     rdfs:range xsd:integer .
+
+
+###  http://www.smolang.org/tree#familyName
+:familyName rdf:type owl:DatatypeProperty ;
+            rdfs:domain :Tree ;
+            rdfs:range xsd:string .
+
+
+###  http://www.smolang.org/tree#height
+:height rdf:type owl:DatatypeProperty ;
+        rdfs:domain :Tree ;
+        rdfs:range xsd:double .
+
+
+###  http://www.smolang.org/tree#id
+:id rdf:type owl:DatatypeProperty ;
+    rdfs:domain :Tree ;
+    rdfs:range xsd:string .
+
+
+###  http://www.smolang.org/tree#oxAmount
+:oxAmount rdf:type owl:DatatypeProperty ;
+          rdfs:domain :Tree ;
+          rdfs:range xsd:double .
+
+
+#################################################################
+#    Classes
+#################################################################
+
+###  http://www.smolang.org/tree#Mature
+:Mature rdf:type owl:Class ;
+        rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#MatureOak
+:MatureOak rdf:type owl:Class ;
+           owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                        owl:onProperty :age ;
+                                                        owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                             owl:onDatatype xsd:integer ;
+                                                                             owl:withRestrictions ( [ xsd:minInclusive 40
+                                                                                                    ]
+                                                                                                  )
+                                                                           ]
+                                                      ]
+                                                      [ rdf:type owl:Restriction ;
+                                                        owl:onProperty :age ;
+                                                        owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                             owl:onDatatype xsd:integer ;
+                                                                             owl:withRestrictions ( [ xsd:maxExclusive 299
+                                                                                                    ]
+                                                                                                  )
+                                                                           ]
+                                                      ]
+                                                      [ rdf:type owl:Restriction ;
+                                                        owl:onProperty :familyName ;
+                                                        owl:hasValue "Quercus"
+                                                      ]
+                                                    ) ;
+                                 rdf:type owl:Class
+                               ] ;
+           rdfs:subClassOf :Mature .
+
+
+###  http://www.smolang.org/tree#Oak
+:Oak rdf:type owl:Class ;
+     rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#Old
+:Old rdf:type owl:Class ;
+     rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#OldOak
+:OldOak rdf:type owl:Class ;
+        owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :age ;
+                                                     owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                          owl:onDatatype xsd:integer ;
+                                                                          owl:withRestrictions ( [ xsd:minInclusive 300
+                                                                                                 ]
+                                                                                               )
+                                                                        ]
+                                                   ]
+                                                   [ rdf:type owl:Restriction ;
+                                                     owl:onProperty :familyName ;
+                                                     owl:hasValue "Quercus"
+                                                   ]
+                                                 ) ;
+                              rdf:type owl:Class
+                            ] ;
+        rdfs:subClassOf :Old .
+
+
+###  http://www.smolang.org/tree#Sapling
+:Sapling rdf:type owl:Class ;
+         rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#SaplingOak
+:SaplingOak rdf:type owl:Class ;
+            owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                         owl:onProperty :age ;
+                                                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                              owl:onDatatype xsd:integer ;
+                                                                              owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                                                     ]
+                                                                                                   )
+                                                                            ]
+                                                       ]
+                                                       [ rdf:type owl:Restriction ;
+                                                         owl:onProperty :height ;
+                                                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                              owl:onDatatype xsd:double ;
+                                                                              owl:withRestrictions ( [ xsd:minInclusive "90.0"^^xsd:double
+                                                                                                     ]
+                                                                                                   )
+                                                                            ]
+                                                       ]
+                                                       [ rdf:type owl:Restriction ;
+                                                         owl:onProperty :height ;
+                                                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                              owl:onDatatype xsd:double ;
+                                                                              owl:withRestrictions ( [ xsd:maxExclusive "500.0"^^xsd:double
+                                                                                                     ]
+                                                                                                   )
+                                                                            ]
+                                                       ]
+                                                       [ rdf:type owl:Restriction ;
+                                                         owl:onProperty :familyName ;
+                                                         owl:hasValue "Quercus"
+                                                       ]
+                                                     ) ;
+                                  rdf:type owl:Class
+                                ] ;
+            rdfs:subClassOf :Sapling .
+
+
+###  http://www.smolang.org/tree#Seedling
+:Seedling rdf:type owl:Class ;
+          rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#SeedlingOak
+:SeedlingOak rdf:type owl:Class ;
+             owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                          owl:onProperty :age ;
+                                                          owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                               owl:onDatatype xsd:integer ;
+                                                                               owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                                                      ]
+                                                                                                    )
+                                                                             ]
+                                                        ]
+                                                        [ rdf:type owl:Restriction ;
+                                                          owl:onProperty :height ;
+                                                          owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                               owl:onDatatype xsd:double ;
+                                                                               owl:withRestrictions ( [ xsd:maxExclusive "90.0"^^xsd:double
+                                                                                                      ]
+                                                                                                    )
+                                                                             ]
+                                                        ]
+                                                        [ rdf:type owl:Restriction ;
+                                                          owl:onProperty :familyName ;
+                                                          owl:hasValue "Quercus"
+                                                        ]
+                                                      ) ;
+                                   rdf:type owl:Class
+                                 ] ;
+             rdfs:subClassOf :Seedling .
+
+
+###  http://www.smolang.org/tree#Tree
+:Tree rdf:type owl:Class ;
+      owl:disjointUnionOf ( :Mature
+                            :Old
+                            :Sapling
+                            :Seedling
+                            :Young
+                          ) .
+
+
+###  http://www.smolang.org/tree#Young
+:Young rdf:type owl:Class ;
+       rdfs:subClassOf :Tree .
+
+
+###  http://www.smolang.org/tree#YoungOak
+:YoungOak rdf:type owl:Class ;
+          owl:equivalentClass [ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                                                       owl:onProperty :age ;
+                                                       owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                            owl:onDatatype xsd:integer ;
+                                                                            owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                                                   ]
+                                                                                                 )
+                                                                          ]
+                                                     ]
+                                                     [ rdf:type owl:Restriction ;
+                                                       owl:onProperty :height ;
+                                                       owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                                                            owl:onDatatype xsd:double ;
+                                                                            owl:withRestrictions ( [ xsd:minInclusive "500.0"^^xsd:double
+                                                                                                   ]
+                                                                                                 )
+                                                                          ]
+                                                     ]
+                                                     [ rdf:type owl:Restriction ;
+                                                       owl:onProperty :familyName ;
+                                                       owl:hasValue "Quercus"
+                                                     ]
+                                                   ) ;
+                                rdf:type owl:Class
+                              ] ;
+          rdfs:subClassOf :Young .
+
+
+#################################################################
+#    Individuals
+#################################################################
+
+###  http://www.smolang.org/tree#MatureOak
+:MatureOak rdf:type owl:NamedIndividual ;
+           :familyName "Quercus" ;
+           :oxAmount "274.0"^^xsd:double .
+
+
+###  http://www.smolang.org/tree#OldOak
+:OldOak rdf:type owl:NamedIndividual ;
+        :familyName "Quercus" ;
+        :oxAmount "274.0"^^xsd:double .
+
+
+###  http://www.smolang.org/tree#SaplingOak
+:SaplingOak rdf:type owl:NamedIndividual ;
+            :familyName "Quercus" ;
+            :oxAmount "50.0"^^xsd:double .
+
+
+###  http://www.smolang.org/tree#SeedlingOak
+:SeedlingOak rdf:type owl:NamedIndividual ;
+             :familyName "Quercus" ;
+             :oxAmount "0.8"^^xsd:double .
+
+
+###  http://www.smolang.org/tree#YoungOak
+:YoungOak rdf:type owl:NamedIndividual ;
+          :familyName "Quercus" ;
+          :oxAmount "140.0"^^xsd:double .
+
+
+###  http://www.smolang.org/tree#oak1
+:oak1 rdf:type owl:NamedIndividual ,
+               :Oak ;
+      :age 50 ;
+      :familyName "Quercus" ;
+      :height "80.0"^^xsd:double ;
+      :id "1" .
+
+
+#################################################################
+#    General axioms
+#################################################################
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:minInclusive 300
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :familyName ;
+                         owl:hasValue "Quercus"
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :OldOak
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:minInclusive 40
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive 299
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :familyName ;
+                         owl:hasValue "Quercus"
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :MatureOak
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :height ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:double ;
+                                              owl:withRestrictions ( [ xsd:minInclusive "500.0"^^xsd:double
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :familyName ;
+                         owl:hasValue "Quercus"
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :YoungOak
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :height ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:double ;
+                                              owl:withRestrictions ( [ xsd:minInclusive "90.0"^^xsd:double
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :height ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:double ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive "500.0"^^xsd:double
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :familyName ;
+                         owl:hasValue "Quercus"
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :SaplingOak
+] .
+
+
+[ owl:intersectionOf ( [ rdf:type owl:Restriction ;
+                         owl:onProperty :age ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:integer ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive 40
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :height ;
+                         owl:someValuesFrom [ rdf:type rdfs:Datatype ;
+                                              owl:onDatatype xsd:double ;
+                                              owl:withRestrictions ( [ xsd:maxExclusive "90.0"^^xsd:double
+                                                                     ]
+                                                                   )
+                                            ]
+                       ]
+                       [ rdf:type owl:Restriction ;
+                         owl:onProperty :familyName ;
+                         owl:hasValue "Quercus"
+                       ]
+                     ) ;
+  rdf:type owl:Class ;
+  rdfs:subClassOf :SeedlingOak
+] .
+
+
+[ rdf:type owl:AllDisjointClasses ;
+  owl:members ( :Mature
+                :Old
+                :Sapling
+                :Seedling
+                :Young
+              )
+] .
+
+
+###  Generated by the OWL API (version 4.5.26.2023-07-17T20:34:13Z) https://github.com/owlcs/owlapi
