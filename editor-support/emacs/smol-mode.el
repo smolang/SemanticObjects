@@ -132,8 +132,8 @@
   (when (featurep 'yasnippet)
     ;; don't let our missing indentation support mess up the snippets
     (setq-local yas-indent-line 'fixed)
-    (unless (member abs--yas-snippets-dir yas-snippet-dirs)
-      (add-to-list 'yas-snippet-dirs abs--yas-snippets-dir t)
+    (unless (member smol--yas-snippets-dir yas-snippet-dirs)
+      (add-to-list 'yas-snippet-dirs smol--yas-snippets-dir t)
       ;; we use an internal function here, but the `yasnippet-snippets' package
       ;; does the same; let's assume this is a de facto public API for now.
       (yas--load-snippet-dirs))))
