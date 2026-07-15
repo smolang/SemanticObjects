@@ -918,6 +918,9 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                             if (vars.keys.contains(name)) log("Variable $name declared twice.", ctx)
                             else {
                                 expType = translateType(ctx.type(), className, generics)
+                                if(expType.getPrimary().getNameString() != "List"){
+                                    log("Access statements return a List<T>.", ctx)
+                                }
                                 vars[name] = expType
                             }
                         }
