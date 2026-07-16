@@ -140,7 +140,9 @@ class SandstoneUnit extends GeoUnit (List<Double> kerogenUnits)
         print(this.size);
     end
 end
-class ShaleUnit extends GeoUnit (hidden Double temperature, hidden Boolean hasKerogenSource, hidden Int maturedUnits)
+class ShaleUnit extends GeoUnit (hidden Double temperature,
+hidden Boolean hasKerogenSource,
+hidden Int maturedUnits)
     models "a <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoReservoirOntology_sedimentary_geological_object>; obo:RO_0001015 _:fr3; <http://purl.obolibrary.org/obo/bfo.owl#UFRGS:GeoCoreOntology_constituted_by> _:fr1; obo:RO_0000086 _:fr2. _:fr1 a domain:shale. _:fr2 domain:datavalue %temperature; a domain:temperature. _:fr3 a domain:amount_of_organic_matter.";
 
     override Unit update()

@@ -19,8 +19,8 @@
 
 project = 'The SMOL Language'
 html_short_title = "SMOL"
-copyright = '2022-2024, Eduard Kamburjan, Rudolf Schlatte'
-author = 'Eduard Kamburjan, Rudolf Schlatte'
+copyright = '2022-2026, Eduard Kamburjan, Einar Broch Johnsen, Rudolf Schlatte'
+author = 'Eduard Kamburjan, Einar Broch Johnsen, Rudolf Schlatte'
 
 
 # -- General configuration ---------------------------------------------------
