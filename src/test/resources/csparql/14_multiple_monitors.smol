@@ -1,0 +1,120 @@
+// reada src/test/resources/csparql/14_multiple_monitors.smol
+
+class Observation(Int x, Int ts) end
+
+class Controller(List<C> streamers)
+    
+    Unit register()
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.register();
+            objs = objs.next;
+        end
+    end
+
+    Unit doStream(Int ts)
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.doStream(ts);
+            objs = objs.next;
+        end
+    end
+
+    String windowToString()
+        String s = "";
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            String res = o.windowToString();
+            s = s ++ o ++ " ( " ++ res ++ ") ";
+            objs = objs.next;
+        end
+        return s;
+    end
+end
+
+streamer class C(Int x, Observation obs, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT4.001s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x. }
+            }
+        ", 
+            this
+        );
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.obs = new Observation(this.x, ts);
+        this.x = this.x + 1;
+    end
+
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
+    C o1 = new C(0, null, null);
+    C o2 = new C(10, null, null);
+    C o3 = new C(20, null, null);
+    List<C> l3 = new List<C>(o3, null);
+    List<C> l2 = new List<C>(o2, l3);
+    List<C> streamers = new List<C>(o1, l2);
+    Controller ctrl = new Controller(streamers);
+
+    // initialize monitor
+    ctrl.register();
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        ctrl.doStream(i);
+
+        // read window contents
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: obj7 ( ) obj8 ( ) obj9 ( ) 
+// >>101: obj7 ( ) obj8 ( ) obj9 ( ) 
+// >>102: obj7 ( ) obj8 ( ) obj9 ( ) 
+// >>103: obj7 ( 0 1 ) obj8 ( 10 11 ) obj9 ( 20 21 ) 
+// >>104: obj7 ( 0 1 ) obj8 ( 10 11 ) obj9 ( 20 21 ) 
+// >>105: obj7 ( 0 1 2 3 ) obj8 ( 10 11 12 13 ) obj9 ( 20 21 22 23 ) 
+// >>106: obj7 ( 0 1 2 3 ) obj8 ( 10 11 12 13 ) obj9 ( 20 21 22 23 ) 
+// >>107: obj7 ( 2 3 4 5 ) obj8 ( 12 13 14 15 ) obj9 ( 22 23 24 25 ) 
+// >>108: obj7 ( 2 3 4 5 ) obj8 ( 12 13 14 15 ) obj9 ( 22 23 24 25 ) 
+// >>109: obj7 ( 4 5 6 7 ) obj8 ( 14 15 16 17 ) obj9 ( 24 25 26 27 ) 
+// >>110: obj7 ( 4 5 6 7 ) obj8 ( 14 15 16 17 ) obj9 ( 24 25 26 27 ) 
+// >>111: obj7 ( 6 7 8 9 ) obj8 ( 16 17 18 19 ) obj9 ( 26 27 28 29 ) 
+// >>112: obj7 ( 6 7 8 9 ) obj8 ( 16 17 18 19 ) obj9 ( 26 27 28 29 ) 
+// >>113: obj7 ( 8 9 10 11 ) obj8 ( 18 19 20 21 ) obj9 ( 28 29 30 31 ) 
+
+// Notes:
+// - Multiple monitors on multiple streams are supported

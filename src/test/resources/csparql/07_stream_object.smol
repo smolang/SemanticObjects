@@ -1,0 +1,74 @@
+// reada src/test/resources/csparql/07_stream_object.smol
+
+class Observation(Int x, Int ts) end
+
+streamer class C(Int x, Observation obs, Monitor<Observation> m)
+
+    Unit register()
+        Monitor<Observation> m = monitor("
+            SELECT ?s
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT5.001s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x }
+            }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.x = this.x + 1;
+        this.obs = new Observation(this.x, ts);
+    end
+
+    String windowToString()
+        String s = "";
+        List<Observation> l = window(this.m);
+        while l != null do
+            s = s ++ l.content ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
+    C o = new C(0, null, null);
+
+    // initialize monitor
+    o.register();
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        o.doStream(i);
+
+        // read window contents
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: obj639 obj640 
+// >>103: obj639 obj640 
+// >>104: obj639 obj640 obj641 obj644 
+// >>105: obj639 obj640 obj641 obj644 
+// >>106: obj640 obj641 obj644 obj647 obj652 
+// >>107: obj640 obj641 obj644 obj647 obj652 
+// >>108: obj644 obj647 obj652 obj657 obj663 
+// >>109: obj644 obj647 obj652 obj657 obj663 
+// ..
+
+// Notes:
+// - Objects can be used as stream elements

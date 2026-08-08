@@ -3,6 +3,7 @@ package no.uio.microobject.runtime
 import no.uio.microobject.ast.Expression
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.Statement
+import no.uio.microobject.ast.stmt.MonitorObject
 import no.uio.microobject.type.Type
 import org.apache.jena.query.ResultSet
 
@@ -29,8 +30,8 @@ data class StaticTable(
     val hiddenSet: Set<String>,//This set of classes is skipped by the lifting
     val owldescr: MutableMap<String, String>, // This maps class names to the default models block
     val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf(), // Queries for classification
-    val contextTable: MutableMap<String, String>
-
+    val contextTable: MutableMap<String, String>,
+    val streamersTable: MutableMap<String, MutableMap<String, MutableSet<Expression>>>
 ) {
     override fun toString(): String =
 """

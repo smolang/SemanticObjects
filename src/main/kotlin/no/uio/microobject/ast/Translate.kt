@@ -22,6 +22,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
     private val classifiesTable: MutableMap<String, Pair<String, String>> = mutableMapOf()
     private val checkClassifiesTable: MutableMap<String, MutableMap<String, Pair<String, String>>> = mutableMapOf()
     private val contextTable : MutableMap<String, String> = mutableMapOf()
+    private val streamersTable : MutableMap<String, MutableMap<String, MutableSet<Expression>>> = mutableMapOf()
 
     private fun translateModels(ctx : Models_blockContext) : Pair<List<Pair<Expression, String>>, String>{
         if(ctx is Simple_models_blockContext)
@@ -74,6 +75,11 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                 } else {
                     addClassifyQuery(cl.className.text, cl.classifies_block(), null)
                 }
+            }
+
+            // create streamer configuration
+            if (cl.streamer != null) {
+                streamersTable[cl.className.text] = mutableMapOf()
             }
             val inFields = if(cl.external != null) {
                 var res = listOf<FieldInfo>()
@@ -141,6 +147,14 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
                     val params = if (nm.paramList() != null) paramListTranslate(nm.paramList()) else listOf()
                     res[nm.NAME().text] = MethodInfo(SkipStmt(ctx!!.start.line), params, nm.builtinrule != null, nm.domainrule != null, cl.className.text, metType)
                 }
+                if (nm.emits_block() != null) {
+                    if (!streamersTable.containsKey(cl.className.text))
+                        throw Exception("Class with methods containing emits clause must be a streamer: ${nm.NAME().text}")
+
+                    streamersTable[cl.className.text]!![nm.NAME().text] = mutableSetOf()
+                    for(i in 0 until nm.emits_block().expression().size)
+                        streamersTable[cl.className.text]!![nm.NAME().text]!! += visit(nm.emits_block().expression(i)) as Expression
+                }
             }
             table[cl.className.text] = Pair(fields, res)
         }
@@ -179,7 +193,7 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
 
         return Pair(
                      StackEntry(visit(ctx.statement()) as Statement, mutableMapOf(), Names.getObjName("_Entry_"), Names.getStackId()),
-                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable, contextTable)
+                     StaticTable(fieldTable, methodTable, hierarchy, modelsTable, hidden, owldescr, checkClassifiesTable, contextTable, streamersTable)
                    )
     }
 
@@ -402,6 +416,50 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         return SimulationStmt(target, path,  res, ctx!!.start.line, declares)
     }
 
+    override fun visitMonitor_statement(ctx: Monitor_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val decl = getClassDecl(ctx)
+            val className = if(decl == null) ERRORTYPE.name else decl!!.className.text
+            val targetType = TypeChecker.translateType(ctx.declType, className, mutableMapOf())
+            target.setType(targetType)
+        }
+
+        val query = visit(ctx!!.registeredQuery) as Expression
+        val ll = emptyList<Expression>().toMutableList()
+        for(i in 2 until ctx!!.expression().size)
+            ll += visit(ctx.expression(i)) as Expression
+
+        return MonitorStmt(target, query, ll, ctx!!.start.line, target.getType())
+    }
+
+    override fun visitPushStatic_statement(ctx: PushStatic_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val decl = getClassDecl(ctx)
+            val className = if(decl == null) ERRORTYPE.name else decl!!.className.text
+            val targetType = TypeChecker.translateType(ctx.declType, className, mutableMapOf())
+            target.setType(targetType)
+        }
+
+        val sources = visit(ctx!!.sources) as Expression
+
+        return PushStaticStmt(target, sources, ctx!!.start.line, target.getType())
+    }
+
+
+    override fun visitWindow_statement(ctx: Window_statementContext?): ProgramElement {
+        val target = visit(ctx!!.target) as Location
+        if(ctx.declType != null) {
+            val decl = getClassDecl(ctx)
+            val className = if(decl == null) ERRORTYPE.name else decl!!.className.text
+            val targetType = TypeChecker.translateType(ctx.declType, className, mutableMapOf())
+            target.setType(targetType)
+        }
+        val monitor = visit(ctx!!.monitor) as Expression
+        return WindowStmt(target, monitor, ctx!!.start.line, declares=target.getType())
+    }
+
     override fun visitTick_statement(ctx: Tick_statementContext?): ProgramElement {
         return TickStmt(visit(ctx!!.fmu) as Expression, visit(ctx!!.time) as Expression )
     }
@@ -418,7 +476,8 @@ class Translate : WhileBaseVisitor<ProgramElement>() {
         val def = getClassDecl(ctx as RuleContext)
         val declares = if(ctx!!.declType == null) null else
             TypeChecker.translateType(ctx.declType, if(def != null) def!!.className.text else ERRORTYPE.name, mutableMapOf())
-        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, ctx!!.start.line, declares)
+        val isClock = if(ctx.clock == null) false else true
+        return AssignStmt(visit(ctx!!.expression(0)) as Location, visit(ctx.expression(1)) as Expression, isClock, ctx!!.start.line, declares)
     }
 
     override fun visitSkip_statment(ctx: Skip_statmentContext?): ProgramElement {
