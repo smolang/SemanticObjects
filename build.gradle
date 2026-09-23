@@ -65,7 +65,7 @@ compileKotlin.dependsOn generateGrammarSource
 compileTestKotlin.dependsOn generateTestGrammarSource
 
 jar {
-    archiveFileName='smol.jar'
+    archiveFileName='smol-min.jar'
     manifest {
         attributes 'Main-Class': 'no.uio.microobject.main.MainKtKt'
     }
