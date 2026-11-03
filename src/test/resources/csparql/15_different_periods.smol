@@ -1,0 +1,136 @@
+// reada src/test/resources/csparql/15_different_periods.smol
+
+class Observation(Int x, Int ts) end
+
+class Controller(List<C> streamers)
+    
+    Unit register()
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.register();
+            objs = objs.next;
+        end
+    end
+
+    // Unit doStream(Int ts)
+    //     List<C> objs = this.streamers;
+    //     while objs != null do
+    //         C o = objs.content;
+    //         o.doStream(ts);
+    //         objs = objs.next;
+    //     end
+    // end
+
+    String windowToString()
+        String s = "";
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            String res = o.windowToString();
+            s = s ++ o ++ " ( " ++ res ++ ") ";
+            objs = objs.next;
+        end
+        return s;
+    end
+end
+
+streamer class C(Int x, Int period, Observation obs, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT6.001s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x. }
+            }
+        ", 
+            this
+        );
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.obs = new Observation(this.x, ts);
+        this.x = this.x + 1;
+    end
+
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
+    C o1 = new C(0, 1, null, null);
+    C o2 = new C(10, 2, null, null);
+    C o3 = new C(20, 3, null, null);
+    List<C> l3 = new List<C>(o3, null);
+    List<C> l2 = new List<C>(o2, l3);
+    List<C> streamers = new List<C>(o1, l2);
+    Controller ctrl = new Controller(streamers);
+
+    // initialize monitor
+    ctrl.register();
+
+    // run simulation
+    List<C> objs = null;
+    while i < endAt do
+
+        // put triples in the stream
+        objs = streamers;
+        while objs != null do
+            C o = objs.content;
+            if (((i / o.period) * o.period) == i) then
+                o.doStream(i);
+            else
+                o.x = o.x + 1; // increment without streaming
+            end
+            objs = objs.next;
+        end
+
+        // advance clock (timestamp)
+        i = i + 1;
+
+        // read window contents
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+    end
+end
+
+// Output:
+// >>101: obj6 ( ) obj7 ( ) obj8 ( ) 
+// >>102: obj6 ( ) obj7 ( ) obj8 ( ) 
+// >>103: obj6 ( 0 1 ) obj7 ( 10 ) obj8 ( ) 
+// >>104: obj6 ( 0 1 ) obj7 ( 10 ) obj8 ( ) 
+// >>105: obj6 ( 0 1 2 3 ) obj7 ( 10 12 ) obj8 ( 22 ) 
+// >>106: obj6 ( 0 1 2 3 ) obj7 ( 10 12 ) obj8 ( 22 ) 
+// >>107: obj6 ( 0 1 2 3 4 5 ) obj7 ( 10 12 14 ) obj8 ( 22 25 ) 
+// >>108: obj6 ( 0 1 2 3 4 5 ) obj7 ( 10 12 14 ) obj8 ( 22 25 ) 
+// >>109: obj6 ( 2 3 4 5 6 7 ) obj7 ( 12 14 16 ) obj8 ( 22 25 ) 
+// >>110: obj6 ( 2 3 4 5 6 7 ) obj7 ( 12 14 16 ) obj8 ( 22 25 ) 
+// >>111: obj6 ( 4 5 6 7 8 9 ) obj7 ( 14 16 18 ) obj8 ( 25 28 ) 
+// >>112: obj6 ( 4 5 6 7 8 9 ) obj7 ( 14 16 18 ) obj8 ( 25 28 ) 
+// >>113: obj6 ( 6 7 8 9 10 11 ) obj7 ( 16 18 20 ) obj8 ( 28 31 ) 
+// >>114: obj6 ( 6 7 8 9 10 11 ) obj7 ( 16 18 20 ) obj8 ( 28 31 ) 
+// >>115: obj6 ( 8 9 10 11 12 13 ) obj7 ( 18 20 22 ) obj8 ( 28 31 ) 
+// >>116: obj6 ( 8 9 10 11 12 13 ) obj7 ( 18 20 22 ) obj8 ( 28 31 ) 
+// >>117: obj6 ( 10 11 12 13 14 15 ) obj7 ( 20 22 24 ) obj8 ( 31 34 ) 
+
+// Notes:
+// - Clock variable is increased before reading the window contents (can only read past data)
+// - First monitor streams every second: can fit 6 elements in a 6.001s window
+// - Second monitor streams every 2 seconds: can fit 3 elements in a 6.001s window
+// - Third monitor streams every 3 seconds: can fit 2 elements in a 6.001s window

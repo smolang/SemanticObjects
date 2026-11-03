@@ -8,7 +8,7 @@ import no.uio.microobject.runtime.Memory
 import no.uio.microobject.runtime.StackEntry
 
 // This is a runtime-syntax only statement which models that we will write the return value of the next method in the stack into target
-data class StoreReturnStmt(val target : Location, val pos : Int = -1) : Statement {
+data class StoreReturnStmt(val target : Location, val pos : Int = -1, val emitFromMethod: String? = null) : Statement {
     override fun toString(): String = "$target <- stack"
     override fun getRDF(): String {
         return """

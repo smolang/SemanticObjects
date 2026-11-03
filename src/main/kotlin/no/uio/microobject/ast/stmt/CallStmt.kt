@@ -39,8 +39,14 @@ data class CallStmt(val target : Location, val callee : Location, val method : S
         for (i in m.params.indices) {
             newMemory[m.params[i]] = interpreter.eval(params[i], stackFrame)
         }
+
+        var emitFromMethod: String? = null
+        if (interpreter.staticInfo.streamersTable.containsKey(newObj.tag.name) &&
+            interpreter.staticInfo.streamersTable[newObj.tag.name]!!.containsKey(method))
+            emitFromMethod = method
+
         return EvalResult(
-            StackEntry(StoreReturnStmt(target), stackFrame.store, stackFrame.obj, stackFrame.id),
+            StackEntry(StoreReturnStmt(target, emitFromMethod=emitFromMethod), stackFrame.store, stackFrame.obj, stackFrame.id),
             listOf(StackEntry(m.stmt, newMemory, newObj, Names.getStackId()))
         )
     }

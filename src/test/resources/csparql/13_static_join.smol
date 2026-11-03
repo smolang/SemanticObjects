@@ -1,0 +1,134 @@
+// reada src/test/resources/csparql/13_static_join.smol
+
+class Observation(Int x, Int ts) end
+
+class Controller(List<C> streamers)
+    
+    Unit register(String static)
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.register(static);
+            objs = objs.next;
+        end
+    end
+
+    Unit doStream(Int ts)
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.doStream(ts);
+            objs = objs.next;
+        end
+    end
+
+    String windowToString()
+        String s = "";
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            String res = o.windowToString();
+            s = s ++ o ++ " ( " ++ res ++ ") ";
+            objs = objs.next;
+        end
+        return s;
+    end
+end
+
+streamer class C(Int x, Int mult, Observation obs, Monitor<Int> m)
+
+    Unit register(String static)
+        Monitor<Int> m = monitor("
+            SELECT (?x * ?k AS ?res)
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT5.001s STEP PT2s]
+            FROM %2
+            WHERE {
+                ?streamer prog:C_mult ?k.
+                WINDOW ?w {
+                    ?streamer prog:C_obs ?obs .
+                    ?obs prog:Observation_x ?x .
+                }
+            }
+        ", 
+            this,
+            static
+        );
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.obs = new Observation(this.x, ts);
+        this.x = this.x + 1;
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    C o1 = new C(0, 2, null, null);
+    C o2 = new C(10, 3, null, null);
+    C o3 = new C(20, 10, null, null);
+
+    // push static data
+    String static = pushStatic("heap,staticTable");
+
+    // initialize stream
+    List<C> l3 = new List<C>(o3, null);
+    List<C> l2 = new List<C>(o2, l3);
+    List<C> streamers = new List<C>(o1, l2);
+    Controller ctrl = new Controller(streamers);
+
+    // initialize monitor
+    ctrl.register(static);
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        ctrl.doStream(i);
+
+        // read window contents
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: obj8 ( ) obj9 ( ) obj10 ( ) 
+// >>101: obj8 ( ) obj9 ( ) obj10 ( ) 
+// >>102: obj8 ( ) obj9 ( ) obj10 ( ) 
+// >>103: obj8 ( 0 2 ) obj9 ( 30 33 ) obj10 ( 200 210 ) 
+// >>104: obj8 ( 0 2 ) obj9 ( 30 33 ) obj10 ( 200 210 ) 
+// >>105: obj8 ( 0 2 4 6 ) obj9 ( 30 33 36 39 ) obj10 ( 200 210 220 230 ) 
+// >>106: obj8 ( 0 2 4 6 ) obj9 ( 30 33 36 39 ) obj10 ( 200 210 220 230 ) 
+// >>107: obj8 ( 2 4 6 8 10 ) obj9 ( 33 36 39 42 45 ) obj10 ( 210 220 230 240 250 ) 
+// >>108: obj8 ( 2 4 6 8 10 ) obj9 ( 33 36 39 42 45 ) obj10 ( 210 220 230 240 250 ) 
+// >>109: obj8 ( 6 8 10 12 14 ) obj9 ( 39 42 45 48 51 ) obj10 ( 230 240 250 260 270 ) 
+// >>110: obj8 ( 6 8 10 12 14 ) obj9 ( 39 42 45 48 51 ) obj10 ( 230 240 250 260 270 ) 
+// >>111: obj8 ( 10 12 14 16 18 ) obj9 ( 45 48 51 54 57 ) obj10 ( 250 260 270 280 290 ) 
+// ..
+
+// Notes:
+// - pushStatic("heap, staticTable") dumps static data to output.ttl
+// - This file contains triples for C_mult property of each streamer object (static data)
+
+// - Results from streamers are multiplied by {2, 3, 10} respectively
+// - Stream data is inside the window: ?x
+// - Static data is outside the window: ?k
+// - Static data is joined with stream data: ?x * ?k

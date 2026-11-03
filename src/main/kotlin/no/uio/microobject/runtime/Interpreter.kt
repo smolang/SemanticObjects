@@ -14,7 +14,9 @@ import kotlinx.coroutines.runBlocking
 import no.uio.microobject.ast.*
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.stmt.ReturnStmt
+import no.uio.microobject.ast.stmt.MonitorObject
 import no.uio.microobject.data.TripleManager
+import no.uio.microobject.data.StreamManager
 import no.uio.microobject.main.Settings
 import no.uio.microobject.type.*
 import org.apache.jena.query.QueryExecution
@@ -68,6 +70,7 @@ class Interpreter(
 
     // TripleManager used to provide virtual triples etc.
     val tripleManager : TripleManager = TripleManager(settings, staticInfo, this)
+    val streamManager : StreamManager = StreamManager(settings, staticInfo, this)
 
     /**
      * Evaluates a call on a method of a class

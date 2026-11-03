@@ -1,0 +1,51 @@
+Full output with debug prints:
+Added to stream obj6 at 1758566583488: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj8]
+Added to stream obj6 at 1758566583488: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj8, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "1"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583488: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj8, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "0"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583488: 3 triples (now: 1758566583506)
+>>1: 
+Added to stream obj6 at 1758566583625: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj9]
+Added to stream obj6 at 1758566583625: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj9, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "2"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583625: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj9, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "1"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583625: 3 triples (now: 1758566583626)
+>>2: 
+Added to stream obj6 at 1758566583718: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj10]
+Added to stream obj6 at 1758566583718: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj10, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "3"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583718: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj10, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "2"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583718: 3 triples (now: 1758566583845)
+>>3: 1 2 
+Added to stream obj6 at 1758566583892: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj13]
+Added to stream obj6 at 1758566583892: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj13, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "4"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583892: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj13, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "3"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583892: 3 triples (now: 1758566583896)
+>>4: 1 2 3 
+Added to stream obj6 at 1758566583939: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj17]
+Added to stream obj6 at 1758566583939: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj17, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "5"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583939: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj17, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "4"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583939: 3 triples (now: 1758566583939)
+>>5: 1 2 3 
+Added to stream obj6 at 1758566583999: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj21]
+Added to stream obj6 at 1758566583999: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj21, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "6"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566583999: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj21, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "5"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566583999: 3 triples (now: 1758566583999)
+>>6: 1 2 3 
+Added to stream obj6 at 1758566584135: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj25]
+Added to stream obj6 at 1758566584135: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj25, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "7"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566584135: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj25, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "6"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566584135: 3 triples (now: 1758566584139)
+>>7: 2 3 4 5 6 
+Added to stream obj6 at 1758566584194: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj31]
+Added to stream obj6 at 1758566584194: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj31, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "8"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566584194: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj31, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "7"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566584194: 3 triples (now: 1758566584195)
+>>8: 2 3 4 5 6 
+Added to stream obj6 at 1758566584237: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj37]
+Added to stream obj6 at 1758566584237: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj37, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "9"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566584237: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj37, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "8"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566584237: 3 triples (now: 1758566584237)
+>>9: 2 3 4 5 6 
+Added to stream obj6 at 1758566584288: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj6, https://github.com/Edkamb/SemanticObjects/Program#C_obs, https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj43]
+Added to stream obj6 at 1758566584288: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj43, https://github.com/Edkamb/SemanticObjects/Program#Observation_x, "10"^^http://www.w3.org/2001/XMLSchema#int]
+Added to stream obj6 at 1758566584288: [https://github.com/Edkamb/SemanticObjects/Run1758566561585#obj43, https://github.com/Edkamb/SemanticObjects/Program#Observation_ts, "9"^^http://www.w3.org/2001/XMLSchema#int]
+Pushed immediately to stream obj6 at 1758566584288: 3 triples (now: 1758566584291)
+>>10: 4 5 6 7 8 9 

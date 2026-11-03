@@ -1,0 +1,75 @@
+// reada src/test/resources/csparql/03_sum.smol
+
+class Observation(Int x, Int ts) end
+
+streamer class C(Int x, Observation obs, Monitor<Int> m)
+
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT (SUM(?x) AS ?sumX)
+            FROM NAMED WINDOW <win> ON %1 [RANGE PT5.001s STEP PT2s]
+            WHERE {
+                WINDOW ?w { ?s prog:Observation_x ?x }
+            }
+        ", this);
+        this.m = m;
+    end
+
+    Unit doStream(Int ts) emits(this.obs, this.obs.x, this.obs.ts)
+        this.x = this.x + 1;
+        this.obs = new Observation(this.x, ts);
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
+    C o = new C(0, null, null);
+
+    // initialize monitor
+    o.register();
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        o.doStream(i);
+
+        // read window contents
+        String res = o.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 3  = 1+2
+// >>103: 3 
+// >>104: 10 = 1+2+3+4
+// >>105: 10 
+// >>106: 20 = 2+3+4+5+6
+// >>107: 20 
+// >>108: 30 = 4+5+6+7+8
+// >>109: 30 
+// >>110: 40 = 6+7+8+9+10
+// ..
+
+// Notes:
+// - SUM aggregation works as expected

@@ -1,0 +1,108 @@
+// reada src/test/resources/csparql/10_multiple_streams.smol
+
+class Observation(Int x, Int ts) end
+
+class Controller(List<C> streamers, Monitor<Int> m)
+    
+    Unit register()
+        Monitor<Int> m = monitor("
+            SELECT ?x
+            FROM NAMED WINDOW <win1> ON %1 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win2> ON %2 [RANGE PT4.001s STEP PT2s]
+            FROM NAMED WINDOW <win3> ON %3 [RANGE PT4.001s STEP PT2s]
+            WHERE {
+                { WINDOW <win1> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win2> { ?s prog:C_x ?x. } }
+                UNION
+                { WINDOW <win3> { ?s prog:C_x ?x. } }
+            }
+        ", 
+            this.streamers.content,
+            this.streamers.next.content,
+            this.streamers.next.next.content
+        );
+        this.m = m;
+    end
+
+    Unit doStream()
+        List<C> objs = this.streamers;
+        while objs != null do
+            C o = objs.content;
+            o.doStream();
+            objs = objs.next;
+        end
+    end
+
+    String windowToString()
+        String s = "";
+        List<Int> l = window(this.m);
+        while l != null do
+            s = s ++ intToString(l.content) ++ " ";
+            l = l.next;
+        end
+        return s;
+    end
+
+end
+
+streamer class C(Int x)
+
+    Unit doStream() emits(this.x)
+        this.x = this.x + 1;
+    end
+
+end
+
+main
+    // configure simulation
+    clock Int i = 100;
+    Int endAt = 200;
+
+    // initialize stream
+    C o1 = new C(0);
+    C o2 = new C(10);
+    C o3 = new C(20);
+    List<C> l3 = new List<C>(o3, null);
+    List<C> l2 = new List<C>(o2, l3);
+    List<C> streamers = new List<C>(o1, l2);
+
+    Controller ctrl = new Controller(streamers, null);
+
+    // initialize monitor
+    ctrl.register();
+
+    // run simulation
+    while i < endAt do
+
+        // put triples in the stream
+        ctrl.doStream(i);
+
+        // read window contents
+        String res = ctrl.windowToString();
+        print(">>" ++ intToString(i) ++ ": " ++ res);
+
+        // advance clock (timestamp)
+        i = i + 1;
+    end
+end
+
+// Output:
+// >>100: 
+// >>101: 
+// >>102: 
+// >>103: 1 11 21 2 12 22                    : 1-2, 11-12, 21-22
+// >>104: 1 11 21 2 12 22 
+// >>105: 1 21 14 4 3 23 11 22 24 12 13 2    : 2-5, 12-15, 22-25
+// >>106: 1 21 14 4 3 23 11 22 24 12 13 2 
+// >>107: 25 4 14 3 23 16 26 24 6 5 13 15    : 3-6, 13-16, 23-26
+// >>108: 25 4 14 3 23 16 26 24 6 5 13 15 
+// >>109: 25 27 16 26 28 6 17 5 8 7 18 15    : 5-8, 15-18, 25-28
+// >>110: 25 27 16 26 28 6 17 5 8 7 18 15 
+// >>111: 30 20 27 28 10 9 17 29 8 19 7 18   : 7-10, 17-20, 27-30
+// >>112: 30 20 27 28 10 9 17 29 8 19 7 18 
+// >>113: 30 20 32 21 10 9 22 29 12 11 19 31 : 9-12, 19-22, 29-32
+// ..
+
+// Notes:
+// - Three streams with different starting points (0, 10, 20)
