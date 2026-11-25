@@ -323,7 +323,7 @@ class TypeChecker(private val ctx: WhileParser.ProgramContext, private val setti
                 val equivalentClasses = reasoner.getEquivalentClasses(objectUnion)
 
                 if (classExpression?.let { equivalentClasses.contains(it) } == true) {
-                    log("Class $mainClassName is equivalent to the union of $dlQueries", nodeName, Severity.INFO)
+                    log("Class $mainClassName is equivalent to the union of $dlQueries", nodeName)
                     found = true
                 } else {
                     log("Class $mainClassName is not equivalent to the union of $dlQueries", nodeName, Severity.WARNING)
