@@ -302,7 +302,7 @@ fun liftField(store:String,  //class to lift
         )
         manager.addIfMatch(candidateTriple, searchTriple, matchingTriples, pseudo)
     } else {
-        val entry = NodeFactory.createURI("${run}${obj.tag}_${store}")
+        val entry = NodeFactory.createURI("${run}${obj.tag}_${obj}_${store}")
         var resTriple =
             Triple(
                 NodeFactory.createURI(subjectString),
