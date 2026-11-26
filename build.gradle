@@ -4,6 +4,7 @@ plugins {
     id 'antlr'
     id "kr.motd.sphinx" version "2.10.0"
     id 'scala'
+    id 'maven-publish'
 }
 
 group = 'org.smolang'
@@ -74,6 +75,17 @@ shadowJar {
     archiveFileName='smol.jar'
 }
 assemble.dependsOn shadowJar
+
+publishing {
+    // for jitpack.io: generates pom.xml etc. in
+    // build/publications/mavenJava/
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+        }
+    }
+}
+assemble.dependsOn publishToMavenLocal
 
 sphinx {
     // Documentation at
