@@ -117,7 +117,6 @@ class REPL(private val settings: Settings) {
         val tripleManager = TripleManager(settings, pair.second, null)
         val tC = TypeChecker(tree, settings, tripleManager)
         tC.check()
-        tC.report()
 
 
 
@@ -132,6 +131,10 @@ class REPL(private val settings: Settings) {
             pair.second,
             settings
         )
+        if (pair.second.checkClassifiesTable.isNotEmpty()) {
+            tC.checkAdaptationConsistency(interpreter!!)
+        }
+        tC.report()
     }
 
     private fun initCommands() {
@@ -319,6 +322,21 @@ class REPL(private val settings: Settings) {
         )
         commands["query"] = query
         commands["q"] = query
+
+        val ask = Command(
+            "ask",
+            this,
+            { str ->
+                val results = interpreter!!.ask(str)
+                printRepl("\n" + results)
+                false
+            },
+            "executes a SPARQL ask query",
+            parameterHelp = "SPARQL ask query",
+            requiresParameter = true
+        )
+        commands["ask"] = ask
+        commands["a"] = ask
 
         commands["plot"] = Command(
             "plot",

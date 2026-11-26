@@ -1,6 +1,7 @@
 package no.uio.microobject.ast.stmt
 
 import no.uio.microobject.ast.*
+import no.uio.microobject.ast.expr.FALSEEXPR
 import no.uio.microobject.ast.expr.LiteralExpr
 import no.uio.microobject.ast.expr.TRUEEXPR
 import no.uio.microobject.runtime.EvalResult
@@ -67,6 +68,10 @@ data class ConstructStmt(val target : Location, val query: Expression, val param
                                 newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
                             else if (f.type == DOUBLETYPE && (extractedName.matches("\\d+".toRegex()) || extractedName.matches("\\d+\\^\\^http://www.w3.org/2001/XMLSchema#double".toRegex())))
                                 newObjMemory[f.name] = LiteralExpr(extractedName.split("^^")[0], DOUBLETYPE)
+                            else if (f.type == BOOLEANTYPE && extractedName.removePrefix("\"").substringBefore("\"").substringBefore("^^").lowercase() in setOf("true", "false", "1", "0")) {
+                                val boolLex = extractedName.removePrefix("\"").substringBefore("\"").substringBefore("^^").lowercase()
+                                newObjMemory[f.name] = if (boolLex == "true" || boolLex == "1") TRUEEXPR else FALSEEXPR
+                            }
                             else if(f.type == STRINGTYPE)
                                 newObjMemory[f.name] = LiteralExpr("\""+extractedName+"\"", f.type)
                             else

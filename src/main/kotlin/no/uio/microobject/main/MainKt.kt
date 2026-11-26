@@ -32,7 +32,7 @@ data class Settings(var verbose : Boolean,      //Verbosity
                     val extraPrefixes : HashMap<String, String>,
                     val useQueryType : Boolean = false,
                     val punning : Boolean = false, //uses the pre-1.0 lifting
-                    val reasoner : ReasonerMode = ReasonerMode.owl
+                    var reasoner : ReasonerMode = ReasonerMode.owl
                     ){
     var prefixMapCache: HashMap<String, String>? = null
     fun prefixMap() : HashMap<String, String> {

@@ -1,0 +1,11 @@
+class Flag(Boolean value)
+end
+
+main
+    Flag f1 = new Flag(False);
+    Flag f2 = new Flag(True);
+    List<Boolean> lf = access("SELECT ?v WHERE { ?o smol:implements prog:Flag. ?o prog:Flag_value ?v . FILTER (?v = false) }");
+    List<Boolean> lt = access("SELECT ?v WHERE { ?o smol:implements prog:Flag. ?o prog:Flag_value ?v . FILTER (?v = true) }");
+    breakpoint;
+    print("done");
+end
