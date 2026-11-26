@@ -1,1 +1,1 @@
-[(?X domain:models ?Y), (?X prog:GeoLayer_depth_builtin_res ?Z) -> (?Y domain:depth ?Z)]
+[(?X smol:links ?Y), (?X prog:GeoLayer_depth_builtin_res ?Z) -> (?Y domain:depth ?Z)]
